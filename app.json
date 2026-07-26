@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "ZannyChat",
+    "slug": "zannychat",
+    "scheme": "zannychat",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.zannychat.app"
+    },
+    "android": {
+      "package": "com.zannychat.app"
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
