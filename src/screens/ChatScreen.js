@@ -10,7 +10,7 @@ import { fetchMessages, sendMessage, subscribeToMessages } from '../services/api
 
 export default function ChatScreen({ route, navigation }) {
   const { conversation } = route.params;
-  const { colors, spacing } = useTheme();
+  const { colors, spacing, radii, typography } = useTheme();
   const [messages, setMessages] = useState([]);
   const [replyingTo, setReplyingTo] = useState(null);
   const [reactions, setReactions] = useState({});
@@ -58,31 +58,41 @@ export default function ChatScreen({ route, navigation }) {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <Header
-        title={conversation.participant.name}
-        subtitle={conversation.participant.online ? 'Online' : 'Offline'}
-        onBack={() => navigation.goBack()}
-        right={
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <TouchableOpacity style={{ marginRight: spacing.sm }}>
-              <Ionicons name="call-outline" size={20} color={colors.textPrimary} />
-            </TouchableOpacity>
-            <Avatar name={conversation.participant.name} color={conversation.participant.avatarColor} size={32} />
+    <View style={{ flex: 1, backgroundColor: '#0a0a1a' }}>
+      <View style={[styles.bgOverlay, { backgroundColor: colors.background, opacity: 0.2 }]} />
+      
+      <View style={[styles.premiumHeader, { paddingHorizontal: spacing.md, paddingTop: Platform.OS === 'ios' ? 50 : 20, paddingBottom: 16, backgroundColor: 'rgba(10, 10, 26, 0.85)', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ paddingRight: 16 }}>
+          <Ionicons name="chevron-back" size={28} color={colors.primary} />
+        </TouchableOpacity>
+        
+        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+          <Avatar name={conversation.participant.name} color={conversation.participant.avatarColor || colors.primary} size={40} />
+          <View style={{ marginLeft: 12 }}>
+            <Text style={[typography.bodyStrong, { color: '#fff', fontSize: 16 }]}>{conversation.participant.name}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+              <Ionicons name="lock-closed" size={10} color="rgba(255,255,255,0.5)" style={{ marginRight: 4 }} />
+              <Text style={[typography.caption, { color: 'rgba(255,255,255,0.6)' }]}>
+                {conversation.participant.online ? 'Online globally' : 'Securely connected'}
+              </Text>
+            </View>
           </View>
-        }
-      />
+        </View>
+
+        <TouchableOpacity style={[styles.iconBtn, { backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: radii.pill }]}>
+          <Ionicons name="call-outline" size={20} color={colors.primary} />
+        </TouchableOpacity>
+      </View>
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={90}
       >
         <FlatList
           ref={listRef}
           data={messages}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingVertical: spacing.md }}
+          contentContainerStyle={{ paddingVertical: spacing.md, paddingHorizontal: spacing.sm }}
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
           renderItem={({ item }) => (
             <ChatBubble
@@ -101,7 +111,7 @@ export default function ChatScreen({ route, navigation }) {
           replyingTo={replyingTo}
           onCancelReply={() => setReplyingTo(null)}
           onAttach={() =>
-            Alert.alert('Attachments', 'Media, documents, and the encrypted vault land in a later build.')
+            Alert.alert('ZannyChat Vault', 'Secure file encryption and global transfers land in the next build.')
           }
         />
       </KeyboardAvoidingView>
@@ -109,4 +119,8 @@ export default function ChatScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  bgOverlay: { ...StyleSheet.absoluteFillObject },
+  premiumHeader: { flexDirection: 'row', alignItems: 'center' },
+  iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }
+});
