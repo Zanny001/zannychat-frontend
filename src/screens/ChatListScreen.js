@@ -7,6 +7,8 @@ import ChatListItem from '../components/ChatListItem';
 import GlassCard from '../components/GlassCard';
 import Knot from '../components/Knot';
 import { fetchConversations } from '../services/api';
+import { SUPABASE_ENABLED } from '../services/supabaseClient';
+import { hexToRgba } from '../utils/color';
 
 export default function ChatListScreen({ navigation }) {
   const { colors, mood, spacing, typography, radii } = useTheme();
@@ -64,6 +66,17 @@ export default function ChatListScreen({ navigation }) {
         </GlassCard>
       </View>
 
+      {!SUPABASE_ENABLED && (
+        <View style={{ paddingHorizontal: spacing.md, marginBottom: spacing.sm }}>
+          <View style={[styles.demoPill, { backgroundColor: hexToRgba(colors.gold, 0.14), borderColor: hexToRgba(colors.gold, 0.35) }]}>
+            <Ionicons name="flask-outline" size={13} color={colors.gold} />
+            <Text style={[typography.small, { color: colors.gold, marginLeft: 6 }]}>
+              DEMO DATA — connect Supabase to go live
+            </Text>
+          </View>
+        </View>
+      )}
+
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
@@ -95,4 +108,13 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center' },
   newChatBtn: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   searchBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 9 },
+  demoPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
 });

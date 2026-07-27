@@ -36,3 +36,20 @@ export async function backendFetch(path, options = {}) {
   }
   return body;
 }
+
+// Hits /health directly — no auth token, since that route doesn't
+// require one. Used by the Connections panel in Settings to show real
+// status instead of just "a URL is set", and returns null rather than
+// throwing so a slow/unreachable backend never breaks the screen that
+// calls it.
+export async function checkBackendHealth() {
+  if (!BACKEND_ENABLED) return null;
+  try {
+    const response = await fetch(`${BACKEND_URL}/health`);
+    if (!response.ok) return { reachable: false };
+    const body = await response.json();
+    return { reachable: true, ...body };
+  } catch (err) {
+    return { reachable: false };
+  }
+}

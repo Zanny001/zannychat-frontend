@@ -66,6 +66,10 @@ encrypted and reachable anywhere, without it being a whole banner.
   long-press reactions, typing bar
 - **New chat / contacts** screen (QR-scan entry point stubbed for later)
 - **Profile** screen
+- **Settings → Connections**: live status for Supabase and the backend —
+  the backend row actually calls its `/health` route rather than just
+  checking a URL is set, so "Live" means the deployed service can reach
+  its own database, not just that this app can reach the service
 - **Settings → Mood**: four two-tone moods, switch instantly, applies
   app-wide
 - **Wallet tab**: gold balance card, live once the backend is connected
@@ -136,6 +140,21 @@ until fonts load (see "Fonts don't load" below).
 
 ## Connecting the real backend
 
+**Current status of this specific project:** all three vars in `.env`
+are filled in with real values — Supabase project
+`vithpppgyjmazxvogvno` (URL derived from the anon JWT's `ref` claim,
+using the newer `sb_publishable_...` key) and the backend at
+`https://zannychat-backend.onrender.com`. The "DEMO DATA" pill on the
+Chats screen should be gone; if it's still showing, `.env` wasn't
+picked up — see the troubleshooting note below.
+
+One thing to verify on your end, since I can't check it: **the backend's
+`SUPABASE_URL` on Render needs to point at this exact same project**
+(`vithpppgyjmazxvogvno`). If the backend was set up against a
+*different* Supabase project, session tokens this app generates won't
+validate there, and `POST /conversations` / `GET /wallet/balance` will
+fail with 401s even though both services individually report healthy.
+
 There are two pieces, each toggled by its own env vars — see
 `zannychat-backend`'s README for how to stand them up.
 
@@ -153,10 +172,15 @@ There are two pieces, each toggled by its own env vars — see
    ```
    EXPO_PUBLIC_BACKEND_URL=https://your-service.onrender.com
    ```
-   `src/services/backendClient.js` picks this up the same way. With it
-   set, tapping a contact in **New chat** creates a real conversation via
-   `POST /conversations`, and the **Wallet** tab shows a live balance via
-   `GET /wallet/balance` instead of the static preview.
+   `src/services/backendClient.js` picks this up the same way. Note that
+   `createConversation` and `fetchWalletBalance` both check *both* flags
+   before calling the backend, not just this one — the backend's routes
+   require a Supabase session token to authenticate the request, so a
+   backend URL with no Supabase session to attach is a dead end by
+   design, not a bug. `checkBackendHealth()` (used by Settings →
+   Connections) is the one exception — `/health` needs no auth, so it
+   works as soon as the URL is set, which makes it the fastest way to
+   confirm a fresh deploy is actually reachable.
 4. Restart `expo start` after editing `.env` — Expo only reads
    `EXPO_PUBLIC_*` vars at startup.
 
@@ -199,6 +223,11 @@ src/
 ```
 
 ## Troubleshooting
+
+**"DEMO DATA" pill won't go away even though `.env` has real values.**
+Expo only reads `EXPO_PUBLIC_*` vars at bundler startup, not on hot
+reload — fully stop and rerun `expo start` (clearing the cache with
+`expo start -c` if that alone doesn't do it).
 
 **Fonts don't load / app stays blank.** `App.js` holds the splash
 screen up until Space Grotesk and Manrope finish loading, then renders
