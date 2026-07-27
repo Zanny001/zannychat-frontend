@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
   },
   initials: {
     color: '#FFFFFF',
-    fontWeight: '700',
+    fontFamily: 'SpaceGrotesk_700Bold',
   },
   statusDot: {
     position: 'absolute',

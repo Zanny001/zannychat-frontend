@@ -1,4 +1,5 @@
 import { supabase, SUPABASE_ENABLED } from './supabaseClient';
+import { backendFetch, BACKEND_ENABLED } from './backendClient';
 import {
   CURRENT_USER,
   MOCK_CONTACTS,
@@ -8,16 +9,25 @@ import {
 
 // ---------------------------------------------------------------------
 // This file is the ONLY place that knows whether ZannyChat is talking
-// to a real Supabase backend or running on local mock data. Screens
-// never import supabaseClient or mockData directly — they call these
-// functions, so wiring up the real backend later (Phase 2) means
+// to a real backend or running on local mock data. Screens never
+// import supabaseClient, backendClient, or mockData directly — they
+// call these functions, so turning on the real backend (Phase 2) means
 // filling in env vars, not rewriting screens.
+//
+// Two backends are involved, each with its own flag:
+//   SUPABASE_ENABLED — direct reads/writes for profiles, conversations,
+//     and messages (see supabaseClient.js).
+//   BACKEND_ENABLED — the Express service on Render, used only for the
+//     handful of things a client shouldn't do directly: creating a
+//     conversation (a multi-table write) and touching wallet balances
+//     (see zannychat-backend's README for why).
 //
 // Expected Supabase schema (created by the backend project):
 //   profiles(id, name, avatar_color, status, online)
 //   conversations(id, created_at)
 //   conversation_participants(conversation_id, user_id)
-//   messages(id, conversation_id, sender_id, text, created_at)
+//   messages(id, conversation_id, sender_id, text, created_at, reply_to_id)
+//   wallets(user_id, currency) / ledger_entries(id, wallet_id, amount, ...)
 // ---------------------------------------------------------------------
 
 // Mutable in-memory clone so mock mode "remembers" sent messages for
@@ -85,6 +95,43 @@ export async function fetchConversations() {
 
   if (error) throw error;
   return data;
+}
+
+// Starts a conversation with a contact. When the backend is deployed,
+// this is a single trusted server call that creates the conversation
+// and both participant rows together (see zannychat-backend's
+// POST /conversations). Otherwise it falls back to a locally-faked
+// conversation, same as before — good enough to demo the Chat screen
+// without any backend at all.
+export async function createConversation(participantId, participantProfile) {
+  if (BACKEND_ENABLED && SUPABASE_ENABLED) {
+    const conversation = await backendFetch('/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ participantId }),
+    });
+    return {
+      ...conversation,
+      participant: participantProfile,
+      lastMessage: '',
+      lastMessageAt: '',
+      unreadCount: 0,
+    };
+  }
+
+  return {
+    id: `new-${participantId}`,
+    participant: participantProfile,
+    lastMessage: '',
+    lastMessageAt: '',
+    unreadCount: 0,
+  };
+}
+
+// Returns null when the backend isn't configured — WalletScreen treats
+// that as "show the static preview" rather than a real ₦0.00 balance.
+export async function fetchWalletBalance() {
+  if (!BACKEND_ENABLED || !SUPABASE_ENABLED) return null;
+  return backendFetch('/wallet/balance');
 }
 
 export async function fetchMessages(conversationId) {

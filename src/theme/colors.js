@@ -1,79 +1,102 @@
-// ZannyChat — Dynamic Theme Engine
-// A handful of curated palettes. Users pick one in Settings and every
-// screen re-renders through ThemeContext — no per-screen color logic.
+// ZannyChat — "Signal & Thread" design system
+//
+// The idea a conversation is two voices meeting is carried literally
+// into color: every mood defines a warm SIGNAL hue (always "my"
+// messages, always the primary action color) and a cool THREAD hue
+// (always "their" voice, used as an accent rather than a full fill —
+// see ChatBubble). Switching moods changes the whole feeling of the
+// app without ever breaking that warm-is-mine / cool-is-theirs logic.
 
-export const PALETTES = {
-  nexus: {
-    key: 'nexus',
-    label: 'Nexus (default)',
-    primary: '#6C5CE7',
-    primaryDark: '#4B3FCF',
-    accent: '#00D2A0',
-    background: '#0F1020',
-    surface: '#191A2E',
-    surfaceAlt: '#232544',
-    bubbleMine: '#6C5CE7',
-    bubbleTheirs: '#232544',
-    textPrimary: '#F4F4FB',
-    textSecondary: '#9C9BC2',
-    border: '#2A2C4E',
+export const MOODS = {
+  ember: {
+    key: 'ember',
+    label: 'Ember',
+    ink: '#15111C',
+    inkRaised: '#1F1A29',
+    inkRaisedAlt: '#282232',
+    signal: '#FF6A4D',
+    thread: '#2FC1A8',
+    gold: '#F3B94D',
+    paper: '#F3EEE7',
+    inkSoft: '#9C93AE',
+    line: '#2C2740',
     danger: '#FF5C7A',
-    online: '#00D2A0',
   },
-  midnight: {
-    key: 'midnight',
-    label: 'Midnight',
-    primary: '#3E7BFA',
-    primaryDark: '#2C5FD1',
-    accent: '#7DE0FF',
-    background: '#05070F',
-    surface: '#0E1220',
-    surfaceAlt: '#161B2E',
-    bubbleMine: '#3E7BFA',
-    bubbleTheirs: '#161B2E',
-    textPrimary: '#EAF0FF',
-    textSecondary: '#8792B0',
-    border: '#20263D',
+  tide: {
+    key: 'tide',
+    label: 'Tide',
+    ink: '#0B1720',
+    inkRaised: '#11202B',
+    inkRaisedAlt: '#182B38',
+    signal: '#FF8F5E',
+    thread: '#2FA9D6',
+    gold: '#E8C468',
+    paper: '#EAF3F5',
+    inkSoft: '#7C97A3',
+    line: '#1C3140',
     danger: '#FF6B6B',
-    online: '#4CE0B3',
   },
-  sunset: {
-    key: 'sunset',
-    label: 'Sunset',
-    primary: '#FF7A59',
-    primaryDark: '#E0603F',
-    accent: '#FFC15E',
-    background: '#1A1113',
-    surface: '#241619',
-    surfaceAlt: '#2F1D20',
-    bubbleMine: '#FF7A59',
-    bubbleTheirs: '#2F1D20',
-    textPrimary: '#FBEFEA',
-    textSecondary: '#C4A39A',
-    border: '#3A2226',
-    danger: '#FF4D4D',
-    online: '#5EE6A0',
+  aurora: {
+    key: 'aurora',
+    label: 'Aurora',
+    ink: '#130E1F',
+    inkRaised: '#1C1530',
+    inkRaisedAlt: '#251D40',
+    signal: '#FF7A9C',
+    thread: '#5FE3A8',
+    gold: '#F6C15E',
+    paper: '#F2EEF9',
+    inkSoft: '#9D93B8',
+    line: '#2E2650',
+    danger: '#FF5C7A',
   },
-  ocean: {
-    key: 'ocean',
-    label: 'Ocean',
-    primary: '#00A8CC',
-    primaryDark: '#00839F',
-    accent: '#7CF5D4',
-    background: '#081418',
-    surface: '#0F1E22',
-    surfaceAlt: '#15292E',
-    bubbleMine: '#00A8CC',
-    bubbleTheirs: '#15292E',
-    textPrimary: '#E7FBFF',
-    textSecondary: '#89AEB5',
-    border: '#1C3238',
-    danger: '#FF6B6B',
-    online: '#7CF5D4',
+  dawn: {
+    key: 'dawn',
+    label: 'Dawn',
+    ink: '#1C1512',
+    inkRaised: '#271C18',
+    inkRaisedAlt: '#312420',
+    signal: '#FF8A5B',
+    thread: '#4FBFA8',
+    gold: '#F4C05C',
+    paper: '#F7EFE6',
+    inkSoft: '#B39C8E',
+    line: '#3A2C24',
+    danger: '#FF6157',
   },
 };
 
-export const DEFAULT_PALETTE_KEY = 'nexus';
+export const DEFAULT_MOOD_KEY = 'ember';
+
+// Fixed across every mood on purpose — "online" should mean the same
+// thing regardless of which mood is active.
+const ONLINE = '#4ADE80';
+
+// Maps a mood's raw palette onto the semantic tokens components use.
+// Keeping both semantic names (primary/accent) AND the concept names
+// (signal/thread) means most screens never have to know the theme
+// changed, while ChatBubble and the mood picker can reach for the
+// literal "two voices" meaning.
+export function resolveMoodColors(mood) {
+  return {
+    background: mood.ink,
+    surface: mood.inkRaised,
+    surfaceAlt: mood.inkRaisedAlt,
+    primary: mood.signal,
+    primaryDark: mood.signal,
+    accent: mood.thread,
+    signal: mood.signal,
+    thread: mood.thread,
+    gold: mood.gold,
+    bubbleMine: mood.signal,
+    bubbleTheirs: mood.inkRaisedAlt,
+    textPrimary: mood.paper,
+    textSecondary: mood.inkSoft,
+    border: mood.line,
+    danger: mood.danger,
+    online: ONLINE,
+  };
+}
 
 export const spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 };
 

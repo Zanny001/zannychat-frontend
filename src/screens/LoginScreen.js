@@ -23,57 +23,53 @@ export default function LoginScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0a1a' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <View style={{ padding: spacing.lg, flex: 1, justifyContent: 'center' }}>
-          
-          <View style={[styles.glassCard, { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: radii.xl, padding: spacing.xl, borderColor: 'rgba(255,255,255,0.08)' }]}>
-            <Text style={[typography.title, { color: '#fff', marginBottom: spacing.xs, textAlign: 'center', fontSize: 28 }]}>Welcome back</Text>
-            <Text style={[typography.body, { color: 'rgba(255,255,255,0.6)', marginBottom: spacing.xl, textAlign: 'center' }]}>
-              Enter your ZannyChat global ID.
-            </Text>
+          <Text style={[typography.title, { color: colors.textPrimary, marginBottom: spacing.xs }]}>Welcome back</Text>
+          <Text style={[typography.body, { color: colors.textSecondary, marginBottom: spacing.lg }]}>
+            Sign in to keep chatting.
+          </Text>
 
-            {!SUPABASE_ENABLED && (
-              <View style={[styles.notice, { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: colors.primary }]}>
-                <Text style={[typography.caption, { color: 'rgba(255,255,255,0.8)', textAlign: 'center' }]}>
-                  Demo Mode: Enter any email/password to securely connect.
-                </Text>
-              </View>
-            )}
-
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Email address"
-              placeholderTextColor="rgba(255,255,255,0.4)"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              style={[styles.input, { backgroundColor: 'rgba(255,255,255,0.06)', color: '#fff', borderRadius: radii.md, borderColor: 'rgba(255,255,255,0.1)' }]}
-            />
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Master Password"
-              placeholderTextColor="rgba(255,255,255,0.4)"
-              secureTextEntry
-              style={[styles.input, { backgroundColor: 'rgba(255,255,255,0.06)', color: '#fff', borderRadius: radii.md, borderColor: 'rgba(255,255,255,0.1)' }]}
-            />
-
-            <TouchableOpacity
-              style={[styles.button, { backgroundColor: colors.primary, borderRadius: radii.pill, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }]}
-              onPress={handleLogin}
-              disabled={loading}
-            >
-              <Text style={styles.buttonText}>{loading ? 'Authenticating…' : 'Secure Login'}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={{ marginTop: spacing.lg, alignItems: 'center' }} onPress={() => navigation.navigate('Signup')}>
-              <Text style={[typography.caption, { color: 'rgba(255,255,255,0.6)' }]}>
-                Don't have an ID? <Text style={{ color: colors.primary, fontWeight: '700' }}>Create one</Text>
+          {!SUPABASE_ENABLED && (
+            <View style={[styles.notice, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>
+                No backend connected yet — any email/password will sign you into the demo.
               </Text>
-            </TouchableOpacity>
-          </View>
+            </View>
+          )}
 
+          <TextInput
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Email"
+            placeholderTextColor={colors.textSecondary}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderRadius: radii.md }]}
+          />
+          <TextInput
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Password"
+            placeholderTextColor={colors.textSecondary}
+            secureTextEntry
+            style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderRadius: radii.md }]}
+          />
+
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: colors.primary, borderRadius: radii.pill }]}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            <Text style={styles.buttonText}>{loading ? 'Signing in…' : 'Sign in'}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={{ marginTop: spacing.md, alignItems: 'center' }} onPress={() => navigation.navigate('Signup')}>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>
+              Don't have an account? <Text style={{ color: colors.primary, fontFamily: 'Manrope_700Bold' }}>Sign up</Text>
+            </Text>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -81,9 +77,8 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  glassCard: { borderWidth: 1, overflow: 'hidden' },
-  input: { paddingHorizontal: 16, paddingVertical: 16, marginBottom: 16, fontSize: 15, borderWidth: 1 },
-  button: { paddingVertical: 16, alignItems: 'center', marginTop: 12 },
-  buttonText: { color: '#fff', fontWeight: '800', fontSize: 16, letterSpacing: 0.5 },
-  notice: { padding: 12, borderRadius: 10, borderWidth: 1, marginBottom: 24 },
+  input: { paddingHorizontal: 16, paddingVertical: 14, marginBottom: 12, fontSize: 15 },
+  button: { paddingVertical: 16, alignItems: 'center', marginTop: 8 },
+  buttonText: { color: '#fff', fontFamily: 'Manrope_700Bold', fontSize: 16 },
+  notice: { padding: 12, borderRadius: 10, borderWidth: 1, marginBottom: 16 },
 });

@@ -1,98 +1,85 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import Header from '../components/Header';
+import { fetchWalletBalance } from '../services/api';
 
+function formatBalance(balance) {
+  const symbol = balance.currency === 'NGN' ? '₦' : `${balance.currency} `;
+  return `${symbol}${Number(balance.balance).toFixed(2)}`;
+}
+
+// Gold is used nowhere else in the app — money gets its own visual
+// language, distinct from the signal/thread pair that means "you" and
+// "them" everywhere else. Once the backend is connected,
+// fetchWalletBalance() returns a real ledger balance; until then it
+// returns null and this shows a styled preview instead. No real
+// payment processing happens in this build either way.
 export default function WalletScreen({ navigation }) {
-  const { colors, spacing, typography, radii } = useTheme();
+  const { colors, mood, spacing, typography, radii } = useTheme();
+  const [balance, setBalance] = useState(null);
+
+  useEffect(() => {
+    fetchWalletBalance()
+      .then(setBalance)
+      .catch(() => setBalance(null));
+  }, []);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0a1a' }}>
-      <Header title="Zanny Vault" onBack={navigation.canGoBack() ? () => navigation.goBack() : undefined} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <Header title="Wallet" onBack={navigation.canGoBack() ? () => navigation.goBack() : undefined} />
       <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
-        
-        {/* Premium Glass Credit Card Design */}
-        <View style={[styles.glassCard, { backgroundColor: colors.primary, borderRadius: radii.xl, shadowColor: colors.primary, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.4, shadowRadius: 20 }]}>
-          <View style={styles.cardHeader}>
-             <Ionicons name="planet-outline" size={24} color="rgba(255,255,255,0.8)" />
-             <Text style={styles.cardLogo}>
-                <Text style={{ fontStyle: 'italic', fontWeight: '900' }}>Z</Text>anny<Text style={{ fontWeight: '400' }}>Pay</Text>
-             </Text>
-          </View>
-          
-          <Text style={styles.cardLabel}>Global Balance</Text>
-          <Text style={styles.cardBalance}>₦0.00</Text>
-          
+        <View style={[styles.card, { backgroundColor: mood.gold, borderRadius: radii.lg }]}>
+          <Text style={[typography.small, styles.cardLabel]}>AVAILABLE BALANCE</Text>
+          <Text style={[typography.numeric, styles.cardBalance]}>{balance ? formatBalance(balance) : '₦0.00'}</Text>
           <View style={styles.cardFooter}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="lock-closed" size={14} color="rgba(255,255,255,0.9)" />
-              <Text style={styles.cardFooterText}>Encrypted Ledger</Text>
-            </View>
-            <Ionicons name="wifi" size={20} color="rgba(255,255,255,0.5)" style={{ transform: [{ rotate: '90deg' }] }} />
+            <Ionicons
+              name={balance ? 'checkmark-circle-outline' : 'sparkles-outline'}
+              size={16}
+              color="rgba(21,17,28,0.65)"
+            />
+            <Text style={[typography.caption, styles.cardFooterText]}>
+              {balance ? 'Live from your wallet' : 'Preview — Phase 2'}
+            </Text>
           </View>
         </View>
 
-        <View style={styles.actionRow}>
-          <WalletAction icon="arrow-up" label="Send" colors={colors} radii={radii} />
-          <WalletAction icon="arrow-down" label="Receive" colors={colors} radii={radii} />
-          <WalletAction icon="scan" label="Scan to Pay" colors={colors} radii={radii} />
-          <WalletAction icon="add" label="Top Up" colors={colors} radii={radii} />
-        </View>
-
-        <View style={[styles.banner, { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: radii.lg, borderColor: 'rgba(255,255,255,0.1)' }]}>
-          <Ionicons name="flash" size={24} color={colors.primary} />
-          <Text style={[typography.caption, { color: 'rgba(255,255,255,0.7)', marginLeft: spacing.md, flex: 1, fontSize: 13, lineHeight: 18 }]}>
-            The native vault — seamless global transfers, bill splitting, and automated savings pots — activates fully in Phase 2.
+        <View style={[styles.banner, { backgroundColor: colors.surfaceAlt, borderRadius: radii.md }]}>
+          <Ionicons name="construct-outline" size={20} color={colors.accent} />
+          <Text style={[typography.caption, { color: colors.textSecondary, marginLeft: spacing.sm, flex: 1 }]}>
+            Send/request money, split bills, and group savings pots connect once the backend's payments layer
+            is live.
           </Text>
         </View>
 
-        <Text style={[typography.heading, { color: '#fff', marginTop: spacing.xl, marginBottom: spacing.md, fontSize: 18 }]}>
-          Architecture Roadmap
+        <Text style={[typography.heading, { color: colors.textPrimary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
+          What's coming
         </Text>
-        <RoadmapItem icon="swap-horizontal" title="Instant P2P Transfers" text="Send & request assets globally inside any chat thread." />
-        <RoadmapItem icon="receipt-outline" title="Smart Contracts" text="Split bills in real-time with automated network execution." />
-        <RoadmapItem icon="shield-checkmark-outline" title="Double-Entry Ledger" text="Institutional-grade fraud checks and immutable records." />
+        <RoadmapItem icon="swap-horizontal" text="Send & request money inside any chat" />
+        <RoadmapItem icon="receipt-outline" text="Split bills in real time with a group" />
+        <RoadmapItem icon="people-outline" text="Shared savings pots for groups" />
+        <RoadmapItem icon="shield-checkmark-outline" text="Fraud checks & a double-entry ledger" />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function WalletAction({ icon, label, colors, radii }) {
+function RoadmapItem({ icon, text }) {
+  const { colors, spacing, typography } = useTheme();
   return (
-    <TouchableOpacity style={{ alignItems: 'center' }}>
-      <View style={[styles.actionBtn, { backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: radii.pill, borderColor: 'rgba(255,255,255,0.1)' }]}>
-        <Ionicons name={icon} size={22} color={colors.primary} />
-      </View>
-      <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 8, fontWeight: '600' }}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
-function RoadmapItem({ icon, title, text }) {
-  const { colors, spacing, typography, radii } = useTheme();
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, backgroundColor: 'rgba(255,255,255,0.02)', padding: 12, borderRadius: radii.md }}>
-      <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', justifyContent: 'center' }}>
-        <Ionicons name={icon} size={20} color={colors.primary} />
-      </View>
-      <View style={{ marginLeft: spacing.md, flex: 1 }}>
-        <Text style={[typography.bodyStrong, { color: '#fff', fontSize: 14 }]}>{title}</Text>
-        <Text style={[typography.caption, { color: 'rgba(255,255,255,0.5)', marginTop: 2 }]}>{text}</Text>
-      </View>
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm }}>
+      <Ionicons name={icon} size={18} color={colors.textSecondary} />
+      <Text style={[typography.body, { color: colors.textSecondary, marginLeft: spacing.sm }]}>{text}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  glassCard: { padding: 24, paddingBottom: 20, overflow: 'hidden' },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
-  cardLogo: { color: '#fff', fontSize: 18, letterSpacing: 1 },
-  cardLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
-  cardBalance: { color: '#fff', fontSize: 42, fontWeight: '800', marginTop: 4, letterSpacing: -1 },
-  cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 24, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.2)' },
-  cardFooterText: { color: 'rgba(255,255,255,0.9)', fontSize: 12, marginLeft: 6, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  actionRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 32, paddingHorizontal: 8 },
-  actionBtn: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  banner: { flexDirection: 'row', alignItems: 'center', padding: 16, marginTop: 32, borderWidth: 1 },
+  card: { padding: 20 },
+  cardLabel: { color: 'rgba(21,17,28,0.65)' },
+  cardBalance: { color: '#15111C', marginTop: 8 },
+  cardFooter: { flexDirection: 'row', alignItems: 'center', marginTop: 14 },
+  cardFooterText: { color: 'rgba(21,17,28,0.7)', marginLeft: 6 },
+  banner: { flexDirection: 'row', alignItems: 'flex-start', padding: 14, marginTop: 16 },
 });

@@ -1,30 +1,30 @@
 import React, { createContext, useContext, useMemo, useState } from 'react';
-import { PALETTES, DEFAULT_PALETTE_KEY, spacing, radii } from './colors';
+import { MOODS, DEFAULT_MOOD_KEY, resolveMoodColors, spacing, radii } from './colors';
 import { typography } from './typography';
 
 const ThemeContext = createContext(null);
 
-// TODO (next iteration): persist the chosen palette with
+// TODO (next iteration): persist the chosen mood with
 // @react-native-async-storage/async-storage so it survives an app
-// restart. Kept in-memory for now to keep the dependency list lean
-// for the first Snack import.
+// restart. Kept in-memory for now to keep the dependency list lean.
 export function ThemeProvider({ children }) {
-  const [paletteKey, setPaletteKey] = useState(DEFAULT_PALETTE_KEY);
+  const [moodKey, setMoodKey] = useState(DEFAULT_MOOD_KEY);
 
   const value = useMemo(() => {
-    const colors = PALETTES[paletteKey] || PALETTES[DEFAULT_PALETTE_KEY];
+    const mood = MOODS[moodKey] || MOODS[DEFAULT_MOOD_KEY];
     return {
-      colors,
+      colors: resolveMoodColors(mood),
+      mood,
       spacing,
       radii,
       typography,
-      paletteKey,
-      palettes: Object.values(PALETTES),
+      paletteKey: moodKey,
+      palettes: Object.values(MOODS),
       setPalette: (key) => {
-        if (PALETTES[key]) setPaletteKey(key);
+        if (MOODS[key]) setMoodKey(key);
       },
     };
-  }, [paletteKey]);
+  }, [moodKey]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

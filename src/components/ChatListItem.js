@@ -41,5 +41,5 @@ const styles = StyleSheet.create({
   topLine: { flexDirection: 'row', justifyContent: 'space-between' },
   bottomLine: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
   badge: { minWidth: 20, height: 20, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center', marginLeft: 6 },
-  badgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
+  badgeText: { color: '#FFFFFF', fontSize: 11, fontFamily: 'Manrope_700Bold' },
 });

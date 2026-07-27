@@ -4,64 +4,51 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import Header from '../components/Header';
 import Avatar from '../components/Avatar';
-import { fetchContacts } from '../services/api';
+import { fetchContacts, createConversation } from '../services/api';
 
 export default function NewChatScreen({ navigation }) {
-  const { colors, spacing, typography, radii } = useTheme();
+  const { colors, spacing, typography } = useTheme();
   const [contacts, setContacts] = useState([]);
 
   useEffect(() => {
     fetchContacts().then(setContacts);
   }, []);
 
-  function startChat(contact) {
-    navigation.navigate('Chat', {
-      conversation: {
-        id: `new-${contact.id}`,
-        participant: contact,
-        lastMessage: '',
-        lastMessageAt: '',
-        unreadCount: 0,
-      },
-    });
+  async function startChat(contact) {
+    try {
+      const conversation = await createConversation(contact.id, contact);
+      navigation.navigate('Chat', { conversation });
+    } catch (err) {
+      Alert.alert('Couldn\u2019t start chat', err.message || 'Please try again.');
+    }
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0a1a' }}>
-      <Header title="Global Connect" onBack={() => navigation.goBack()} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <Header title="New chat" onBack={() => navigation.goBack()} />
 
       <TouchableOpacity
-        style={[styles.qrCard, { marginHorizontal: spacing.md, marginVertical: spacing.md, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: radii.lg, borderColor: 'rgba(255,255,255,0.1)' }]}
-        onPress={() => Alert.alert('ZannyChat Connect', 'Encrypted camera-based QR contact discovery ships in the next build.')}
+        style={[styles.qrRow, { paddingHorizontal: spacing.md, borderBottomColor: colors.border }]}
+        onPress={() => Alert.alert('Scan to connect', 'Camera-based QR contact discovery ships in the next build.')}
       >
-        <View style={[styles.qrIcon, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
-          <Ionicons name="qr-code-outline" size={24} color={colors.primary} />
+        <View style={[styles.qrIcon, { backgroundColor: colors.surface }]}>
+          <Ionicons name="qr-code-outline" size={20} color={colors.accent} />
         </View>
-        <View style={{ marginLeft: spacing.md }}>
-          <Text style={[typography.bodyStrong, { color: '#fff' }]}>Scan Global ID</Text>
-          <Text style={[typography.caption, { color: 'rgba(255,255,255,0.6)', marginTop: 2 }]}>Connect instantly via QR code</Text>
-        </View>
+        <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginLeft: spacing.sm }]}>
+          Scan QR to add a contact
+        </Text>
       </TouchableOpacity>
-
-      <Text style={[typography.caption, { color: 'rgba(255,255,255,0.5)', paddingHorizontal: spacing.lg, marginBottom: spacing.sm, textTransform: 'uppercase', letterSpacing: 1 }]}>
-        Your Network
-      </Text>
 
       <FlatList
         data={contacts}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingHorizontal: spacing.md }}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={[styles.contactRow, { backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: radii.md, marginBottom: 8 }]}
+            style={[styles.row, { paddingHorizontal: spacing.md, paddingVertical: spacing.sm }]}
             onPress={() => startChat(item)}
           >
             <Avatar name={item.name} color={item.avatarColor} online={item.online} />
-            <View style={{ marginLeft: spacing.sm, flex: 1 }}>
-              <Text style={[typography.bodyStrong, { color: '#fff' }]}>{item.name}</Text>
-              <Text style={[typography.caption, { color: 'rgba(255,255,255,0.4)', marginTop: 2 }]}>Verified Contact</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.2)" />
+            <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm }]}>{item.name}</Text>
           </TouchableOpacity>
         )}
       />
@@ -70,7 +57,7 @@ export default function NewChatScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  contactRow: { flexDirection: 'row', alignItems: 'center', padding: 12 },
-  qrCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderWidth: 1 },
-  qrIcon: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  row: { flexDirection: 'row', alignItems: 'center' },
+  qrRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth },
+  qrIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
 });

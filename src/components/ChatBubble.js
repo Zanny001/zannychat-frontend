@@ -6,6 +6,11 @@ import { useTheme } from '../theme/ThemeContext';
 
 const QUICK_REACTIONS = ['❤️', '😂', '👍', '😮', '😢'];
 
+// The two-voice idea shows up here directly: "mine" is a solid fill in
+// the mood's signal color — bold, since it's the voice you're
+// projecting. "Theirs" stays a quiet neutral surface with a slim
+// thread-colored rail on the leading edge — present, but not shouting
+// over the words. Loud + quiet, not loud + loud.
 export default function ChatBubble({ message, isMine, replyPreview, onSwipeReply, onReact, reaction }) {
   const { colors, spacing, radii, typography } = useTheme();
   const swipeableRef = useRef(null);
@@ -26,6 +31,8 @@ export default function ChatBubble({ message, isMine, replyPreview, onSwipeReply
     swipeableRef.current?.close();
   }
 
+  const replyBorderColor = isMine ? 'rgba(255,255,255,0.6)' : colors.thread;
+
   const bubble = (
     <TouchableOpacity
       activeOpacity={0.85}
@@ -35,6 +42,7 @@ export default function ChatBubble({ message, isMine, replyPreview, onSwipeReply
         { justifyContent: isMine ? 'flex-end' : 'flex-start', marginBottom: reaction ? spacing.md : spacing.xs },
       ]}
     >
+      {!isMine && <View style={[styles.threadRail, { backgroundColor: colors.thread }]} />}
       <View
         style={[
           styles.bubble,
@@ -48,8 +56,11 @@ export default function ChatBubble({ message, isMine, replyPreview, onSwipeReply
         ]}
       >
         {replyPreview ? (
-          <View style={[styles.replyPreview, { borderLeftColor: colors.accent }]}>
-            <Text style={[typography.caption, { color: colors.textSecondary }]} numberOfLines={1}>
+          <View style={[styles.replyPreview, { borderLeftColor: replyBorderColor }]}>
+            <Text
+              style={[typography.caption, { color: isMine ? 'rgba(255,255,255,0.85)' : colors.textSecondary }]}
+              numberOfLines={1}
+            >
               {replyPreview}
             </Text>
           </View>
@@ -86,14 +97,15 @@ export default function ChatBubble({ message, isMine, replyPreview, onSwipeReply
 export { QUICK_REACTIONS };
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', paddingHorizontal: 12 },
-  bubble: { maxWidth: '78%', paddingVertical: 8, paddingHorizontal: 12 },
+  row: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 12 },
+  bubble: { maxWidth: '76%', paddingVertical: 8, paddingHorizontal: 12 },
+  threadRail: { width: 3, borderRadius: 2, alignSelf: 'stretch', marginRight: 6, opacity: 0.85 },
   metaRow: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-end', marginTop: 2 },
   replyPreview: {
     borderLeftWidth: 2,
     paddingLeft: 6,
     marginBottom: 4,
-    opacity: 0.85,
+    opacity: 0.9,
   },
   replyIconWrap: { justifyContent: 'center', paddingHorizontal: 16 },
   reactionBadge: {
