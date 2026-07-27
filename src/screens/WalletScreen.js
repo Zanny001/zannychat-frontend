@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useTheme } from '../theme/ThemeContext';
 import Header from '../components/Header';
+import GlassCard from '../components/GlassCard';
 import { fetchWalletBalance } from '../services/api';
 
 function formatBalance(balance) {
@@ -19,6 +21,8 @@ function formatBalance(balance) {
 export default function WalletScreen({ navigation }) {
   const { colors, mood, spacing, typography, radii } = useTheme();
   const [balance, setBalance] = useState(null);
+  const canGoBack = navigation.canGoBack();
+  const tabBarHeight = useBottomTabBarHeight();
 
   useEffect(() => {
     fetchWalletBalance()
@@ -28,8 +32,8 @@ export default function WalletScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <Header title="Wallet" onBack={navigation.canGoBack() ? () => navigation.goBack() : undefined} />
-      <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
+      <Header title="Wallet" brand={!canGoBack} onBack={canGoBack ? () => navigation.goBack() : undefined} />
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: tabBarHeight + spacing.lg }}>
         <View style={[styles.card, { backgroundColor: mood.gold, borderRadius: radii.lg }]}>
           <Text style={[typography.small, styles.cardLabel]}>AVAILABLE BALANCE</Text>
           <Text style={[typography.numeric, styles.cardBalance]}>{balance ? formatBalance(balance) : '₦0.00'}</Text>
@@ -45,30 +49,32 @@ export default function WalletScreen({ navigation }) {
           </View>
         </View>
 
-        <View style={[styles.banner, { backgroundColor: colors.surfaceAlt, borderRadius: radii.md }]}>
+        <GlassCard style={{ marginTop: 16 }} contentStyle={styles.banner}>
           <Ionicons name="construct-outline" size={20} color={colors.accent} />
           <Text style={[typography.caption, { color: colors.textSecondary, marginLeft: spacing.sm, flex: 1 }]}>
             Send/request money, split bills, and group savings pots connect once the backend's payments layer
             is live.
           </Text>
-        </View>
+        </GlassCard>
 
         <Text style={[typography.heading, { color: colors.textPrimary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
           What's coming
         </Text>
-        <RoadmapItem icon="swap-horizontal" text="Send & request money inside any chat" />
-        <RoadmapItem icon="receipt-outline" text="Split bills in real time with a group" />
-        <RoadmapItem icon="people-outline" text="Shared savings pots for groups" />
-        <RoadmapItem icon="shield-checkmark-outline" text="Fraud checks & a double-entry ledger" />
+        <GlassCard contentStyle={{ gap: spacing.sm }}>
+          <RoadmapItem icon="swap-horizontal" text="Send & request money inside any chat" />
+          <RoadmapItem icon="receipt-outline" text="Split bills in real time with a group" />
+          <RoadmapItem icon="people-outline" text="Shared savings pots for groups" />
+          <RoadmapItem icon="shield-checkmark-outline" text="Fraud checks & a double-entry ledger" last />
+        </GlassCard>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function RoadmapItem({ icon, text }) {
+function RoadmapItem({ icon, text, last }) {
   const { colors, spacing, typography } = useTheme();
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: last ? 0 : spacing.sm }}>
       <Ionicons name={icon} size={18} color={colors.textSecondary} />
       <Text style={[typography.body, { color: colors.textSecondary, marginLeft: spacing.sm }]}>{text}</Text>
     </View>
@@ -81,5 +87,5 @@ const styles = StyleSheet.create({
   cardBalance: { color: '#15111C', marginTop: 8 },
   cardFooter: { flexDirection: 'row', alignItems: 'center', marginTop: 14 },
   cardFooterText: { color: 'rgba(21,17,28,0.7)', marginLeft: 6 },
-  banner: { flexDirection: 'row', alignItems: 'flex-start', padding: 14, marginTop: 16 },
+  banner: { flexDirection: 'row', alignItems: 'flex-start' },
 });

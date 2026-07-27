@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { signInWithEmail } from '../services/api';
 import { SUPABASE_ENABLED } from '../services/supabaseClient';
+import GlassInput from '../components/GlassInput';
+import GlassCard from '../components/GlassCard';
+import Knot from '../components/Knot';
 
 export default function LoginScreen({ navigation }) {
-  const { colors, spacing, typography, radii } = useTheme();
+  const { colors, mood, spacing, typography, radii } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,36 +29,30 @@ export default function LoginScreen({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <View style={{ padding: spacing.lg, flex: 1, justifyContent: 'center' }}>
-          <Text style={[typography.title, { color: colors.textPrimary, marginBottom: spacing.xs }]}>Welcome back</Text>
+          <Knot size={40} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={7} />
+          <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.md, marginBottom: spacing.xs }]}>
+            Welcome back
+          </Text>
           <Text style={[typography.body, { color: colors.textSecondary, marginBottom: spacing.lg }]}>
             Sign in to keep chatting.
           </Text>
 
           {!SUPABASE_ENABLED && (
-            <View style={[styles.notice, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
+            <GlassCard style={{ marginBottom: spacing.md }} intensity={20}>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>
                 No backend connected yet — any email/password will sign you into the demo.
               </Text>
-            </View>
+            </GlassCard>
           )}
 
-          <TextInput
+          <GlassInput
             value={email}
             onChangeText={setEmail}
             placeholder="Email"
-            placeholderTextColor={colors.textSecondary}
             autoCapitalize="none"
             keyboardType="email-address"
-            style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderRadius: radii.md }]}
           />
-          <TextInput
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Password"
-            placeholderTextColor={colors.textSecondary}
-            secureTextEntry
-            style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderRadius: radii.md }]}
-          />
+          <GlassInput value={password} onChangeText={setPassword} placeholder="Password" secureTextEntry />
 
           <TouchableOpacity
             style={[styles.button, { backgroundColor: colors.primary, borderRadius: radii.pill }]}
@@ -77,8 +74,6 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  input: { paddingHorizontal: 16, paddingVertical: 14, marginBottom: 12, fontSize: 15 },
   button: { paddingVertical: 16, alignItems: 'center', marginTop: 8 },
   buttonText: { color: '#fff', fontFamily: 'Manrope_700Bold', fontSize: 16 },
-  notice: { padding: 12, borderRadius: 10, borderWidth: 1, marginBottom: 16 },
 });

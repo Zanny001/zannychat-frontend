@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useTheme } from '../theme/ThemeContext';
 import Avatar from '../components/Avatar';
+import Header from '../components/Header';
+import GlassCard from '../components/GlassCard';
 import { getCurrentUser } from '../services/api';
 
 export default function ProfileScreen({ navigation }) {
-  const { colors, spacing, typography, radii } = useTheme();
+  const { colors, spacing, typography } = useTheme();
   const [user, setUser] = useState(null);
+  const tabBarHeight = useBottomTabBarHeight();
 
   useEffect(() => {
     getCurrentUser().then(setUser);
@@ -15,7 +19,8 @@ export default function ProfileScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
+      <Header title="Profile" brand={!navigation.canGoBack()} onBack={navigation.canGoBack() ? () => navigation.goBack() : undefined} />
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: tabBarHeight + spacing.lg }}>
         <View style={{ alignItems: 'center', marginBottom: spacing.lg }}>
           <Avatar name={user?.name || 'You'} color={user?.avatarColor || colors.primary} size={88} />
           <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.md }]}>
@@ -37,15 +42,14 @@ export default function ProfileScreen({ navigation }) {
 }
 
 function MenuRow({ icon, label, onPress }) {
-  const { colors, spacing, typography, radii } = useTheme();
+  const { colors, spacing, typography } = useTheme();
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      style={[styles.row, { backgroundColor: colors.surface, borderRadius: radii.md, padding: spacing.md, marginBottom: spacing.sm }]}
-    >
-      <Ionicons name={icon} size={20} color={colors.accent} />
-      <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm, flex: 1 }]}>{label}</Text>
-      <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+      <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={styles.row} intensity={26}>
+        <Ionicons name={icon} size={20} color={colors.accent} />
+        <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm, flex: 1 }]}>{label}</Text>
+        <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+      </GlassCard>
     </TouchableOpacity>
   );
 }

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { signUpWithEmail } from '../services/api';
+import GlassInput from '../components/GlassInput';
+import Knot from '../components/Knot';
 
 export default function SignupScreen({ navigation }) {
-  const { colors, spacing, typography, radii } = useTheme();
+  const { colors, mood, spacing, typography, radii } = useTheme();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,35 +32,23 @@ export default function SignupScreen({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <View style={{ padding: spacing.lg, flex: 1, justifyContent: 'center' }}>
-          <Text style={[typography.title, { color: colors.textPrimary, marginBottom: spacing.xs }]}>Create your account</Text>
+          <Knot size={40} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={7} />
+          <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.md, marginBottom: spacing.xs }]}>
+            Create your account
+          </Text>
           <Text style={[typography.body, { color: colors.textSecondary, marginBottom: spacing.lg }]}>
             Join ZannyChat in under a minute.
           </Text>
 
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            placeholder="Full name"
-            placeholderTextColor={colors.textSecondary}
-            style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderRadius: radii.md }]}
-          />
-          <TextInput
+          <GlassInput value={name} onChangeText={setName} placeholder="Full name" />
+          <GlassInput
             value={email}
             onChangeText={setEmail}
             placeholder="Email"
-            placeholderTextColor={colors.textSecondary}
             autoCapitalize="none"
             keyboardType="email-address"
-            style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderRadius: radii.md }]}
           />
-          <TextInput
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Password"
-            placeholderTextColor={colors.textSecondary}
-            secureTextEntry
-            style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderRadius: radii.md }]}
-          />
+          <GlassInput value={password} onChangeText={setPassword} placeholder="Password" secureTextEntry />
 
           <TouchableOpacity
             style={[styles.button, { backgroundColor: colors.primary, borderRadius: radii.pill }]}
@@ -80,7 +70,6 @@ export default function SignupScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  input: { paddingHorizontal: 16, paddingVertical: 14, marginBottom: 12, fontSize: 15 },
   button: { paddingVertical: 16, alignItems: 'center', marginTop: 8 },
   buttonText: { color: '#fff', fontFamily: 'Manrope_700Bold', fontSize: 16 },
 });

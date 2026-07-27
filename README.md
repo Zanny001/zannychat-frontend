@@ -37,9 +37,24 @@ The signature mark is **Knot** (`src/components/Knot.js`) — two open
 rings in the signal/thread colors, drawn with `react-native-svg`. On
 Onboarding it draws itself in with Reanimated, one ring then the other,
 as the one deliberate animated moment in the app; everywhere else
-(the Chats header) it's a small static mark. It respects the OS-level
+(headers, auth screens) it's a small static mark. It respects the OS-level
 "reduce motion" setting (`src/utils/motion.js`) and skips the draw-in
 entirely when that's on.
+
+**Glass layer.** Every card, row, input, and header is
+`src/components/GlassCard.js` (or its lighter sibling `GlassInput.js`)
+rather than a flat colored `View` — a real blur (`expo-blur`) of
+whatever's behind, tinted toward the active mood's surface color, with
+a hairline light border. It's used consistently: chat previews,
+Settings sections, Profile's menu rows, Wallet's roadmap list, the
+message input bar, and the bottom tab bar are all glass. The one
+exception is deliberate — chat bubbles stay solid/flat, because message
+text needs to win every legibility fight, not share the screen with a
+blurred background.
+
+Chat previews also carry a small globe + lock indicator
+(`ChatListItem.js`) — a quiet, recurring reminder that a thread is
+encrypted and reachable anywhere, without it being a whole banner.
 
 ## What's in this build
 
@@ -82,7 +97,7 @@ npx expo install \
   react-native-screens react-native-safe-area-context \
   react-native-gesture-handler react-native-reanimated react-native-worklets \
   react-native-svg react-native-url-polyfill \
-  expo-font expo-splash-screen \
+  expo-font expo-splash-screen expo-blur \
   @expo-google-fonts/space-grotesk @expo-google-fonts/manrope \
   @supabase/supabase-js @react-native-async-storage/async-storage
 
@@ -148,6 +163,12 @@ There are two pieces, each toggled by its own env vars — see
 Either var can be set without the other — the app degrades gracefully
 either way (checked in `src/services/api.js`).
 
+**Session persistence.** Once Supabase is connected, `App.js` checks
+for an existing session before the app renders — a returning signed-in
+user lands straight in the chat list instead of seeing Onboarding again
+on every launch. This is real, not cosmetic: it's reading the same
+session Supabase's SDK persists to `AsyncStorage` after sign-in.
+
 ## Project structure
 
 ```
@@ -164,6 +185,8 @@ src/
   components/
     Knot.js                    The signature mark (static or animated)
     MoodSwatch.js               Two-circle swatch used in Settings
+    GlassCard.js                 Blurred, tinted, bordered surface — used everywhere
+    GlassInput.js                 Lighter glass treatment for text fields
     Avatar.js, ChatBubble.js, InputBar.js, ChatListItem.js, Header.js
   services/
     supabaseClient.js         Reads env vars, no-ops if unset
@@ -172,6 +195,7 @@ src/
     mockData.js                Demo data used until the backend is connected
   utils/
     motion.js                  Reduced-motion hook, used by Knot
+    color.js                    hexToRgba() — tints every glass surface
 ```
 
 ## Troubleshooting
@@ -184,6 +208,13 @@ it never resolves, double check `@expo-google-fonts/space-grotesk` and
 
 **Animations don't run / a Babel warning mentions `react-native-reanimated/plugin`.**
 See the Reanimated v4 note above — install `react-native-worklets`.
+
+**Glass surfaces look flat on Android instead of blurred.** Android's
+blur renderer is weaker than iOS's — `GlassCard`/`Header`/`InputBar`
+already pass `experimentalBlurMethod: 'dimezisBlurView'` on Android to
+get a real blur there too, but the tint overlay underneath is what
+actually carries the look either way, so it should never look broken,
+just less blurred on some Android devices.
 
 ## Roadmap this maps to
 

@@ -1,13 +1,16 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useTheme } from '../theme/ThemeContext';
 import ChatListItem from '../components/ChatListItem';
+import GlassCard from '../components/GlassCard';
 import Knot from '../components/Knot';
 import { fetchConversations } from '../services/api';
 
 export default function ChatListScreen({ navigation }) {
   const { colors, mood, spacing, typography, radii } = useTheme();
+  const tabBarHeight = useBottomTabBarHeight();
   const [conversations, setConversations] = useState([]);
   const [query, setQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -47,30 +50,30 @@ export default function ChatListScreen({ navigation }) {
       </View>
 
       <View style={{ paddingHorizontal: spacing.md, marginBottom: spacing.sm }}>
-        <View style={[styles.searchBar, { backgroundColor: colors.surface, borderRadius: radii.md }]}>
-          <Ionicons name="search" size={16} color={colors.textSecondary} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search"
-            placeholderTextColor={colors.textSecondary}
-            style={[typography.body, { color: colors.textPrimary, marginLeft: 8, flex: 1 }]}
-          />
-        </View>
+        <GlassCard noPadding intensity={24} tintAlpha={0.4}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={16} color={colors.textSecondary} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search"
+              placeholderTextColor={colors.textSecondary}
+              style={[typography.body, { color: colors.textPrimary, marginLeft: 8, flex: 1 }]}
+            />
+          </View>
+        </GlassCard>
       </View>
 
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
+        contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: tabBarHeight + spacing.lg }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
         renderItem={({ item }) => (
           <ChatListItem
             conversation={item}
             onPress={() => navigation.navigate('Chat', { conversation: item })}
           />
-        )}
-        ItemSeparatorComponent={() => (
-          <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border, marginLeft: 76 }} />
         )}
         ListEmptyComponent={
           <View style={{ padding: spacing.xl, alignItems: 'center' }}>

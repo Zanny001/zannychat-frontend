@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Swi
 import { useTheme } from '../theme/ThemeContext';
 import Header from '../components/Header';
 import MoodSwatch from '../components/MoodSwatch';
+import GlassCard from '../components/GlassCard';
+import { hexToRgba } from '../utils/color';
 import { signOut } from '../services/api';
 
 export default function SettingsScreen({ navigation }) {
@@ -21,58 +23,63 @@ export default function SettingsScreen({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Appearance & theme" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
-        <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.sm }]}>Mood</Text>
-        <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>
-          Each mood is two colors — one for you, one for them. Pick one and it applies everywhere.
-        </Text>
+        <GlassCard style={{ marginBottom: spacing.md }}>
+          <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.sm }]}>Mood</Text>
+          <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>
+            Each mood is two colors — one for you, one for them. Pick one and it applies everywhere.
+          </Text>
 
-        <View style={styles.swatchRow}>
-          {palettes.map((mood) => {
-            const selected = paletteKey === mood.key;
-            return (
-              <TouchableOpacity key={mood.key} onPress={() => setPalette(mood.key)} style={styles.swatchWrap}>
-                <View
-                  style={[
-                    styles.swatchRing,
-                    { borderColor: selected ? colors.textPrimary : 'transparent' },
-                  ]}
-                >
-                  <MoodSwatch mood={mood} size={44} />
-                </View>
-                <Text
-                  style={[
-                    typography.small,
-                    { color: selected ? colors.textPrimary : colors.textSecondary, marginTop: 6 },
-                  ]}
-                >
-                  {mood.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
-
-        <View style={[styles.row, { marginBottom: spacing.md }]}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Zero-Knowledge Vault</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>
-              Extra-encrypted storage for voice notes & files (preview)
-            </Text>
+          <View style={styles.swatchRow}>
+            {palettes.map((mood) => {
+              const selected = paletteKey === mood.key;
+              return (
+                <TouchableOpacity key={mood.key} onPress={() => setPalette(mood.key)} style={styles.swatchWrap}>
+                  <View
+                    style={[
+                      styles.swatchRing,
+                      { borderColor: selected ? colors.textPrimary : 'transparent' },
+                    ]}
+                  >
+                    <MoodSwatch mood={mood} size={44} />
+                  </View>
+                  <Text
+                    style={[
+                      typography.small,
+                      { color: selected ? colors.textPrimary : colors.textSecondary, marginTop: 6 },
+                    ]}
+                  >
+                    {mood.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-          <Switch
-            value={vaultEnabled}
-            onValueChange={(val) => {
-              setVaultEnabled(val);
-              if (val) Alert.alert('Preview feature', 'The vault backend lands with Phase 4 of the roadmap.');
-            }}
-            trackColor={{ true: colors.primary }}
-          />
-        </View>
+        </GlassCard>
+
+        <GlassCard style={{ marginBottom: spacing.md }}>
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Zero-Knowledge Vault</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>
+                Extra-encrypted storage for voice notes & files (preview)
+              </Text>
+            </View>
+            <Switch
+              value={vaultEnabled}
+              onValueChange={(val) => {
+                setVaultEnabled(val);
+                if (val) Alert.alert('Preview feature', 'The vault backend lands with Phase 4 of the roadmap.');
+              }}
+              trackColor={{ true: colors.primary }}
+            />
+          </View>
+        </GlassCard>
 
         <TouchableOpacity
-          style={[styles.logoutBtn, { borderColor: colors.danger, borderRadius: radii.pill }]}
+          style={[
+            styles.logoutBtn,
+            { borderColor: colors.danger, borderRadius: radii.pill, backgroundColor: hexToRgba(colors.danger, 0.1) },
+          ]}
           onPress={handleLogout}
         >
           <Text style={[typography.bodyStrong, { color: colors.danger }]}>Log out</Text>
@@ -93,7 +100,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  divider: { height: StyleSheet.hairlineWidth, marginVertical: 20 },
   row: { flexDirection: 'row', alignItems: 'center' },
-  logoutBtn: { borderWidth: 1.5, paddingVertical: 14, alignItems: 'center', marginTop: 12 },
+  logoutBtn: { borderWidth: 1.5, paddingVertical: 14, alignItems: 'center', marginTop: 4 },
 });

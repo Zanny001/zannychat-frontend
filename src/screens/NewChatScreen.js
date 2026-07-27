@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import Header from '../components/Header';
 import Avatar from '../components/Avatar';
+import GlassCard from '../components/GlassCard';
 import { fetchContacts, createConversation } from '../services/api';
 
 export default function NewChatScreen({ navigation }) {
@@ -27,28 +28,32 @@ export default function NewChatScreen({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="New chat" onBack={() => navigation.goBack()} />
 
-      <TouchableOpacity
-        style={[styles.qrRow, { paddingHorizontal: spacing.md, borderBottomColor: colors.border }]}
-        onPress={() => Alert.alert('Scan to connect', 'Camera-based QR contact discovery ships in the next build.')}
-      >
-        <View style={[styles.qrIcon, { backgroundColor: colors.surface }]}>
-          <Ionicons name="qr-code-outline" size={20} color={colors.accent} />
-        </View>
-        <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginLeft: spacing.sm }]}>
-          Scan QR to add a contact
-        </Text>
-      </TouchableOpacity>
+      <View style={{ padding: spacing.md }}>
+        <TouchableOpacity
+          onPress={() => Alert.alert('Scan to connect', 'Camera-based QR contact discovery ships in the next build.')}
+          activeOpacity={0.8}
+        >
+          <GlassCard contentStyle={styles.qrRow}>
+            <View style={[styles.qrIcon, { backgroundColor: colors.surface }]}>
+              <Ionicons name="qr-code-outline" size={20} color={colors.accent} />
+            </View>
+            <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginLeft: spacing.sm }]}>
+              Scan QR to add a contact
+            </Text>
+          </GlassCard>
+        </TouchableOpacity>
+      </View>
 
       <FlatList
         data={contacts}
         keyExtractor={(item) => item.id}
+        contentContainerStyle={{ paddingHorizontal: spacing.md }}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[styles.row, { paddingHorizontal: spacing.md, paddingVertical: spacing.sm }]}
-            onPress={() => startChat(item)}
-          >
-            <Avatar name={item.name} color={item.avatarColor} online={item.online} />
-            <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm }]}>{item.name}</Text>
+          <TouchableOpacity onPress={() => startChat(item)} activeOpacity={0.8}>
+            <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={styles.row} intensity={26}>
+              <Avatar name={item.name} color={item.avatarColor} online={item.online} />
+              <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm }]}>{item.name}</Text>
+            </GlassCard>
           </TouchableOpacity>
         )}
       />
@@ -58,6 +63,6 @@ export default function NewChatScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
-  qrRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth },
+  qrRow: { flexDirection: 'row', alignItems: 'center' },
   qrIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
 });
