@@ -201,3 +201,34 @@ export function subscribeToMessages(conversationId, onInsert) {
 
   return () => supabase.removeChannel(channel);
 }
+
+// --- Phase 3: AI features (smart replies, summaries) -------------------
+// Both require the backend AND Supabase (same as wallet/conversations —
+// these routes check a real session token) AND the backend's own
+// ANTHROPIC_API_KEY. There's no client-side flag for that last part —
+// the backend just returns 501, which these treat as "feature not on
+// yet" rather than an error worth alarming the user about.
+
+export async function fetchSmartReplies(conversationId) {
+  if (!BACKEND_ENABLED || !SUPABASE_ENABLED) return [];
+  try {
+    const result = await backendFetch('/ai/smart-replies', {
+      method: 'POST',
+      body: JSON.stringify({ conversationId }),
+    });
+    return result.suggestions || [];
+  } catch (err) {
+    return [];
+  }
+}
+
+export async function summarizeConversation(conversationId) {
+  if (!BACKEND_ENABLED || !SUPABASE_ENABLED) {
+    throw new Error('Connect Supabase and the backend to use AI summaries.');
+  }
+  const result = await backendFetch('/ai/summarize', {
+    method: 'POST',
+    body: JSON.stringify({ conversationId }),
+  });
+  return result.summary;
+}

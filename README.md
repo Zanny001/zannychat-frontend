@@ -63,7 +63,9 @@ encrypted and reachable anywhere, without it being a whole banner.
 - **Chat list** with search, unread badges, and an invitation-to-act
   empty state
 - **Conversation screen**: signal/thread bubble treatment, swipe-to-reply,
-  long-press reactions, typing bar
+  long-press reactions, typing bar, AI smart-reply chips, and a
+  summarize action in the header (both need `ANTHROPIC_API_KEY` set on
+  the backend — see `zannychat-backend`'s README)
 - **New chat / contacts** screen (QR-scan entry point stubbed for later)
 - **Profile** screen
 - **Settings → Connections**: live status for Supabase and the backend —
@@ -141,12 +143,11 @@ until fonts load (see "Fonts don't load" below).
 ## Connecting the real backend
 
 **Current status of this specific project:** all three vars in `.env`
-are filled in with real values — Supabase project
-`vithpppgyjmazxvogvno` (URL derived from the anon JWT's `ref` claim,
-using the newer `sb_publishable_...` key) and the backend at
-`https://zannychat-backend.onrender.com`. The "DEMO DATA" pill on the
-Chats screen should be gone; if it's still showing, `.env` wasn't
-picked up — see the troubleshooting note below.
+are filled in with real values — Supabase project `vithpppgyjmazxvogvno`
+(using the newer `sb_publishable_...` key, not a legacy JWT anon key)
+and the backend at `https://zannychat-backend.onrender.com`. The "DEMO
+DATA" pill on the Chats screen should be gone; if it's still showing,
+`.env` wasn't picked up — see the troubleshooting note below.
 
 One thing to verify on your end, since I can't check it: **the backend's
 `SUPABASE_URL` on Render needs to point at this exact same project**
@@ -154,6 +155,14 @@ One thing to verify on your end, since I can't check it: **the backend's
 *different* Supabase project, session tokens this app generates won't
 validate there, and `POST /conversations` / `GET /wallet/balance` will
 fail with 401s even though both services individually report healthy.
+
+Also worth a specific test rather than assuming it's fine: **send a
+message between two real accounts and confirm it arrives live**, not
+just on refresh. Supabase's newer publishable keys are solid for
+everything else, but Realtime specifically has had rough edges
+elsewhere in the ecosystem with the new key format — nothing points at
+a problem here, it's just the one thing I'd actually verify first
+rather than take on faith.
 
 There are two pieces, each toggled by its own env vars — see
 `zannychat-backend`'s README for how to stand them up.
@@ -247,10 +256,13 @@ just less blurred on some Android devices.
 
 ## Roadmap this maps to
 
-This build covers **Phase 1** of the plan (core messaging UI). The
-**Wallet** tab and reaction/vault touches are placeholders that Phase 2
-(fintech) and Phase 4 (privacy hardening) will fill in on the backend
-side — the frontend hooks are already there waiting for them.
+This build covers **Phase 1** (core messaging UI) fully, and the first
+slice of **Phase 3** (AI) — smart replies and summaries are real,
+calling Claude through the backend. **Phase 2** (fintech) has a working
+ledger and wallet endpoints but no real payment provider connected yet.
+Phase 4 (enterprise/privacy hardening) and Phase 5 (multi-platform) are
+still just the placeholders (vault toggle, roadmap text) they always
+were.
 
 ## Next step
 
