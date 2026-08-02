@@ -1,15 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import Header from '../components/Header';
 import Avatar from '../components/Avatar';
 import GlassCard from '../components/GlassCard';
-import { fetchContacts, createConversation } from '../services/api';
+import { fetchContacts, createConversation, sendAttachment } from '../services/api';
 
-export default function NewChatScreen({ navigation }) {
+// Doubles as the contact picker for "share a contact" — when opened
+// with shareToConversationId in params (see ChatScreen's attach menu),
+// tapping someone sends them as a contact card into that conversation
+// instead of starting a new chat with them.
+export default function NewChatScreen({ navigation, route }) {
   const { colors, spacing, typography } = useTheme();
   const [contacts, setContacts] = useState([]);
+  const [sendingId, setSendingId] = useState(null);
+  const shareToConversationId = route?.params?.shareToConversationId;
+  const isShareMode = Boolean(shareToConversationId);
 
   useEffect(() => {
     fetchContacts().then(setContacts);
@@ -24,35 +31,58 @@ export default function NewChatScreen({ navigation }) {
     }
   }
 
+  async function shareContact(contact) {
+    setSendingId(contact.id);
+    try {
+      await sendAttachment(shareToConversationId, {
+        mediaType: 'contact',
+        sharedUserId: contact.id,
+        mediaName: contact.name,
+      });
+      navigation.goBack();
+    } catch (err) {
+      Alert.alert("Couldn't share contact", err.message || 'Please try again.');
+    } finally {
+      setSendingId(null);
+    }
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <Header title="New chat" onBack={() => navigation.goBack()} />
+      <Header title={isShareMode ? 'Share a contact' : 'New chat'} onBack={() => navigation.goBack()} />
 
-      <View style={{ padding: spacing.md }}>
-        <TouchableOpacity
-          onPress={() => Alert.alert('Scan to connect', 'Camera-based QR contact discovery ships in the next build.')}
-          activeOpacity={0.8}
-        >
-          <GlassCard contentStyle={styles.qrRow}>
-            <View style={[styles.qrIcon, { backgroundColor: colors.surface }]}>
-              <Ionicons name="qr-code-outline" size={20} color={colors.accent} />
-            </View>
-            <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginLeft: spacing.sm }]}>
-              Scan QR to add a contact
-            </Text>
-          </GlassCard>
-        </TouchableOpacity>
-      </View>
+      {!isShareMode && (
+        <View style={{ padding: spacing.md }}>
+          <TouchableOpacity
+            onPress={() => Alert.alert('Scan to connect', 'Camera-based QR contact discovery ships in the next build.')}
+            activeOpacity={0.8}
+          >
+            <GlassCard contentStyle={styles.qrRow}>
+              <View style={[styles.qrIcon, { backgroundColor: colors.surface }]}>
+                <Ionicons name="qr-code-outline" size={20} color={colors.accent} />
+              </View>
+              <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginLeft: spacing.sm }]}>
+                Scan QR to add a contact
+              </Text>
+            </GlassCard>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <FlatList
         data={contacts}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingHorizontal: spacing.md }}
+        contentContainerStyle={{ paddingHorizontal: spacing.md, paddingTop: isShareMode ? spacing.md : 0 }}
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => startChat(item)} activeOpacity={0.8}>
+          <TouchableOpacity
+            onPress={() => (isShareMode ? shareContact(item) : startChat(item))}
+            activeOpacity={0.8}
+            disabled={sendingId === item.id}
+          >
             <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={styles.row} intensity={26}>
-              <Avatar name={item.name} color={item.avatarColor} online={item.online} />
-              <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm }]}>{item.name}</Text>
+              <Avatar name={item.name} color={item.avatarColor} imageUrl={item.avatarUrl} online={item.online} />
+              <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm, flex: 1 }]}>{item.name}</Text>
+              {sendingId === item.id && <ActivityIndicator size="small" color={colors.textSecondary} />}
             </GlassCard>
           </TouchableOpacity>
         )}

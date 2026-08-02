@@ -1,10 +1,10 @@
 import { supabase, SUPABASE_ENABLED } from './supabaseClient';
 
-// Same pattern as supabaseClient.js: read an EXPO_PUBLIC_ env var, and
-// let everything downstream check a boolean instead of the URL itself.
-// Set EXPO_PUBLIC_BACKEND_URL once the backend is deployed on Render
-// (or running locally, e.g. http://localhost:3000 in dev).
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+// Same pattern as supabaseClient.js, including the same Snack fallback
+// reasoning — a deployed backend's URL isn't secret either.
+const FALLBACK_BACKEND_URL = 'https://zannychat-backend.onrender.com';
+
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || FALLBACK_BACKEND_URL;
 
 export const BACKEND_ENABLED = Boolean(BACKEND_URL);
 

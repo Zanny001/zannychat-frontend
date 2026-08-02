@@ -56,6 +56,34 @@ Chat previews also carry a small globe + lock indicator
 (`ChatListItem.js`) — a quiet, recurring reminder that a thread is
 encrypted and reachable anywhere, without it being a whole banner.
 
+## Media, profile edits, and a data-shape bug worth knowing about
+
+Photos, files, and shared contacts all go through Supabase Storage
+(`avatars` and `chat-media` buckets — created by
+`zannychat-backend/supabase/migrations/0002_media_and_profile.sql`,
+**a separate migration from 0001 — run it too**, or every attachment
+call fails with a missing-column error same as the "table not found"
+issue from earlier).
+
+While wiring this up, `src/services/api.js` got a real fix: Supabase
+returns raw columns (`sender_id`, `avatar_url`, `created_at` as an ISO
+string), but every screen was built against mock data's camelCase shape
+(`senderId`, `avatarUrl`, a pre-formatted time string) — because mock
+data *is* written in that shape by hand. That mismatch was invisible
+until Supabase was actually live, since mock mode never exercised it.
+`api.js` now normalizes every Supabase read into the shape screens
+already expect (`normalizeProfile`, `normalizeMessage`,
+`normalizeConversation`) — screens didn't change, because the whole
+point of this file is that they shouldn't need to.
+
+Two smaller things fixed in the same pass:
+- **Reply previews** now survive a reload — previously only the
+  in-memory optimistic echo had the quoted text; a message loaded from
+  the database only had a `replyToId` with nothing resolving it to text.
+- **Your own profile no longer appears in your own contact list** — it
+  did before, and tapping it failed anyway (the backend explicitly
+  rejects starting a conversation with yourself).
+
 ## What's in this build
 
 - **Onboarding** with the animated Knot hero → **Sign up / Sign in**
@@ -66,8 +94,17 @@ encrypted and reachable anywhere, without it being a whole banner.
   long-press reactions, typing bar, AI smart-reply chips, and a
   summarize action in the header (both need `ANTHROPIC_API_KEY` set on
   the backend — see `zannychat-backend`'s README)
+- **Attachments**: real photo, file, and contact sharing from the chat's
+  attach button — photos and files upload to Supabase Storage and show
+  as an image thumbnail (tap for fullscreen) or a name+size card (tap to
+  open); sharing a contact sends a tappable card that starts a chat with
+  them. All need Supabase connected (Storage uploads require a real
+  session); mock mode still works using the picked file's local URI
+  directly, just without a real upload.
 - **New chat / contacts** screen (QR-scan entry point stubbed for later)
-- **Profile** screen
+  — also doubles as the "share a contact" picker
+- **Profile** screen with a real **Edit Profile** screen — name, status,
+  and a tap-to-change photo that uploads to Storage
 - **Settings → Connections**: live status for Supabase and the backend —
   the backend row actually calls its `/health` route rather than just
   checking a URL is set, so "Live" means the deployed service can reach
@@ -104,6 +141,7 @@ npx expo install \
   react-native-gesture-handler react-native-reanimated react-native-worklets \
   react-native-svg react-native-url-polyfill \
   expo-font expo-splash-screen expo-blur \
+  expo-image-picker expo-document-picker \
   @expo-google-fonts/space-grotesk @expo-google-fonts/manrope \
   @supabase/supabase-js @react-native-async-storage/async-storage
 
@@ -230,6 +268,35 @@ src/
     motion.js                  Reduced-motion hook, used by Knot
     color.js                    hexToRgba() — tints every glass surface
 ```
+
+## Testing in Snack specifically
+
+Confirmed from an actual run: the onboarding hero (Knot mark included),
+mood picker, glass cards, chat list, and wallet card all render
+correctly in Snack's own preview. A few Snack-specific things worth
+knowing:
+
+- **`.env` doesn't reliably work in Snack** — confirmed limitation
+  (github.com/expo/expo/issues/24180), not specific to this project.
+  `supabaseClient.js` and `backendClient.js` both fall back to this
+  project's real (non-secret) values when the env var isn't present, so
+  Snack should work without any extra config. If Settings → Connections
+  still shows "Not configured," the fallback values themselves may need
+  updating (e.g. if you rotate the Supabase key).
+- **Snack may auto-add a bad `package.json` entry** like
+  `"react-native-url-polyfill/auto": "*"` — that's Snack's dependency
+  auto-scanner mistaking a subpath import (`import
+  'react-native-url-polyfill/auto'`) for a package name. Harmless, but
+  safe to delete if you see it; it may come back if Snack rescans.
+- **The "Web" preview tab is a secondary target, not the real one.**
+  This is a native-first app — `expo-blur`, `react-native-svg`, and
+  Reanimated/worklets all target iOS/Android, and react-native-web's
+  support for them is best-effort. For the representative experience,
+  use the **My Device** tab (scan the QR with Expo Go) rather than Web.
+  An `IDBObjectStore` transaction error in the Web preview's logs is a
+  known AsyncStorage-on-web quirk in sandboxed iframes;
+  `supabaseClient.js` already routes web specifically to `localStorage`
+  instead to avoid it, but native is still the target that matters.
 
 ## Troubleshooting
 

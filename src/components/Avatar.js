@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 
 function initials(name = '') {
@@ -11,19 +11,32 @@ function initials(name = '') {
     .join('');
 }
 
-export default function Avatar({ name, color = '#6C5CE7', size = 48, online }) {
+// Shows a real photo when imageUrl is set, falling back to the
+// color+initials circle otherwise — including if the image URL fails
+// to load (a broken link shouldn't leave a blank circle).
+export default function Avatar({ name, color = '#6C5CE7', size = 48, online, imageUrl }) {
   const { colors } = useTheme();
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = Boolean(imageUrl) && !imageFailed;
 
   return (
     <View style={{ width: size, height: size }}>
-      <View
-        style={[
-          styles.circle,
-          { width: size, height: size, borderRadius: size / 2, backgroundColor: color },
-        ]}
-      >
-        <Text style={[styles.initials, { fontSize: size * 0.38 }]}>{initials(name)}</Text>
-      </View>
+      {showImage ? (
+        <Image
+          source={{ uri: imageUrl }}
+          style={{ width: size, height: size, borderRadius: size / 2 }}
+          onError={() => setImageFailed(true)}
+        />
+      ) : (
+        <View
+          style={[
+            styles.circle,
+            { width: size, height: size, borderRadius: size / 2, backgroundColor: color },
+          ]}
+        >
+          <Text style={[styles.initials, { fontSize: size * 0.38 }]}>{initials(name)}</Text>
+        </View>
+      )}
       {online !== undefined && (
         <View
           style={[

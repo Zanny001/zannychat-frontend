@@ -15,6 +15,7 @@ import ChatListScreen from '../screens/ChatListScreen';
 import ChatScreen from '../screens/ChatScreen';
 import NewChatScreen from '../screens/NewChatScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import WalletScreen from '../screens/WalletScreen';
 
@@ -94,6 +95,7 @@ export default function AppNavigator({ initialRouteName = 'Onboarding' }) {
         <RootStack.Screen name="Chat" component={ChatScreen} />
         <RootStack.Screen name="NewChat" component={NewChatScreen} options={{ presentation: 'modal' }} />
         <RootStack.Screen name="Settings" component={SettingsScreen} />
+        <RootStack.Screen name="EditProfile" component={EditProfileScreen} />
       </RootStack.Navigator>
     </NavigationContainer>
   );

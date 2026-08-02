@@ -16,7 +16,7 @@ export default function ChatListItem({ conversation, onPress }) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
       <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={styles.content}>
-        <Avatar name={participant.name} color={participant.avatarColor} online={participant.online} />
+        <Avatar name={participant.name} color={participant.avatarColor} imageUrl={participant.avatarUrl} online={participant.online} />
         <View style={{ flex: 1, marginLeft: spacing.sm }}>
           <View style={styles.topLine}>
             <Text style={[typography.bodyStrong, { color: colors.textPrimary, flexShrink: 1 }]} numberOfLines={1}>

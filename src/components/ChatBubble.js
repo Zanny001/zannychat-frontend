@@ -1,17 +1,41 @@
 import React, { useRef } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
+import { View, Text, Image, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
+import Avatar from './Avatar';
 
 const QUICK_REACTIONS = ['❤️', '😂', '👍', '😮', '😢'];
+
+function formatFileSize(bytes) {
+  if (!bytes && bytes !== 0) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 // The two-voice idea shows up here directly: "mine" is a solid fill in
 // the mood's signal color — bold, since it's the voice you're
 // projecting. "Theirs" stays a quiet neutral surface with a slim
 // thread-colored rail on the leading edge — present, but not shouting
 // over the words. Loud + quiet, not loud + loud.
-export default function ChatBubble({ message, isMine, replyPreview, onSwipeReply, onReact, reaction }) {
+//
+// message.mediaType (unset for plain text) switches what renders
+// inside the bubble: 'image' shows a thumbnail (tap for fullscreen via
+// onViewImage), 'file' shows a name+size row (tap opens it via
+// onOpenFile), 'contact' shows a small shared-profile card (tap starts
+// a chat via onOpenContact).
+export default function ChatBubble({
+  message,
+  isMine,
+  replyPreview,
+  onSwipeReply,
+  onReact,
+  reaction,
+  onViewImage,
+  onOpenFile,
+  onOpenContact,
+}) {
   const { colors, spacing, radii, typography } = useTheme();
   const swipeableRef = useRef(null);
 
@@ -31,7 +55,63 @@ export default function ChatBubble({ message, isMine, replyPreview, onSwipeReply
     swipeableRef.current?.close();
   }
 
+  function handlePress() {
+    if (message.mediaType === 'image') onViewImage?.(message.mediaUrl);
+    else if (message.mediaType === 'file') onOpenFile?.(message.mediaUrl, message.mediaName);
+    else if (message.mediaType === 'contact') onOpenContact?.(message.sharedUserId, message.mediaName);
+  }
+
   const replyBorderColor = isMine ? 'rgba(255,255,255,0.6)' : colors.thread;
+  const captionColor = isMine ? '#FFFFFF' : colors.textPrimary;
+
+  function renderContent() {
+    if (message.mediaType === 'image') {
+      return (
+        <TouchableOpacity onPress={handlePress} activeOpacity={0.9}>
+          <Image source={{ uri: message.mediaUrl }} style={[styles.image, { borderRadius: radii.sm }]} resizeMode="cover" />
+          {message.text ? <Text style={[typography.body, { color: captionColor, marginTop: 6 }]}>{message.text}</Text> : null}
+        </TouchableOpacity>
+      );
+    }
+
+    if (message.mediaType === 'file') {
+      return (
+        <TouchableOpacity onPress={handlePress} activeOpacity={0.85} style={[styles.fileRow, { borderColor: replyBorderColor }]}>
+          <View style={[styles.fileIcon, { backgroundColor: isMine ? 'rgba(255,255,255,0.2)' : colors.surface }]}>
+            <Ionicons name="document-text-outline" size={20} color={captionColor} />
+          </View>
+          <View style={{ flex: 1, marginLeft: spacing.sm }}>
+            <Text style={[typography.bodyStrong, { color: captionColor }]} numberOfLines={1}>
+              {message.mediaName || 'File'}
+            </Text>
+            <Text style={[typography.small, { color: isMine ? 'rgba(255,255,255,0.7)' : colors.textSecondary }]}>
+              {formatFileSize(message.mediaSize)}
+            </Text>
+          </View>
+          <Ionicons name="download-outline" size={18} color={captionColor} />
+        </TouchableOpacity>
+      );
+    }
+
+    if (message.mediaType === 'contact') {
+      return (
+        <TouchableOpacity onPress={handlePress} activeOpacity={0.85} style={[styles.fileRow, { borderColor: replyBorderColor }]}>
+          <Avatar name={message.mediaName || 'Contact'} size={36} />
+          <View style={{ flex: 1, marginLeft: spacing.sm }}>
+            <Text style={[typography.bodyStrong, { color: captionColor }]} numberOfLines={1}>
+              {message.mediaName || 'Contact'}
+            </Text>
+            <Text style={[typography.small, { color: isMine ? 'rgba(255,255,255,0.7)' : colors.textSecondary }]}>
+              Contact card — tap to chat
+            </Text>
+          </View>
+          <Ionicons name="chatbubble-outline" size={18} color={captionColor} />
+        </TouchableOpacity>
+      );
+    }
+
+    return <Text style={[typography.body, { color: captionColor }]}>{message.text}</Text>;
+  }
 
   const bubble = (
     <TouchableOpacity
@@ -65,7 +145,9 @@ export default function ChatBubble({ message, isMine, replyPreview, onSwipeReply
             </Text>
           </View>
         ) : null}
-        <Text style={[typography.body, { color: isMine ? '#FFFFFF' : colors.textPrimary }]}>{message.text}</Text>
+
+        {renderContent()}
+
         <View style={styles.metaRow}>
           <Text style={[typography.small, { color: isMine ? 'rgba(255,255,255,0.7)' : colors.textSecondary }]}>
             {message.createdAt}
@@ -117,4 +199,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     paddingVertical: 1,
   },
+  image: { width: 220, height: 220 },
+  fileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 200,
+    paddingVertical: 4,
+  },
+  fileIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
 });

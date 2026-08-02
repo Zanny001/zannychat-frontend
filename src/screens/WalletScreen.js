@@ -18,10 +18,9 @@ function formatBalance(balance) {
 // fetchWalletBalance() returns a real ledger balance; until then it
 // returns null and this shows a styled preview instead. No real
 // payment processing happens in this build either way.
-export default function WalletScreen({ navigation }) {
+export default function WalletScreen() {
   const { colors, mood, spacing, typography, radii } = useTheme();
   const [balance, setBalance] = useState(null);
-  const canGoBack = navigation.canGoBack();
   const tabBarHeight = useBottomTabBarHeight();
 
   useEffect(() => {
@@ -32,7 +31,7 @@ export default function WalletScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <Header title="Wallet" brand={!canGoBack} onBack={canGoBack ? () => navigation.goBack() : undefined} />
+      <Header title="Wallet" brand />
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: tabBarHeight + spacing.lg }}>
         <View style={[styles.card, { backgroundColor: mood.gold, borderRadius: radii.lg }]}>
           <Text style={[typography.small, styles.cardLabel]}>AVAILABLE BALANCE</Text>

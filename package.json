@@ -16,6 +16,8 @@
     "expo-font": "latest",
     "expo-splash-screen": "latest",
     "expo-blur": "latest",
+    "expo-image-picker": "latest",
+    "expo-document-picker": "latest",
     "react": "latest",
     "react-native": "latest",
     "@react-navigation/native": "latest",
