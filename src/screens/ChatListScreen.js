@@ -173,11 +173,12 @@ export default function ChatListScreen({ navigation }) {
         </GlassCard>
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.sm, gap: 8 }}
-      >
+      <View style={{ flexGrow: 0, flexShrink: 0, marginBottom: spacing.sm }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.sm, gap: 8 }}
+        >
         {FILTERS.map((filter) => {
           const active = activeFilter === filter.key;
           return (
@@ -204,7 +205,8 @@ export default function ChatListScreen({ navigation }) {
             </TouchableOpacity>
           );
         })}
-      </ScrollView>
+        </ScrollView>
+      </View>
 
       {!SUPABASE_ENABLED && (
         <View style={{ paddingHorizontal: spacing.md, marginBottom: spacing.sm }}>
@@ -218,6 +220,7 @@ export default function ChatListScreen({ navigation }) {
       )}
 
       <FlatList
+        style={{ flex: 1 }}
         data={filtered}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: tabBarHeight + spacing.lg }}
