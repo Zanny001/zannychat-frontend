@@ -7,7 +7,7 @@ import { hexToRgba } from '../utils/color';
 import Knot from './Knot';
 
 // brand=true renders the ZannyChat mark + wordmark instead of a plain
-// title — used on tab-root screens (Wallet, Profile) where there's no
+// title — used on tab-root screens (Profile) where there's no
 // "back" context and the header's job is identity, not navigation.
 // Screens reached with a back button (Chat, New chat, Settings) pass
 // their own title instead — repeating the app logo next to a
@@ -28,7 +28,13 @@ export default function Header({ title, onBack, right, subtitle, brand = false }
       <View style={[styles.container, { paddingHorizontal: spacing.md }]}>
         <View style={styles.left}>
           {onBack && (
-            <TouchableOpacity onPress={onBack} hitSlop={10} style={{ marginRight: spacing.sm }}>
+            <TouchableOpacity
+              onPress={onBack}
+              hitSlop={10}
+              style={{ marginRight: spacing.sm }}
+              accessibilityLabel="Go back"
+              accessibilityRole="button"
+            >
               <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
             </TouchableOpacity>
           )}

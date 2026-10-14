@@ -1,10 +1,8 @@
 import { supabase, SUPABASE_ENABLED } from './supabaseClient';
 
-// Same pattern as supabaseClient.js, including the same Snack fallback
-// reasoning — a deployed backend's URL isn't secret either.
-const FALLBACK_BACKEND_URL = 'https://zannychat-backend.onrender.com';
-
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || FALLBACK_BACKEND_URL;
+// Backend access is opt-in. A fresh checkout with no .env stays in mock
+// mode and never contacts a shared hosted backend by accident.
+const BACKEND_URL = (process.env.EXPO_PUBLIC_BACKEND_URL || '').replace(/\/$/, '');
 
 export const BACKEND_ENABLED = Boolean(BACKEND_URL);
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, Platform } from 'react-native';
-import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
@@ -11,13 +11,33 @@ import { hexToRgba } from '../utils/color';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
+import PasswordRecoveryScreen from '../screens/PasswordRecoveryScreen';
+import PasswordResetScreen from '../screens/PasswordResetScreen';
 import ChatListScreen from '../screens/ChatListScreen';
 import ChatScreen from '../screens/ChatScreen';
 import NewChatScreen from '../screens/NewChatScreen';
+import CreateGroupScreen from '../screens/CreateGroupScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
-import WalletScreen from '../screens/WalletScreen';
+import PrivacySecurityScreen from '../screens/PrivacySecurityScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
+import HelpScreen from '../screens/HelpScreen';
+import QRContactScreen from '../screens/QRContactScreen';
+import ForwardMessageScreen from '../screens/ForwardMessageScreen';
+import DataStorageScreen from '../screens/DataStorageScreen';
+import DataExportScreen from '../screens/DataExportScreen';
+import SessionsScreen from '../screens/SessionsScreen';
+import ChatAppearanceScreen from '../screens/ChatAppearanceScreen';
+import SharedMediaScreen from '../screens/SharedMediaScreen';
+import SavedMessagesScreen from '../screens/SavedMessagesScreen';
+import DraftsScreen from '../screens/DraftsScreen';
+import PinnedMessagesScreen from '../screens/PinnedMessagesScreen';
+
+// Lets code outside the component tree (the push-notification tap
+// handler in App.js) trigger navigation — the standard React
+// Navigation pattern for exactly that case.
+export const navigationRef = createNavigationContainerRef();
 
 const RootStack = createNativeStackNavigator();
 const MainTabs = createBottomTabNavigator();
@@ -46,6 +66,7 @@ function MainTabNavigator() {
     <MainTabs.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarAccessibilityLabel: route.name === 'Chats' ? 'Chats tab' : 'Profile tab',
         tabBarStyle: {
           backgroundColor: 'transparent',
           borderTopColor: hexToRgba(colors.textPrimary, 0.08),
@@ -55,13 +76,12 @@ function MainTabNavigator() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarIcon: ({ color, size }) => {
-          const icons = { Chats: 'chatbubbles', Wallet: 'wallet', Profile: 'person-circle' };
+          const icons = { Chats: 'chatbubbles', Profile: 'person-circle' };
           return <Ionicons name={icons[route.name]} size={size} color={color} />;
         },
       })}
     >
       <MainTabs.Screen name="Chats" component={ChatListScreen} />
-      <MainTabs.Screen name="Wallet" component={WalletScreen} />
       <MainTabs.Screen name="Profile" component={ProfileScreen} />
     </MainTabs.Navigator>
   );
@@ -86,16 +106,32 @@ export default function AppNavigator({ initialRouteName = 'Onboarding' }) {
   };
 
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer ref={navigationRef} theme={navTheme} linking={{ prefixes: ['zannychat://'], config: { screens: { PasswordReset: 'reset-password' } } }}>
       <RootStack.Navigator screenOptions={{ headerShown: false }} initialRouteName={initialRouteName}>
         <RootStack.Screen name="Onboarding" component={OnboardingScreen} />
         <RootStack.Screen name="Login" component={LoginScreen} />
         <RootStack.Screen name="Signup" component={SignupScreen} />
+        <RootStack.Screen name="PasswordRecovery" component={PasswordRecoveryScreen} />
+        <RootStack.Screen name="PasswordReset" component={PasswordResetScreen} />
         <RootStack.Screen name="Main" component={MainTabNavigator} />
         <RootStack.Screen name="Chat" component={ChatScreen} />
         <RootStack.Screen name="NewChat" component={NewChatScreen} options={{ presentation: 'modal' }} />
+        <RootStack.Screen name="QRContact" component={QRContactScreen} options={{ presentation: 'modal' }} />
+        <RootStack.Screen name="ForwardMessage" component={ForwardMessageScreen} options={{ presentation: 'modal' }} />
+        <RootStack.Screen name="CreateGroup" component={CreateGroupScreen} options={{ presentation: 'modal' }} />
         <RootStack.Screen name="Settings" component={SettingsScreen} />
+        <RootStack.Screen name="ChatAppearance" component={ChatAppearanceScreen} />
+        <RootStack.Screen name="SharedMedia" component={SharedMediaScreen} />
+        <RootStack.Screen name="SavedMessages" component={SavedMessagesScreen} />
+        <RootStack.Screen name="Drafts" component={DraftsScreen} />
+        <RootStack.Screen name="PinnedMessages" component={PinnedMessagesScreen} />
         <RootStack.Screen name="EditProfile" component={EditProfileScreen} />
+        <RootStack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
+        <RootStack.Screen name="Notifications" component={NotificationsScreen} />
+        <RootStack.Screen name="DataStorage" component={DataStorageScreen} />
+        <RootStack.Screen name="DataExport" component={DataExportScreen} />
+        <RootStack.Screen name="Sessions" component={SessionsScreen} />
+        <RootStack.Screen name="Help" component={HelpScreen} />
       </RootStack.Navigator>
     </NavigationContainer>
   );

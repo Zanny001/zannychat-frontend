@@ -24,30 +24,22 @@ const webStorage = {
 
 const authStorage = Platform.OS === 'web' ? webStorage : AsyncStorage;
 
-// Expo CLI (`npx expo start`) and EAS Build read EXPO_PUBLIC_ vars from
-// .env automatically. Snack does NOT reliably do this — it's a known,
-// confirmed limitation (github.com/expo/expo/issues/24180), not
-// something wrong with your .env file. So env vars still take
-// priority when they ARE available (a real `expo start` or EAS build),
-// but fall back to this project's actual public values otherwise —
-// safe to hardcode because a Supabase URL + publishable key are
-// designed to be public (see the SUPABASE_SERVICE_ROLE_KEY discussion
-// in zannychat-backend's README — that one, never this pattern).
-const FALLBACK_SUPABASE_URL = 'https://vithpppgyjmazxvogvno.supabase.co';
-const FALLBACK_SUPABASE_ANON_KEY = 'sb_publishable_l7pVchKAgwv1ydWpkSBfRA_q0CXM195';
+// Hosted services are opt-in. With no EXPO_PUBLIC_* configuration the app
+// stays in local mock-data mode, so a fresh checkout cannot accidentally
+// contact a shared or production project. Snack/preview users should set
+// these public client values explicitly when they want a real backend.
+export const SUPABASE_URL = (process.env.EXPO_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '');
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || FALLBACK_SUPABASE_URL;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || FALLBACK_SUPABASE_ANON_KEY;
-
-export const SUPABASE_ENABLED = Boolean(supabaseUrl && supabaseAnonKey);
+export const SUPABASE_ENABLED = Boolean(SUPABASE_URL && supabaseAnonKey);
 
 export const supabase = SUPABASE_ENABLED
-  ? createClient(supabaseUrl, supabaseAnonKey, {
+  ? createClient(SUPABASE_URL, supabaseAnonKey, {
       auth: {
         storage: authStorage,
         autoRefreshToken: true,
         persistSession: true,
-        detectSessionInUrl: false,
+        detectSessionInUrl: true,
       },
     })
   : null;

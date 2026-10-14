@@ -3,19 +3,71 @@
     "name": "ZannyChat",
     "slug": "zannychat",
     "scheme": "zannychat",
-    "version": "1.0.0",
+    "version": "1.2.36",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "imageWidth": 192,
+      "backgroundColor": "#15111C"
+    },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.zannychat.app"
+      "bundleIdentifier": "com.zannychat.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "ZannyChat uses the camera so you can take and send photos in your chats.",
+        "NSMicrophoneUsageDescription": "ZannyChat uses the microphone so you can record and send voice messages.",
+        "NSPhotoLibraryUsageDescription": "ZannyChat accesses your photo library so you can send photos and set a profile picture.",
+        "NSPhotoLibraryAddUsageDescription": "ZannyChat can save photos from your chats to your photo library."
+      }
     },
     "android": {
-      "package": "com.zannychat.app"
+      "package": "com.zannychat.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#15111C"
+      },
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "READ_MEDIA_IMAGES",
+        "READ_MEDIA_VIDEO",
+        "POST_NOTIFICATIONS"
+      ]
     },
     "web": {
       "bundler": "metro"
-    }
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#FF6A4D"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "ZannyChat uses the camera to scan QR codes and connect you with contacts."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "ZannyChat accesses your photo library so you can send photos and set a profile picture.",
+          "cameraPermission": "ZannyChat uses the camera so you can take and send photos in your chats."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "ZannyChat uses the microphone so you can record and send voice messages."
+        }
+      ],
+      "expo-status-bar"
+    ]
   }
 }

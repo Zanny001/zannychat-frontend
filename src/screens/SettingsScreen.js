@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Switch, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import Header from '../components/Header';
@@ -7,15 +7,16 @@ import MoodSwatch from '../components/MoodSwatch';
 import GlassCard from '../components/GlassCard';
 import { hexToRgba } from '../utils/color';
 import { signOut } from '../services/api';
+import { stopPresence } from '../services/presence';
 import { SUPABASE_ENABLED } from '../services/supabaseClient';
 import { BACKEND_ENABLED, checkBackendHealth } from '../services/backendClient';
 
 export default function SettingsScreen({ navigation }) {
   const { colors, spacing, typography, radii, paletteKey, palettes, setPalette } = useTheme();
-  const [vaultEnabled, setVaultEnabled] = React.useState(false);
 
   async function handleLogout() {
     try {
+      stopPresence();
       await signOut();
     } finally {
       navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] });
@@ -27,6 +28,25 @@ export default function SettingsScreen({ navigation }) {
       <Header title="Appearance & theme" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
         <ConnectionsPanel />
+
+        <TouchableOpacity
+          onPress={() => navigation.navigate('ChatAppearance')}
+          activeOpacity={0.82}
+          accessibilityRole="button"
+          accessibilityLabel="Chat appearance"
+          style={{ marginBottom: spacing.md }}
+        >
+          <GlassCard contentStyle={styles.row}>
+            <View style={[styles.appearanceIcon, { backgroundColor: hexToRgba(colors.primary, 0.14) }]}>
+              <Ionicons name="color-wand-outline" size={20} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1, marginLeft: spacing.sm }}>
+              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Chat appearance</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>Personalize the conversation canvas</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+          </GlassCard>
+        </TouchableOpacity>
 
         <GlassCard style={{ marginBottom: spacing.md }}>
           <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.sm }]}>Mood</Text>
@@ -61,22 +81,28 @@ export default function SettingsScreen({ navigation }) {
           </View>
         </GlassCard>
 
-        <GlassCard style={{ marginBottom: spacing.md }}>
+        {/* The audit called the old version of this row out by name: a
+            Switch that visibly flipped but persisted nothing is a worse
+            pattern than an honest "coming soon" row. This is that row —
+            disabled, labelled, no fake state. */}
+        <GlassCard style={{ marginBottom: spacing.md, opacity: 0.6 }}>
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
-              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Zero-Knowledge Vault</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Zero-Knowledge Vault</Text>
+                <View
+                  style={[
+                    styles.comingSoonPill,
+                    { borderColor: hexToRgba(colors.gold, 0.5), backgroundColor: hexToRgba(colors.gold, 0.12) },
+                  ]}
+                >
+                  <Text style={[typography.small, { color: colors.gold }]}>COMING SOON</Text>
+                </View>
+              </View>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>
-                Extra-encrypted storage for voice notes & files (preview)
+                Extra-encrypted storage for voice notes & files. Not built yet — this row will become a switch when it is.
               </Text>
             </View>
-            <Switch
-              value={vaultEnabled}
-              onValueChange={(val) => {
-                setVaultEnabled(val);
-                if (val) Alert.alert('Preview feature', 'The vault backend lands with Phase 4 of the roadmap.');
-              }}
-              trackColor={{ true: colors.primary }}
-            />
           </View>
         </GlassCard>
 
@@ -126,7 +152,13 @@ function ConnectionsPanel() {
       <View style={[styles.row, { marginBottom: spacing.sm }]}>
         <Text style={[typography.heading, { color: colors.textPrimary, flex: 1 }]}>Connections</Text>
         {BACKEND_ENABLED && (
-          <TouchableOpacity onPress={runCheck} hitSlop={10} disabled={checking}>
+          <TouchableOpacity
+            onPress={runCheck}
+            hitSlop={10}
+            disabled={checking}
+            accessibilityLabel="Re-check connections"
+            accessibilityRole="button"
+          >
             {checking ? (
               <ActivityIndicator size="small" color={colors.textSecondary} />
             ) : (
@@ -196,6 +228,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   row: { flexDirection: 'row', alignItems: 'center' },
+  appearanceIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   dot: { width: 8, height: 8, borderRadius: 4 },
+  comingSoonPill: {
+    marginLeft: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
   logoutBtn: { borderWidth: 1.5, paddingVertical: 14, alignItems: 'center', marginTop: 4 },
 });

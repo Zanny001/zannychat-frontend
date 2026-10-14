@@ -15,13 +15,13 @@ export default function OnboardingScreen({ navigation }) {
           ZannyChat
         </Text>
         <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.sm, maxWidth: 260 }]}>
-          Two threads, one conversation. Chat, pay, and stay connected.
+          Two threads, one conversation.
         </Text>
       </View>
 
       <View style={{ paddingHorizontal: spacing.lg }}>
-        <Feature icon="lock-closed" text="Encrypted the moment you hit send" />
-        <Feature icon="wallet" text="Send money without leaving the chat" />
+        <Feature icon="lock-closed" text="Private — only you and them can open it" />
+        <Feature icon="people" text="Group chats, voice notes & real attachments" />
         <Feature icon="sparkles" text="Smart replies, translation & summaries" />
         <Feature icon="color-palette" text="A theme that's actually got range" />
       </View>
@@ -30,10 +30,12 @@ export default function OnboardingScreen({ navigation }) {
         <TouchableOpacity
           style={[styles.primaryBtn, { backgroundColor: colors.primary, borderRadius: radii.pill }]}
           onPress={() => navigation.navigate('Login')}
+          accessibilityRole="button"
+          accessibilityLabel="Get started and sign in"
         >
           <Text style={styles.primaryBtnText}>Get started</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={{ marginTop: spacing.md, alignItems: 'center' }} onPress={() => navigation.navigate('Signup')}>
+        <TouchableOpacity style={{ marginTop: spacing.md, alignItems: 'center' }} onPress={() => navigation.navigate('Signup')} accessibilityRole="button" accessibilityLabel="Create a new account">
           <Text style={[typography.caption, { color: colors.textSecondary }]}>
             New here? <Text style={{ color: colors.primary, fontFamily: 'Manrope_700Bold' }}>Create an account</Text>
           </Text>
@@ -47,7 +49,7 @@ function Feature({ icon, text }) {
   const { colors, spacing, typography } = useTheme();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md }}>
-      <View style={[styles.featureIcon, { backgroundColor: colors.surface }]}>
+      <View style={[styles.featureIcon, { backgroundColor: colors.surface }]} accessible={false} importantForAccessibility="no">
         <Ionicons name={icon} size={18} color={colors.accent} />
       </View>
       <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm }]}>{text}</Text>

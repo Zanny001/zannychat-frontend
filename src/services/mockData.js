@@ -38,6 +38,7 @@ export const MOCK_CONVERSATIONS = [
     lastMessage: 'Sounds good, see you then!',
     lastMessageAt: 'Yesterday',
     unreadCount: 0,
+    isFavorite: true,
   },
   {
     id: 'c4',
@@ -45,6 +46,15 @@ export const MOCK_CONVERSATIONS = [
     lastMessage: 'Welcome to ZannyChat 🎉',
     lastMessageAt: 'Mon',
     unreadCount: 0,
+  },
+  {
+    id: 'c5',
+    isGroup: true,
+    memberCount: 4,
+    participant: { name: 'Weekend Trip', avatarColor: '#3E7BFA', avatarUrl: null, online: false },
+    lastMessage: 'Priya: I booked the cabin!',
+    lastMessageAt: 'Fri',
+    unreadCount: 1,
   },
 ];
 
@@ -65,5 +75,10 @@ export const MOCK_MESSAGES = {
   c4: [
     { id: 'm8', senderId: 'u4', text: 'Welcome to ZannyChat 🎉', createdAt: 'Mon' },
     { id: 'm9', senderId: 'u4', text: 'Try switching your theme in Settings!', createdAt: 'Mon' },
+  ],
+  c5: [
+    { id: 'm10', senderId: 'u1', senderName: 'Amara Okafor', text: 'Who\u2019s in for the weekend trip?', createdAt: 'Fri' },
+    { id: 'm11', senderId: 'me', text: 'Count me in', createdAt: 'Fri' },
+    { id: 'm12', senderId: 'u3', senderName: 'Priya Nair', text: 'I booked the cabin!', createdAt: 'Fri' },
   ],
 };

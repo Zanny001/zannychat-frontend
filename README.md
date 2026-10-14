@@ -3,10 +3,16 @@
 The mobile frontend for **ZannyChat**, built with React Native + Expo.
 It runs on mock data out of the box (`src/services/mockData.js`), so you
 can click through the entire app — sign up, chat list, conversations,
-swipe-to-reply, reactions, mood switching, wallet — with no backend at
-all. Every screen calls through `src/services/api.js`, so connecting
-the real backend (`zannychat-backend`) later is a config change, not a
+swipe-to-reply, reactions, mood switching — with no backend at all.
+Every screen calls through `src/services/api.js`, so connecting the
+real backend (`zannychat-backend`) later is a config change, not a
 rewrite.
+
+> **No wallet.** ZannyChat briefly shipped an in-chat wallet/ledger
+> preview; it's been removed so this project can stay focused on being
+> a chat app — payments now live in a separate, dedicated product. If
+> you're updating an existing deployment, see `zannychat-backend`'s
+> README for the migration that drops the leftover database tables.
 
 ## Design system — "Signal & Thread"
 
@@ -18,9 +24,10 @@ using one accent for everything:
   primary button, the active tab.
 - **Thread** (cool) is always *their* voice — the accent rail on
   received bubbles, secondary icons.
-- **Gold** belongs to money alone. It never appears outside the Wallet
-  tab, so a screen with gold on it always means "this is about your
-  balance."
+- **Gold** is the standalone accent — the favorite star on a chat, the
+  "DEMO DATA" pill when no backend is connected, a pending status dot
+  in Settings. It's deliberately rare, so it still reads as a flag
+  worth noticing rather than a third default color.
 
 Four moods (Ember, Tide, Aurora, Dawn — Settings → Appearance) each
 define their own signal/thread/gold trio, so switching moods actually
@@ -29,8 +36,8 @@ picker itself shows this: each swatch is two overlapping circles, not
 one flat color (`src/components/MoodSwatch.js`).
 
 Two typefaces carry the rest of the personality: **Space Grotesk** for
-anything display-sized or numeric (the wordmark, screen titles, the
-wallet balance), **Manrope** for everything meant to be read at length
+anything display-sized or numeric (the wordmark, screen titles, unread
+badges), **Manrope** for everything meant to be read at length
 (messages, body copy, buttons) — see `src/theme/typography.js`.
 
 The signature mark is **Knot** (`src/components/Knot.js`) — two open
@@ -46,8 +53,8 @@ entirely when that's on.
 rather than a flat colored `View` — a real blur (`expo-blur`) of
 whatever's behind, tinted toward the active mood's surface color, with
 a hairline light border. It's used consistently: chat previews,
-Settings sections, Profile's menu rows, Wallet's roadmap list, the
-message input bar, and the bottom tab bar are all glass. The one
+Settings sections, Profile's menu rows, the message input bar, and the
+bottom tab bar are all glass. The one
 exception is deliberate — chat bubbles stay solid/flat, because message
 text needs to win every legibility fight, not share the screen with a
 blurred background.
@@ -88,21 +95,43 @@ Two smaller things fixed in the same pass:
 
 - **Onboarding** with the animated Knot hero → **Sign up / Sign in**
   (Supabase Auth-ready, works offline as a demo)
-- **Chat list** with search, unread badges, and an invitation-to-act
-  empty state
+- **Chat list** with search, an invitation-to-act empty state, and
+  **All / Unread / Favorites / Groups filter pills** — the same
+  category set WhatsApp itself uses (confirmed against real
+  screenshots). Long-press a chat to favorite it. Unread badges are
+  real counts now, not a placeholder — see the honesty note below.
 - **Conversation screen**: signal/thread bubble treatment, swipe-to-reply,
   long-press reactions, typing bar, AI smart-reply chips, and a
   summarize action in the header (both need `ANTHROPIC_API_KEY` set on
-  the backend — see `zannychat-backend`'s README)
-- **Attachments**: real photo, file, and contact sharing from the chat's
-  attach button — photos and files upload to Supabase Storage and show
-  as an image thumbnail (tap for fullscreen) or a name+size card (tap to
-  open); sharing a contact sends a tappable card that starts a chat with
-  them. All need Supabase connected (Storage uploads require a real
-  session); mock mode still works using the picked file's local URI
-  directly, just without a real upload.
+  the backend — see `zannychat-backend`'s README). In a group, each
+  received message is labeled with the sender's name. **Real read
+  receipts** in 1:1s — a message's tick is grey-single while still an
+  optimistic local echo, grey-double once actually confirmed by the
+  server, and signal-colored double the moment they've actually read
+  it (live, via Realtime — not just after a refresh). A plain-text
+  message with a URL in it shows a real link preview card underneath
+  (title/description/image, fetched server-side from the page's Open
+  Graph tags) — needs the backend connected; fails silently to plain
+  text otherwise, never a broken card.
+- **Group chats** — New chat → New group: pick 2+ people and a name.
+  Anyone in the group can post; there's no admin/kick/promote layer,
+  a deliberate scope limit, not an oversight. Group read receipts
+  aren't attempted either (see the backend README for why).
+- **Attachments**: real photo, file, voice note, and contact sharing
+  from the chat's attach button (mic icon doubles as the attach
+  trigger's neighbor — tap it directly to record). Photos, files, and
+  voice notes upload to Supabase Storage; a voice bubble shows an
+  inline play button with a real progress bar, not just a duration
+  label. Sharing a contact sends a tappable card that starts a chat
+  with them. All need Supabase connected (Storage uploads require a
+  real session); mock mode still works using the picked file's local
+  URI directly, just without a real upload.
+- **Push notifications** — real, not stubbed, but needs infrastructure
+  beyond what everything else in this app has needed. **Read the
+  section below before expecting to see one fire.**
 - **New chat / contacts** screen (QR-scan entry point stubbed for later)
-  — also doubles as the "share a contact" picker
+  — also doubles as the "share a contact" picker and the group-member
+  picker
 - **Profile** screen with a real **Edit Profile** screen — name, status,
   and a tap-to-change photo that uploads to Storage
 - **Settings → Connections**: live status for Supabase and the backend —
@@ -110,10 +139,108 @@ Two smaller things fixed in the same pass:
   checking a URL is set, so "Live" means the deployed service can reach
   its own database, not just that this app can reach the service
 - **Settings → Mood**: four two-tone moods, switch instantly, applies
-  app-wide
-- **Wallet tab**: gold balance card, live once the backend is connected
-  (`GET /wallet/balance`), a styled preview otherwise — no real payment
-  processing in this build either way, see `zannychat-backend`'s README
+  app-wide, and persists between launches
+
+## What's new in 1.1 — the post-audit upgrade
+
+A full independent audit (Oct 2026) graded the app and sequenced a
+roadmap; 1.1 implements its P0 tier completely and most of P1:
+
+**Safety & abuse resistance**
+- **Block & report** — block from any chat's ⋮ menu (they can no longer
+  message you — enforced by RLS, not just hidden), report a person or a
+  specific message, and manage your block list in the new **Privacy &
+  security** screen.
+- **Mute & archive** — per conversation, from the chat-list long-press
+  sheet or the in-chat ⋮ menu. Muting also stops push notifications from
+  that conversation, enforced server-side. Archived chats get their own
+  filter pill.
+- The backend is now **rate-limited** per user (see its README).
+
+**Finish — nothing that looks shipped but isn't**
+- The three dead Profile menu rows now open real screens (**Privacy &
+  security**, **Notifications**, **Help**).
+- The chat header's **call button is gone** — it had no handler at all;
+  voice calls are a roadmap item, not a broken button.
+- The "Zero-Knowledge Vault" fake switch is now an honest, disabled
+  "coming soon" row.
+- The **chosen mood persists** between launches (AsyncStorage) — it used
+  to reset to Ember on every restart.
+- **App icon, splash screen, and iOS/Android permission strings** are
+  configured (the Knot mark, generated for this build).
+
+**Features that used to be half-built, now whole**
+- **Reactions persist and sync** — long-press → react now writes to the
+  database and appears live on the other person's screen (Realtime),
+  instead of silently doing nothing for anyone but you.
+- **Real presence** — online dots come from Supabase Presence (who has
+  the app open right now), not the mock `profiles.online` column.
+- **Typing indicators** — "typing…" in the chat header, via Realtime
+  broadcast.
+- **Message edit & delete** — long-press your own message; delete is a
+  soft-delete tombstone ("This message was deleted"), edits show an
+  "edited" label.
+- **Camera capture** in the attach sheet, next to the photo library.
+
+**Design system & access**
+- The attach menu, reaction picker, and long-press actions are now
+  **branded glass bottom sheets** (`ActionSheet`) — the native
+  `Alert.alert` lists were the one visible break in the design system.
+- **Accessibility labels and roles** on every icon-only control the
+  audit listed: attach, mic/send, back, summarize, lightbox close,
+  connections refresh, avatars, and more.
+- **Date separators** in the message list, and **paginated history** —
+  opening a chat loads 30 messages at a time ("Load earlier messages"
+  pill up top) instead of the entire history on every open.
+
+**Found while upgrading (not in the audit):** the chat screen compared
+`senderId` against the mock-mode literal `'me'`, so in live mode every
+message — including your own — rendered as "theirs". 1.1 resolves the
+real signed-in user id and compares against that.
+
+## An honesty fix worth flagging
+
+Onboarding used to say "Encrypted the moment you hit send" — not true.
+Messages are protected by real access control (Row Level Security: only
+conversation participants can read a thread via the app, enforced by
+Postgres, not just by the app choosing not to show it to anyone else),
+but that's not the same claim as end-to-end encryption, which would
+mean not even this project's own database admin could read them. That
+second thing isn't built. The copy now says "Private — only you and
+them can open it," which is actually true. Real E2E encryption (Signal
+Protocol–style key exchange, per-device keys) is a legitimately large
+undertaking, not something to half-build and call finished — if you
+want it, that's a real feature request, not a quick copy fix.
+
+## Push notifications — needs a development build, not Expo Go
+
+This is different from everything else in this app, worth reading
+before assuming it's broken when nothing happens.
+
+**Remote push notifications don't work in Expo Go on Android (SDK 53+),
+and don't work at all in Snack's preview** (Web or otherwise) — this is
+a platform limitation, not a bug in this code. To actually see a
+notification fire, you need a **development build**:
+
+```bash
+npm install -g eas-cli
+eas login
+eas init          # links this project to an EAS project — required,
+                   # generates the projectId push registration needs
+eas build --profile development --platform android
+```
+
+Install the resulting build on a physical device (not a simulator —
+push tokens require real hardware) and run `expo start --dev-client`
+against it instead of Expo Go.
+
+Without an EAS project linked, `registerForPushNotifications()` in
+`src/services/notifications.js` logs why it's skipping and returns
+`null` — it never throws, so the rest of the app keeps working exactly
+as before. Everything downstream (the `push_tokens` table, the Postgres
+trigger, the backend's send logic) is real and wired; this is the one
+piece that's on you to set up, because it requires infrastructure
+(an EAS account, a real device) I have no way to provide.
 
 ## Quick start (recommended — safest path)
 
@@ -142,6 +269,7 @@ npx expo install \
   react-native-svg react-native-url-polyfill \
   expo-font expo-splash-screen expo-blur \
   expo-image-picker expo-document-picker \
+  expo-notifications expo-device expo-audio expo-constants \
   @expo-google-fonts/space-grotesk @expo-google-fonts/manrope \
   @supabase/supabase-js @react-native-async-storage/async-storage
 
@@ -180,19 +308,15 @@ until fonts load (see "Fonts don't load" below).
 
 ## Connecting the real backend
 
-**Current status of this specific project:** all three vars in `.env`
-are filled in with real values — Supabase project `vithpppgyjmazxvogvno`
-(using the newer `sb_publishable_...` key, not a legacy JWT anon key)
-and the backend at `https://zannychat-backend.onrender.com`. The "DEMO
-DATA" pill on the Chats screen should be gone; if it's still showing,
-`.env` wasn't picked up — see the troubleshooting note below.
+**Default development mode:** no hosted Supabase project or Express backend
+is configured automatically. With the `.env.example` values left empty,
+the app uses local mock data and does not contact a hosted project. This is
+the recommended mode for design work and frontend development.
 
-One thing to verify on your end, since I can't check it: **the backend's
-`SUPABASE_URL` on Render needs to point at this exact same project**
-(`vithpppgyjmazxvogvno`). If the backend was set up against a
-*different* Supabase project, session tokens this app generates won't
-validate there, and `POST /conversations` / `GET /wallet/balance` will
-fail with 401s even though both services individually report healthy.
+When you are ready to test integrations, set the variables below to a
+dedicated development/staging project. Keep its Supabase URL consistent
+with the backend's `SUPABASE_URL`. Do not point local design work at
+production unless you deliberately intend to test against production.
 
 Also worth a specific test rather than assuming it's fine: **send a
 message between two real accounts and confirm it arrives live**, not
@@ -214,17 +338,17 @@ There are two pieces, each toggled by its own env vars — see
    ```
    `src/services/supabaseClient.js` detects these automatically and every
    chat screen switches from mock data to live data — no code changes.
-3. **The Express backend** (new chat creation, wallet balance) — once
-   it's deployed on Render:
+3. **The Express backend** (new chat / group creation, AI features, link
+   previews) — once it's deployed on Render:
    ```
    EXPO_PUBLIC_BACKEND_URL=https://your-service.onrender.com
    ```
    `src/services/backendClient.js` picks this up the same way. Note that
-   `createConversation` and `fetchWalletBalance` both check *both* flags
-   before calling the backend, not just this one — the backend's routes
-   require a Supabase session token to authenticate the request, so a
-   backend URL with no Supabase session to attach is a dead end by
-   design, not a bug. `checkBackendHealth()` (used by Settings →
+   `createConversation` and the other backend-routed calls all check
+   *both* flags before calling the backend, not just this one — the
+   backend's routes require a Supabase session token to authenticate
+   the request, so a backend URL with no Supabase session to attach is
+   a dead end by design, not a bug. `checkBackendHealth()` (used by Settings →
    Connections) is the one exception — `/health` needs no auth, so it
    works as soon as the URL is set, which makes it the fastest way to
    confirm a fresh deploy is actually reachable.
@@ -251,17 +375,22 @@ src/
     typography.js              Space Grotesk / Manrope type scale
     fonts.js                   useFonts() call, loaded once in App.js
     ThemeContext.js             Exposes the active mood + setPalette()
-  navigation/                 Stack + bottom tab navigation
-  screens/                    One file per screen
+  navigation/                 Stack + bottom tab navigation, exports navigationRef
+                               (used by notifications.js to navigate from a tap)
+  screens/                    One file per screen, including CreateGroupScreen.js
   components/
     Knot.js                    The signature mark (static or animated)
     MoodSwatch.js               Two-circle swatch used in Settings
     GlassCard.js                 Blurred, tinted, bordered surface — used everywhere
     GlassInput.js                 Lighter glass treatment for text fields
     Avatar.js, ChatBubble.js, InputBar.js, ChatListItem.js, Header.js
+    ActionSheet.js               Branded glass bottom sheet (attach, reactions, overflow)
   services/
     supabaseClient.js         Reads env vars, no-ops if unset
     backendClient.js           Same idea, for the Express backend on Render
+    notifications.js            Push registration, foreground config, tap-to-navigate
+    presence.js                  Real online state via Supabase Presence
+    notificationPrefs.js         Persisted banner/sound/push preferences
     api.js                    Single place every screen calls — mock or live
     mockData.js                Demo data used until the backend is connected
   utils/
@@ -272,17 +401,14 @@ src/
 ## Testing in Snack specifically
 
 Confirmed from an actual run: the onboarding hero (Knot mark included),
-mood picker, glass cards, chat list, and wallet card all render
-correctly in Snack's own preview. A few Snack-specific things worth
-knowing:
+mood picker, glass cards, and chat list all render correctly in
+Snack's own preview. A few Snack-specific things worth knowing:
 
-- **`.env` doesn't reliably work in Snack** — confirmed limitation
-  (github.com/expo/expo/issues/24180), not specific to this project.
-  `supabaseClient.js` and `backendClient.js` both fall back to this
-  project's real (non-secret) values when the env var isn't present, so
-  Snack should work without any extra config. If Settings → Connections
-  still shows "Not configured," the fallback values themselves may need
-  updating (e.g. if you rotate the Supabase key).
+- **`.env` doesn't reliably work in Snack** — Expo Snack may not expose
+  environment variables the same way as a local Expo CLI build. This app
+  no longer has automatic hosted-service fallbacks: without explicit
+  development credentials, it stays in mock-data mode. For live integration
+  testing in Snack, configure a dedicated development project deliberately.
 - **Snack may auto-add a bad `package.json` entry** like
   `"react-native-url-polyfill/auto": "*"` — that's Snack's dependency
   auto-scanner mistaking a subpath import (`import
@@ -323,16 +449,54 @@ just less blurred on some Android devices.
 
 ## Roadmap this maps to
 
-This build covers **Phase 1** (core messaging UI) fully, and the first
-slice of **Phase 3** (AI) — smart replies and summaries are real,
-calling Claude through the backend. **Phase 2** (fintech) has a working
-ledger and wallet endpoints but no real payment provider connected yet.
-Phase 4 (enterprise/privacy hardening) and Phase 5 (multi-platform) are
-still just the placeholders (vault toggle, roadmap text) they always
-were.
+**Phase 1** (core messaging) is done, now including group chats, voice
+notes, real unread counts, and live read receipts — not just 1:1 text.
+**Phase 3**'s first slice (AI smart replies and summaries) is real.
+Push notifications — arguably more foundational than any single phase,
+since nothing else matters if a message only appears when someone
+happens to have the app open — are built end to end but need the EAS
+setup above to actually fire.
+
+A wallet/ledger preview (an earlier "Phase 2") shipped briefly and has
+since been removed — this project is focused on chat; payments now
+live in a separate, dedicated product.
+
+Deliberately not built, and not stubbed either — these need a real
+decision or a paid third-party account before there's anything useful
+to write:
+- **Voice/video calling** — needs a WebRTC signaling setup or a paid
+  provider (Twilio, Agora, Stream, LiveKit); a real per-minute cost and
+  a provider choice, not something to default silently.
+- **GIF/sticker keyboard** — needs a Giphy or Tenor API key.
+- **Real end-to-end encryption** — see the honesty note above. What
+  exists (RLS-based access control) is real and meaningful; it isn't
+  the same claim.
+- **Phone number / OTP sign-in** — reviewed a separate reference app
+  that had this, but its OTP was entirely fake (a client-side random
+  number displayed in the UI for you to read back to yourself, no real
+  SMS ever sent). Not worth copying a mocked security flow — real phone
+  auth needs an SMS provider (Twilio, same category as calling above).
+
+Still just placeholders: Phase 4 (enterprise/privacy hardening — the
+Vault toggle) and Phase 5 (multi-platform).
 
 ## Next step
 
 The backend (Supabase schema + Express API on Render) is built and lives
 in `zannychat-backend`. Deploy it, then follow "Connecting the real
 backend" above — that's the whole integration.
+
+
+## Accessibility polish in 1.2.4
+
+The shared input component provides a stable screen-reader label, auth forms expose autofill metadata and busy states, and profile/onboarding/tab navigation actions have explicit accessible labels. This is a baseline improvement, not a claim of complete WCAG/mobile accessibility compliance; continue testing with VoiceOver and TalkBack. See `FRONTEND_ACCESSIBILITY_POLISH_1.2.4.md` at the release root.
+
+
+### QR contact discovery
+
+QR contact discovery requires both a configured Supabase project and the ZannyChat backend. The QR payload contains only the public profile UUID in the `zannychat://contact/<uuid>` format; it does not contain credentials or recovery tokens. Camera permission is requested only when the user starts scanning. Install dependencies using the Expo-compatible package versions before building a native binary.
+
+
+### Forwarding text messages
+
+Long-press a non-deleted text message and choose **Forward** to send its text to another active conversation. Media forwarding is intentionally not exposed yet: private media is bound to its source conversation, so safe forwarding requires a server-side copy/re-authorize flow rather than reusing a private storage URL.

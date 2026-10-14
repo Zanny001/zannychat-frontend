@@ -5,3 +5,9 @@ web-build/
 .env
 *.log
 .DS_Store
+
+# Local Netlify folder
+.netlify
+.env.*
+!.env.example
+.netlify/

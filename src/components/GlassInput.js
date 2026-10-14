@@ -7,7 +7,7 @@ import { hexToRgba } from '../utils/color';
 // tint and hairline border. A compact field doesn't have enough behind
 // it for a blur to read as anything but muddy; the tint + border alone
 // already reads as "glass" at this size.
-export default function GlassInput({ style, ...textInputProps }) {
+export default function GlassInput({ style, accessibilityLabel, ...textInputProps }) {
   const { colors, radii, typography } = useTheme();
 
   return (
@@ -24,6 +24,7 @@ export default function GlassInput({ style, ...textInputProps }) {
     >
       <TextInput
         placeholderTextColor={colors.textSecondary}
+        accessibilityLabel={accessibilityLabel || textInputProps.placeholder || 'Text field'}
         style={[typography.body, styles.input, { color: colors.textPrimary }]}
         {...textInputProps}
       />
