@@ -12,6 +12,7 @@ import OnboardingScreen from '../screens/OnboardingScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
 import PasswordRecoveryScreen from '../screens/PasswordRecoveryScreen';
+import VerifyEmailScreen from '../screens/VerifyEmailScreen';
 import PasswordResetScreen from '../screens/PasswordResetScreen';
 import ChatListScreen from '../screens/ChatListScreen';
 import ChatScreen from '../screens/ChatScreen';
@@ -112,6 +113,7 @@ export default function AppNavigator({ initialRouteName = 'Onboarding' }) {
         <RootStack.Screen name="Login" component={LoginScreen} />
         <RootStack.Screen name="Signup" component={SignupScreen} />
         <RootStack.Screen name="PasswordRecovery" component={PasswordRecoveryScreen} />
+        <RootStack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
         <RootStack.Screen name="PasswordReset" component={PasswordResetScreen} />
         <RootStack.Screen name="Main" component={MainTabNavigator} />
         <RootStack.Screen name="Chat" component={ChatScreen} />

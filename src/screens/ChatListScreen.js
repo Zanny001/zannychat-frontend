@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, RefreshControl, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, RefreshControl, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useTheme } from '../theme/ThemeContext';
@@ -7,7 +7,7 @@ import ChatListItem from '../components/ChatListItem';
 import GlassCard from '../components/GlassCard';
 import Knot from '../components/Knot';
 import ActionSheet from '../components/ActionSheet';
-import { fetchConversations, toggleFavorite, setConversationFlags } from '../services/api';
+import { fetchConversations, toggleFavorite, setConversationFlags, deleteConversationForCurrentUser } from '../services/api';
 import { startPresence, subscribePresence } from '../services/presence';
 import { SUPABASE_ENABLED } from '../services/supabaseClient';
 import { hexToRgba } from '../utils/color';
@@ -110,6 +110,31 @@ export default function ChatListScreen({ navigation }) {
     setConversationFlags(conversation.id, { isArchived: !conversation.isArchived }).catch(() => {});
   }
 
+  function confirmDeleteConversation(conversation) {
+    Alert.alert(
+      'Delete this chat?',
+      'This removes the chat from your list. Other participants will keep their chat and message history.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete chat',
+          style: 'destructive',
+          onPress: async () => {
+            const previous = conversations;
+            setConversations((current) => current.filter((item) => item.id !== conversation.id));
+            try {
+              await deleteConversationForCurrentUser(conversation.id);
+              setSheetFor(null);
+            } catch (error) {
+              setConversations(previous);
+              Alert.alert('Could not delete chat', error?.message || 'Please try again.');
+            }
+          },
+        },
+      ],
+    );
+  }
+
   // Live presence overrides the stored online flag for 1:1 rows —
   // "online" now means "has the app open right now".
   function withPresence(conversation) {
@@ -179,7 +204,7 @@ export default function ChatListScreen({ navigation }) {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.sm, gap: 8 }}
         >
-        {FILTERS.map((filter) => {
+          {FILTERS.map((filter) => {
           const active = activeFilter === filter.key;
           return (
             <TouchableOpacity
@@ -204,7 +229,7 @@ export default function ChatListScreen({ navigation }) {
               </View>
             </TouchableOpacity>
           );
-        })}
+          })}
         </ScrollView>
       </View>
 
@@ -278,6 +303,13 @@ export default function ChatListScreen({ navigation }) {
                   label: sheetFor.isArchived ? 'Unarchive' : 'Archive',
                   icon: 'archive-outline',
                   onPress: () => { handleToggleArchive(sheetFor); setSheetFor(null); },
+                },
+                {
+                  key: 'delete',
+                  label: 'Delete chat',
+                  icon: 'trash-outline',
+                  destructive: true,
+                  onPress: () => confirmDeleteConversation(sheetFor),
                 },
               ]
             : []

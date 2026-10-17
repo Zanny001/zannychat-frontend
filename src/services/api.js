@@ -346,6 +346,29 @@ export async function signUpWithEmail(email, password, name) {
   return { ...data, requiresEmailConfirmation: Boolean(data?.user && !data?.session) };
 }
 
+export async function verifySignupEmailOtp(email, token) {
+  if (!SUPABASE_ENABLED) throw new Error('Email verification requires a configured Supabase project.');
+  const normalizedEmail = normalizeEmail(email);
+  const cleanToken = String(token || '').replace(/\s+/g, '');
+  if (!/^[0-9]{6}$/.test(cleanToken)) throw new Error('Enter the 6-digit code from your email.');
+  const { data, error } = await supabase.auth.verifyOtp({
+    email: normalizedEmail,
+    token: cleanToken,
+    type: 'signup',
+  });
+  if (error) throw error;
+  if (!data?.session || !data?.user) throw new Error('Verification did not create a session. Please sign in.');
+  return data;
+}
+
+export async function resendSignupEmailOtp(email) {
+  if (!SUPABASE_ENABLED) throw new Error('Email verification requires a configured Supabase project.');
+  const normalizedEmail = normalizeEmail(email);
+  const { error } = await supabase.auth.resend({ type: 'signup', email: normalizedEmail });
+  if (error) throw error;
+  return { requested: true };
+}
+
 export async function requestPasswordReset(email) {
   if (!SUPABASE_ENABLED) return { mock: true };
   const normalizedEmail = normalizeEmail(email);
@@ -520,6 +543,32 @@ export async function fetchConversations({ limit = 50, offset = 0 } = {}) {
     .map(({ _sortKey, ...rest }) => rest);
 
   return { conversations, hasMore: data.length === limit };
+}
+
+// Removes the current user's membership in a conversation. This is a
+// user-scoped "delete chat": it removes the chat from this account's list
+// without deleting the other participants' conversation or message history.
+// The database must permit users to delete only their own participant row;
+// if RLS rejects the operation, surface the error rather than pretending it worked.
+export async function deleteConversationForCurrentUser(conversationId) {
+  if (!SUPABASE_ENABLED) return;
+
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError) throw authError;
+  const userId = authData?.user?.id;
+  if (!userId) throw new Error('Sign in to delete a chat.');
+
+  const { data, error } = await supabase
+    .from('conversation_participants')
+    .delete()
+    .eq('conversation_id', conversationId)
+    .eq('user_id', userId)
+    .select('conversation_id');
+
+  if (error) throw error;
+  if (!data || data.length === 0) {
+    throw new Error('This chat could not be deleted. You may no longer be a participant.');
+  }
 }
 
 // Called when ChatScreen gains focus — zeroes this conversation's

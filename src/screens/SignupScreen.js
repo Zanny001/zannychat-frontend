@@ -12,6 +12,7 @@ import {
 
 import { useTheme } from '../theme/ThemeContext';
 import { signUpWithEmail } from '../services/api';
+import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import {
   normalizeEmail,
   validateSignup,
@@ -37,6 +38,26 @@ export default function SignupScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  async function handleGoogleSignup() {
+    if (loading) return;
+    if (!SUPABASE_ENABLED || !supabase) {
+      showMessage('Google sign-up unavailable', 'Connect and configure Supabase authentication first.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: 'https://zannychat.netlify.app' },
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error('Google signup failed:', error);
+      showMessage('Google sign-up failed', error?.message || 'Please try again.');
+      setLoading(false);
+    }
+  }
 
   async function handleSignup() {
     if (loading) return;
@@ -68,10 +89,7 @@ export default function SignupScreen({ navigation }) {
           'If your address is valid, you should receive a confirmation link before signing in.'
         );
 
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Login' }],
-        });
+        navigation.navigate('VerifyEmail', { email: normalizeEmail(email) });
         return;
       }
 
@@ -145,6 +163,19 @@ export default function SignupScreen({ navigation }) {
           >
             Join ZannyChat in under a minute.
           </Text>
+
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: colors.background, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.primary, opacity: loading ? 0.65 : 1 }]}
+            onPress={handleGoogleSignup}
+            disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel="Sign up with Google"
+            accessibilityState={{ disabled: loading, busy: loading }}
+            activeOpacity={0.75}
+          >
+            <Text style={[styles.buttonText, { color: colors.textPrimary }]}>Continue with Google</Text>
+          </TouchableOpacity>
+          <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginVertical: spacing.sm }]}>or sign up with email</Text>
 
           <GlassInput
             value={name}
