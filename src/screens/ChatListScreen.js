@@ -309,7 +309,11 @@ export default function ChatListScreen({ navigation }) {
                   label: 'Delete chat',
                   icon: 'trash-outline',
                   destructive: true,
-                  onPress: () => confirmDeleteConversation(sheetFor),
+                  onPress: () => {
+                    const conversation = sheetFor;
+                    setSheetFor(null);
+                    setTimeout(() => confirmDeleteConversation(conversation), 350);
+                  },
                 },
               ]
             : []
