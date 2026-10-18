@@ -122,6 +122,9 @@ export default function ChatScreen({ route, navigation }) {
   // replacing the native Alert.alert lists the audit called out as the
   // one visible break in the design system.
   const [activeSheet, setActiveSheet] = useState(null);
+  const [deleteMessageTarget, setDeleteMessageTarget] = useState(null);
+  const [deletingMessage, setDeletingMessage] = useState(false);
+  const [deleteMessageError, setDeleteMessageError] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSearchIndex, setActiveSearchIndex] = useState(0);
@@ -216,9 +219,9 @@ export default function ChatScreen({ route, navigation }) {
   }, [conversation.id, hasMore, loadingOlder, messages]);
 
   // Realtime subscription lives here (mount/unmount only) so it's
-  // never torn down and recreated on every focus.
+  // never torn down and recreated on every focus. Initial loading and
+  // refresh-on-return are handled by useFocusEffect below.
   useEffect(() => {
-    load();
     const unsubscribe = subscribeToMessages(conversation.id, (newMessage) => {
       setMessages((prev) => {
         // Realtime doesn't exclude the sender — our own message, already
@@ -245,7 +248,7 @@ export default function ChatScreen({ route, navigation }) {
       stickToBottom.current = true;
     });
     return unsubscribe;
-  }, [conversation.id, load]);
+  }, [conversation.id]);
 
   // Live reactions: one channel for the whole app (the table is small
   // and RLS-scoped), applying changes only to messages currently on
@@ -430,24 +433,50 @@ export default function ChatScreen({ route, navigation }) {
     toggleReaction(message.id, emoji, mine?.emoji || null).catch(() => {});
   }
 
+  async function performDeleteMessage(message) {
+    if (!message || deletingMessage) return;
+
+    setDeletingMessage(true);
+    setDeleteMessageError('');
+
+    try {
+      await deleteMessage(message.id);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === message.id
+            ? { ...m, deletedAt: new Date().toISOString() }
+            : m
+        )
+      );
+      setDeleteMessageTarget(null);
+    } catch (err) {
+      const messageText = err?.message || 'Please try again.';
+      setDeleteMessageError(messageText);
+      if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+        window.alert("Couldn't delete message: " + messageText);
+      }
+    } finally {
+      setDeletingMessage(false);
+    }
+  }
+
   function confirmDeleteMessage(message) {
-    Alert.alert('Delete message?', 'This removes it for everyone in the chat.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteMessage(message.id);
-            setMessages((prev) =>
-              prev.map((m) => (m.id === message.id ? { ...m, deletedAt: new Date().toISOString() } : m))
-            );
-          } catch (err) {
-            Alert.alert("Couldn't delete", err.message || 'Please try again.');
-          }
-        },
-      },
-    ]);
+    if (!message) return;
+
+    if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
+      const confirmed = window.confirm(
+        'Delete message? This removes the message for everyone in the chat. This action cannot be undone.'
+      );
+      if (confirmed) void performDeleteMessage(message);
+      return;
+    }
+
+    setDeleteMessageError('');
+    setDeleteMessageTarget(message);
+  }
+
+  async function handleConfirmDeleteMessage() {
+    await performDeleteMessage(deleteMessageTarget);
   }
 
   function openMessageActions(message) {
@@ -904,7 +933,15 @@ export default function ChatScreen({ route, navigation }) {
                 label: 'Delete',
                 icon: 'trash-outline',
                 destructive: true,
-                onPress: () => { setActiveSheet(null); confirmDeleteMessage(sheetMessage); },
+                onPress: () => {
+                    if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
+                      setActiveSheet(null);
+                      confirmDeleteMessage(sheetMessage);
+                    } else {
+                      setActiveSheet(null);
+                      setTimeout(() => confirmDeleteMessage(sheetMessage), 350);
+                    }
+                  },
               },
             ]
           : []),
@@ -1188,6 +1225,118 @@ export default function ChatScreen({ route, navigation }) {
         options={messageOptions}
         onClose={() => setActiveSheet(null)}
       />
+
+      <Modal
+        visible={Boolean(deleteMessageTarget)}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          if (!deletingMessage) {
+            setDeleteMessageTarget(null);
+            setDeleteMessageError('');
+          }
+        }}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.55)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 24,
+          }}
+        >
+          <View
+            style={{
+              width: '100%',
+              maxWidth: 420,
+              padding: 22,
+              borderRadius: radii.lg || 16,
+              backgroundColor: colors.surface,
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
+          >
+            <Text
+              style={[
+                typography.title,
+                { color: colors.text, marginBottom: 10 },
+              ]}
+            >
+              Delete message?
+            </Text>
+            <Text
+              style={[
+                typography.body,
+                { color: colors.textSecondary, marginBottom: 16 },
+              ]}
+            >
+              This removes the message for everyone in the chat. This action
+              cannot be undone.
+            </Text>
+
+            {deleteMessageError ? (
+              <Text
+                style={{
+                  color: '#B42318',
+                  marginBottom: 14,
+                  fontSize: 14,
+                }}
+              >
+                Couldn't delete: {deleteMessageError}
+              </Text>
+            ) : null}
+
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                gap: 10,
+              }}
+            >
+              <TouchableOpacity
+                disabled={deletingMessage}
+                onPress={() => {
+                  setDeleteMessageTarget(null);
+                  setDeleteMessageError('');
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel message deletion"
+                style={{ paddingHorizontal: 14, paddingVertical: 11 }}
+              >
+                <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                disabled={deletingMessage}
+                onPress={handleConfirmDeleteMessage}
+                accessibilityRole="button"
+                accessibilityLabel="Confirm message deletion"
+                style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 11,
+                  borderRadius: radii.md || 10,
+                  backgroundColor: '#B42318',
+                  opacity: deletingMessage ? 0.65 : 1,
+                  minWidth: 90,
+                  alignItems: 'center',
+                }}
+              >
+                {deletingMessage ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>
+                    Delete
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <Modal visible={Boolean(fullscreenImage)} transparent animationType="fade" onRequestClose={() => setFullscreenImage(null)}>
         <View style={styles.lightbox}>

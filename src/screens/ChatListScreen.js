@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, RefreshControl, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, RefreshControl, ScrollView, ActivityIndicator, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useTheme } from '../theme/ThemeContext';
@@ -37,6 +38,10 @@ export default function ChatListScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [sheetFor, setSheetFor] = useState(null); // conversation whose long-press sheet is open
   const [onlineIds, setOnlineIds] = useState(new Set());
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
 
   // Real presence: every "online" dot used to be mock data (the
   // profiles.online column existed but nothing ever set it). Now the
@@ -53,9 +58,9 @@ export default function ChatListScreen({ navigation }) {
     setHasMore(more);
   }, []);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     load();
-  }, [load]);
+  }, [load]));
 
   async function handleRefresh() {
     setRefreshing(true);
@@ -110,29 +115,49 @@ export default function ChatListScreen({ navigation }) {
     setConversationFlags(conversation.id, { isArchived: !conversation.isArchived }).catch(() => {});
   }
 
-  function confirmDeleteConversation(conversation) {
-    Alert.alert(
-      'Delete this chat?',
-      'This removes the chat from your list. Other participants will keep their chat and message history.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete chat',
-          style: 'destructive',
-          onPress: async () => {
-            const previous = conversations;
-            setConversations((current) => current.filter((item) => item.id !== conversation.id));
-            try {
-              await deleteConversationForCurrentUser(conversation.id);
-              setSheetFor(null);
-            } catch (error) {
-              setConversations(previous);
-              Alert.alert('Could not delete chat', error?.message || 'Please try again.');
-            }
-          },
-        },
-      ],
+  async function performDeleteConversation(conversation) {
+    if (!conversation || deleting) return;
+
+    const previous = conversations;
+    setDeleting(true);
+    setDeleteError('');
+    setConversations((current) =>
+      current.filter((item) => item.id !== conversation.id)
     );
+
+    try {
+      await deleteConversationForCurrentUser(conversation.id);
+      setDeleteTarget(null);
+      setSheetFor(null);
+    } catch (error) {
+      setConversations(previous);
+      const message = error?.message || 'Please try again.';
+      setDeleteError(message);
+      if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+        window.alert('Could not delete chat: ' + message);
+      }
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  function confirmDeleteConversation(conversation) {
+    if (!conversation) return;
+
+    if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
+      const confirmed = window.confirm(
+        'Delete this chat? This removes it from your list. Other participants will keep their chat and message history.'
+      );
+      if (confirmed) void performDeleteConversation(conversation);
+      return;
+    }
+
+    setDeleteError('');
+    setDeleteTarget(conversation);
+  }
+
+  async function handleConfirmDeleteConversation() {
+    await performDeleteConversation(deleteTarget);
   }
 
   // Live presence overrides the stored online flag for 1:1 rows —
@@ -311,8 +336,13 @@ export default function ChatListScreen({ navigation }) {
                   destructive: true,
                   onPress: () => {
                     const conversation = sheetFor;
-                    setSheetFor(null);
-                    setTimeout(() => confirmDeleteConversation(conversation), 350);
+                    if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
+                      setSheetFor(null);
+                      confirmDeleteConversation(conversation);
+                    } else {
+                      setSheetFor(null);
+                      setTimeout(() => confirmDeleteConversation(conversation), 350);
+                    }
                   },
                 },
               ]
@@ -320,6 +350,117 @@ export default function ChatListScreen({ navigation }) {
         }
         onClose={() => setSheetFor(null)}
       />
+
+      <Modal
+        visible={Boolean(deleteTarget)}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          if (!deleting) setDeleteTarget(null);
+        }}
+      >
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            padding: spacing.lg,
+            backgroundColor: 'rgba(0, 0, 0, 0.55)',
+          }}
+        >
+          <View
+            style={{
+              width: '100%',
+              maxWidth: 420,
+              alignSelf: 'center',
+              padding: spacing.lg,
+              borderRadius: 16,
+              backgroundColor: colors.surface,
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
+          >
+            <Text
+              style={[
+                typography.title,
+                { color: colors.textPrimary, marginBottom: spacing.sm },
+              ]}
+            >
+              Delete this chat?
+            </Text>
+
+            <Text
+              style={[
+                typography.body,
+                { color: colors.textSecondary, marginBottom: spacing.md },
+              ]}
+            >
+              This removes the chat from your list. Other participants will
+              keep their chat and message history.
+            </Text>
+
+            {deleteError ? (
+              <Text
+                accessibilityRole="alert"
+                style={{
+                  color: colors.danger || '#dc2626',
+                  marginBottom: spacing.md,
+                }}
+              >
+                Could not delete chat: {deleteError}
+              </Text>
+            ) : null}
+
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                gap: spacing.sm,
+                flexWrap: 'wrap',
+              }}
+            >
+              <TouchableOpacity
+                disabled={deleting}
+                onPress={() => {
+                  setDeleteTarget(null);
+                  setDeleteError('');
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel delete chat"
+                style={{
+                  paddingVertical: spacing.sm,
+                  paddingHorizontal: spacing.md,
+                  borderRadius: 10,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }}
+              >
+                <Text style={{ color: colors.textPrimary }}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                disabled={deleting}
+                onPress={handleConfirmDeleteConversation}
+                accessibilityRole="button"
+                accessibilityLabel="Confirm delete chat"
+                style={{
+                  paddingVertical: spacing.sm,
+                  paddingHorizontal: spacing.md,
+                  borderRadius: 10,
+                  backgroundColor: deleting ? colors.border : '#dc2626',
+                  opacity: deleting ? 0.7 : 1,
+                }}
+              >
+                <Text style={{ color: '#ffffff', fontWeight: '600' }}>
+                  {deleting ? 'Deleting…' : 'Delete chat'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

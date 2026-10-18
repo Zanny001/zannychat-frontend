@@ -80,10 +80,13 @@ export default function NewChatScreen({ navigation, route }) {
     setOpeningChatId(contact.id);
     setChatError('');
 
+
     try {
       console.log('[NewChat] Creating conversation for contact:', contact.id);
+      const createStartedAt = Date.now();
 
       const conversation = await createConversation(contact.id, contact);
+      console.log('[Perf][NewChat] createConversationMs:', Date.now() - createStartedAt);
 
       if (!conversation?.id) {
         throw new Error(
