@@ -34,6 +34,13 @@ import SharedMediaScreen from '../screens/SharedMediaScreen';
 import SavedMessagesScreen from '../screens/SavedMessagesScreen';
 import DraftsScreen from '../screens/DraftsScreen';
 import PinnedMessagesScreen from '../screens/PinnedMessagesScreen';
+import ChatFoldersScreen from '../screens/ChatFoldersScreen';
+import StatusUpdatesScreen from '../screens/StatusUpdatesScreen';
+import PollsScreen from '../screens/PollsScreen';
+import EventsScreen from '../screens/EventsScreen';
+import GroupManagementScreen from '../screens/GroupManagementScreen';
+import JoinGroupScreen from '../screens/JoinGroupScreen';
+import ChannelsScreen from '../screens/ChannelsScreen';
 
 // Lets code outside the component tree (the push-notification tap
 // handler in App.js) trigger navigation — the standard React
@@ -107,7 +114,7 @@ export default function AppNavigator({ initialRouteName = 'Onboarding' }) {
   };
 
   return (
-    <NavigationContainer ref={navigationRef} theme={navTheme} linking={{ prefixes: ['zannychat://'], config: { screens: { PasswordReset: 'reset-password' } } }}>
+    <NavigationContainer ref={navigationRef} theme={navTheme} linking={{ prefixes: ['zannychat://'], config: { screens: { PasswordReset: 'reset-password', JoinGroup: 'join-group' } } }}>
       <RootStack.Navigator screenOptions={{ headerShown: false }} initialRouteName={initialRouteName}>
         <RootStack.Screen name="Onboarding" component={OnboardingScreen} />
         <RootStack.Screen name="Login" component={LoginScreen} />
@@ -127,6 +134,13 @@ export default function AppNavigator({ initialRouteName = 'Onboarding' }) {
         <RootStack.Screen name="SavedMessages" component={SavedMessagesScreen} />
         <RootStack.Screen name="Drafts" component={DraftsScreen} />
         <RootStack.Screen name="PinnedMessages" component={PinnedMessagesScreen} />
+        <RootStack.Screen name="ChatFolders" component={ChatFoldersScreen} />
+        <RootStack.Screen name="StatusUpdates" component={StatusUpdatesScreen} />
+        <RootStack.Screen name="Polls" component={PollsScreen} />
+        <RootStack.Screen name="Events" component={EventsScreen} />
+        <RootStack.Screen name="GroupManagement" component={GroupManagementScreen} />
+        <RootStack.Screen name="JoinGroup" component={JoinGroupScreen} />
+        <RootStack.Screen name="Channels" component={ChannelsScreen} />
         <RootStack.Screen name="EditProfile" component={EditProfileScreen} />
         <RootStack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
         <RootStack.Screen name="Notifications" component={NotificationsScreen} />

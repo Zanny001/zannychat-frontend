@@ -152,7 +152,7 @@ function LinkPreviewCard({ url, isMine }) {
 // passed by ChatScreen) labels who sent a received message — a 1:1
 // never needs it, you already know who "they" are.
 //
-// status ('pending' | 'sent' | 'read', mine-only — ChatScreen computes
+// status ('pending' | 'sent' | 'delivered' | 'read', mine-only — ChatScreen computes
 // it by comparing this message's createdAt against the other
 // participant's last_read_at) drives the tick: a single grey check
 // while it's still an optimistic local echo not yet confirmed by the
@@ -165,6 +165,8 @@ export default function ChatBubble({
   isMine,
   senderName,
   status,
+  seenByCount = 0,
+  deliveredToCount = 0,
   replyPreview,
   onSwipeReply,
   onShowActions,
@@ -366,13 +368,29 @@ export default function ChatBubble({
             </Text>
             {isMine && !message.deletedAt && (
               <Ionicons
-                name={status === 'pending' ? 'checkmark' : 'checkmark-done'}
+                name={status === 'pending' ? 'time-outline' : status === 'sent' ? 'checkmark' : 'checkmark-done'}
                 size={14}
                 color={status === 'read' ? colors.thread : 'rgba(255,255,255,0.75)'}
                 style={{ marginLeft: 4 }}
-                accessibilityLabel={status === 'read' ? 'Read' : status === 'pending' ? 'Sending' : 'Sent'}
+                accessibilityLabel={status === 'read' ? 'Read' : status === 'delivered' ? 'Delivered' : status === 'pending' ? 'Sending' : 'Sent'}
               />
             )}
+            {isMine && deliveredToCount > 0 && !message.deletedAt ? (
+              <Text
+                accessibilityLabel={`Delivered to ${deliveredToCount} ${deliveredToCount === 1 ? 'member' : 'members'}`}
+                style={[typography.small, { color: 'rgba(255,255,255,0.78)', marginLeft: 4 }]}
+              >
+                Delivered to {deliveredToCount}
+              </Text>
+            ) : null}
+            {isMine && seenByCount > 0 && !message.deletedAt ? (
+              <Text
+                accessibilityLabel={`Seen by ${seenByCount} ${seenByCount === 1 ? 'member' : 'members'}`}
+                style={[typography.small, { color: 'rgba(255,255,255,0.78)', marginLeft: 4 }]}
+              >
+                Seen by {seenByCount}
+              </Text>
+            ) : null}
           </View>
           {hasReactions ? (
             <View style={[styles.reactionBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}>

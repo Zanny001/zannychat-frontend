@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
+import { View, TextInput, TouchableOpacity, Text, StyleSheet, Platform, ScrollView } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 import { clearDraft, loadDraft, saveDraft } from '../services/drafts';
 import { shouldPersistDraft } from '../utils/drafts';
+import { EMOJI_CATEGORIES } from '../utils/emojiCatalog';
 
 function formatDuration(seconds) {
   const s = Math.max(0, Math.round(seconds || 0));
@@ -44,6 +45,8 @@ export default function InputBar({
   const [text, setText] = useState('');
   const [draftReady, setDraftReady] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const [emojiCategory, setEmojiCategory] = useState(0);
   const userEditedRef = useRef(false);
   const previousDraftKeyRef = useRef(null);
   const wasEditingRef = useRef(false);
@@ -173,6 +176,21 @@ export default function InputBar({
         </View>
       ) : null}
 
+      {emojiOpen && !isRecording && !editing ? (
+        <View style={[styles.emojiPanel, { borderTopColor: colors.border, backgroundColor: colors.surface }]} accessibilityLabel="Emoji picker">
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.sm, gap: spacing.sm }}>
+            {EMOJI_CATEGORIES.map((category, index) => (
+              <TouchableOpacity key={category.label} onPress={() => setEmojiCategory(index)} accessibilityRole="button" accessibilityLabel={`${category.label} emoji`} style={[styles.emojiCategory, { backgroundColor: emojiCategory === index ? colors.surfaceAlt : 'transparent', borderColor: emojiCategory === index ? colors.primary : colors.border }]}><Text style={{ fontSize: 18 }}>{category.icon}</Text></TouchableOpacity>
+            ))}
+          </ScrollView>
+          <ScrollView style={{ maxHeight: 150 }} contentContainerStyle={styles.emojiGrid}>
+            {EMOJI_CATEGORIES[emojiCategory].emojis.map((emoji, index) => (
+              <TouchableOpacity key={`${emoji}-${index}`} onPress={() => { handleChange(text + emoji); }} accessibilityRole="button" accessibilityLabel={`Insert ${emoji}`} style={styles.emojiCell}><Text style={{ fontSize: 25 }}>{emoji}</Text></TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
+
       {isRecording ? (
         <View style={[styles.row, { padding: spacing.sm }]}>
           <TouchableOpacity
@@ -214,6 +232,10 @@ export default function InputBar({
             accessibilityRole="button"
           >
             <Ionicons name="add-circle-outline" size={26} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => setEmojiOpen((open) => !open)} hitSlop={6} style={{ padding: 5 }} accessibilityRole="button" accessibilityLabel={emojiOpen ? 'Close emoji picker' : 'Open emoji picker'}>
+            <Text style={{ fontSize: 23 }}>{emojiOpen ? '⌨️' : '😊'}</Text>
           </TouchableOpacity>
 
           <View
@@ -273,4 +295,8 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   recordingDot: { width: 8, height: 8, borderRadius: 4 },
+  emojiPanel: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 8, paddingBottom: 6 },
+  emojiCategory: { minWidth: 38, height: 36, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 18, paddingHorizontal: 6 },
+  emojiGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 6, paddingTop: 6 },
+  emojiCell: { width: '12.5%', minWidth: 32, alignItems: 'center', justifyContent: 'center', paddingVertical: 5 },
 });

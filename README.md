@@ -500,3 +500,24 @@ QR contact discovery requires both a configured Supabase project and the ZannyCh
 ### Forwarding text messages
 
 Long-press a non-deleted text message and choose **Forward** to send its text to another active conversation. Media forwarding is intentionally not exposed yet: private media is bound to its source conversation, so safe forwarding requires a server-side copy/re-authorize flow rather than reusing a private storage URL.
+
+### Channel post reports (1.2.74)
+
+Users can report channel posts for a bounded set of reasons. Channel owners and active moderators can review open reports and mark them reviewed or dismissed. Apply backend migration `0037_channel_post_reports.sql` before using this feature. Local tests pass; hosted integration and device validation remain required.
+
+### Release 1.2.78 — channel directory search
+The Channels screen supports searching channel titles and descriptions. Search uses the authenticated backend and preserves private-channel visibility rules. See `CHANNEL_SEARCH_1.2.78.md` in the delivery bundle for implementation and validation notes.
+
+### Release 1.2.81 — group rename and invite history
+Group admins can rename a group from Group details and review/revoke active group invites from an invite-history list. Invite history displays expiry, usage and status without exposing invite tokens. See `GROUP_RENAME_1.2.80.md` and `GROUP_INVITE_HISTORY_1.2.81.md` in the delivery bundle. Local unit tests and release audit passed; live hosted/device validation is still pending.
+
+### Release 1.2.82 — group announcement mode
+Group admins can enable announcement mode in Group Management. Members can continue reading, but only admins can send while enabled; the restriction is enforced by backend database RLS rather than only by the UI. Apply backend migration `0040_group_announcement_mode.sql` before enabling this setting. Live staging/device validation remains required.
+
+### Release 1.2.83 — group message status details
+Group members can open the message action menu on their own confirmed group messages and select **View message status** to see each member's strongest available state: read, delivered, or awaiting a delivery receipt. Read state is inferred from the member's last-read cursor and is not a precise per-message read event. No migration is required; hosted integration and physical-device validation remain outstanding. See `GROUP_RECEIPT_DETAILS_1.2.83.md`.
+
+
+## Release 1.2.86 — group announcement state preservation
+
+Fixed a group-management UI regression where saving group name/topic/description could reset the announcement-mode switch visually when the API response omitted that boolean. The saved response now preserves the locally selected announcement value unless the server explicitly returns a boolean, and the success message reflects all saved group settings. Added a regression test. Source-only fix; hosted behavior still requires staging verification.

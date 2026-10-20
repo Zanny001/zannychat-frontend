@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Conservative static release hygiene checks for the ZannyChat frontend."""
 from pathlib import Path
-import re, sys
+import re, sys, subprocess
 root = Path(__file__).resolve().parents[1]
 checks = []
 def check(name, condition, detail=""):
@@ -26,6 +26,15 @@ check("Private-media release notes present", any("PRIVATE_MEDIA_RELEASE" in p.na
 check("Email OTP Brevo setup notes present", (root/"EMAIL_OTP_BREVO_SETUP.md").exists())
 check("No committed .env files", not any(p.name == ".env" or p.name.startswith(".env.") and p.name not in {".env.example"} for p,_ in files))
 check("Package manifest present", (root/"package.json").exists())
+# Parse plain JavaScript service modules as ESM so duplicate lexical declarations
+# and other syntax errors fail release audit (unit tests do not import every service).
+service_files = list((root / "src" / "services").glob("*.js"))
+syntax_failures = []
+for source in service_files:
+    result = subprocess.run(["node", "--input-type=module", "--check"], input=source.read_text(), text=True, capture_output=True)
+    if result.returncode:
+        syntax_failures.append(f"{source.name}: {(result.stderr or result.stdout).strip().splitlines()[-1] if (result.stderr or result.stdout).strip() else 'syntax error'}")
+check("Service modules pass JavaScript syntax checks", not syntax_failures, "; ".join(syntax_failures[:3]))
 for name, ok, detail in checks:
     print(f'{"PASS" if ok else "FAIL"}: {name}' + (f" — {detail}" if detail else ""))
 print(f"\n{sum(ok for _,ok,_ in checks)}/{len(checks)} checks passed")

@@ -58,7 +58,11 @@ export default function ProfileScreen({ navigation }) {
         <MenuRow icon="color-palette-outline" label="Appearance & theme" onPress={() => navigation.navigate('Settings')} />
         <MenuRow icon="shield-checkmark-outline" label="Privacy & security" onPress={() => navigation.navigate('PrivacySecurity')} />
         <MenuRow icon="notifications-outline" label="Notifications" onPress={() => navigation.navigate('Notifications')} />
+        <MenuRow icon="aperture-outline" label="Status updates" onPress={() => navigation.navigate('StatusUpdates')} />
+        <MenuRow icon="megaphone-outline" label="Channels" onPress={() => navigation.navigate('Channels')} />
         <MenuRow icon="bookmark-outline" label="Saved messages" onPress={() => navigation.navigate('SavedMessages')} />
+        <MenuRow icon="folder-outline" label="Chat folders" onPress={() => navigation.navigate('ChatFolders')} />
+        <MenuRow icon="people-outline" label="Join a group" onPress={() => navigation.navigate('JoinGroup')} />
         <MenuRow icon="cloud-upload-outline" label="Data & storage" onPress={() => navigation.navigate('DataStorage')} />
         <MenuRow icon="help-circle-outline" label="Help" onPress={() => navigation.navigate('Help')} />
       </ScrollView>

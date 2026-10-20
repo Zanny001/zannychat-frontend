@@ -15,14 +15,14 @@ import { useTheme } from '../theme/ThemeContext';
 // Favorites filter pill, which is what this exists for.
 export default function ChatListItem({ conversation, onPress, onLongPressActions }) {
   const { colors, spacing, typography, radii } = useTheme();
-  const { participant, lastMessage, lastMessageAt, unreadCount, isGroup, isFavorite, isMuted } = conversation;
+  const { participant = {}, lastMessage = '', lastMessageAt = '', unreadCount = 0, isGroup, isFavorite, isMuted } = conversation;
 
   return (
     <TouchableOpacity
       onPress={onPress}
       onLongPress={onLongPressActions}
       activeOpacity={0.8}
-      accessibilityLabel={`${participant.name}, ${lastMessage || 'no messages yet'}${
+      accessibilityLabel={`${participant.name || 'Unknown chat'}, ${lastMessage || 'no messages yet'}${
         unreadCount > 0 ? `, ${unreadCount} unread` : ''
       }`}
       accessibilityHint="Long-press for favorite, mute, and archive options"
@@ -30,7 +30,7 @@ export default function ChatListItem({ conversation, onPress, onLongPressActions
     >
       <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={styles.content}>
         <Avatar
-          name={participant.name}
+          name={participant.name || 'Unknown chat'}
           color={participant.avatarColor}
           imageUrl={participant.avatarUrl}
           online={isGroup ? undefined : participant.online}
@@ -44,7 +44,7 @@ export default function ChatListItem({ conversation, onPress, onLongPressActions
                 <Ionicons name="volume-mute-outline" size={13} color={colors.textSecondary} style={{ marginRight: 4 }} />
               )}
               <Text style={[typography.bodyStrong, { color: colors.textPrimary, flexShrink: 1 }]} numberOfLines={1}>
-                {participant.name}
+                {participant.name || 'Unknown chat'}
               </Text>
             </View>
             <Text style={[typography.small, { color: colors.textSecondary }]}>{lastMessageAt}</Text>

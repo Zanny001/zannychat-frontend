@@ -8,10 +8,13 @@ import ChatListItem from '../components/ChatListItem';
 import GlassCard from '../components/GlassCard';
 import Knot from '../components/Knot';
 import ActionSheet from '../components/ActionSheet';
-import { fetchConversations, toggleFavorite, setConversationFlags, deleteConversationForCurrentUser } from '../services/api';
+import { fetchConversations, toggleFavorite, setConversationFlags, deleteConversationForCurrentUser, getCurrentUser } from '../services/api';
 import { startPresence, subscribePresence } from '../services/presence';
 import { SUPABASE_ENABLED } from '../services/supabaseClient';
 import { hexToRgba } from '../utils/color';
+import { filterConversations as filterChatList } from '../utils/filterConversations';
+import { filterByChatFolder } from '../utils/chatFolders';
+import { loadChatFolders } from '../services/chatFolders';
 
 // All / Unread / Favorites / Groups / Archived — the same category set
 // WhatsApp itself uses, confirmed against real screenshots rather than
@@ -35,6 +38,7 @@ export default function ChatListScreen({ navigation }) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [query, setQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
+  const [customFolders, setCustomFolders] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [sheetFor, setSheetFor] = useState(null); // conversation whose long-press sheet is open
   const [onlineIds, setOnlineIds] = useState(new Set());
@@ -60,6 +64,11 @@ export default function ChatListScreen({ navigation }) {
 
   useFocusEffect(useCallback(() => {
     load();
+    let alive = true;
+    (async () => {
+      try { const user = await getCurrentUser(); const folders = await loadChatFolders(user?.id || 'guest'); if (alive) setCustomFolders(folders); } catch (_) {}
+    })();
+    return () => { alive = false; };
   }, [load]));
 
   async function handleRefresh() {
@@ -170,15 +179,15 @@ export default function ChatListScreen({ navigation }) {
     };
   }
 
-  const filtered = conversations
-    .filter((c) => (activeFilter === 'archived' ? c.isArchived : !c.isArchived))
-    .filter((c) => c.participant.name.toLowerCase().includes(query.toLowerCase()))
-    .filter((c) => {
-      if (activeFilter === 'unread') return c.unreadCount > 0;
-      if (activeFilter === 'favorites') return c.isFavorite;
-      if (activeFilter === 'groups') return c.isGroup;
-      return true;
-    });
+  // Search covers people, group names, and message previews. Keep the
+  // filtering logic pure so malformed/partial rows cannot crash the list.
+  const selectedFolder = customFolders.find((folder) => `custom:${folder.id}` === activeFilter);
+  const filtered = selectedFolder
+    ? filterByChatFolder(conversations, selectedFolder).filter((conversation) => {
+        const needle = String(query || '').trim().toLocaleLowerCase();
+        return !needle || [conversation?.participant?.name, conversation?.name, conversation?.lastMessage].filter((part) => typeof part === 'string').join(' ').toLocaleLowerCase().includes(needle);
+      })
+    : filterChatList(conversations, activeFilter, query);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -229,7 +238,7 @@ export default function ChatListScreen({ navigation }) {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.sm, gap: 8 }}
         >
-          {FILTERS.map((filter) => {
+          {[...FILTERS, ...customFolders.map((folder) => ({ key: `custom:${folder.id}`, label: folder.name }))].map((filter) => {
           const active = activeFilter === filter.key;
           return (
             <TouchableOpacity
@@ -248,9 +257,7 @@ export default function ChatListScreen({ navigation }) {
                   },
                 ]}
               >
-                <Text style={[typography.caption, { color: active ? '#FFFFFF' : colors.textSecondary }]}>
-                  {filter.label}
-                </Text>
+                <Text style={[typography.caption, { color: active ? '#FFFFFF' : colors.textSecondary }]}>{filter.label}</Text>
               </View>
             </TouchableOpacity>
           );

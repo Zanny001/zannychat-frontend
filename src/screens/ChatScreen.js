@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
+import { countReadersForMessage, resolveMessageDeliveryStatus, countDeliveredRecipients } from '../utils/readReceipts';
+import { buildGroupReceiptDetails } from '../utils/groupReceiptDetails';
 import {
   View,
+  AppState,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -19,6 +22,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import { useAudioRecorder, useAudioRecorderState, AudioModule, RecordingPresets, setAudioModeAsync } from 'expo-audio';
 import { useTheme } from '../theme/ThemeContext';
 import Header from '../components/Header';
@@ -27,6 +31,10 @@ import ChatBubble, { QUICK_REACTIONS } from '../components/ChatBubble';
 import InputBar from '../components/InputBar';
 import ActionSheet from '../components/ActionSheet';
 import { hexToRgba } from '../utils/color';
+import { savePendingMessage, loadPendingMessages, removePendingMessage, recordMessageRetryFailure, isMessageRetryDue } from '../services/messageOutbox';
+import { savePendingAttachment, loadPendingAttachments, removePendingAttachment, recordAttachmentRetryFailure } from '../services/attachmentOutbox';
+import { getAttachmentNextRetryAt, isAttachmentRetryDue } from '../utils/attachmentRetryPolicy';
+import { preserveAttachmentForRetry, removePreservedAttachment } from '../utils/attachmentFileRecovery';
 import {
   fetchMessages,
   sendMessage,
@@ -46,6 +54,10 @@ import {
   markConversationRead,
   fetchParticipantReadState,
   subscribeToParticipantUpdates,
+  markMessagesDelivered,
+  fetchMessageDeliveryState,
+  subscribeToMessageDeliveryReceipts,
+  fetchGroupMembers,
   fetchReactions,
   toggleReaction,
   subscribeToReactions,
@@ -99,6 +111,10 @@ export default function ChatScreen({ route, navigation }) {
   const [reactions, setReactions] = useState({}); // messageId -> [{ userId, emoji }]
   const [suggestions, setSuggestions] = useState([]);
   const [sendError, setSendError] = useState('');
+  const [pendingOutbox, setPendingOutbox] = useState([]);
+  const [retryingOutbox, setRetryingOutbox] = useState(false);
+  const [pendingAttachments, setPendingAttachments] = useState([]);
+  const [retryingAttachments, setRetryingAttachments] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [fullscreenImage, setFullscreenImage] = useState(null);
@@ -109,11 +125,13 @@ export default function ChatScreen({ route, navigation }) {
   const [resolved, setResolved] = useState(null);
   const display = resolved || conversation;
   const [participantReadState, setParticipantReadState] = useState({}); // userId -> last_read_at
+  const [messageDeliveryState, setMessageDeliveryState] = useState({}); // messageId -> recipient user IDs
   // Per-participant flags (0006) — initialized from whatever the
   // navigator passed, updated locally on toggle. Muted conversations
   // also stop pushing to this device (enforced server-side).
   const [flags, setFlags] = useState({ isMuted: Boolean(conversation.isMuted), isArchived: Boolean(conversation.isArchived) });
   const [myUserId, setMyUserId] = useState(null);
+  useEffect(() => { let active = true; Promise.all([loadPendingMessages(myUserId, conversation?.id), loadPendingAttachments(myUserId, conversation?.id)]).then(([messages, attachments]) => { if (active) { setPendingOutbox(messages); setPendingAttachments(attachments); } }); return () => { active = false; }; }, [myUserId, conversation?.id]);
   const [pinnedMessages, setPinnedMessages] = useState([]);
   const [peerTyping, setPeerTyping] = useState(false);
   const [onlineIds, setOnlineIds] = useState(new Set());
@@ -137,6 +155,7 @@ export default function ChatScreen({ route, navigation }) {
   const handledTargetMessageRef = useRef(null);
   const targetLookupForRef = useRef(null);
   const targetLookupPagesRef = useRef(0);
+  const automaticRetryInFlightRef = useRef(false);
 
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(audioRecorder, 200);
@@ -148,6 +167,17 @@ export default function ChatScreen({ route, navigation }) {
   useEffect(() => {
     getCurrentUser().then((u) => setMyUserId(u?.id || 'me'));
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToMessageDeliveryReceipts(conversation.id, (receipt) => {
+      if (!receipt?.message_id || !receipt?.user_id) return;
+      setMessageDeliveryState((prev) => ({
+        ...prev,
+        [receipt.message_id]: [...new Set([...(prev[receipt.message_id] || []), receipt.user_id])],
+      }));
+    });
+    return unsubscribe;
+  }, [conversation.id]);
 
   useEffect(() => {
     if (!myUserId) return;
@@ -179,12 +209,15 @@ export default function ChatScreen({ route, navigation }) {
       if (m.senderName) senderNamesRef.current[m.senderId] = m.senderName;
     });
     setMessages(data);
+    fetchMessageDeliveryState(conversation.id, data.map((message) => message.id))
+      .then((state) => setMessageDeliveryState((prev) => ({ ...prev, ...state }))).catch(() => {});
+    markMessagesDelivered(conversation.id, data, myUserId).catch(() => {});
     setHasMore(more);
     stickToBottom.current = true;
     // Reactions ride along with the initial page — one query for all
     // visible messages, then Realtime keeps them current.
     fetchReactions(data.map((m) => m.id)).then(setReactions).catch(() => {});
-  }, [conversation.id]);
+  }, [conversation.id, myUserId]);
 
   // Older-history pagination: explicit "load earlier" affordance rather
   // than scroll-position-triggered fetching, so reading old messages
@@ -202,6 +235,9 @@ export default function ChatScreen({ route, navigation }) {
       older.forEach((m) => {
         if (m.senderName) senderNamesRef.current[m.senderId] = m.senderName;
       });
+      fetchMessageDeliveryState(conversation.id, older.map((message) => message.id))
+        .then((state) => setMessageDeliveryState((prev) => ({ ...prev, ...state }))).catch(() => {});
+      markMessagesDelivered(conversation.id, older, myUserId).catch(() => {});
       setMessages((prev) => {
         const seen = new Set(prev.map((m) => m.id));
         return [...older.filter((m) => !seen.has(m.id)), ...prev];
@@ -216,13 +252,14 @@ export default function ChatScreen({ route, navigation }) {
     } finally {
       setLoadingOlder(false);
     }
-  }, [conversation.id, hasMore, loadingOlder, messages]);
+  }, [conversation.id, hasMore, loadingOlder, messages, myUserId]);
 
   // Realtime subscription lives here (mount/unmount only) so it's
   // never torn down and recreated on every focus. Initial loading and
   // refresh-on-return are handled by useFocusEffect below.
   useEffect(() => {
     const unsubscribe = subscribeToMessages(conversation.id, (newMessage) => {
+      if (newMessage?.senderId && newMessage.senderId !== myUserId) markMessagesDelivered(conversation.id, [newMessage], myUserId).catch(() => {});
       setMessages((prev) => {
         // Realtime doesn't exclude the sender — our own message, already
         // placed by handleSend's own resolution, would otherwise show up
@@ -248,7 +285,7 @@ export default function ChatScreen({ route, navigation }) {
       stickToBottom.current = true;
     });
     return unsubscribe;
-  }, [conversation.id]);
+  }, [conversation.id, myUserId]);
 
   // Live reactions: one channel for the whole app (the table is small
   // and RLS-scoped), applying changes only to messages currently on
@@ -325,6 +362,44 @@ export default function ChatScreen({ route, navigation }) {
     }, [load])
   );
 
+  // Recover queued text sends when the chat regains focus / the app returns
+  // to the foreground. Stable request IDs preserve server-side idempotency;
+  // bounded exponential backoff prevents a bad connection from being hammered.
+  const retryQueuedTextMessages = useCallback(async () => {
+    if (!myUserId || !conversation?.id || automaticRetryInFlightRef.current || AppState.currentState !== 'active') return;
+    automaticRetryInFlightRef.current = true;
+    try {
+      const queued = await loadPendingMessages(myUserId, conversation.id);
+      setPendingOutbox(queued);
+      for (const item of queued) {
+        if (!isMessageRetryDue(item)) continue;
+        try {
+          const confirmed = await sendMessage(conversation.id, item.text, item.replyToId, item.requestId);
+          await removePendingMessage(myUserId, conversation.id, item.requestId);
+          setPendingOutbox((items) => items.filter((entry) => entry.requestId !== item.requestId));
+          setMessages((items) => items.some((entry) => entry.id === confirmed.id) ? items : [...items, confirmed]);
+          stickToBottom.current = true;
+        } catch (error) {
+          await recordMessageRetryFailure(myUserId, conversation.id, item.requestId, error);
+          // Do not alert on every background retry; the queued-message banner
+          // remains visible and the user can still retry manually.
+        }
+      }
+      setPendingOutbox(await loadPendingMessages(myUserId, conversation.id));
+    } finally { automaticRetryInFlightRef.current = false; }
+  }, [myUserId, conversation?.id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      retryQueuedTextMessages();
+      const interval = setInterval(() => retryQueuedTextMessages(), 15000);
+      const subscription = AppState.addEventListener('change', (state) => {
+        if (state === 'active') retryQueuedTextMessages();
+      });
+      return () => { clearInterval(interval); subscription.remove(); };
+    }, [retryQueuedTextMessages])
+  );
+
   // Smart replies only make sense when the other person spoke last —
   // suggesting replies to your own message is backwards. Guarded by
   // lastSuggestedFor so a re-render doesn't re-fire the request for a
@@ -338,7 +413,7 @@ export default function ChatScreen({ route, navigation }) {
     fetchSmartReplies(conversation.id).then(setSuggestions);
   }, [messages, conversation.id, isMineMessage]);
 
-  async function handleSend(text) {
+  async function handleSend(text, existingRequestId = null, existingReplyToId = undefined) {
     if (editing) {
       // Editing reuses the same input bar — the send path here updates
       // the existing row instead of inserting a new one.
@@ -356,7 +431,8 @@ export default function ChatScreen({ route, navigation }) {
       }
     }
 
-    const replyTarget = replyingTo;
+    const replyTarget = existingReplyToId !== undefined ? (existingReplyToId ? { id: existingReplyToId } : null) : replyingTo;
+    const requestId = existingRequestId || `xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx`.replace(/[xy]/g, (char) => { const random = Math.floor(Math.random() * 16); return (char === 'x' ? random : (random & 0x3) | 0x8).toString(16); });
     setSendError('');
     const tempId = `temp-${Date.now()}`;
     const optimistic = {
@@ -372,7 +448,9 @@ export default function ChatScreen({ route, navigation }) {
     setSuggestions([]);
     stickToBottom.current = true;
     try {
-      const confirmed = await sendMessage(conversation.id, text, replyTarget?.id);
+      const confirmed = await sendMessage(conversation.id, text, replyTarget?.id, requestId);
+      await removePendingMessage(myUserId, conversation.id, requestId);
+      setPendingOutbox((items) => items.filter((item) => item.requestId !== requestId));
       // Swaps the optimistic echo for the real, server-confirmed message
       // (real id, real timestamp) — without this, Realtime would also
       // deliver this same insert back to us (it doesn't exclude the
@@ -384,6 +462,9 @@ export default function ChatScreen({ route, navigation }) {
     } catch (err) {
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
       setReplyingTo(replyTarget);
+      const pending = { requestId, text, replyToId: replyTarget?.id || null, createdAt: new Date().toISOString() };
+      await savePendingMessage(myUserId, conversation.id, pending);
+      setPendingOutbox((items) => [...items.filter((item) => item.requestId !== requestId), pending]);
       console.error('[ChatScreen] Message send failed:', err);
       setSendError(err?.message || String(err) || 'Please try again.');
       const blocked = /row-level security/i.test(err.message || '');
@@ -483,6 +564,29 @@ export default function ChatScreen({ route, navigation }) {
     setActiveSheet({ message });
   }
 
+  async function handleShowGroupReceiptDetails(message) {
+    setActiveSheet(null);
+    try {
+      const roster = await fetchGroupMembers(conversation.id);
+      const details = buildGroupReceiptDetails({
+        message,
+        members: Array.isArray(roster?.members) ? roster.members : [],
+        senderId: myUserId,
+        participantReadState,
+        deliveryState: messageDeliveryState,
+      });
+      if (!details.length) {
+        Alert.alert('Message status', 'Receipt details are not available for this message yet.');
+        return;
+      }
+      const visible = details.slice(0, 12).map((item) => `${item.name}: ${item.status}`);
+      if (details.length > visible.length) visible.push(`…and ${details.length - visible.length} more members`);
+      Alert.alert('Message status', visible.join('\n'));
+    } catch (err) {
+      Alert.alert('Could not load message status', err?.message || 'Please try again.');
+    }
+  }
+
   async function handleSaveMessage(message) {
     setActiveSheet(null);
     try {
@@ -503,10 +607,10 @@ export default function ChatScreen({ route, navigation }) {
       if (isMessagePinned(pinnedMessages, conversation.id, message.id)) {
         const pinId = `${String(conversation.id)}:${String(message.id)}`;
         setPinnedMessages(await unpinMessageLocally(userId, pinId));
-        Alert.alert('Message unpinned', 'Removed from your on-device pinned messages.');
+        Alert.alert('Message unpinned', 'Removed from your pinned messages. If this was a shared pin, other members will no longer see it.');
       } else {
         setPinnedMessages(await pinMessageLocally(userId, message, conversationRecord));
-        Alert.alert('Message pinned', 'Added to your on-device pinned messages. This pin is private to this device and is not shared with other chat participants.');
+        Alert.alert('Message pinned', 'Added to your pinned messages. When connected to your account, this pin is shared with other members of the conversation and syncs across devices.');
       }
     } catch (err) {
       Alert.alert('Could not update pin', err.message || 'Please try again.');
@@ -558,19 +662,110 @@ export default function ChatScreen({ route, navigation }) {
 
   // --- Attachments ------------------------------------------------------
 
+  function makeAttachmentOutboxItem(kind, uri, details = {}) {
+    return { id: `attachment-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, kind, uri, ...details, createdAt: new Date().toISOString() };
+  }
+
+  async function queueAttachmentRetry(item, error) {
+    const recovery = await preserveAttachmentForRetry(FileSystem, item, myUserId, conversation.id);
+    const queuedItem = recovery.item;
+    const saved = await savePendingAttachment(myUserId, conversation.id, queuedItem);
+    if (!saved && recovery.preserved) await removePreservedAttachment(FileSystem, queuedItem);
+    if (saved) setPendingAttachments((items) => [...items.filter((entry) => entry.id !== queuedItem.id), queuedItem].slice(-20));
+    Alert.alert(
+      saved ? 'Attachment waiting to retry' : 'Could not save retry',
+      saved ? `The ${item.kind} upload failed. ${recovery.preserved ? 'A recovery copy was saved in app storage for retries after restarting the app.' : 'The original file must remain available on this device; a durable recovery copy could not be created.'} ${error?.message || ''}`.trim() : 'The upload failed and this device could not save a retry record. Please select the attachment again.'
+    );
+  }
+
   async function handlePickedImage(asset) {
     if (!asset) return;
+    const item = makeAttachmentOutboxItem('image', asset.uri, { mimeType: asset.mimeType || 'image/jpeg' });
     setUploading(true);
     try {
-      const { url } = await uploadChatImage(conversation.id, asset.uri, asset.mimeType || 'image/jpeg');
-      const sent = await sendAttachment(conversation.id, { mediaUrl: url, mediaType: 'image' });
+      let uploaded;
+      try { uploaded = await uploadChatImage(conversation.id, item.uri, item.mimeType); }
+      catch (err) { await queueAttachmentRetry(item, err); return; }
+      const sent = await sendAttachment(conversation.id, { mediaUrl: uploaded.url, mediaType: 'image' });
       setMessages((prev) => [...prev, sent]);
       stickToBottom.current = true;
     } catch (err) {
       Alert.alert("Couldn't send photo", err.message || 'Please try again.');
-    } finally {
-      setUploading(false);
+    } finally { setUploading(false); }
+  }
+
+  function discardPendingAttachment(item) {
+    const label = item.name || (item.kind === 'image' ? 'photo' : item.kind === 'voice' ? 'voice note' : 'file');
+    Alert.alert('Remove queued attachment?', `“${label}” will be removed from this device's retry queue. This cannot be undone.`, [
+      { text: 'Keep', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: async () => {
+        try {
+          const removed = await removePendingAttachment(myUserId, conversation.id, item.id);
+          if (!removed) throw new Error('The local retry queue could not be updated.');
+          await removePreservedAttachment(FileSystem, item);
+          setPendingAttachments((items) => items.filter((entry) => entry.id !== item.id));
+        } catch (error) {
+          Alert.alert('Could not remove attachment', error?.message || 'Please try again.');
+        }
+      } },
+    ]);
+  }
+
+  async function retryPendingAttachments(attachmentId = null) {
+    if (retryingAttachments) return;
+    const candidates = attachmentId
+      ? pendingAttachments.filter((item) => item.id === attachmentId)
+      : pendingAttachments;
+    const retryable = candidates.filter((item) => isAttachmentRetryDue(item));
+    if (!retryable.length) {
+      Alert.alert('Uploads are waiting', attachmentId ? 'This attachment is still in its retry waiting period.' : 'Please wait before retrying these attachments.');
+      return;
     }
+    setRetryingAttachments(true);
+    try {
+      for (const item of retryable) {
+        let uploaded;
+        try {
+          if (item.kind === 'image') uploaded = await uploadChatImage(conversation.id, item.uri, item.mimeType || 'image/jpeg');
+          else if (item.kind === 'file') uploaded = await uploadChatFile(conversation.id, item.uri, item.name, item.mimeType, item.size);
+          else uploaded = await uploadVoiceNote(conversation.id, item.uri, item.durationSeconds);
+        } catch (error) {
+          await recordAttachmentRetryFailure(myUserId, conversation.id, item.id, error);
+          setPendingAttachments((items) => items.map((entry) => entry.id === item.id ? {
+            ...entry,
+            attempts: Math.min(100, (Number.isInteger(entry.attempts) ? entry.attempts : 0) + 1),
+            lastAttemptAt: new Date().toISOString(),
+            nextRetryAt: getAttachmentNextRetryAt(Math.min(100, (Number.isInteger(entry.attempts) ? entry.attempts : 0) + 1)),
+            lastError: String(error?.message || error || 'Upload failed').slice(0, 240),
+          } : entry));
+          Alert.alert('Attachment still waiting', error?.message || 'The file may no longer be available. Select it again if needed.');
+          break;
+        }
+        // Remove from the retry queue before creating a message record. If the
+        // insert response is lost, we must not blindly create a duplicate.
+        const removedFromQueue = await removePendingAttachment(myUserId, conversation.id, item.id);
+        if (!removedFromQueue) {
+          Alert.alert('Upload succeeded; retry record remains', 'The media uploaded, but the local retry record could not be cleared. Check the conversation before retrying to avoid duplicates.');
+          break;
+        }
+        await removePreservedAttachment(FileSystem, item);
+        setPendingAttachments((items) => items.filter((entry) => entry.id !== item.id));
+        try {
+          const sent = await sendAttachment(conversation.id, {
+            mediaUrl: uploaded.url,
+            mediaType: item.kind,
+            mediaName: uploaded.name || item.name,
+            mediaSize: uploaded.size || item.size,
+            mediaDuration: uploaded.duration || item.durationSeconds,
+          });
+          setMessages((prev) => [...prev, sent]);
+          stickToBottom.current = true;
+        } catch (error) {
+          Alert.alert('Upload succeeded; message status uncertain', 'The media uploaded, but saving the message failed. Check the conversation before sending it again to avoid duplicates.');
+          break;
+        }
+      }
+    } finally { setRetryingAttachments(false); }
   }
 
   async function handlePickImage() {
@@ -615,22 +810,18 @@ export default function ChatScreen({ route, navigation }) {
       return;
     }
 
+    const item = makeAttachmentOutboxItem('file', asset.uri, { name: asset.name, mimeType: asset.mimeType, size: asset.size });
     setUploading(true);
     try {
-      const uploaded = await uploadChatFile(conversation.id, asset.uri, asset.name, asset.mimeType, asset.size);
-      const sent = await sendAttachment(conversation.id, {
-        mediaUrl: uploaded.url,
-        mediaType: 'file',
-        mediaName: uploaded.name,
-        mediaSize: uploaded.size,
-      });
+      let uploaded;
+      try { uploaded = await uploadChatFile(conversation.id, asset.uri, asset.name, asset.mimeType, asset.size); }
+      catch (err) { await queueAttachmentRetry(item, err); return; }
+      const sent = await sendAttachment(conversation.id, { mediaUrl: uploaded.url, mediaType: 'file', mediaName: uploaded.name, mediaSize: uploaded.size });
       setMessages((prev) => [...prev, sent]);
       stickToBottom.current = true;
     } catch (err) {
       Alert.alert("Couldn't send file", err.message || 'Please try again.');
-    } finally {
-      setUploading(false);
-    }
+    } finally { setUploading(false); }
   }
 
   async function handleStartRecording() {
@@ -663,21 +854,18 @@ export default function ChatScreen({ route, navigation }) {
     // rather than sending a near-empty clip.
     if (!uri || durationSeconds < 1) return;
 
+    const item = makeAttachmentOutboxItem('voice', uri, { durationSeconds });
     setUploading(true);
     try {
-      const uploaded = await uploadVoiceNote(conversation.id, uri, durationSeconds);
-      const sent = await sendAttachment(conversation.id, {
-        mediaUrl: uploaded.url,
-        mediaType: 'voice',
-        mediaDuration: uploaded.duration,
-      });
+      let uploaded;
+      try { uploaded = await uploadVoiceNote(conversation.id, uri, durationSeconds); }
+      catch (err) { await queueAttachmentRetry(item, err); return; }
+      const sent = await sendAttachment(conversation.id, { mediaUrl: uploaded.url, mediaType: 'voice', mediaDuration: uploaded.duration });
       setMessages((prev) => [...prev, sent]);
       stickToBottom.current = true;
     } catch (err) {
       Alert.alert("Couldn't send voice message", err.message || 'Please try again.');
-    } finally {
-      setUploading(false);
-    }
+    } finally { setUploading(false); }
   }
 
   async function handleCancelRecording() {
@@ -722,13 +910,34 @@ export default function ChatScreen({ route, navigation }) {
   // README). A still-optimistic message (no confirmed timestamp yet)
   // is always 'pending' regardless of anyone's read state.
   function computeStatus(message) {
-    if (message.id.startsWith('temp-')) return 'pending';
-    if (display.isGroup) return 'sent';
-    const otherLastReadAt = participantReadState[display.participant?.id];
-    if (otherLastReadAt && message.createdAtRaw && new Date(message.createdAtRaw) <= new Date(otherLastReadAt)) {
-      return 'read';
-    }
-    return 'sent';
+    return resolveMessageDeliveryStatus({
+      message,
+      isGroup: Boolean(display.isGroup),
+      peerId: display.participant?.id,
+      deliveryState: messageDeliveryState,
+      participantReadState,
+    });
+  }
+
+  function computeGroupSeenCount(message) {
+    if (!display.isGroup || !isMineMessage(message) || message.id.startsWith('temp-')) return 0;
+    return countReadersForMessage({
+      messageCreatedAt: message.createdAtRaw,
+      participantReadState,
+      senderId: myUserId,
+    });
+  }
+
+  function computeGroupDeliveredCount(message) {
+    if (!display.isGroup || !isMineMessage(message) || message.id.startsWith('temp-')) return 0;
+    const participantIds = Object.keys(participantReadState);
+    if (!participantIds.length) return 0;
+    return countDeliveredRecipients({
+      messageId: message.id,
+      participantIds,
+      deliveryState: messageDeliveryState,
+      senderId: myUserId,
+    });
   }
 
   // Date separators: the FlatList renders a mixed array — day markers
@@ -844,6 +1053,8 @@ export default function ChatScreen({ route, navigation }) {
   ];
 
   const overflowOptions = [
+    { key: 'polls', label: 'Polls', icon: 'bar-chart-outline', onPress: () => { setActiveSheet(null); navigation.navigate('Polls', { conversation: display }); } },
+    { key: 'events', label: 'Events', icon: 'calendar-outline', onPress: () => { setActiveSheet(null); navigation.navigate('Events', { conversation: display }); } },
     {
       key: 'shared-media',
       label: 'Shared media, files & links',
@@ -926,6 +1137,9 @@ export default function ChatScreen({ route, navigation }) {
               },
             ]
           : []),
+        ...(display.isGroup && isMineMessage(sheetMessage) && !sheetMessage.deletedAt && !String(sheetMessage.id).startsWith('temp-')
+          ? [{ key: 'receipts', label: 'View message status', icon: 'people-outline', onPress: () => handleShowGroupReceiptDetails(sheetMessage) }]
+          : []),
         ...(isMineMessage(sheetMessage) && !sheetMessage.deletedAt
           ? [
               {
@@ -998,6 +1212,16 @@ export default function ChatScreen({ route, navigation }) {
             {/* The dead call button the audit flagged is gone — voice
                 calls are a P3 undertaking (WebRTC + signaling), and a
                 button with no handler reads as broken, not unfinished. */}
+            {display.isGroup ? (
+              <TouchableOpacity
+                style={{ marginRight: spacing.sm }}
+                onPress={() => navigation.navigate('GroupManagement', { conversation: display })}
+                accessibilityLabel="Manage group members"
+                accessibilityRole="button"
+              >
+                <Ionicons name="people-outline" size={20} color={colors.textPrimary} />
+              </TouchableOpacity>
+            ) : null}
             <TouchableOpacity
               style={{ marginRight: spacing.sm }}
               onPress={() => setActiveSheet('overflow')}
@@ -1118,6 +1342,8 @@ export default function ChatScreen({ route, navigation }) {
                 isMine={mine}
                 senderName={display.isGroup && !mine ? item.senderName : undefined}
                 status={mine ? computeStatus(item) : undefined}
+                seenByCount={mine && display.isGroup ? computeGroupSeenCount(item) : 0}
+                deliveredToCount={mine && display.isGroup ? computeGroupDeliveredCount(item) : 0}
                 replyPreview={item.replyPreview}
                 reactions={uniqueEmojis}
                 reactionExtra={reactionExtra}
@@ -1162,6 +1388,38 @@ export default function ChatScreen({ route, navigation }) {
             ))}
           </ScrollView>
         )}
+
+        {pendingAttachments.length > 0 ? (
+          <View style={{ marginHorizontal: spacing.md, marginBottom: 8, padding: 10, borderRadius: 8, backgroundColor: hexToRgba(colors.accent, 0.10), gap: 8 }}>
+            <Text style={{ color: colors.text, fontSize: 13 }}>{pendingAttachments.length} attachment upload{pendingAttachments.length === 1 ? '' : 's'} waiting. Preserved recovery copies are used when available.</Text>
+            {pendingAttachments.map((item) => (
+              <View key={item.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 7 }}>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text numberOfLines={1} style={{ color: colors.text, fontSize: 13, fontWeight: '600' }}>{item.name || (item.kind === 'image' ? 'Photo' : item.kind === 'voice' ? 'Voice note' : 'File')}</Text>
+                  <Text numberOfLines={2} style={{ color: colors.textSecondary, fontSize: 11 }}>{item.lastError ? `Last error: ${item.lastError}` : item.recoveryCopy ? 'Recovery copy saved on this device' : 'Original file must remain available'}{Number.isInteger(item.attempts) && item.attempts > 0 ? ` · ${item.attempts} failed attempt${item.attempts === 1 ? '' : 's'}` : ''}</Text>
+                </View>
+                <TouchableOpacity disabled={retryingAttachments} onPress={() => retryPendingAttachments(item.id)} accessibilityRole="button" accessibilityLabel={`Retry queued ${item.kind} attachment`} style={{ padding: 6 }}>
+                  <Text style={{ color: colors.accent, fontWeight: '700', fontSize: 12 }}>Retry</Text>
+                </TouchableOpacity>
+                <TouchableOpacity disabled={retryingAttachments} onPress={() => discardPendingAttachment(item)} accessibilityRole="button" accessibilityLabel={`Remove queued ${item.kind} attachment`} style={{ padding: 6 }}>
+                  <Text style={{ color: colors.danger || '#D84C4C', fontWeight: '700', fontSize: 12 }}>Remove</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+            <TouchableOpacity disabled={retryingAttachments} onPress={retryPendingAttachments} style={{ alignSelf: 'flex-end', paddingTop: 2 }} accessibilityRole="button" accessibilityLabel="Retry attachment uploads">
+              <Text style={{ color: colors.accent, fontWeight: '700' }}>{retryingAttachments ? 'Retrying uploads…' : 'Retry eligible uploads'}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        {pendingOutbox.length > 0 ? (
+          <View style={{ marginHorizontal: spacing.md, marginBottom: 8, padding: 10, borderRadius: 8, backgroundColor: hexToRgba(colors.accent, 0.10) }}>
+            <Text style={{ color: colors.text, fontSize: 13 }}>{pendingOutbox.length} message{pendingOutbox.length === 1 ? '' : 's'} waiting to send. They are saved on this device.</Text>
+            <TouchableOpacity disabled={retryingOutbox} onPress={async () => { if (automaticRetryInFlightRef.current) return; automaticRetryInFlightRef.current = true; setRetryingOutbox(true); try { for (const item of [...pendingOutbox]) { const ok = await handleSend(item.text, item.requestId, item.replyToId); if (!ok) break; } } finally { automaticRetryInFlightRef.current = false; setRetryingOutbox(false); } }} style={{ alignSelf: 'flex-end', paddingTop: 6 }} accessibilityRole="button">
+              <Text style={{ color: colors.accent, fontWeight: '700' }}>{retryingOutbox ? 'Retrying…' : 'Retry pending messages'}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
         {sendError ? (
           <View style={{ marginHorizontal: spacing.md, marginBottom: 8, padding: 10, borderRadius: 8, backgroundColor: '#FCE8E6' }}>

@@ -1,4 +1,5 @@
 import { normalizeEmail, parseRecoveryCallback } from '../utils/authValidation';
+import { retryTransient } from '../utils/retry';
 import { clearDraftsForUser } from './drafts';
 import { clearPinnedMessagesForUser } from './pinnedMessages';
 import { supabase, SUPABASE_ENABLED, SUPABASE_URL } from './supabaseClient';
@@ -514,6 +515,30 @@ export async function fetchContacts() {
 // last-message preview and an unread count (which is therefore capped
 // at 30; honest tradeoff, noted on the badge rather than fetching
 // unbounded history per row like before).
+// Server-backed scheduled messages. These helpers intentionally use the authenticated
+// backend rather than direct Supabase writes because the queue is service-role-only.
+export async function fetchScheduledMessages() {
+  const result = await backendFetch('/conversations/scheduled-messages');
+  return result.scheduledMessages || [];
+}
+
+export async function scheduleMessage(conversationId, text, scheduledFor) {
+  if (typeof conversationId !== 'string' || !conversationId.trim()) throw new Error('A conversation is required');
+  if (typeof text !== 'string' || !text.trim() || text.trim().length > 4000) throw new Error('Message text must be 1–4000 characters');
+  if (typeof scheduledFor !== 'string' || !Number.isFinite(Date.parse(scheduledFor))) throw new Error('A valid scheduled date is required');
+  const result = await backendFetch('/conversations/scheduled-messages', {
+    method: 'POST',
+    body: JSON.stringify({ conversationId, text: text.trim(), scheduledFor }),
+  });
+  return result.scheduledMessage;
+}
+
+export async function cancelScheduledMessage(scheduledMessageId) {
+  if (typeof scheduledMessageId !== 'string' || !scheduledMessageId.trim()) throw new Error('A scheduled message ID is required');
+  await backendFetch(`/conversations/scheduled-messages/${encodeURIComponent(scheduledMessageId)}`, { method: 'DELETE' });
+  return true;
+}
+
 export async function fetchConversations({ limit = 50, offset = 0 } = {}) {
   if (!SUPABASE_ENABLED) return { conversations: MOCK_CONVERSATIONS, hasMore: false };
 
@@ -814,7 +839,16 @@ export async function deleteMessage(messageId) {
   if (error) throw error;
 }
 
-export async function sendMessage(conversationId, text, replyToId = null) {
+function createMessageRequestId() {
+  // UUID-shaped client identifier keeps a retry from creating a second copy
+  // if the first insert reached Postgres but its response was lost.
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
+    const random = Math.floor(Math.random() * 16);
+    return (char === 'x' ? random : (random & 0x3) | 0x8).toString(16);
+  });
+}
+
+export async function sendMessage(conversationId, text, replyToId = null, requestId = null) {
   const messageText = typeof text === 'string' ? text.trim() : '';
 
   if (!conversationId) {
@@ -859,6 +893,7 @@ export async function sendMessage(conversationId, text, replyToId = null) {
   }
 
   const payload = {
+    id: requestId || createMessageRequestId(),
     conversation_id: conversationId,
     sender_id: userId,
     text: messageText,
@@ -868,29 +903,38 @@ export async function sendMessage(conversationId, text, replyToId = null) {
     payload.reply_to_id = replyToId;
   }
 
-  const { data, error } = await supabase
-    .from('messages')
-    .insert(payload)
-    .select('*')
-    .single();
-
-  if (error) {
-    console.error('[Messaging] Supabase insert failed:', {
-      code: error.code,
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-    });
-
-    throw new Error(
-      `Message could not be saved (${error.code || 'database error'}): ${error.message}`
-    );
+  let data;
+  try {
+    const result = await retryTransient(async () => {
+      const response = await supabase
+        .from('messages')
+        .insert(payload)
+        .select('*')
+        .single();
+      if (response.error) throw response.error;
+      return response.data;
+    }, { attempts: 3, delay: 300 });
+    data = result;
+  } catch (error) {
+    // A timeout can happen after Postgres committed the insert. Since retries
+    // reuse the same primary key, recover that committed row instead of asking
+    // the user to retry and risking a duplicate message.
+    if (error?.code === '23505') {
+      const recovered = await supabase.from('messages').select('*').eq('id', payload.id).maybeSingle();
+      if (!recovered.error && recovered.data) data = recovered.data;
+    }
+    if (!data) {
+      console.error('[Messaging] Supabase insert failed:', {
+        code: error?.code,
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+      });
+      throw new Error(`Message could not be saved (${error?.code || 'network/database error'}): ${error?.message || 'Please check your connection and try again.'}`);
+    }
   }
 
-  if (!data) {
-    throw new Error('Supabase did not return the saved message. Please retry.');
-  }
-
+  if (!data) throw new Error('Supabase did not return the saved message. Please retry.');
   return normalizeMessage(data);
 }
 
@@ -917,6 +961,41 @@ export function subscribeToMessages(conversationId, onInsert) {
     )
     .subscribe();
 
+  return () => supabase.removeChannel(channel);
+}
+
+// --- Per-message delivery acknowledgements --------------------------------
+// A receipt means the recipient's authenticated client fetched/received the
+// message. It is not a read receipt; last_read_at remains the read source.
+export async function markMessagesDelivered(conversationId, messages, userId) {
+  if (!SUPABASE_ENABLED || !conversationId || !userId || !Array.isArray(messages)) return;
+  const rows = messages
+    .filter((message) => message?.id && !String(message.id).startsWith('temp-') && message.senderId && message.senderId !== userId)
+    .map((message) => ({ message_id: message.id, conversation_id: conversationId, user_id: userId }));
+  if (!rows.length) return;
+  const { error } = await supabase.from('message_delivery_receipts')
+    .upsert(rows, { onConflict: 'message_id,user_id', ignoreDuplicates: true });
+  if (error) throw error;
+}
+
+// Returns { [messageId]: [recipientUserId, ...] } for this conversation.
+export async function fetchMessageDeliveryState(conversationId, messageIds = []) {
+  if (!SUPABASE_ENABLED || !conversationId || !Array.isArray(messageIds) || messageIds.length === 0) return {};
+  const { data, error } = await supabase.from('message_delivery_receipts')
+    .select('message_id, user_id').eq('conversation_id', conversationId).in('message_id', messageIds);
+  if (error) throw error;
+  return (data || []).reduce((state, row) => {
+    (state[row.message_id] ||= []).push(row.user_id);
+    return state;
+  }, {});
+}
+
+export function subscribeToMessageDeliveryReceipts(conversationId, onReceipt) {
+  if (!SUPABASE_ENABLED) return () => {};
+  const channel = supabase.channel(`message-delivery:${conversationId}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'message_delivery_receipts', filter: `conversation_id=eq.${conversationId}` },
+      (payload) => onReceipt?.(payload.new))
+    .subscribe();
   return () => supabase.removeChannel(channel);
 }
 
@@ -1182,24 +1261,39 @@ export async function sendAttachment(conversationId, attachment) {
     return message;
   }
 
-  const { data: authData } = await supabase.auth.getUser();
-  const { data, error } = await supabase
-    .from('messages')
-    .insert({
-      conversation_id: conversationId,
-      sender_id: authData?.user?.id,
-      text,
-      media_url: mediaUrl,
-      media_type: mediaType,
-      media_name: mediaName,
-      media_size: mediaSize,
-      media_duration: mediaDuration,
-      shared_user_id: sharedUserId,
-    })
-    .select()
-    .single();
+  if (!conversationId) throw new Error('Cannot send this attachment: the conversation ID is missing.');
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError) throw new Error(`Could not verify your sign-in: ${authError.message}`);
+  const userId = authData?.user?.id;
+  if (!userId) throw new Error('You are not signed in. Sign in again before sending.');
 
-  if (error) throw error;
+  const payload = {
+    id: createMessageRequestId(),
+    conversation_id: conversationId,
+    sender_id: userId,
+    text,
+    media_url: mediaUrl,
+    media_type: mediaType,
+    media_name: mediaName,
+    media_size: mediaSize,
+    media_duration: mediaDuration,
+    shared_user_id: sharedUserId,
+  };
+  let data;
+  try {
+    data = await retryTransient(async () => {
+      const response = await supabase.from('messages').insert(payload).select().single();
+      if (response.error) throw response.error;
+      return response.data;
+    }, { attempts: 3, delay: 300 });
+  } catch (error) {
+    if (error?.code === '23505') {
+      const recovered = await supabase.from('messages').select('*').eq('id', payload.id).maybeSingle();
+      if (!recovered.error && recovered.data) data = recovered.data;
+    }
+    if (!data) throw new Error(`Attachment could not be saved (${error?.code || 'network/database error'}): ${error?.message || 'Please check your connection and try again.'}`);
+  }
+  if (!data) throw new Error('Supabase did not return the saved attachment. Please retry.');
   return normalizeMessageWithMedia(data);
 }
 
@@ -1245,4 +1339,217 @@ export async function fetchLinkPreview(url) {
   } catch (err) {
     return null;
   }
+}
+
+
+// Load a group roster through the authenticated backend. The backend checks
+// membership before returning any profile information.
+export async function fetchGroupMembers(conversationId) {
+  if (!(BACKEND_ENABLED && SUPABASE_ENABLED)) {
+    throw new Error('Group members require a connected account.');
+  }
+  if (!conversationId) throw new Error('A group is required.');
+  return backendFetch(`/conversations/${encodeURIComponent(conversationId)}/members`);
+}
+
+// Group metadata is read only by members; server-side role checks protect edits.
+export async function fetchGroupMetadata(conversationId) {
+  if (!(BACKEND_ENABLED && SUPABASE_ENABLED)) throw new Error('Group settings require a connected account.');
+  if (!conversationId) throw new Error('A group is required.');
+  return backendFetch(`/conversations/${encodeURIComponent(conversationId)}/metadata`);
+}
+
+export async function updateGroupMetadata(conversationId, { name, topic, description, adminOnlyMessages }) {
+  if (!(BACKEND_ENABLED && SUPABASE_ENABLED)) throw new Error('Group settings require a connected account.');
+  if (!conversationId) throw new Error('A group is required.');
+  const cleanName = typeof name === 'string' ? name.trim() : undefined;
+  const cleanTopic = typeof topic === 'string' ? topic.trim() : '';
+  const cleanDescription = typeof description === 'string' ? description.trim() : '';
+  if (cleanName !== undefined && (!cleanName || cleanName.length > 80)) throw new Error('Group name must be between 1 and 80 characters.');
+  if (cleanTopic.length > 80 || cleanDescription.length > 500) throw new Error('Topic must be at most 80 characters and description at most 500.');
+  return backendFetch(`/conversations/${encodeURIComponent(conversationId)}/metadata`, {
+    method: 'PATCH', body: JSON.stringify({ ...(cleanName === undefined ? {} : { name: cleanName }), topic: cleanTopic, description: cleanDescription, ...(typeof adminOnlyMessages === 'boolean' ? { adminOnlyMessages } : {}) }),
+  });
+}
+
+// Group administration endpoints require a verified backend session. These
+// helpers intentionally fail closed in mock/offline mode instead of pretending
+// that a local-only role change has been saved to the server.
+export async function setGroupMemberAdmin(conversationId, memberId, isAdmin) {
+  if (!(BACKEND_ENABLED && SUPABASE_ENABLED)) {
+    throw new Error('Group administration requires a connected account.');
+  }
+  if (!conversationId || !memberId || typeof isAdmin !== 'boolean') {
+    throw new Error('A group, member, and valid admin setting are required.');
+  }
+  return backendFetch(`/conversations/${encodeURIComponent(conversationId)}/members/${encodeURIComponent(memberId)}/admin`, {
+    method: 'PATCH',
+    body: JSON.stringify({ isAdmin }),
+  });
+}
+
+export async function removeGroupMember(conversationId, memberId) {
+  if (!(BACKEND_ENABLED && SUPABASE_ENABLED)) {
+    throw new Error('Group membership changes require a connected account.');
+  }
+  if (!conversationId || !memberId) throw new Error('A group and member are required.');
+  return backendFetch(`/conversations/${encodeURIComponent(conversationId)}/members/${encodeURIComponent(memberId)}`, {
+    method: 'DELETE',
+  });
+}
+
+
+// Group invite links are generated and verified by the authenticated backend.
+export async function createGroupInvite(conversationId, options = {}) {
+  if (!(BACKEND_ENABLED && SUPABASE_ENABLED)) throw new Error('Group invites require a connected account.');
+  if (!conversationId) throw new Error('A group is required.');
+  const expiresInHours = options.expiresInHours ?? 168;
+  const maxUses = options.maxUses ?? 25;
+  return backendFetch(`/conversations/${encodeURIComponent(conversationId)}/invites`, {
+    method: 'POST', body: JSON.stringify({ expiresInHours, maxUses }),
+  });
+}
+
+export async function acceptGroupInvite(token) {
+  if (!(BACKEND_ENABLED && SUPABASE_ENABLED)) throw new Error('Joining a group requires a connected account.');
+  if (typeof token !== 'string' || !token.trim()) throw new Error('Enter a group invite token.');
+  return backendFetch('/conversations/invites/accept', { method: 'POST', body: JSON.stringify({ token: token.trim() }) });
+}
+
+export async function fetchGroupInvites(conversationId) {
+  if (!(BACKEND_ENABLED && SUPABASE_ENABLED)) throw new Error('Group invites require a connected account.');
+  if (!conversationId) throw new Error('A group is required.');
+  const result = await backendFetch(`/conversations/${encodeURIComponent(conversationId)}/invites`);
+  return Array.isArray(result?.invites) ? result.invites : [];
+}
+
+export async function revokeGroupInvite(conversationId, inviteId) {
+  if (!(BACKEND_ENABLED && SUPABASE_ENABLED)) throw new Error('Group invites require a connected account.');
+  if (!conversationId || !inviteId) throw new Error('A group and invite are required.');
+  return backendFetch(`/conversations/${encodeURIComponent(conversationId)}/invites/${encodeURIComponent(inviteId)}`, { method: 'DELETE' });
+}
+
+// Channel directory and broadcast-post APIs are mediated by the authenticated
+// backend so channel ownership and subscription state cannot be forged by clients.
+export async function listChannels(search = '') {
+  const query = typeof search === 'string' ? search.trim().slice(0, 80) : '';
+  const path = query ? `/channels?q=${encodeURIComponent(query)}` : '/channels';
+  const result = await backendFetch(path);
+  return Array.isArray(result?.channels) ? result.channels : [];
+}
+
+export async function createChannel({ title, description = '', isPrivate = false }) {
+  const result = await backendFetch('/channels', { method: 'POST', body: JSON.stringify({ title, description, isPrivate: Boolean(isPrivate) }) });
+  return result.channel;
+}
+
+export async function updateChannel(channelId, { title, description = '', isPrivate }) {
+  const payload = { title, description };
+  if (typeof isPrivate === 'boolean') payload.isPrivate = isPrivate;
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}`, { method: 'PATCH', body: JSON.stringify(payload) });
+  return result.channel;
+}
+
+export async function createChannelInvite(channelId, options = {}) {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/invites`, { method: 'POST', body: JSON.stringify(options) });
+  return result.invite;
+}
+
+export async function acceptChannelInvite(token) {
+  const result = await backendFetch('/channels/invites/accept', { method: 'POST', body: JSON.stringify({ token }) });
+  return result.channel;
+}
+
+export async function fetchChannelInvites(channelId) {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/invites`);
+  return Array.isArray(result?.invites) ? result.invites : [];
+}
+
+export async function revokeChannelInvite(channelId, inviteId) {
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}/invites/${encodeURIComponent(inviteId)}`, { method: 'DELETE' });
+}
+
+export async function subscribeToChannel(channelId) {
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}/subscribe`, { method: 'POST', body: '{}' });
+}
+
+export async function unsubscribeFromChannel(channelId) {
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}/subscribe`, { method: 'DELETE' });
+}
+
+export async function fetchChannelPosts(channelId, cursor = null) {
+  const query = cursor?.created_at && cursor?.id
+    ? `?beforeCreatedAt=${encodeURIComponent(cursor.created_at)}&beforeId=${encodeURIComponent(cursor.id)}`
+    : '';
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}/posts${query}`);
+}
+
+export async function publishChannelPost(channelId, body) {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts`, { method: 'POST', body: JSON.stringify({ body }) });
+  return result.post;
+}
+
+export async function updateChannelPost(channelId, postId, body) {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}`, { method: 'PATCH', body: JSON.stringify({ body }) });
+  return result.post;
+}
+
+export async function setChannelPostPinned(channelId, postId, pinned) {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}/pin`, { method: 'PUT', body: JSON.stringify({ pinned: Boolean(pinned) }) });
+  return result.post;
+}
+
+export async function deleteChannelPost(channelId, postId) {
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}`, { method: 'DELETE' });
+}
+
+export async function setChannelPostReaction(channelId, postId, emoji) {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}/reaction`, { method: 'PUT', body: JSON.stringify({ emoji }) });
+  return result;
+}
+
+export async function fetchChannelPostComments(channelId, postId) {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}/comments`);
+  return Array.isArray(result?.comments) ? result.comments : [];
+}
+
+export async function publishChannelPostComment(channelId, postId, body) {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}/comments`, { method: 'POST', body: JSON.stringify({ body }) });
+  return result.comment;
+}
+
+export async function deleteChannelPostComment(channelId, postId, commentId) {
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}`, { method: 'DELETE' });
+}
+
+export async function deleteChannel(channelId) {
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}`, { method: 'DELETE' });
+}
+
+export async function fetchChannelModerators(channelId) {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/moderators`);
+  return Array.isArray(result?.members) ? result.members : [];
+}
+
+export async function appointChannelModerator(channelId, userId) {
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}/moderators`, { method: 'POST', body: JSON.stringify({ userId }) });
+}
+
+export async function removeChannelModerator(channelId, userId) {
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}/moderators/${encodeURIComponent(userId)}`, { method: 'DELETE' });
+}
+
+
+export async function reportChannelPost(channelId, postId, reason, details = '') {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}/reports`, { method: 'POST', body: JSON.stringify({ reason, details }) });
+  return result.report;
+}
+
+export async function fetchChannelPostReports(channelId) {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/reports`);
+  return Array.isArray(result?.reports) ? result.reports : [];
+}
+
+export async function updateChannelPostReport(channelId, reportId, status) {
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}/reports/${encodeURIComponent(reportId)}`, { method: 'PATCH', body: JSON.stringify({ status }) });
 }

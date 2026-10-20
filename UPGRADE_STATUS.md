@@ -33,3 +33,16 @@ These are local source-level checks. They do not prove production configuration,
 
 ## Deployment status
 **Not deployed by this pass.** Keep production changes gated on the release items above.
+
+
+## 1.2.43 attachment upload retry queue
+
+Added a bounded local retry queue for image, file, and voice-note upload failures. Queue entries are removed before the database insert to avoid blind duplicate attachment sends when the insert result is uncertain. See `ATTACHMENT_RETRY_1.2.43.md` for limitations and recovery behavior.
+
+## Increment 1.2.83 — group message status details
+- Added a message-action entry for per-member group message status on confirmed outgoing messages.
+- Status display prioritizes read cursor, then explicit delivery receipt, then an awaiting-receipt label; it does not claim that missing receipts prove non-delivery.
+- Frontend unit tests: 96 passed, 0 failed.
+- Frontend release hygiene audit: 12/12 passed.
+- Backend group regression/migration tests: 17 passed, 0 failed.
+- No live migration, hosted integration, native build, or physical-device test was performed.
