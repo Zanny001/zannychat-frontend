@@ -27,12 +27,6 @@ export default function EditProfileScreen({ navigation }) {
   }, []);
 
   async function handleChangePhoto() {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Photo access needed', 'Allow photo library access in Settings to change your avatar.');
-      return;
-    }
-
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,

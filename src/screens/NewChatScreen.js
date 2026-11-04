@@ -1,5 +1,6 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   Text,
@@ -9,16 +10,21 @@ import {
   SafeAreaView,
   Alert,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import Header from '../components/Header';
 import Avatar from '../components/Avatar';
 import GlassCard from '../components/GlassCard';
+import { debugLog } from '../utils/diagnostics';
+import { filterMemberDirectory, memberFavoritesStorageKey, toggleMemberFavorite } from '../utils/memberFavorites';
+import { startPresence, subscribePresence } from '../services/presence';
 import {
   fetchContacts,
   createConversation,
   sendAttachment,
+  getCurrentUser,
 } from '../services/api';
 
 export default function NewChatScreen({ navigation, route }) {
@@ -30,9 +36,44 @@ export default function NewChatScreen({ navigation, route }) {
   const [chatError, setChatError] = useState('');
   const [openingChatId, setOpeningChatId] = useState(null);
   const [sendingId, setSendingId] = useState(null);
+  const [memberSearch, setMemberSearch] = useState('');
+  const [onlineOnly, setOnlineOnly] = useState(false);
+  const [directoryFilter, setDirectoryFilter] = useState('all');
+  const [favoriteIds, setFavoriteIds] = useState([]);
+  const [favoriteStorageKey, setFavoriteStorageKey] = useState('zannychat:member-favorites:v1:guest');
+  const [onlineIds, setOnlineIds] = useState(new Set());
 
   const shareToConversationId = route?.params?.shareToConversationId;
   const isShareMode = Boolean(shareToConversationId);
+  const presenceAwareContacts = contacts.map((contact) => ({ ...contact, online: onlineIds.has(contact.id) }));
+  const activeFilter = onlineOnly ? 'online' : directoryFilter;
+  const visibleContacts = useMemo(() => filterMemberDirectory(presenceAwareContacts, memberSearch, activeFilter, favoriteIds), [contacts, onlineIds, memberSearch, activeFilter, favoriteIds]);
+
+  useEffect(() => {
+    let active = true;
+    getCurrentUser().then(async (user) => {
+      const key = memberFavoritesStorageKey(user?.id);
+      const raw = await AsyncStorage.getItem(key);
+      let parsed = [];
+      try { parsed = raw ? JSON.parse(raw) : []; } catch (_) { parsed = []; }
+      if (active) { setFavoriteStorageKey(key); setFavoriteIds(Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'string') : []); }
+    }).catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  async function toggleFavorite(contactId) {
+    const next = toggleMemberFavorite(favoriteIds, contactId);
+    setFavoriteIds(next);
+    try { await AsyncStorage.setItem(favoriteStorageKey, JSON.stringify(next)); } catch (_) {
+      setFavoriteIds(favoriteIds);
+      Alert.alert('Could not save favorite', 'Please check device storage and try again.');
+    }
+  }
+
+  useEffect(() => {
+    startPresence();
+    return subscribePresence(setOnlineIds);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -82,11 +123,11 @@ export default function NewChatScreen({ navigation, route }) {
 
 
     try {
-      console.log('[NewChat] Creating conversation for contact:', contact.id);
+      debugLog('[NewChat] Creating conversation');
       const createStartedAt = Date.now();
 
       const conversation = await createConversation(contact.id, contact);
-      console.log('[Perf][NewChat] createConversationMs:', Date.now() - createStartedAt);
+      debugLog('[Perf][NewChat] createConversationMs:', Date.now() - createStartedAt);
 
       if (!conversation?.id) {
         throw new Error(
@@ -94,10 +135,7 @@ export default function NewChatScreen({ navigation, route }) {
         );
       }
 
-      console.log(
-        '[NewChat] Conversation created:',
-        conversation.id
-      );
+      debugLog('[NewChat] Conversation created');
 
       navigation.navigate('Chat', { conversation });
     } catch (err) {
@@ -164,98 +202,31 @@ export default function NewChatScreen({ navigation, route }) {
       />
 
       {!isShareMode && (
-        <View
-          style={{
-            paddingHorizontal: spacing.md,
-            paddingTop: spacing.md,
-            gap: spacing.sm,
-            marginBottom: spacing.sm,
-          }}
-        >
-          <TouchableOpacity
-            onPress={() => navigation.navigate('QRContact')}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel="Connect by QR code"
-            accessibilityHint="Opens your contact QR code and camera scanner"
-          >
-            <GlassCard contentStyle={styles.qrRow}>
-              <View
-                style={[
-                  styles.qrIcon,
-                  { backgroundColor: colors.surface },
-                ]}
-              >
-                <Ionicons
-                  name="qr-code-outline"
-                  size={20}
-                  color={colors.accent}
-                />
-              </View>
-
-              <View style={{ marginLeft: spacing.sm, flex: 1 }}>
-                <Text
-                  style={[
-                    typography.bodyStrong,
-                    { color: colors.textPrimary },
-                  ]}
-                >
-                  Connect by QR code
-                </Text>
-
-                <Text
-                  style={[
-                    typography.caption,
-                    { color: colors.textSecondary },
-                  ]}
-                >
-                  Share your code or scan a contact
-                </Text>
-              </View>
-
-              <Ionicons
-                name="chevron-forward"
-                size={18}
-                color={colors.textSecondary}
-              />
-            </GlassCard>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => navigation.navigate('CreateGroup')}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel="New group"
-          >
-            <GlassCard contentStyle={styles.qrRow}>
-              <View
-                style={[
-                  styles.qrIcon,
-                  { backgroundColor: colors.surface },
-                ]}
-              >
-                <Ionicons
-                  name="people-outline"
-                  size={20}
-                  color={colors.accent}
-                />
-              </View>
-
-              <Text
-                style={[
-                  typography.bodyStrong,
-                  {
-                    color: colors.textPrimary,
-                    marginLeft: spacing.sm,
-                  },
-                ]}
-              >
-                New group
-              </Text>
-            </GlassCard>
-          </TouchableOpacity>
+        <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md, gap: spacing.sm, marginBottom: spacing.sm }}>
+          <Text style={[typography.title, { color: colors.textPrimary }]}>Find people on ZannyChat</Text>
+          <Text style={[typography.caption, { color: colors.textSecondary }]}>Search registered members and start a private conversation instantly.</Text>
+          <View style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: 16, paddingHorizontal: spacing.md, backgroundColor: colors.surface }}>
+            <Ionicons name="search-outline" size={19} color={colors.textSecondary} />
+            <TextInput value={memberSearch} onChangeText={setMemberSearch} placeholder="Search names or status…" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search ZannyChat members" returnKeyType="search" autoCapitalize="none" style={[typography.body, { flex: 1, marginLeft: spacing.sm, color: colors.textPrimary, minHeight: 46 }]} />
+            {memberSearch ? <TouchableOpacity onPress={() => setMemberSearch('')} accessibilityRole="button" accessibilityLabel="Clear member search" style={{ minWidth: 40, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={20} color={colors.textSecondary} /></TouchableOpacity> : null}
+          </View>
+          <View style={{ gap: spacing.sm }}>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>{loadingContacts ? 'Finding members…' : `${visibleContacts.length} of ${contacts.length} member${contacts.length === 1 ? '' : 's'}${favoriteIds.length ? ` · ${favoriteIds.length} saved` : ''}`}</Text>
+            <View style={{ flexDirection: 'row', gap: spacing.xs, flexWrap: 'wrap' }}>
+              {[{ id: 'all', label: 'All members', icon: 'people-outline' }, { id: 'online', label: 'Online', icon: 'radio-button-on-outline' }, { id: 'favorites', label: 'Favorites', icon: 'star-outline' }].map((option) => {
+                const selected = activeFilter === option.id;
+                return <TouchableOpacity key={option.id} onPress={() => { setDirectoryFilter(option.id); setOnlineOnly(false); }} accessibilityRole="radio" accessibilityState={{ selected }} style={{ minHeight: 42, paddingHorizontal: spacing.md, borderRadius: 22, borderWidth: 1, borderColor: selected ? colors.accent : colors.border, backgroundColor: selected ? colors.surface : 'transparent', flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name={option.icon} size={16} color={selected ? colors.accent : colors.textSecondary} /><Text style={[typography.caption, { color: selected ? colors.accent : colors.textSecondary }]}>{option.label}</Text></TouchableOpacity>;
+              })}
+            </View>
+          </View>
+          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+            <TouchableOpacity onPress={() => navigation.navigate('ContactDiscovery')} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Find friends by phone"><GlassCard contentStyle={styles.qrRow}><Ionicons name="people-outline" size={18} color={colors.accent} /><Text style={[typography.caption, { color: colors.textPrimary, marginLeft: 6 }]}>Find friends</Text></GlassCard></TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('QRContact')} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Connect by QR code"><GlassCard contentStyle={styles.qrRow}><Ionicons name="qr-code-outline" size={18} color={colors.accent} /><Text style={[typography.caption, { color: colors.textPrimary, marginLeft: 6 }]}>Scan QR</Text></GlassCard></TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('CreateGroup')} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="New group"><GlassCard contentStyle={styles.qrRow}><Ionicons name="people-outline" size={18} color={colors.accent} /><Text style={[typography.caption, { color: colors.textPrimary, marginLeft: 6 }]}>New group</Text></GlassCard></TouchableOpacity>
+          </View>
         </View>
       )}
+
 
       {Boolean(chatError) && (
         <View
@@ -319,7 +290,7 @@ export default function NewChatScreen({ navigation, route }) {
         </View>
       ) : (
         <FlatList
-          data={contacts}
+          data={visibleContacts}
           keyExtractor={(item, index) =>
             item?.id ? String(item.id) : `contact-${index}`
           }
@@ -338,7 +309,7 @@ export default function NewChatScreen({ navigation, route }) {
                     { color: colors.textSecondary, textAlign: 'center' },
                   ]}
                 >
-                  No contacts found.
+                  {contacts.length === 0 ? 'No ZannyChat members found yet.' : activeFilter === 'favorites' && !memberSearch.trim() ? 'No favorites saved yet. Tap the star beside a member to keep them close.' : activeFilter === 'online' ? 'Nobody is online right now. Try All members to see everyone.' : `No members match “${memberSearch.trim()}”. Try another name or status.`}
                 </Text>
               </View>
             ) : null
@@ -387,6 +358,8 @@ export default function NewChatScreen({ navigation, route }) {
                   >
                     {item.name}
                   </Text>
+
+                  {!isShareMode && <TouchableOpacity onPress={() => toggleFavorite(item.id)} accessibilityRole="button" accessibilityLabel={favoriteIds.includes(item.id) ? `Remove ${item.name} from favorites` : `Add ${item.name} to favorites`} accessibilityState={{ selected: favoriteIds.includes(item.id) }} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name={favoriteIds.includes(item.id) ? 'star' : 'star-outline'} size={20} color={favoriteIds.includes(item.id) ? '#F4B740' : colors.textSecondary} /></TouchableOpacity>}
 
                   {(isOpening || isSending) && (
                     <ActivityIndicator

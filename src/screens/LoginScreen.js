@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
+import { startGoogleOAuth } from '../services/googleAuth';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { signInWithEmail } from '../services/api';
 import { isValidEmail, normalizeEmail } from '../utils/authValidation';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
-import { registerForPushNotifications } from '../services/notifications';
 import GlassInput from '../components/GlassInput';
 import GlassCard from '../components/GlassCard';
 import Knot from '../components/Knot';
+
+function showMessage(title, message) {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') window.alert(`${title}\n\n${message}`);
+  else Alert.alert(title, message);
+}
 
 export default function LoginScreen({ navigation }) {
   const { colors, mood, spacing, typography, radii } = useTheme();
@@ -17,20 +22,21 @@ export default function LoginScreen({ navigation }) {
 
   async function handleLogin() {
     if (!isValidEmail(email)) {
-      Alert.alert('Check your email', 'Enter a valid email address to continue.');
+      showMessage('Check your email', 'Enter a valid email address to continue.');
       return;
     }
     if (!password) {
-      Alert.alert('Enter your password', 'Your password is required to sign in.');
+      showMessage('Enter your password', 'Your password is required to sign in.');
       return;
     }
     setLoading(true);
     try {
       await signInWithEmail(normalizeEmail(email), password);
-      registerForPushNotifications();
-      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+      // In live mode App.js reacts to Supabase SIGNED_IN and switches the
+      // registered navigator routes. Demo mode has no auth event, so navigate locally.
+      if (!SUPABASE_ENABLED) navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
     } catch (err) {
-      Alert.alert('Couldn\u2019t sign in', err.message || 'Please check your details and try again.');
+      showMessage('Sign-in failed', err.message || 'Please check your details and try again.');
     } finally {
       setLoading(false);
     }
@@ -39,18 +45,16 @@ export default function LoginScreen({ navigation }) {
 
   async function handleGoogleSignIn() {
     if (!SUPABASE_ENABLED || !supabase) {
-      Alert.alert('Sign-in unavailable', 'Connect the Supabase backend first.');
+      showMessage('Sign-in unavailable', 'Connect the Supabase backend first.');
       return;
     }
     setLoading(true);
     try {
-      const result = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: 'https://zannychat.netlify.app' },
-      });
-      if (result.error) throw result.error;
+      const result = await startGoogleOAuth(supabase);
+      // A cancelled native browser session should restore the button immediately.
+      if (result?.cancelled) setLoading(false);
     } catch (err) {
-      Alert.alert('Google sign-in failed', err.message || 'Please try again.');
+      showMessage('Google sign-in failed', err.message || 'Please try again.');
       setLoading(false);
     }
   }
@@ -87,6 +91,17 @@ export default function LoginScreen({ navigation }) {
             returnKeyType="next"
           />
           <GlassInput value={password} onChangeText={setPassword} placeholder="Password" accessibilityLabel="Password" textContentType="password" secureTextEntry returnKeyType="go" onSubmitEditing={handleLogin} />
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: colors.primary, borderRadius: radii.pill, opacity: loading ? 0.65 : 1 }]}
+            onPress={handleLogin}
+            disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel={loading ? 'Signing in' : 'Sign in'}
+            accessibilityState={{ disabled: loading, busy: loading }}
+            activeOpacity={0.75}
+          >
+            <Text style={styles.buttonText}>{loading ? 'Signing in…' : 'Sign in'}</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={[

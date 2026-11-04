@@ -1,0 +1,316 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import Avatar from '../components/Avatar';
+import { sendCallSignal, subscribeToCallSession, subscribeToCallSignals, updateCallStatus } from '../services/calls';
+import { backendFetch } from '../services/backendClient';
+import { supabase } from '../services/supabaseClient';
+import { formatCallDuration, getCallEndStatus, isTerminalCallStatus } from '../utils/callPolicy';
+
+const FALLBACK_ICE_SERVERS = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
+
+export default function CallScreenWeb({ route, navigation }) {
+  const params = route.params || {};
+  const { call: initialCall, callId, conversationId, callType = 'audio', isCaller = false, participantName = 'ZannyChat contact', avatarColor } = params;
+  const initial = initialCall || { id: callId, conversation_id: conversationId, call_type: callType, status: 'accepted' };
+  const [call, setCall] = useState(initial);
+  const [phase, setPhase] = useState('Connecting…');
+  const [muted, setMuted] = useState(false);
+  const [cameraOff, setCameraOff] = useState((initial.call_type || callType) !== 'video');
+  const [seconds, setSeconds] = useState(0);
+  const [errorText, setErrorText] = useState('');
+  const [remoteStream, setRemoteStream] = useState(null);
+  const [localStream, setLocalStream] = useState(null);
+  const remoteVideoRef = useRef(null);
+  const localVideoRef = useRef(null);
+  const pcRef = useRef(null);
+  const localStreamRef = useRef(null);
+  const callRef = useRef(initial);
+  const activeRef = useRef(true);
+  const remoteDescriptionReady = useRef(false);
+  const queuedIce = useRef([]);
+  const seenSignals = useRef(new Set());
+  const connectedAtRef = useRef(null);
+  const offerStartedRef = useRef(false);
+
+  const activeCallType = call?.call_type || callType;
+
+  useEffect(() => {
+    if (remoteVideoRef.current && remoteStream) {
+      remoteVideoRef.current.srcObject = remoteStream;
+      remoteVideoRef.current.play?.().catch(() => {});
+    }
+  }, [remoteStream]);
+
+  useEffect(() => {
+    if (localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream;
+      localVideoRef.current.play?.().catch(() => {});
+    }
+  }, [localStream, cameraOff]);
+
+  const endCall = useCallback(async (reason = 'ended') => {
+    const current = callRef.current;
+    if (current?.id && ['ringing', 'accepted'].includes(current.status)) {
+      const nextStatus = getCallEndStatus({ reason, isCaller, status: current.status });
+      await updateCallStatus(current.id, nextStatus).catch(() => {});
+    }
+    navigation.goBack();
+  }, [isCaller, navigation]);
+
+  useEffect(() => {
+    activeRef.current = true;
+    let unsubscribeSignals = () => {};
+    let unsubscribeSession = () => {};
+    let pc = null;
+    let stream = null;
+    let signalingReady = false;
+    let currentStatus = callRef.current?.status;
+
+    const processSignal = async (signal) => {
+      if (!activeRef.current || !signal?.id || seenSignals.current.has(signal.id) || !pc) return;
+      seenSignals.current.add(signal.id);
+      const expectedRemoteId = isCaller ? callRef.current?.callee_id : callRef.current?.caller_id;
+      if (signal.sender_id !== expectedRemoteId) return;
+      try {
+        if (signal.signal_type === 'offer' && !isCaller) {
+          await pc.setRemoteDescription(new window.RTCSessionDescription(signal.payload));
+          remoteDescriptionReady.current = true;
+          for (const candidate of queuedIce.current.splice(0)) await pc.addIceCandidate(new window.RTCIceCandidate(candidate));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          await sendCallSignal({ call: callRef.current, type: 'answer', payload: { type: answer.type, sdp: answer.sdp } });
+          setPhase('Connecting…');
+        } else if (signal.signal_type === 'answer' && isCaller && !remoteDescriptionReady.current) {
+          await pc.setRemoteDescription(new window.RTCSessionDescription(signal.payload));
+          remoteDescriptionReady.current = true;
+          for (const candidate of queuedIce.current.splice(0)) await pc.addIceCandidate(new window.RTCIceCandidate(candidate));
+        } else if (signal.signal_type === 'ice-candidate') {
+          if (remoteDescriptionReady.current && pc.remoteDescription) await pc.addIceCandidate(new window.RTCIceCandidate(signal.payload));
+          else queuedIce.current.push(signal.payload);
+        }
+      } catch (error) {
+        if (activeRef.current) setErrorText('Could not establish the media connection. Check your network and try again.');
+      }
+    };
+
+    const run = async () => {
+      if (!callRef.current?.id) throw new Error('Call session is missing. Please start the call again.');
+      if (!supabase) throw new Error('Sign in to ZannyChat before starting a call.');
+      if (!navigator.mediaDevices?.getUserMedia || !window.RTCPeerConnection) {
+        throw new Error('This browser does not support audio/video calling. Try the latest Chrome, Edge, Firefox, or Safari over HTTPS.');
+      }
+      const { data: liveCall, error: liveCallError } = await supabase.from('call_sessions')
+        .select('id,conversation_id,caller_id,callee_id,call_type,status,created_at,accepted_at,ended_at,expires_at')
+        .eq('id', callRef.current.id).maybeSingle();
+      if (liveCallError || !liveCall || liveCall.status !== 'accepted') {
+        throw new Error('The call must be accepted before microphone or camera access is enabled.');
+      }
+      callRef.current = liveCall;
+      if (activeRef.current) setCall(liveCall);
+
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: liveCall.call_type === 'video' ? { facingMode: 'user', width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: 24 } } : false,
+      });
+      localStreamRef.current = stream;
+      if (activeRef.current) setLocalStream(stream);
+
+      let iceServers = FALLBACK_ICE_SERVERS;
+      try {
+        const config = await backendFetch('/calls/ice-config');
+        if (Array.isArray(config?.iceServers) && config.iceServers.length) iceServers = config.iceServers;
+      } catch (_) { /* STUN fallback; some networks require TURN. */ }
+      if (!activeRef.current) { stream.getTracks().forEach((track) => track.stop()); return; }
+
+      pc = new window.RTCPeerConnection({ iceServers, iceCandidatePoolSize: 4 });
+      pcRef.current = pc;
+      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+      pc.ontrack = (event) => {
+        const nextStream = event.streams?.[0];
+        if (nextStream && activeRef.current) setRemoteStream(nextStream);
+      };
+      pc.onicecandidate = (event) => {
+        if (event.candidate && activeRef.current && callRef.current) {
+          sendCallSignal({ call: callRef.current, type: 'ice-candidate', payload: event.candidate.toJSON ? event.candidate.toJSON() : event.candidate })
+            .catch(() => { if (activeRef.current) setErrorText('Network signalling interrupted. Check your connection.'); });
+        }
+      };
+      pc.onconnectionstatechange = () => {
+        if (!activeRef.current) return;
+        if (pc.connectionState === 'connected') {
+          connectedAtRef.current = connectedAtRef.current || Date.now();
+          setPhase('Connected');
+          setErrorText('');
+        } else if (pc.connectionState === 'connecting') setPhase('Connecting…');
+        else if (pc.connectionState === 'disconnected') setPhase('Reconnecting…');
+        else if (pc.connectionState === 'failed') setErrorText('Connection failed. This network may require a TURN relay.');
+      };
+
+      const maybeStartOffer = async () => {
+        if (!isCaller || currentStatus !== 'accepted' || !signalingReady || offerStartedRef.current || !pc || !activeRef.current) return;
+        offerStartedRef.current = true;
+        try {
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          await sendCallSignal({ call: callRef.current, type: 'offer', payload: { type: offer.type, sdp: offer.sdp } });
+          if (activeRef.current) setPhase('Calling…');
+        } catch (_) {
+          offerStartedRef.current = false;
+          if (activeRef.current) setErrorText('Could not start the call. Please try again.');
+        }
+      };
+
+      unsubscribeSignals = subscribeToCallSignals(liveCall.id, processSignal, async () => {
+        if (!supabase || !activeRef.current) return;
+        const { data } = await supabase.from('call_signals')
+          .select('id,call_id,sender_id,recipient_id,signal_type,payload,created_at')
+          .eq('call_id', liveCall.id).order('created_at', { ascending: true }).limit(250);
+        for (const signal of data || []) await processSignal(signal);
+        signalingReady = true;
+        await maybeStartOffer();
+      });
+
+      unsubscribeSession = subscribeToCallSession(liveCall.id, (next) => {
+        if (!activeRef.current || !next) return;
+        currentStatus = next.status;
+        callRef.current = next;
+        setCall(next);
+        if (next.status === 'accepted') {
+          setPhase('Connecting…');
+          maybeStartOffer();
+        } else if (isTerminalCallStatus(next.status)) {
+          setPhase(next.status === 'declined' ? 'Call declined' : next.status === 'missed' ? 'No answer' : 'Call ended');
+          setTimeout(() => { if (activeRef.current) navigation.goBack(); }, 700);
+        }
+      }, async () => {
+        if (!supabase || !activeRef.current) return;
+        const { data } = await supabase.from('call_sessions')
+          .select('id,conversation_id,caller_id,callee_id,call_type,status,created_at,accepted_at,ended_at,expires_at')
+          .eq('id', liveCall.id).maybeSingle();
+        if (data && activeRef.current) {
+          currentStatus = data.status;
+          callRef.current = data;
+          setCall(data);
+          if (isTerminalCallStatus(data.status)) {
+            setPhase(data.status === 'declined' ? 'Call declined' : 'Call ended');
+            navigation.goBack();
+          }
+        }
+      });
+      await maybeStartOffer();
+    };
+
+    run().catch(async (error) => {
+      const current = callRef.current;
+      if (current?.id && current.status === 'accepted') await updateCallStatus(current.id, 'ended').catch(() => {});
+      if (activeRef.current) {
+        setErrorText(error?.message || 'Could not start the call.');
+        setPhase('Unavailable');
+      }
+    });
+
+    return () => {
+      activeRef.current = false;
+      unsubscribeSignals();
+      unsubscribeSession();
+      try { pc?.close(); } catch (_) {}
+      try { stream?.getTracks?.().forEach((track) => track.stop()); } catch (_) {}
+      pcRef.current = null;
+      localStreamRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!call?.id || call.status !== 'accepted' || !supabase) return undefined;
+    let stopped = false;
+    const renew = async () => {
+      const { error } = await supabase.rpc('heartbeat_call_session', { p_call_id: call.id });
+      if (error && !stopped && /expired|unauthorized|participant/i.test(error.message || '')) {
+        setErrorText('This call session expired. Please start a new call.');
+        setPhase('Unavailable');
+        updateCallStatus(call.id, 'ended').catch(() => {});
+      }
+    };
+    renew();
+    const timer = setInterval(renew, 30000);
+    return () => { stopped = true; clearInterval(timer); };
+  }, [call?.id, call?.status]);
+
+  useEffect(() => {
+    if (phase !== 'Connected') return undefined;
+    const timer = setInterval(() => setSeconds(Math.floor((Date.now() - (connectedAtRef.current || Date.now())) / 1000)), 1000);
+    return () => clearInterval(timer);
+  }, [phase]);
+
+  const toggleMute = () => {
+    const next = !muted;
+    localStreamRef.current?.getAudioTracks?.().forEach((track) => { track.enabled = !next; });
+    setMuted(next);
+  };
+  const toggleCamera = () => {
+    const next = !cameraOff;
+    localStreamRef.current?.getVideoTracks?.().forEach((track) => { track.enabled = !next; });
+    setCameraOff(next);
+  };
+  const control = (icon, label, action, active = false, danger = false) => (
+    <TouchableOpacity key={label} onPress={action} accessibilityRole="button" accessibilityLabel={label}
+      style={[styles.control, { backgroundColor: danger ? '#E4475A' : active ? '#6C5CE7' : 'rgba(255,255,255,0.13)' }]}>
+      <Ionicons name={icon} size={23} color="#FFFFFF" />
+      <Text style={styles.controlLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="light-content" />
+      {activeCallType === 'video' && remoteStream ? React.createElement('video', {
+        ref: remoteVideoRef, autoPlay: true, playsInline: true,
+        style: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', backgroundColor: '#11101A' },
+      }) : null}
+      {activeCallType === 'video' && localStream && !cameraOff ? React.createElement('video', {
+        ref: localVideoRef, autoPlay: true, playsInline: true, muted: true,
+        style: { position: 'absolute', right: 16, top: 76, width: 112, height: 160, objectFit: 'cover', borderRadius: 18, zIndex: 2, backgroundColor: '#242133' },
+      }) : null}
+      <View style={styles.topBar}>
+        <TouchableOpacity onPress={() => endCall('ended')} accessibilityRole="button" accessibilityLabel="Close call">
+          <Ionicons name="chevron-down" size={26} color="#FFFFFF" />
+        </TouchableOpacity>
+        <View style={styles.encryption}><Ionicons name="lock-closed" size={12} color="#A8E6C1" /><Text style={styles.encryptionText}>Encrypted media transport</Text></View>
+        <View style={{ width: 26 }} />
+      </View>
+      <View style={styles.identity}>
+        {!(activeCallType === 'video' && remoteStream) ? <Avatar name={participantName} color={avatarColor || '#6C5CE7'} size={108} /> : null}
+        <Text style={styles.name}>{participantName}</Text>
+        <Text style={styles.phase}>{phase === 'Connected' ? formatCallDuration(seconds) : phase}</Text>
+        {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
+        {phase !== 'Connected' && phase !== 'Unavailable' && !isTerminalCallStatus(call?.status) ? <ActivityIndicator style={{ marginTop: 18 }} color="#FFFFFF" /> : null}
+      </View>
+      <View style={styles.bottom}>
+        <View style={styles.controlsRow}>
+          {control(muted ? 'mic-off' : 'mic', muted ? 'Unmute' : 'Mute', toggleMute, muted)}
+          {activeCallType === 'video' ? control(cameraOff ? 'videocam-off' : 'videocam', cameraOff ? 'Camera on' : 'Camera off', toggleCamera, cameraOff) : null}
+        </View>
+        <TouchableOpacity onPress={() => endCall('ended')} accessibilityRole="button" accessibilityLabel="End call" style={styles.endButton}>
+          <Ionicons name="call" size={27} color="#FFFFFF" style={{ transform: [{ rotate: '135deg' }] }} />
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: '#11101A' },
+  topBar: { paddingHorizontal: 22, paddingTop: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  encryption: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 18, paddingVertical: 7, paddingHorizontal: 11, backgroundColor: 'rgba(255,255,255,0.08)' },
+  encryptionText: { color: '#C5C5D1', fontSize: 11, fontWeight: '600' },
+  identity: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28 },
+  name: { color: '#FFFFFF', fontSize: 27, fontWeight: '700', marginTop: 24, textAlign: 'center' },
+  phase: { color: '#C4C2D2', fontSize: 15, marginTop: 9 },
+  error: { color: '#FFB8C0', fontSize: 13, textAlign: 'center', marginTop: 16, maxWidth: 340 },
+  bottom: { paddingHorizontal: 22, paddingBottom: 28, alignItems: 'center' },
+  controlsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 28 },
+  control: { width: 68, height: 68, borderRadius: 22, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  controlLabel: { color: '#FFFFFF', fontSize: 10, fontWeight: '600' },
+  endButton: { width: 70, height: 70, borderRadius: 35, backgroundColor: '#E4475A', alignItems: 'center', justifyContent: 'center' },
+});

@@ -3,17 +3,10 @@
     "name": "ZannyChat",
     "slug": "zannychat",
     "scheme": "zannychat",
-    "version": "1.2.98",
+    "version": "1.2.237",
     "orientation": "portrait",
-    "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
+    "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "imageWidth": 192,
-      "backgroundColor": "#15111C"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.zannychat.app",
@@ -22,7 +15,8 @@
         "NSMicrophoneUsageDescription": "ZannyChat uses the microphone so you can record and send voice messages.",
         "NSPhotoLibraryUsageDescription": "ZannyChat accesses your photo library so you can send photos and set a profile picture.",
         "NSPhotoLibraryAddUsageDescription": "ZannyChat can save photos from your chats to your photo library."
-      }
+      },
+      "bitcode": false
     },
     "android": {
       "package": "com.zannychat.app",
@@ -31,11 +25,22 @@
         "backgroundColor": "#15111C"
       },
       "permissions": [
-        "CAMERA",
-        "RECORD_AUDIO",
-        "READ_MEDIA_IMAGES",
-        "READ_MEDIA_VIDEO",
-        "POST_NOTIFICATIONS"
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.READ_CONTACTS",
+        "android.permission.WRITE_CONTACTS",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.INTERNET",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.WAKE_LOCK",
+        "android.permission.BLUETOOTH"
       ]
     },
     "web": {
@@ -67,7 +72,45 @@
           "microphonePermission": "ZannyChat uses the microphone so you can record and send voice messages."
         }
       ],
-      "expo-status-bar"
-    ]
+      "expo-status-bar",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "ZannyChat accesses your photo library so you can save images and videos shared in chats.",
+          "savePhotosPermission": "ZannyChat saves images and videos you choose to keep from your chats.",
+          "granularPermissions": []
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "ZannyChat accesses your contacts only when you choose Import contacts, so you can select which phone numbers to check for registered members."
+        }
+      ],
+      [
+        "@config-plugins/react-native-webrtc",
+        {
+          "cameraPermission": "ZannyChat uses the camera only when you start or answer a video call.",
+          "microphonePermission": "ZannyChat uses the microphone only when you start or answer a call."
+        }
+      ],
+      "expo-web-browser",
+      "expo-sharing",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 192,
+          "resizeMode": "contain",
+          "backgroundColor": "#15111C"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "2c65f95e-6b35-449a-b75a-fee39fc807a5"
+      }
+    },
+    "owner": "zannie"
   }
 }

@@ -10,16 +10,33 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // gotcha). Plain localStorage doesn't have that lifecycle problem and
 // is more than adequate for a session token, so web gets that instead;
 // native keeps AsyncStorage, which is the only real option there.
+// Browsers can disable localStorage (private mode, embedded/sandboxed views,
+// or enterprise policy). Never let a storage SecurityError crash auth startup;
+// use a tab-memory fallback for the current runtime when persistence is blocked.
+const memoryWebStorage = new Map();
+function readLocalStorage(key) {
+  try { return typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem(key) : null; }
+  catch (_) { return memoryWebStorage.has(key) ? memoryWebStorage.get(key) : null; }
+}
+function writeLocalStorage(key, value) {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem(key, value);
+      memoryWebStorage.delete(key);
+      return;
+    }
+  } catch (_) { /* Fall through to tab-memory storage. */ }
+  memoryWebStorage.set(key, value);
+}
+function removeLocalStorage(key) {
+  try { if (typeof window !== 'undefined' && window.localStorage) window.localStorage.removeItem(key); }
+  catch (_) { /* The fallback still needs to be cleared. */ }
+  memoryWebStorage.delete(key);
+}
 const webStorage = {
-  getItem: (key) => Promise.resolve(typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null),
-  setItem: (key, value) => {
-    if (typeof localStorage !== 'undefined') localStorage.setItem(key, value);
-    return Promise.resolve();
-  },
-  removeItem: (key) => {
-    if (typeof localStorage !== 'undefined') localStorage.removeItem(key);
-    return Promise.resolve();
-  },
+  getItem: async (key) => readLocalStorage(key),
+  setItem: async (key, value) => writeLocalStorage(key, value),
+  removeItem: async (key) => removeLocalStorage(key),
 };
 
 const authStorage = Platform.OS === 'web' ? webStorage : AsyncStorage;

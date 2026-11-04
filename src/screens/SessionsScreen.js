@@ -45,7 +45,7 @@ export default function SessionsScreen({ navigation }) {
           setBusy(true);
           try {
             if (global) await signOutEverywhere(); else await signOutThisDevice();
-            navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] });
+            // The auth-state listener switches to the guest route group after sign-out.
           } catch (error) {
             Alert.alert('Could not sign out', error?.message || 'Please retry when your connection is available.');
           } finally { setBusy(false); }

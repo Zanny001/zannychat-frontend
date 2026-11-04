@@ -12,8 +12,8 @@ import Knot from './Knot';
 // Screens reached with a back button (Chat, New chat, Settings) pass
 // their own title instead — repeating the app logo next to a
 // contact's name would just be noise.
-export default function Header({ title, onBack, right, subtitle, brand = false }) {
-  const { colors, mood, spacing, typography } = useTheme();
+export default function Header({ title, onBack, right, subtitle, brand = false, onTitlePress }) {
+  const { colors, mood, spacing, typography, layout } = useTheme();
 
   return (
     <View style={[styles.wrap, { borderBottomColor: hexToRgba(colors.textPrimary, 0.08) }]}>
@@ -25,13 +25,13 @@ export default function Header({ title, onBack, right, subtitle, brand = false }
       />
       <View style={[StyleSheet.absoluteFill, { backgroundColor: hexToRgba(colors.background, 0.62) }]} />
 
-      <View style={[styles.container, { paddingHorizontal: spacing.md }]}>
+      <View style={[styles.container, { minHeight: layout.headerHeight, paddingHorizontal: spacing.md, paddingVertical: spacing.xs }]}>
         <View style={styles.left}>
           {onBack && (
             <TouchableOpacity
               onPress={onBack}
               hitSlop={10}
-              style={{ marginRight: spacing.sm }}
+              style={[styles.backButton, { marginRight: spacing.sm }]}
               accessibilityLabel="Go back"
               accessibilityRole="button"
             >
@@ -44,14 +44,14 @@ export default function Header({ title, onBack, right, subtitle, brand = false }
               <Text style={[typography.title, { color: colors.textPrimary, marginLeft: 8 }]}>{title}</Text>
             </View>
           ) : (
-            <View>
+            <TouchableOpacity disabled={!onTitlePress} onPress={onTitlePress} activeOpacity={0.75} accessibilityRole={onTitlePress ? 'button' : undefined} accessibilityLabel={onTitlePress ? `View ${title} profile` : undefined}>
               <Text style={[typography.heading, { color: colors.textPrimary }]} numberOfLines={1}>
                 {title}
               </Text>
               {subtitle ? (
                 <Text style={[typography.caption, { color: colors.textSecondary }]}>{subtitle}</Text>
               ) : null}
-            </View>
+            </TouchableOpacity>
           )}
         </View>
         <View style={styles.right}>{right}</View>
@@ -63,12 +63,13 @@ export default function Header({ title, onBack, right, subtitle, brand = false }
 const styles = StyleSheet.create({
   wrap: { borderBottomWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   container: {
-    height: 56,
+    minHeight: 60,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   left: { flexDirection: 'row', alignItems: 'center', flexShrink: 1 },
+  backButton: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   brandRow: { flexDirection: 'row', alignItems: 'center' },
   right: { flexDirection: 'row', alignItems: 'center' },
 });

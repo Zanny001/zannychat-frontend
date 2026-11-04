@@ -13,7 +13,7 @@ test('preserves a retry file in app-owned storage and avoids copying the origina
   const result = await preserveAttachmentForRetry(fs, original, 'user/1', 'conversation 2');
   assert.equal(result.preserved, true);
   assert.equal(result.item.recoveryCopy, true);
-  assert.match(result.item.uri, /zannychat-attachment-outbox\/user_1-conversation_2-att-1\.pdf$/);
+  assert.match(result.item.uri, /zannychat-attachment-outbox\/user%2F1-conversation%202-att-1\.pdf$/);
   assert.equal(result.item.originalUri, undefined);
   assert.equal(copies.filter(([kind]) => kind === 'copy').length, 1);
 });
@@ -40,4 +40,30 @@ test('chat retry path preserves failed uploads and cleans the recovery copy afte
   assert.match(source, /if \(!saved && recovery\.preserved\) await removePreservedAttachment\(FileSystem, queuedItem\)/);
   assert.match(source, /await removePreservedAttachment\(FileSystem, item\)/);
   assert.match(source, /expo-file-system\/legacy/);
+});
+
+
+test('recovery paths distinguish identifiers that previously collided after sanitization', async () => {
+  const destinations = [];
+  const fs = {
+    documentDirectory: 'file:///documents/',
+    makeDirectoryAsync: async () => {},
+    copyAsync: async ({ to }) => destinations.push(to),
+  };
+  const base = { id: 'att-1', kind: 'file', uri: 'file:///cache/report.pdf' };
+  const first = await preserveAttachmentForRetry(fs, base, 'user/1', 'conversation');
+  const second = await preserveAttachmentForRetry(fs, base, 'user_1', 'conversation');
+  assert.equal(first.preserved, true);
+  assert.equal(second.preserved, true);
+  assert.notEqual(first.item.uri, second.item.uri);
+  assert.equal(destinations.length, 2);
+});
+
+test('invalid or oversized recovery identifiers fall back without copying', async () => {
+  let copyCount = 0;
+  const fs = { documentDirectory: 'file:///documents/', copyAsync: async () => { copyCount += 1; } };
+  const item = { id: 'att-1', uri: 'file:///cache/a.jpg' };
+  const result = await preserveAttachmentForRetry(fs, item, 'x'.repeat(129), 'conversation');
+  assert.deepEqual(result, { item, preserved: false });
+  assert.equal(copyCount, 0);
 });

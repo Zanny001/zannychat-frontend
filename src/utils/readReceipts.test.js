@@ -33,3 +33,11 @@ test('counts unique delivered group recipients excluding the sender', () => {
   assert.equal(countDeliveredRecipients({ messageId: 'm1', participantIds: ['sender', 'a'], senderId: 'sender', deliveryState: {} }), 0);
   assert.equal(countDeliveredRecipients({ messageId: 'm1', participantIds: null }), 0);
 });
+
+test('malformed receipt maps and non-array delivery entries safely fall back to sent', () => {
+  const message = { id: 'm2', createdAtRaw: '2026-01-01T12:00:00Z' };
+  assert.equal(resolveMessageDeliveryStatus({ message, peerId: 'peer', deliveryState: { m2: 'peer' } }), 'sent');
+  assert.equal(resolveMessageDeliveryStatus({ message, peerId: 'peer', deliveryState: null, participantReadState: [] }), 'sent');
+  assert.equal(countDeliveredRecipients({ messageId: 'm2', participantIds: ['a'], deliveryState: { m2: 'a' } }), 0);
+  assert.equal(countDeliveredRecipients({ messageId: 'm2', participantIds: ['a', 7, null], deliveryState: { m2: ['a', 7] } }), 1);
+});

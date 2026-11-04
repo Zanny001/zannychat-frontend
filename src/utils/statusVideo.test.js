@@ -17,8 +17,9 @@ test('status screen supports picking and playback of video statuses', () => {
   assert.match(screen, /media_kind === 'video'/);
   assert.match(screen, /publishVideoStatus/);
 });
-test('video status retains 24-hour expiry and selected audience', () => {
-  assert.match(service, /statusExpiryFrom\(createdAt\)/);
+test('video status persists the selected expiry and audience, defaulting to 24 hours', () => {
+  assert.match(service, /statusExpiryFrom\(createdAt, lifetimeHours\)/);
+  assert.match(service, /expiryHours = 24/);
   assert.match(service, /audience,\s*media_kind: 'video'/);
   assert.match(service, /createSignedUrl\(path, 300\)/);
 });

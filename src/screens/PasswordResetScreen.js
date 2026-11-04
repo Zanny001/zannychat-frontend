@@ -7,9 +7,26 @@ import GlassCard from '../components/GlassCard';
 import GlassInput from '../components/GlassInput';
 import Knot from '../components/Knot';
 
+function showScreenMessage(title, message, onContinue) {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    window.alert(`${title}\n\n${message}`);
+    if (onContinue) onContinue();
+    return;
+  }
+
+  if (onContinue) {
+    Alert.alert(title, message, [
+      { text: 'Continue', onPress: onContinue },
+    ]);
+  } else {
+    Alert.alert(title, message);
+  }
+}
+
 export default function PasswordResetScreen({ navigation, route }) {
   const { colors, mood, spacing, typography, radii } = useTheme();
-  const [callbackUrl, setCallbackUrl] = useState(route.params?.callbackUrl || '');
+  const initialWebUrl = Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.href : '';
+  const [callbackUrl, setCallbackUrl] = useState(route.params?.callbackUrl || initialWebUrl);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,17 +44,27 @@ export default function PasswordResetScreen({ navigation, route }) {
   }, []);
 
   async function handleSave() {
-    if (password.length < 8) return Alert.alert('Password too short', 'Use at least 8 characters.');
-    if (password.length > 128) return Alert.alert('Password too long', 'Use no more than 128 characters.');
-    if (password !== confirmPassword) return Alert.alert('Passwords do not match', 'Enter the same password in both fields.');
-    if (!callbackUrl) return Alert.alert('Open your recovery link', 'Open the password recovery link from your email on this device, then try again.');
+    if (password.length < 8) return showScreenMessage('Password too short', 'Use at least 8 characters.');
+    if (password.length > 128) return showScreenMessage('Password too long', 'Use no more than 128 characters.');
+    if (password !== confirmPassword) return showScreenMessage('Passwords do not match', 'Enter the same password in both fields.');
+    if (!callbackUrl) return showScreenMessage('Open your recovery link', 'Open the password recovery link from your email on this device, then try again.');
     setLoading(true);
     try {
       await completePasswordReset(callbackUrl, password);
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete('reset-password');
+        cleanUrl.hash = '';
+        window.history.replaceState({}, document.title, cleanUrl.pathname + cleanUrl.search);
+      }
       setComplete(true);
-      Alert.alert('Password updated', 'You can now sign in with your new password.', [{ text: 'Continue', onPress: () => navigation.reset({ index: 0, routes: [{ name: 'Login' }] }) }]);
+      showScreenMessage(
+        'Password updated',
+        'You can now sign in with your new password.',
+        () => navigation.reset({ index: 0, routes: [{ name: 'Login' }] })
+      );
     } catch (error) {
-      Alert.alert('Could not update password', error.message || 'The recovery link may have expired. Request a new one and try again.');
+      showScreenMessage('Could not update password', error.message || 'The recovery link may have expired. Request a new one and try again.');
     } finally {
       setLoading(false);
     }

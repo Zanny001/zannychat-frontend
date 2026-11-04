@@ -1,4 +1,5 @@
 import { supabase, SUPABASE_ENABLED } from './supabaseClient';
+import { debugLog } from '../utils/diagnostics';
 
 // Backend access is opt-in. A fresh checkout with no .env stays in mock
 // mode and never contacts a shared hosted backend by accident.
@@ -39,7 +40,7 @@ export async function backendFetch(path, options = {}) {
 
     const body = await response.json().catch(() => ({}));
 
-    console.log('[Perf][backendFetch]', {
+    debugLog('[Perf][backendFetch]', {
       path,
       sessionMs,
       responseAndBodyMs: Date.now() - requestStartedAt,
@@ -52,7 +53,7 @@ export async function backendFetch(path, options = {}) {
     }
     return body;
   } catch (error) {
-    console.warn('[Perf][backendFetch] failed', {
+    debugLog('[Perf][backendFetch] failed', {
       path,
       sessionMs,
       totalMs: Date.now() - perfStartedAt,

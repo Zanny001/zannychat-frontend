@@ -13,8 +13,8 @@ export const typography = {
   title: { fontFamily: 'SpaceGrotesk_700Bold', fontSize: 23, letterSpacing: -0.3 },
   heading: { fontFamily: 'SpaceGrotesk_600SemiBold', fontSize: 18, letterSpacing: -0.1 },
   numeric: { fontFamily: 'SpaceGrotesk_700Bold', fontSize: 34, letterSpacing: -0.4 },
-  body: { fontFamily: 'Manrope_500Medium', fontSize: 15.5, lineHeight: 21 },
-  bodyStrong: { fontFamily: 'Manrope_700Bold', fontSize: 15.5, lineHeight: 21 },
-  caption: { fontFamily: 'Manrope_500Medium', fontSize: 13, lineHeight: 18 },
-  small: { fontFamily: 'Manrope_600SemiBold', fontSize: 11, letterSpacing: 0.3 },
+  body: { fontFamily: 'Manrope_500Medium', fontSize: 16, lineHeight: 24 },
+  bodyStrong: { fontFamily: 'Manrope_700Bold', fontSize: 16, lineHeight: 24 },
+  caption: { fontFamily: 'Manrope_500Medium', fontSize: 13.5, lineHeight: 20 },
+  small: { fontFamily: 'Manrope_600SemiBold', fontSize: 12, lineHeight: 16, letterSpacing: 0.2 },
 };

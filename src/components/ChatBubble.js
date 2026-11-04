@@ -3,6 +3,7 @@ import { View, Text, Image, StyleSheet, Animated, TouchableOpacity, Linking } fr
 import { Swipeable } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { useTheme } from '../theme/ThemeContext';
 import Avatar from './Avatar';
 import { extractFirstUrl } from '../utils/links';
@@ -160,6 +161,20 @@ function LinkPreviewCard({ url, isMine }) {
 // colored once they've read it. No fake "delivered" state in between —
 // this build has no separate delivery acknowledgment to show one
 // honestly.
+
+function VideoMessageContent({ uri, isMine, onSave }) {
+  const { colors, radii } = useTheme();
+  const player = useVideoPlayer(uri, (instance) => { instance.loop = false; });
+  return (
+    <View style={{ width: 232, height: 174, borderRadius: radii.sm, overflow: 'hidden', backgroundColor: '#080808' }}>
+      <VideoView player={player} nativeControls contentFit="contain" style={{ width: '100%', height: '100%' }} />
+      <TouchableOpacity onPress={() => onSave?.(uri, 'video')} style={{ position: 'absolute', top: 8, right: 8, width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.62)' }} accessibilityRole="button" accessibilityLabel="Save video to device">
+        <Ionicons name="download-outline" size={18} color="#fff" />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 export default function ChatBubble({
   message,
   isMine,
@@ -175,6 +190,7 @@ export default function ChatBubble({
   searchHighlight = false,
   activeSearchHighlight = false,
   onViewImage,
+  onSaveMedia,
   onOpenFile,
   onOpenContact,
 }) {
@@ -200,6 +216,7 @@ export default function ChatBubble({
   function handlePress() {
     if (message.deletedAt) return; // a tombstone has nothing to open
     if (message.mediaType === 'image') onViewImage?.(message.mediaUrl);
+    else if (message.mediaType === 'video') return;
     else if (message.mediaType === 'file') onOpenFile?.(message.mediaUrl, message.mediaName);
     else if (message.mediaType === 'contact') onOpenContact?.(message.sharedUserId, message.mediaName);
   }
@@ -235,10 +252,19 @@ export default function ChatBubble({
           accessibilityLabel={message.text ? `Open image: ${message.text}` : 'Open image attachment'}
           accessibilityHint="Opens the image in full screen"
         >
-          <Image source={{ uri: message.mediaUrl }} style={[styles.image, { borderRadius: radii.sm }]} resizeMode="cover" />
+          <View>
+            <Image source={{ uri: message.mediaUrl }} style={[styles.image, { borderRadius: radii.sm }]} resizeMode="cover" />
+            <TouchableOpacity onPress={() => onSaveMedia?.(message.mediaUrl, 'image')} style={{ position: 'absolute', top: 8, right: 8, width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.62)' }} accessibilityRole="button" accessibilityLabel="Save image to device">
+              <Ionicons name="download-outline" size={18} color="#fff" />
+            </TouchableOpacity>
+          </View>
           {message.text ? <Text style={[typography.body, { color: captionColor, marginTop: 6 }]}>{message.text}</Text> : null}
         </TouchableOpacity>
       );
+    }
+
+    if (message.mediaType === 'video') {
+      return <View><VideoMessageContent uri={message.mediaUrl} isMine={isMine} onSave={onSaveMedia} />{message.text ? <Text style={[typography.body, { color: captionColor, marginTop: 6 }]}>{message.text}</Text> : null}</View>;
     }
 
     if (message.mediaType === 'voice') {

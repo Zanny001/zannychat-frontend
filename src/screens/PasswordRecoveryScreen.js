@@ -8,6 +8,15 @@ import GlassInput from '../components/GlassInput';
 import GlassCard from '../components/GlassCard';
 import Knot from '../components/Knot';
 
+function showMessage(title, message) {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    window.alert(`${title}\n\n${message}`);
+  } else {
+    Alert.alert(title, message);
+  }
+}
+
+
 export default function PasswordRecoveryScreen({ navigation }) {
   const { colors, mood, spacing, typography, radii } = useTheme();
   const [email, setEmail] = useState('');
@@ -17,7 +26,7 @@ export default function PasswordRecoveryScreen({ navigation }) {
   async function handleSubmit() {
     const normalizedEmail = normalizeEmail(email);
     if (!isValidEmail(normalizedEmail)) {
-      Alert.alert('Check your email', 'Enter a valid email address.');
+      showMessage('Check your email', 'Enter a valid email address.');
       return;
     }
     if (!SUPABASE_ENABLED) {
@@ -29,8 +38,24 @@ export default function PasswordRecoveryScreen({ navigation }) {
       await requestPasswordReset(normalizedEmail);
       // Deliberately generic: do not disclose whether an account exists.
       setSubmitted(true);
-    } catch (_) {
-      Alert.alert('Could not request reset', 'Please try again in a moment. If the problem continues, contact support.');
+    } catch (error) {
+      const rawMessage = String(error?.message || '');
+      const normalizedMessage = rawMessage.toLowerCase();
+      let message = rawMessage || 'Please try again in a moment. If the problem continues, contact support.';
+      if (/redirect|url.*(allow|valid)|not allowed/.test(normalizedMessage)) {
+        message = 'Supabase rejected the recovery redirect. In Supabase Dashboard → Authentication → URL Configuration, allow https://zannychat-app.netlify.app/**, then retry. If testing locally, allow that local web origin too.';
+      } else if (/rate limit|too many requests/.test(normalizedMessage)) {
+        message = 'Too many recovery requests were made. Wait a few minutes, then try again.';
+      } else if (/fetch|network|timeout/.test(normalizedMessage)) {
+        message = 'The recovery request could not reach Supabase. Check your internet connection and Supabase project status, then retry.';
+      }
+      // Do not log the email address or any auth tokens.
+      console.warn('[PASSWORD_RECOVERY_REQUEST_FAILED]', {
+        code: error?.code || null,
+        status: error?.status || null,
+        message: rawMessage,
+      });
+      showMessage('Could not request reset', message);
     } finally {
       setLoading(false);
     }

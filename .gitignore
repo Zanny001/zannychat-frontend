@@ -3,11 +3,22 @@ node_modules/
 dist/
 web-build/
 .env
+.env.*
+!.env.example
 *.log
 .DS_Store
 
 # Local Netlify folder
-.netlify
-.env.*
-!.env.example
 .netlify/
+
+# Local backups and diagnostic copies
+*.bak
+*.before-*
+*.pre-*
+*.oauth-backup-*
+*.oauth-diag-*
+*.bak-*
+__pycache__/
+
+# Local release archives
+*.zip

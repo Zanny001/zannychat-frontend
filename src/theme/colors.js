@@ -77,27 +77,71 @@ const ONLINE = '#4ADE80';
 // (signal/thread) means most screens never have to know the theme
 // changed, while ChatBubble and the mood picker can reach for the
 // literal "two voices" meaning.
-export function resolveMoodColors(mood) {
-  return {
+export function resolveMoodColors(mood, mode = 'dark', highContrast = false) {
+  const light = mode === 'light';
+  const base = light ? {
+    background: '#F7F8FC',
+    surface: '#FFFFFF',
+    surfaceAlt: '#EEF1F7',
+    textPrimary: '#171925',
+    textSecondary: highContrast ? '#414658' : '#62697A',
+    border: highContrast ? '#9AA2B4' : '#DDE2EC',
+    borderSubtle: highContrast ? '#B1B8C6' : '#E8EBF2',
+    surfaceElevated: '#FFFFFF',
+    surfaceGlass: '#FFFFFF',
+    overlay: '#000000',
+    scrim: '#000000',
+    shadow: '#1B2030',
+  } : {
     background: mood.ink,
     surface: mood.inkRaised,
     surfaceAlt: mood.inkRaisedAlt,
-    primary: mood.signal,
-    primaryDark: mood.signal,
-    accent: mood.thread,
-    signal: mood.signal,
-    thread: mood.thread,
-    gold: mood.gold,
-    bubbleMine: mood.signal,
-    bubbleTheirs: mood.inkRaisedAlt,
     textPrimary: mood.paper,
-    textSecondary: mood.inkSoft,
-    border: mood.line,
-    danger: mood.danger,
+    textSecondary: highContrast ? '#D2CCDE' : mood.inkSoft,
+    border: highContrast ? '#716A82' : mood.line,
+    borderSubtle: highContrast ? '#5A536B' : mood.line,
+    surfaceElevated: mood.inkRaisedAlt,
+    surfaceGlass: mood.inkRaised,
+    overlay: '#FFFFFF',
+    scrim: '#000000',
+    shadow: '#000000',
+  };
+  const signal = mood.signal;
+  const thread = mood.thread;
+  return {
+    ...base,
+    primary: light ? '#B93825' : signal,
+    primaryDark: light ? '#8F2C1D' : signal,
+    accent: light ? '#087C69' : thread,
+    signal,
+    thread,
+    gold: mood.gold,
+    bubbleMine: light ? '#FFE4DC' : signal,
+    bubbleTheirs: light ? '#E9EDF5' : mood.inkRaisedAlt,
+    danger: light ? '#B4233A' : mood.danger,
     online: ONLINE,
+    success: light ? '#16794B' : ONLINE,
+    warning: light ? '#8A5A00' : mood.gold,
+    focusRing: light ? '#2458D3' : thread,
   };
 }
 
-export const spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 };
+export const spacing = { xxs: 2, xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 40 };
 
-export const radii = { sm: 8, md: 14, lg: 20, pill: 999 };
+export const radii = { xs: 6, sm: 8, md: 14, lg: 20, xl: 28, pill: 999 };
+
+// Shared interaction/layout tokens keep screens coherent as the app grows.
+// 44pt is the minimum comfortable touch target for mobile controls.
+export const layout = {
+  touchTarget: 44,
+  controlHeight: 48,
+  headerHeight: 60,
+  contentMaxWidth: 760,
+  screenGutter: 16,
+  sectionGap: 24,
+};
+
+export const elevation = {
+  card: { shadowOpacity: 0.18, shadowRadius: 14, shadowOffsetY: 6, android: 3 },
+  raised: { shadowOpacity: 0.24, shadowRadius: 20, shadowOffsetY: 9, android: 5 },
+};

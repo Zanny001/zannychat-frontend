@@ -23,6 +23,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
+import * as MediaLibrary from 'expo-media-library/legacy';
+import { saveMediaToLibrary } from '../services/saveMediaToLibrary';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { useAudioRecorder, useAudioRecorderState, AudioModule, RecordingPresets, setAudioModeAsync } from 'expo-audio';
 import { useTheme } from '../theme/ThemeContext';
 import Header from '../components/Header';
@@ -68,6 +71,8 @@ import {
   reportUser,
 } from '../services/api';
 import { subscribePresence } from '../services/presence';
+import { startCall } from '../services/calls';
+import { canStartCall } from '../utils/callPolicy';
 import { SUPABASE_ENABLED } from '../services/supabaseClient';
 import { searchMessages } from '../utils/searchMessages';
 import { resolvePhotoUploadQuality } from '../utils/mediaQuality';
@@ -78,6 +83,11 @@ import { loadPinnedMessages, pinMessageLocally, unpinMessageLocally } from '../s
 import { isMessagePinned } from '../utils/pinnedMessages';
 import { makeDraftKey } from '../utils/drafts';
 import { resolveChatCanvas } from '../utils/chatAppearance';
+
+function DraftVideoPreview({ uri }) {
+  const player = useVideoPlayer(uri, (instance) => { instance.loop = true; });
+  return <VideoView player={player} nativeControls contentFit="contain" style={{ width: '100%', height: '100%' }} />;
+}
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB — enforced server-side too since 0006 (storage.buckets.file_size_limit)
 const MESSAGE_PAGE_SIZE = 30;
@@ -118,6 +128,8 @@ export default function ChatScreen({ route, navigation }) {
   const [summarizing, setSummarizing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [fullscreenImage, setFullscreenImage] = useState(null);
+  const [mediaDraft, setMediaDraft] = useState(null);
+  const [mediaCaption, setMediaCaption] = useState('');
   // Backfilled when this screen is opened from a push notification tap,
   // which only carries a conversation id — see notifications.js. Until
   // that resolves, `display` falls back to whatever the navigator was
@@ -371,8 +383,13 @@ export default function ChatScreen({ route, navigation }) {
     try {
       const queued = await loadPendingMessages(myUserId, conversation.id);
       setPendingOutbox(queued);
-      for (const item of queued) {
-        if (!isMessageRetryDue(item)) continue;
+      // Keep foreground recovery responsive on large backlogs. Retry only a
+      // small oldest-first batch per cycle; the 15-second scheduler drains the rest.
+      const dueQueued = queued
+        .filter((item) => isMessageRetryDue(item))
+        .sort((a, b) => Date.parse(a.createdAt || 0) - Date.parse(b.createdAt || 0))
+        .slice(0, 5);
+      for (const item of dueQueued) {
         try {
           const confirmed = await sendMessage(conversation.id, item.text, item.replyToId, item.requestId);
           await removePendingMessage(myUserId, conversation.id, item.requestId);
@@ -463,15 +480,19 @@ export default function ChatScreen({ route, navigation }) {
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
       setReplyingTo(replyTarget);
       const pending = { requestId, text, replyToId: replyTarget?.id || null, createdAt: new Date().toISOString() };
-      await savePendingMessage(myUserId, conversation.id, pending);
-      setPendingOutbox((items) => [...items.filter((item) => item.requestId !== requestId), pending]);
+      const queued = await savePendingMessage(myUserId, conversation.id, pending);
+      if (queued) {
+        setPendingOutbox((items) => [...items.filter((item) => item.requestId !== requestId), pending]);
+      }
       console.error('[ChatScreen] Message send failed:', err);
-      setSendError(err?.message || String(err) || 'Please try again.');
       const blocked = /row-level security/i.test(err.message || '');
-      Alert.alert(
-        'Message not sent',
-        blocked ? 'You can no longer send messages in this conversation.' : err.message || 'Please try again.'
-      );
+      const failureMessage = blocked
+        ? 'You can no longer send messages in this conversation.'
+        : !queued
+          ? 'Your message could not be saved for automatic retry because the pending-message queue is full or local storage is unavailable. Keep this draft and try again after clearing pending messages.'
+          : err.message || 'Please try again.';
+      setSendError(failureMessage);
+      Alert.alert('Message not sent', failureMessage);
       return false;
     }
   }
@@ -679,23 +700,58 @@ export default function ChatScreen({ route, navigation }) {
   }
 
   async function handlePickedImage(asset) {
-    if (!asset) return;
-    const item = makeAttachmentOutboxItem('image', asset.uri, { mimeType: asset.mimeType || 'image/jpeg' });
+    if (!asset?.uri) return;
+    setMediaCaption('');
+    setMediaDraft({ kind: 'image', uri: asset.uri, mimeType: asset.mimeType || 'image/jpeg', name: asset.fileName || 'Photo', size: asset.fileSize || 0 });
+  }
+
+  async function handlePickedVideo(asset) {
+    if (!asset?.uri) return;
+    if (asset.fileSize && asset.fileSize > MAX_FILE_SIZE) {
+      Alert.alert('Video too large', 'Videos are limited to 25MB for now. Choose a shorter or smaller video.');
+      return;
+    }
+    setMediaCaption('');
+    setMediaDraft({ kind: 'video', uri: asset.uri, mimeType: asset.mimeType || 'video/mp4', name: asset.fileName || 'Video', size: asset.fileSize || 0, durationSeconds: asset.duration ? Math.round(asset.duration / 1000) : undefined });
+  }
+
+  async function sendMediaDraft() {
+    const draft = mediaDraft;
+    if (!draft || uploading) return;
+    const item = makeAttachmentOutboxItem(draft.kind, draft.uri, { mimeType: draft.mimeType, name: draft.name, size: draft.size, durationSeconds: draft.durationSeconds, caption: mediaCaption.trim() });
     setUploading(true);
     try {
       let uploaded;
-      try { uploaded = await uploadChatImage(conversation.id, item.uri, item.mimeType); }
-      catch (err) { await queueAttachmentRetry(item, err); return; }
-      const sent = await sendAttachment(conversation.id, { mediaUrl: uploaded.url, mediaType: 'image' });
+      try {
+        uploaded = draft.kind === 'image'
+          ? await uploadChatImage(conversation.id, draft.uri, draft.mimeType)
+          : await uploadChatFile(conversation.id, draft.uri, draft.name, draft.mimeType, draft.size);
+      } catch (err) {
+        await queueAttachmentRetry(item, err);
+        return;
+      }
+      const sent = await sendAttachment(conversation.id, { mediaUrl: uploaded.url, mediaType: draft.kind, mediaName: uploaded.name || draft.name, mediaSize: uploaded.size || draft.size, mediaDuration: uploaded.duration || draft.durationSeconds, text: mediaCaption.trim() });
       setMessages((prev) => [...prev, sent]);
       stickToBottom.current = true;
+      setMediaDraft(null);
+      setMediaCaption('');
     } catch (err) {
-      Alert.alert("Couldn't send photo", err.message || 'Please try again.');
+      Alert.alert(`Couldn't send ${draft.kind}`, err.message || 'Please try again.');
     } finally { setUploading(false); }
   }
 
+  async function handleSaveMedia(uri, kind = 'image') {
+    if (!uri) return;
+    try {
+      await saveMediaToLibrary({ uri, kind, FileSystem, MediaLibrary, prefix: 'zannychat-chat' });
+      Alert.alert('Saved to your library', `${kind === 'video' ? 'Video' : 'Image'} saved successfully.`);
+    } catch (error) {
+      Alert.alert('Could not save media', error?.message || 'Please try again.');
+    }
+  }
+
   function discardPendingAttachment(item) {
-    const label = item.name || (item.kind === 'image' ? 'photo' : item.kind === 'voice' ? 'voice note' : 'file');
+    const label = item.name || (item.kind === 'image' ? 'photo' : item.kind === 'video' ? 'video' : item.kind === 'voice' ? 'voice note' : 'file');
     Alert.alert('Remove queued attachment?', `“${label}” will be removed from this device's retry queue. This cannot be undone.`, [
       { text: 'Keep', style: 'cancel' },
       { text: 'Remove', style: 'destructive', onPress: async () => {
@@ -727,6 +783,7 @@ export default function ChatScreen({ route, navigation }) {
         let uploaded;
         try {
           if (item.kind === 'image') uploaded = await uploadChatImage(conversation.id, item.uri, item.mimeType || 'image/jpeg');
+          else if (item.kind === 'video') uploaded = await uploadChatFile(conversation.id, item.uri, item.name || 'Video.mp4', item.mimeType || 'video/mp4', item.size);
           else if (item.kind === 'file') uploaded = await uploadChatFile(conversation.id, item.uri, item.name, item.mimeType, item.size);
           else uploaded = await uploadVoiceNote(conversation.id, item.uri, item.durationSeconds);
         } catch (error) {
@@ -736,9 +793,9 @@ export default function ChatScreen({ route, navigation }) {
             attempts: Math.min(100, (Number.isInteger(entry.attempts) ? entry.attempts : 0) + 1),
             lastAttemptAt: new Date().toISOString(),
             nextRetryAt: getAttachmentNextRetryAt(Math.min(100, (Number.isInteger(entry.attempts) ? entry.attempts : 0) + 1)),
-            lastError: String(error?.message || error || 'Upload failed').slice(0, 240),
+            lastError: getSafeRetryError(error, 'attachment'),
           } : entry));
-          Alert.alert('Attachment still waiting', error?.message || 'The file may no longer be available. Select it again if needed.');
+          Alert.alert('Attachment still waiting', getSafeRetryError(error, 'attachment'));
           break;
         }
         // Remove from the retry queue before creating a message record. If the
@@ -757,6 +814,7 @@ export default function ChatScreen({ route, navigation }) {
             mediaName: uploaded.name || item.name,
             mediaSize: uploaded.size || item.size,
             mediaDuration: uploaded.duration || item.durationSeconds,
+            text: item.caption || '',
           });
           setMessages((prev) => [...prev, sent]);
           stickToBottom.current = true;
@@ -769,17 +827,17 @@ export default function ChatScreen({ route, navigation }) {
   }
 
   async function handlePickImage() {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Photo access needed', 'Allow photo library access in Settings to send images.');
-      return;
-    }
-
     const mediaPrefs = await loadMediaPreferences();
     const quality = resolvePhotoUploadQuality(mediaPrefs);
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality });
     if (result.canceled) return;
     await handlePickedImage(result.assets?.[0]);
+  }
+
+  async function handlePickVideo() {
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'], allowsEditing: false, videoMaxDuration: 120 });
+    if (result.canceled) return;
+    await handlePickedVideo(result.assets?.[0]);
   }
 
   // Camera capture — the audit noted only the gallery was wired up,
@@ -794,7 +852,7 @@ export default function ChatScreen({ route, navigation }) {
 
     const mediaPrefs = await loadMediaPreferences();
     const quality = resolvePhotoUploadQuality(mediaPrefs);
-    const result = await ImagePicker.launchCameraAsync({ quality });
+    const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [4, 3], quality });
     if (result.canceled) return;
     await handlePickedImage(result.assets?.[0]);
   }
@@ -1038,7 +1096,8 @@ export default function ChatScreen({ route, navigation }) {
   // --- Sheet option lists -------------------------------------------------
 
   const attachOptions = [
-    { key: 'photo', label: 'Photo library', icon: 'images-outline', onPress: () => { setActiveSheet(null); handlePickImage(); } },
+    { key: 'photo', label: 'Photo library · crop & caption', icon: 'images-outline', onPress: () => { setActiveSheet(null); handlePickImage(); } },
+    { key: 'video', label: 'Video library · preview & caption', icon: 'videocam-outline', onPress: () => { setActiveSheet(null); handlePickVideo(); } },
     { key: 'camera', label: 'Take a photo', icon: 'camera-outline', onPress: () => { setActiveSheet(null); handleTakePhoto(); } },
     { key: 'file', label: 'File', icon: 'document-outline', onPress: () => { setActiveSheet(null); handlePickFile(); } },
     {
@@ -1053,6 +1112,7 @@ export default function ChatScreen({ route, navigation }) {
   ];
 
   const overflowOptions = [
+    { key: 'scheduled-messages', label: 'Schedule message', icon: 'time-outline', onPress: () => { setActiveSheet(null); navigation.navigate('ScheduledMessages', { conversation: display }); } },
     { key: 'polls', label: 'Polls', icon: 'bar-chart-outline', onPress: () => { setActiveSheet(null); navigation.navigate('Polls', { conversation: display }); } },
     { key: 'events', label: 'Events', icon: 'calendar-outline', onPress: () => { setActiveSheet(null); navigation.navigate('Events', { conversation: display }); } },
     {
@@ -1172,6 +1232,19 @@ export default function ChatScreen({ route, navigation }) {
       ]
     : [];
 
+  const handleStartCall = useCallback(async (callType) => {
+    if (!canStartCall({ conversationId: display.id, participantId: display.participant?.id, isGroup: display.isGroup, callType })) {
+      Alert.alert('Calls unavailable', 'Audio and video calls are currently available in direct conversations.');
+      return;
+    }
+    try {
+      const call = await startCall({ conversationId: display.id, calleeId: display.participant.id, callType });
+      navigation.navigate('OutgoingCall', { call, callType, participantName: display.participant.name || 'ZannyChat contact', avatarColor: display.participant.avatarColor });
+    } catch (error) {
+      Alert.alert('Could not start call', error?.message || 'Check your connection and try again.');
+    }
+  }, [display, navigation]);
+
   useFocusEffect(
     useCallback(() => {
       let active = true;
@@ -1185,9 +1258,20 @@ export default function ChatScreen({ route, navigation }) {
       <Header
         title={display.participant?.name || '…'}
         subtitle={subtitle}
+        onTitlePress={!display.isGroup && display.participant?.id ? () => navigation.navigate('PeerProfile', { participant: display.participant, conversation: display }) : undefined}
         onBack={() => navigation.goBack()}
         right={
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {!display.isGroup && display.participant?.id ? (
+              <>
+                <TouchableOpacity style={{ marginRight: spacing.sm }} onPress={() => handleStartCall('audio')} accessibilityLabel="Start audio call" accessibilityRole="button">
+                  <Ionicons name="call-outline" size={20} color={colors.textPrimary} />
+                </TouchableOpacity>
+                <TouchableOpacity style={{ marginRight: spacing.sm }} onPress={() => handleStartCall('video')} accessibilityLabel="Start video call" accessibilityRole="button">
+                  <Ionicons name="videocam-outline" size={21} color={colors.textPrimary} />
+                </TouchableOpacity>
+              </>
+            ) : null}
             <TouchableOpacity
               style={{ marginRight: spacing.sm }}
               onPress={toggleSearch}
@@ -1230,6 +1314,7 @@ export default function ChatScreen({ route, navigation }) {
             >
               <Ionicons name="ellipsis-vertical" size={20} color={colors.textPrimary} />
             </TouchableOpacity>
+            <TouchableOpacity onPress={() => { if (!display.isGroup && display.participant?.id) navigation.navigate('PeerProfile', { participant: display.participant, conversation: display }); }} accessibilityRole="button" accessibilityLabel={`View ${display.participant?.name || 'contact'} profile`} style={{ padding: 2 }}>
             <Avatar
               name={display.participant?.name}
               color={display.participant?.avatarColor}
@@ -1237,6 +1322,7 @@ export default function ChatScreen({ route, navigation }) {
               isGroup={display.isGroup}
               size={32}
             />
+            </TouchableOpacity>
           </View>
         }
       />
@@ -1352,6 +1438,7 @@ export default function ChatScreen({ route, navigation }) {
                 onSwipeReply={setReplyingTo}
                 onShowActions={openMessageActions}
                 onViewImage={setFullscreenImage}
+                onSaveMedia={handleSaveMedia}
                 onOpenFile={handleOpenFile}
                 onOpenContact={handleOpenContact}
               />
@@ -1596,8 +1683,39 @@ export default function ChatScreen({ route, navigation }) {
         </View>
       </Modal>
 
+      <Modal visible={Boolean(mediaDraft)} animationType="slide" onRequestClose={() => setMediaDraft(null)}>
+        <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: Platform.OS === 'ios' ? 52 : 24, paddingHorizontal: spacing.md, paddingBottom: spacing.lg }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md }}>
+            <TouchableOpacity onPress={() => { setMediaDraft(null); setMediaCaption(''); }} accessibilityRole="button" accessibilityLabel="Discard media draft"><Ionicons name="close" size={26} color={colors.textPrimary} /></TouchableOpacity>
+            <Text style={[typography.title, { color: colors.textPrimary }]}>Edit before sending</Text>
+            <TouchableOpacity onPress={sendMediaDraft} disabled={uploading} accessibilityRole="button" accessibilityLabel="Send media"><Ionicons name="send" size={22} color={colors.primary} /></TouchableOpacity>
+          </View>
+          <View style={{ flex: 1, minHeight: 220, borderRadius: radii.lg, overflow: 'hidden', backgroundColor: '#080808', justifyContent: 'center' }}>
+            {mediaDraft?.kind === 'video' && mediaDraft?.uri ? <DraftVideoPreview uri={mediaDraft.uri} /> : mediaDraft?.uri ? <Image source={{ uri: mediaDraft.uri }} style={{ width: '100%', height: '100%' }} resizeMode="contain" /> : null}
+          </View>
+          <Text style={[typography.small, { color: colors.textSecondary, marginTop: spacing.md, marginBottom: spacing.xs }]}>CAPTION & EMOJI</Text>
+          <TextInput value={mediaCaption} onChangeText={setMediaCaption} placeholder="Add a caption…" placeholderTextColor={colors.textSecondary} multiline maxLength={1000} style={{ minHeight: 54, maxHeight: 110, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, color: colors.textPrimary, padding: spacing.md }} />
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.sm }}>
+            {['❤️', '😂', '🔥', '😍', '✨', '👍', '🎉', '🥹'].map((emoji) => <TouchableOpacity key={emoji} onPress={() => setMediaCaption((value) => `${value}${emoji}`)} accessibilityRole="button" accessibilityLabel={`Add ${emoji}`}><Text style={{ fontSize: 24 }}>{emoji}</Text></TouchableOpacity>)}
+          </View>
+          <TouchableOpacity onPress={sendMediaDraft} disabled={uploading} style={{ marginTop: spacing.lg, borderRadius: radii.md, backgroundColor: colors.primary, padding: spacing.md, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', opacity: uploading ? 0.65 : 1 }}>
+            {uploading ? <ActivityIndicator color="#fff" /> : <Ionicons name="send" size={18} color="#fff" />}
+            <Text style={[typography.bodyStrong, { color: '#fff', marginLeft: 8 }]}>{uploading ? 'Sending…' : 'Send media'}</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
       <Modal visible={Boolean(fullscreenImage)} transparent animationType="fade" onRequestClose={() => setFullscreenImage(null)}>
         <View style={styles.lightbox}>
+          <TouchableOpacity
+            style={[styles.lightboxClose, { right: 60 }]}
+            onPress={() => handleSaveMedia(fullscreenImage, 'image')}
+            hitSlop={16}
+            accessibilityLabel="Save image to device"
+            accessibilityRole="button"
+          >
+            <Ionicons name="download-outline" size={25} color="#fff" />
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.lightboxClose}
             onPress={() => setFullscreenImage(null)}

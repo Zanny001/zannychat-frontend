@@ -521,3 +521,8 @@ Group members can open the message action menu on their own confirmed group mess
 ## Release 1.2.86 — group announcement state preservation
 
 Fixed a group-management UI regression where saving group name/topic/description could reset the announcement-mode switch visually when the API response omitted that boolean. The saved response now preserves the locally selected announcement value unless the server explicitly returns a boolean, and the success message reflects all saved group settings. Added a regression test. Source-only fix; hosted behavior still requires staging verification.
+
+
+## Audio/video calling (release 1.2.234)
+
+See the repository-level `AUDIO_VIDEO_CALLS_1.2.234.md` for signaling architecture, backend TURN variables, native build prerequisites, migration order, and outstanding release gates. Calls require a custom native development build; Expo Go is not supported for the WebRTC native module.
