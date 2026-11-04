@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { StyleSheet, View, Platform } from 'react-native';
 import { NavigationContainer, DarkTheme, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -15,16 +15,20 @@ import PasswordRecoveryScreen from '../screens/PasswordRecoveryScreen';
 import VerifyEmailScreen from '../screens/VerifyEmailScreen';
 import PasswordResetScreen from '../screens/PasswordResetScreen';
 import ChatListScreen from '../screens/ChatListScreen';
+import StatusUpdatesScreen from '../screens/StatusUpdatesScreen';
+import ChannelsScreen from '../screens/ChannelsScreen';
 import ChatScreen from '../screens/ChatScreen';
 import NewChatScreen from '../screens/NewChatScreen';
 import CreateGroupScreen from '../screens/CreateGroupScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import PeerProfileScreen from '../screens/PeerProfileScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import PrivacySecurityScreen from '../screens/PrivacySecurityScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import HelpScreen from '../screens/HelpScreen';
 import QRContactScreen from '../screens/QRContactScreen';
+import ContactDiscoveryScreen from '../screens/ContactDiscoveryScreen';
 import ForwardMessageScreen from '../screens/ForwardMessageScreen';
 import DataStorageScreen from '../screens/DataStorageScreen';
 import DataExportScreen from '../screens/DataExportScreen';
@@ -35,12 +39,16 @@ import SavedMessagesScreen from '../screens/SavedMessagesScreen';
 import DraftsScreen from '../screens/DraftsScreen';
 import PinnedMessagesScreen from '../screens/PinnedMessagesScreen';
 import ChatFoldersScreen from '../screens/ChatFoldersScreen';
-import StatusUpdatesScreen from '../screens/StatusUpdatesScreen';
 import PollsScreen from '../screens/PollsScreen';
 import EventsScreen from '../screens/EventsScreen';
 import GroupManagementScreen from '../screens/GroupManagementScreen';
 import JoinGroupScreen from '../screens/JoinGroupScreen';
-import ChannelsScreen from '../screens/ChannelsScreen';
+import ScheduledMessagesScreen from '../screens/ScheduledMessagesScreen';
+import CallScreen from '../screens/CallScreen';
+import IncomingCallScreen from '../screens/IncomingCallScreen';
+import OutgoingCallScreen from '../screens/OutgoingCallScreen';
+import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
+import { getCallParticipantName, subscribeToIncomingCalls } from '../services/calls';
 
 // Lets code outside the component tree (the push-notification tap
 // handler in App.js) trigger navigation — the standard React
@@ -74,22 +82,32 @@ function MainTabNavigator() {
     <MainTabs.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarAccessibilityLabel: route.name === 'Chats' ? 'Chats tab' : 'Profile tab',
+        tabBarAccessibilityLabel: `${route.name} tab`,
+        tabBarShowLabel: true,
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '700', letterSpacing: 0.2, marginTop: 1 },
+        tabBarItemStyle: { paddingTop: 5, paddingBottom: 5 },
         tabBarStyle: {
           backgroundColor: 'transparent',
           borderTopColor: hexToRgba(colors.textPrimary, 0.08),
           position: 'absolute',
+          height: 68,
+          paddingTop: 5,
+          paddingBottom: Platform.OS === 'ios' ? 18 : 8,
+          borderTopWidth: 1,
+          elevation: 0,
         },
         tabBarBackground: () => <GlassTabBackground />,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarIcon: ({ color, size }) => {
-          const icons = { Chats: 'chatbubbles', Profile: 'person-circle' };
+          const icons = { Chats: 'chatbubbles', Updates: 'aperture', Channels: 'megaphone', Profile: 'person-circle' };
           return <Ionicons name={icons[route.name]} size={size} color={color} />;
         },
       })}
     >
       <MainTabs.Screen name="Chats" component={ChatListScreen} />
+      <MainTabs.Screen name="Updates" component={StatusUpdatesScreen} options={{ tabBarLabel: 'Updates' }} />
+      <MainTabs.Screen name="Channels" component={ChannelsScreen} />
       <MainTabs.Screen name="Profile" component={ProfileScreen} />
     </MainTabs.Navigator>
   );
@@ -98,8 +116,58 @@ function MainTabNavigator() {
 // initialRouteName is resolved once in App.js from whether a Supabase
 // session already exists, so a returning, signed-in user lands
 // straight in Main instead of seeing Onboarding again every launch.
-export default function AppNavigator({ initialRouteName = 'Onboarding' }) {
+export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthenticated = false }) {
   const { colors } = useTheme();
+  // In a configured production build, register private app routes only after a
+  // Supabase session exists. Demo mode intentionally keeps its local preview.
+  const canAccessApp = !SUPABASE_ENABLED || isAuthenticated;
+  const incomingUnsubscribeRef = useRef(null);
+  const incomingIdsRef = useRef(new Set());
+  const pendingIncomingRef = useRef(null);
+
+  // Reset only after the route groups have re-rendered. Dispatching a reset
+  // from the auth callback races React Navigation's conditional screen removal.
+  useEffect(() => {
+    if (!SUPABASE_ENABLED || !navigationRef.isReady()) return;
+    const currentRoute = navigationRef.getCurrentRoute()?.name;
+    if (!isAuthenticated && ['PasswordRecovery', 'PasswordReset'].includes(currentRoute)) return;
+    const targetRoute = isAuthenticated ? 'Main' : 'Onboarding';
+    if (currentRoute !== targetRoute) {
+      navigationRef.resetRoot({ index: 0, routes: [{ name: targetRoute }] });
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (Platform.OS === 'web' || !SUPABASE_ENABLED || !supabase) return undefined;
+    let active = true;
+    let attachedUserId = null;
+    const attach = (userId) => {
+      if (userId === attachedUserId) return;
+      attachedUserId = userId;
+      incomingUnsubscribeRef.current?.();
+      incomingUnsubscribeRef.current = null;
+      if (userId) incomingUnsubscribeRef.current = subscribeToIncomingCalls(userId, async (incoming) => {
+        if (!active || incomingIdsRef.current.has(incoming.id)) return;
+        incomingIdsRef.current.add(incoming.id);
+        if (incomingIdsRef.current.size > 50) incomingIdsRef.current.delete(incomingIdsRef.current.values().next().value);
+        const callerName = await getCallParticipantName(incoming.caller_id);
+        if (!active) return;
+        const params = { call: incoming, participantName: callerName };
+        if (navigationRef.isReady()) navigationRef.navigate('IncomingCall', params);
+        else pendingIncomingRef.current = params;
+      });
+    };
+    supabase.auth.getSession().then(({ data }) => { if (active) attach(data?.session?.user?.id || null); }).catch(() => {});
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => attach(session?.user?.id || null));
+    return () => {
+      active = false;
+      incomingUnsubscribeRef.current?.();
+      incomingUnsubscribeRef.current = null;
+      authListener?.subscription?.unsubscribe();
+      incomingIdsRef.current.clear();
+      pendingIncomingRef.current = null;
+    };
+  }, []);
 
   const navTheme = {
     ...DarkTheme,
@@ -114,40 +182,50 @@ export default function AppNavigator({ initialRouteName = 'Onboarding' }) {
   };
 
   return (
-    <NavigationContainer ref={navigationRef} theme={navTheme} linking={{ prefixes: ['zannychat://'], config: { screens: { PasswordReset: 'reset-password', JoinGroup: 'join-group' } } }}>
+    <NavigationContainer ref={navigationRef} onReady={() => { if (pendingIncomingRef.current) { const pending = pendingIncomingRef.current; pendingIncomingRef.current = null; navigationRef.navigate('IncomingCall', pending); } }} theme={navTheme} linking={{ prefixes: ['zannychat://'], config: { screens: { PasswordReset: 'reset-password', JoinGroup: 'join-group' } } }}>
       <RootStack.Navigator screenOptions={{ headerShown: false }} initialRouteName={initialRouteName}>
-        <RootStack.Screen name="Onboarding" component={OnboardingScreen} />
-        <RootStack.Screen name="Login" component={LoginScreen} />
-        <RootStack.Screen name="Signup" component={SignupScreen} />
+        {(!SUPABASE_ENABLED || !isAuthenticated) && <RootStack.Group navigationKey="guest">
+          <RootStack.Screen name="Onboarding" component={OnboardingScreen} />
+          <RootStack.Screen name="Login" component={LoginScreen} />
+          <RootStack.Screen name="Signup" component={SignupScreen} />
+          <RootStack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
+        </RootStack.Group>}
         <RootStack.Screen name="PasswordRecovery" component={PasswordRecoveryScreen} />
-        <RootStack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
         <RootStack.Screen name="PasswordReset" component={PasswordResetScreen} />
-        <RootStack.Screen name="Main" component={MainTabNavigator} />
-        <RootStack.Screen name="Chat" component={ChatScreen} />
-        <RootStack.Screen name="NewChat" component={NewChatScreen} options={{ presentation: 'modal' }} />
-        <RootStack.Screen name="QRContact" component={QRContactScreen} options={{ presentation: 'modal' }} />
-        <RootStack.Screen name="ForwardMessage" component={ForwardMessageScreen} options={{ presentation: 'modal' }} />
-        <RootStack.Screen name="CreateGroup" component={CreateGroupScreen} options={{ presentation: 'modal' }} />
-        <RootStack.Screen name="Settings" component={SettingsScreen} />
-        <RootStack.Screen name="ChatAppearance" component={ChatAppearanceScreen} />
-        <RootStack.Screen name="SharedMedia" component={SharedMediaScreen} />
-        <RootStack.Screen name="SavedMessages" component={SavedMessagesScreen} />
-        <RootStack.Screen name="Drafts" component={DraftsScreen} />
-        <RootStack.Screen name="PinnedMessages" component={PinnedMessagesScreen} />
-        <RootStack.Screen name="ChatFolders" component={ChatFoldersScreen} />
-        <RootStack.Screen name="StatusUpdates" component={StatusUpdatesScreen} />
-        <RootStack.Screen name="Polls" component={PollsScreen} />
-        <RootStack.Screen name="Events" component={EventsScreen} />
-        <RootStack.Screen name="GroupManagement" component={GroupManagementScreen} />
-        <RootStack.Screen name="JoinGroup" component={JoinGroupScreen} />
-        <RootStack.Screen name="Channels" component={ChannelsScreen} />
-        <RootStack.Screen name="EditProfile" component={EditProfileScreen} />
-        <RootStack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
-        <RootStack.Screen name="Notifications" component={NotificationsScreen} />
-        <RootStack.Screen name="DataStorage" component={DataStorageScreen} />
-        <RootStack.Screen name="DataExport" component={DataExportScreen} />
-        <RootStack.Screen name="Sessions" component={SessionsScreen} />
-        <RootStack.Screen name="Help" component={HelpScreen} />
+        {canAccessApp && <RootStack.Group navigationKey={isAuthenticated ? 'authenticated' : 'demo'}>
+          <RootStack.Screen name="Main" component={MainTabNavigator} />
+          <RootStack.Screen name="Chat" component={ChatScreen} />
+          <RootStack.Screen name="IncomingCall" component={IncomingCallScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
+          <RootStack.Screen name="OutgoingCall" component={OutgoingCallScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
+          <RootStack.Screen name="Call" component={CallScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
+          <RootStack.Screen name="PeerProfile" component={PeerProfileScreen} />
+          <RootStack.Screen name="NewChat" component={NewChatScreen} options={{ presentation: 'modal' }} />
+          <RootStack.Screen name="QRContact" component={QRContactScreen} options={{ presentation: 'modal' }} />
+          <RootStack.Screen name="ContactDiscovery" component={ContactDiscoveryScreen} options={{ presentation: 'modal' }} />
+          <RootStack.Screen name="ForwardMessage" component={ForwardMessageScreen} options={{ presentation: 'modal' }} />
+          <RootStack.Screen name="CreateGroup" component={CreateGroupScreen} options={{ presentation: 'modal' }} />
+          <RootStack.Screen name="Settings" component={SettingsScreen} />
+          <RootStack.Screen name="ChatAppearance" component={ChatAppearanceScreen} />
+          <RootStack.Screen name="SharedMedia" component={SharedMediaScreen} />
+          <RootStack.Screen name="SavedMessages" component={SavedMessagesScreen} />
+          <RootStack.Screen name="Drafts" component={DraftsScreen} />
+          <RootStack.Screen name="PinnedMessages" component={PinnedMessagesScreen} />
+          <RootStack.Screen name="ChatFolders" component={ChatFoldersScreen} />
+          <RootStack.Screen name="StatusUpdates" component={StatusUpdatesScreen} />
+          <RootStack.Screen name="Polls" component={PollsScreen} />
+          <RootStack.Screen name="Events" component={EventsScreen} />
+          <RootStack.Screen name="ScheduledMessages" component={ScheduledMessagesScreen} />
+          <RootStack.Screen name="GroupManagement" component={GroupManagementScreen} />
+          <RootStack.Screen name="JoinGroup" component={JoinGroupScreen} />
+          <RootStack.Screen name="Channels" component={ChannelsScreen} />
+          <RootStack.Screen name="EditProfile" component={EditProfileScreen} />
+          <RootStack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
+          <RootStack.Screen name="Notifications" component={NotificationsScreen} />
+          <RootStack.Screen name="DataStorage" component={DataStorageScreen} />
+          <RootStack.Screen name="DataExport" component={DataExportScreen} />
+          <RootStack.Screen name="Sessions" component={SessionsScreen} />
+          <RootStack.Screen name="Help" component={HelpScreen} />
+        </RootStack.Group>}
       </RootStack.Navigator>
     </NavigationContainer>
   );

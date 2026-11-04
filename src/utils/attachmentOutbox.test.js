@@ -4,14 +4,16 @@ import { readFile } from 'node:fs/promises';
 
 test('attachment outbox validates supported attachment kinds and bounds the queue', async () => {
   const source = await readFile(new URL('../services/attachmentOutbox.js', import.meta.url), 'utf8');
-  assert.match(source, /MAX_PENDING_ATTACHMENTS = 20/);
-  assert.match(source, /\['image', 'file', 'voice'\]/);
-  assert.match(source, /next\.slice\(-MAX_PENDING_ATTACHMENTS\)/);
+  assert.match(source, /normalizePendingAttachments/);
+  const normalizer = await readFile(new URL('./normalizePendingAttachments.js', import.meta.url), 'utf8');
+  assert.match(normalizer, /MAX_PENDING_ATTACHMENTS = 20/);
+  assert.match(source, /\['image', 'video', 'file', 'voice'\]/);
+  assert.match(source, /normalizePendingAttachments/);
 });
 
 test('attachment outbox scopes records by user and conversation', async () => {
   const source = await readFile(new URL('../services/attachmentOutbox.js', import.meta.url), 'utf8');
-  assert.match(source, /attachment-outbox:v1:\$\{userId \|\| 'guest'\}:\$\{conversationId\}/);
+  assert.match(source, /getAttachmentOutboxStorageKey/);
 });
 
 
@@ -21,7 +23,7 @@ test('attachment retry failures are bounded and retain diagnostic metadata', asy
   assert.match(source, /Math\.min\(100/);
   assert.match(source, /lastAttemptAt/);
   assert.match(source, /lastError/);
-  assert.match(source, /slice\(0, 240\)/);
+  assert.match(source, /getSafeRetryError\(error, 'attachment'\)/);
 });
 
 test('chat screen records a failed retry instead of silently leaving it unchanged', async () => {

@@ -20,3 +20,11 @@ test('channel owners and moderators can review and resolve open reports', () => 
   assert.match(api, /export async function fetchChannelPostReports/);
   assert.match(api, /export async function updateChannelPostReport/);
 });
+
+test('moderation report list supports cursor-based loading of older reports', () => {
+  assert.match(api, /fetchChannelPostReports\(channelId, cursor = null\)/);
+  assert.match(api, /cursorCreatedAt/);
+  assert.match(screen, /loadMoreChannelReports/);
+  assert.match(screen, /Load more reports/);
+  assert.match(screen, /channelReportsHasMore/);
+});

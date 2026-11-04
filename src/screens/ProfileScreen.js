@@ -61,6 +61,7 @@ export default function ProfileScreen({ navigation }) {
         <MenuRow icon="aperture-outline" label="Status updates" onPress={() => navigation.navigate('StatusUpdates')} />
         <MenuRow icon="megaphone-outline" label="Channels" onPress={() => navigation.navigate('Channels')} />
         <MenuRow icon="bookmark-outline" label="Saved messages" onPress={() => navigation.navigate('SavedMessages')} />
+        <MenuRow icon="time-outline" label="Scheduled messages" onPress={() => navigation.navigate('ScheduledMessages')} />
         <MenuRow icon="folder-outline" label="Chat folders" onPress={() => navigation.navigate('ChatFolders')} />
         <MenuRow icon="people-outline" label="Join a group" onPress={() => navigation.navigate('JoinGroup')} />
         <MenuRow icon="cloud-upload-outline" label="Data & storage" onPress={() => navigation.navigate('DataStorage')} />

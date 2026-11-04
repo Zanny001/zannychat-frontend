@@ -1,11 +1,22 @@
-const SAFE_SEGMENT = (value) => String(value || 'unknown').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 80) || 'unknown';
+// Percent-encoding keeps separators and punctuation distinct in file names. The
+// previous lossy replacement could map values such as `user/1` and `user_1`
+// to the same recovery-copy path.
+const SAFE_SEGMENT = (value) => {
+  const raw = typeof value === 'string' ? value : String(value ?? 'unknown');
+  if (!raw || raw.length > 128 || /[\u0000-\u001F\u007F]/.test(raw)) return null;
+  try { return encodeURIComponent(raw); } catch (_) { return null; }
+};
 
 export async function preserveAttachmentForRetry(fileSystem, item, userId, conversationId) {
   if (!fileSystem || !item?.uri || !item?.id || !fileSystem.documentDirectory || typeof fileSystem.copyAsync !== 'function') {
     return { item, preserved: false };
   }
+  const userSegment = SAFE_SEGMENT(userId);
+  const conversationSegment = SAFE_SEGMENT(conversationId);
+  const attachmentSegment = SAFE_SEGMENT(item.id);
+  if (!userSegment || !conversationSegment || !attachmentSegment) return { item, preserved: false };
   const directory = `${fileSystem.documentDirectory}zannychat-attachment-outbox/`;
-  const name = `${SAFE_SEGMENT(userId)}-${SAFE_SEGMENT(conversationId)}-${SAFE_SEGMENT(item.id)}`;
+  const name = `${userSegment}-${conversationSegment}-${attachmentSegment}`;
   const extension = String(item.uri).match(/\.[a-zA-Z0-9]{1,8}(?:[?#].*)?$/)?.[0]?.split(/[?#]/)[0] || '';
   const destination = `${directory}${name}${extension}`;
   try {

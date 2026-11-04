@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { SafeAreaView, KeyboardAvoidingView, Platform, View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { resendSignupEmailOtp, verifySignupEmailOtp } from '../services/api';
-import { registerForPushNotifications } from '../services/notifications';
 import GlassInput from '../components/GlassInput';
 import Knot from '../components/Knot';
 
@@ -24,8 +23,9 @@ export default function VerifyEmailScreen({ navigation, route }) {
     setLoading(true);
     try {
       await verifySignupEmailOtp(email, token);
-      Promise.resolve().then(() => registerForPushNotifications()).catch((err) => console.warn('Push registration failed:', err));
-      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+      // A live SIGNED_IN event moves the app to the authenticated route group.
+      // Only demo mode needs an explicit local navigation action.
+      if (!SUPABASE_ENABLED) navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
     } catch (err) {
       message('Verification failed', err?.message || 'The code may have expired. Request a new one and try again.');
     } finally { setLoading(false); }

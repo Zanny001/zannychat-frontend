@@ -1,0 +1,3 @@
+# ZannyChat 1.2.215 release summary
+
+Frontend-only premium channel discovery enhancement: a Recent filter backed by user-scoped device-local AsyncStorage history, showing up to 20 recently opened channels in last-opened order. Rows are still constrained to the current server-returned directory result, so private/removed channels are not resurrected by local history. Frontend tests: 385 passed, 0 failed. Backend tests: 191 passed, 0 failed. Frontend release audit: 12/12 passed. Backend remains 1.2.58; no database migration required. Production deployment and physical-device smoke tests were not performed.

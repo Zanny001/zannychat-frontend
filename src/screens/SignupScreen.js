@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { startGoogleOAuth } from '../services/googleAuth';
 import {
   View,
   Text,
@@ -17,7 +18,6 @@ import {
   normalizeEmail,
   validateSignup,
 } from '../utils/authValidation';
-import { registerForPushNotifications } from '../services/notifications';
 import GlassInput from '../components/GlassInput';
 import Knot from '../components/Knot';
 
@@ -47,11 +47,9 @@ export default function SignupScreen({ navigation }) {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: 'https://zannychat.netlify.app' },
-      });
-      if (error) throw error;
+      const result = await startGoogleOAuth(supabase);
+      // Closing the native browser is cancellation, not an authentication error.
+      if (result?.cancelled) setLoading(false);
     } catch (error) {
       console.error('Google signup failed:', error);
       showMessage('Google sign-up failed', error?.message || 'Please try again.');
@@ -93,17 +91,9 @@ export default function SignupScreen({ navigation }) {
         return;
       }
 
-      // Push notifications must not prevent successful signup.
-      Promise.resolve()
-        .then(() => registerForPushNotifications())
-        .catch((error) => {
-          console.warn('Push notification registration failed:', error);
-        });
-
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Main' }],
-      });
+      // Live sessions switch to the private route group through App.js auth state.
+      // Keep the local demo flow navigable without a Supabase auth event.
+      if (!SUPABASE_ENABLED) navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
     } catch (error) {
       console.error('Signup failed:', error);
 

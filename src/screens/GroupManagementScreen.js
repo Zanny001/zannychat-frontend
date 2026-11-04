@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, Share, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import GlassCard from '../components/GlassCard';
 import { useTheme } from '../theme/ThemeContext';
 import { createGroupInvite, fetchGroupInvites, fetchGroupMembers, fetchGroupMetadata, getCurrentUser, removeGroupMember, revokeGroupInvite, setGroupMemberAdmin, updateGroupMetadata } from '../services/api';
 import { filterGroupMembers } from '../utils/filterGroupMembers';
+import { validateGroupMetadata } from '../utils/groupMetadataValidation';
 
 export default function GroupManagementScreen({ navigation, route }) {
   const conversation = route?.params?.conversation;
@@ -25,22 +26,29 @@ export default function GroupManagementScreen({ navigation, route }) {
   const [inviteBusy, setInviteBusy] = useState(false);
   const [groupMetadata, setGroupMetadata] = useState({ name: '', topic: '', description: '', adminOnlyMessages: false });
   const [metadataBusy, setMetadataBusy] = useState(false);
+  const refreshGeneration = useRef(0);
 
   const refresh = useCallback(async () => {
+    const requestId = ++refreshGeneration.current;
     if (!conversationId) { setError('Open group management from a group conversation.'); setLoading(false); return; }
     setLoading(true); setError('');
     try {
       const [roster, user, metadata] = await Promise.all([fetchGroupMembers(conversationId), getCurrentUser(), fetchGroupMetadata(conversationId)]);
+      if (requestId !== refreshGeneration.current) return;
+      const safeMembers = Array.isArray(roster?.members) ? roster.members : [];
       setGroupMetadata({ name: metadata?.name || conversation?.participant?.name || '', topic: metadata?.topic || '', description: metadata?.description || '', adminOnlyMessages: Boolean(metadata?.adminOnlyMessages) });
-      setMembers(Array.isArray(roster?.members) ? roster.members : []);
+      setMembers(safeMembers);
       setCurrentUserId(user?.id || null);
-      if ((roster?.members || []).some((member) => member.id === user?.id && member.isAdmin)) {
-        try { setGroupInvites(await fetchGroupInvites(conversationId)); } catch { setGroupInvites([]); }
+      if (safeMembers.some((member) => member.id === user?.id && member.isAdmin)) {
+        try {
+          const invites = await fetchGroupInvites(conversationId);
+          if (requestId === refreshGeneration.current) setGroupInvites(Array.isArray(invites) ? invites : []);
+        } catch { if (requestId === refreshGeneration.current) setGroupInvites([]); }
       } else setGroupInvites([]);
-    } catch (err) { setError(err?.message || 'Could not load group members.'); }
-    finally { setLoading(false); }
-  }, [conversationId]);
-  useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
+    } catch (err) { if (requestId === refreshGeneration.current) setError(err?.message || 'Could not load group members.'); }
+    finally { if (requestId === refreshGeneration.current) setLoading(false); }
+  }, [conversationId, conversation?.participant?.name]);
+  useFocusEffect(useCallback(() => { refresh(); return () => { refreshGeneration.current += 1; }; }, [refresh]));
 
   const mine = members.find((member) => member.id === currentUserId);
   const isAdmin = Boolean(mine?.isAdmin);
@@ -101,7 +109,9 @@ ${invite.token}` });
   ]); };
   const actionStyle = { minHeight: 38, borderRadius: radii.md, paddingHorizontal: spacing.sm, justifyContent: 'center', borderWidth: 1, borderColor: colors.border };
   const saveMetadata = async () => {
-    try { setMetadataBusy(true); const saved = await updateGroupMetadata(conversationId, groupMetadata); setGroupMetadata({ name: saved.name || '', topic: saved.topic || '', description: saved.description || '', adminOnlyMessages: typeof saved.adminOnlyMessages === 'boolean' ? saved.adminOnlyMessages : Boolean(groupMetadata.adminOnlyMessages) }); Alert.alert('Group details saved', 'The group name, topic, description, and announcement setting have been updated.'); }
+    const validation = validateGroupMetadata(groupMetadata);
+    if (!validation.ok) { Alert.alert('Group details need attention', validation.errors.join('\n')); return; }
+    try { setMetadataBusy(true); const saved = await updateGroupMetadata(conversationId, validation.value); setGroupMetadata({ name: saved.name || validation.value.name, topic: saved.topic || validation.value.topic, description: saved.description || validation.value.description, adminOnlyMessages: typeof saved.adminOnlyMessages === 'boolean' ? saved.adminOnlyMessages : validation.value.adminOnlyMessages }); Alert.alert('Group details saved', 'The group name, topic, description, and announcement setting have been updated.'); }
     catch (err) { Alert.alert('Could not save group details', err?.message || 'Please try again.'); }
     finally { setMetadataBusy(false); }
   };

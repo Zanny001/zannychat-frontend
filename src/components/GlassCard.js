@@ -22,24 +22,44 @@ export default function GlassCard({
   borderRadius,
   noPadding = false,
 }) {
-  const { colors, radii, spacing } = useTheme();
+  const { colors, radii, spacing, elevation } = useTheme();
   const radius = borderRadius ?? radii.md;
+  const shadow = elevation.card;
 
   return (
-    <View style={[styles.wrap, { borderRadius: radius, borderColor: hexToRgba(colors.textPrimary, 0.1) }, style]}>
-      <BlurView
-        intensity={intensity}
-        tint="dark"
-        style={StyleSheet.absoluteFill}
-        experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
-      />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: hexToRgba(colors.surface, tintAlpha) }]} />
-      <View style={[!noPadding && { padding: spacing.md }, contentStyle]}>{children}</View>
+    <View
+      style={[
+        styles.elevated,
+        {
+          borderRadius: radius,
+          backgroundColor: colors.surface,
+          shadowColor: colors.shadow,
+          shadowOpacity: shadow.shadowOpacity,
+          shadowRadius: shadow.shadowRadius,
+          shadowOffset: { width: 0, height: shadow.shadowOffsetY },
+          elevation: shadow.android,
+        },
+      ]}
+    >
+      <View style={[styles.wrap, { borderRadius: radius, borderColor: hexToRgba(colors.textPrimary, 0.1) }, style]}>
+        <BlurView
+          intensity={intensity}
+          tint="dark"
+          style={StyleSheet.absoluteFill}
+          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+        />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: hexToRgba(colors.surface, tintAlpha) }]} />
+        <View style={[!noPadding && { padding: spacing.md }, contentStyle]}>{children}</View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  elevated: {
+    // Keep elevation on an unclipped parent so the glass surface can retain
+    // overflow:hidden without clipping its shadow.
+  },
   wrap: {
     overflow: 'hidden',
     borderWidth: 1,

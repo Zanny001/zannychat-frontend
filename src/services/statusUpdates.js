@@ -1,6 +1,11 @@
 import { supabase, SUPABASE_ENABLED } from './supabaseClient';
-import { normalizeStatusText, statusExpiryFrom, STATUS_TEXT_LIMIT } from '../utils/statusRules';
-export { normalizeStatusText, statusExpiryFrom, STATUS_TEXT_LIMIT };
+import { normalizeStatusText, statusExpiryFrom, STATUS_TEXT_LIMIT, normalizeStatusExpiryHours } from '../utils/statusRules';
+import { filterVisibleStatusRows } from '../utils/statusVisibility';
+import { normalizeStatusAudience } from '../utils/statusAudience';
+import { assertStatusPrivacyDataAvailable } from '../utils/statusPrivacyData';
+import { getSafeExpiredStatusMediaPaths } from '../utils/statusMediaCleanup';
+import { isSafeStatusMediaPath } from '../utils/statusMediaPath';
+export { normalizeStatusText, statusExpiryFrom, STATUS_TEXT_LIMIT, normalizeStatusExpiryHours };
 
 export function subscribeToStatusChanges(onChange) {
   if (!SUPABASE_ENABLED || !supabase || typeof onChange !== 'function') return () => {};
@@ -11,18 +16,36 @@ export function subscribeToStatusChanges(onChange) {
 }
 
 async function cleanupExpiredOwnStatuses(userId) {
-  // Best-effort cleanup on app use; never let cleanup failure hide active statuses.
+  // Bounded batches avoid a long startup pause while gradually clearing large backlogs.
+  // Remove media before deleting rows: if storage cleanup fails, keep the expired row
+  // so a later visit can retry rather than permanently orphaning its media object.
   const now = new Date().toISOString();
-  const { data: expired, error: expiredError } = await supabase.from('status_updates')
-    .select('id,media_path').eq('user_id', userId).lte('expires_at', now).limit(100);
-  if (expiredError || !expired?.length) return;
-  const paths = expired.map((row) => row.media_path).filter((path) => path && path !== 'pending');
-  const { error: deleteError } = await supabase.from('status_updates').delete()
-    .eq('user_id', userId).in('id', expired.map((row) => row.id));
-  if (deleteError) return;
-  if (paths.length) {
-    const { error: storageError } = await supabase.storage.from('status-media').remove(paths);
-    if (storageError) console.warn('Expired status media cleanup failed');
+  const maxBatchesPerVisit = 10;
+  for (let batch = 0; batch < maxBatchesPerVisit; batch += 1) {
+    const { data: expired, error: expiredError } = await supabase.from('status_updates')
+      .select('id,user_id,media_path').eq('user_id', userId).lte('expires_at', now).order('expires_at', { ascending: true }).limit(100);
+    if (expiredError) {
+      console.warn('Expired status lookup failed');
+      return;
+    }
+    if (!expired?.length) return;
+    // Only remove paths matching this owner's status ID and known media naming rules.
+    // Malformed legacy metadata must never become an arbitrary storage deletion target.
+    const paths = getSafeExpiredStatusMediaPaths(expired, userId);
+    if (paths.length) {
+      const { error: storageError } = await supabase.storage.from('status-media').remove(paths);
+      if (storageError) {
+        console.warn('Expired status media cleanup failed; rows retained for retry');
+        return;
+      }
+    }
+    const { error: deleteError } = await supabase.from('status_updates').delete()
+      .eq('user_id', userId).in('id', expired.map((row) => row.id));
+    if (deleteError) {
+      console.warn('Expired status row cleanup failed; cleanup will retry on a later visit');
+      return;
+    }
+    if (expired.length < 100) return;
   }
 }
 
@@ -36,32 +59,71 @@ export async function listActiveStatuses() {
   const { data, error } = await supabase.from('status_updates').select('id,user_id,text,audience,media_kind,media_path,created_at,expires_at').gt('expires_at', new Date().toISOString()).order('created_at', { ascending: false });
   if (error) throw error;
   const userId = auth?.user?.id;
+  let selectedStatusIds = [];
+  if (userId) {
+    const { data: recipientRows, error: recipientError } = await supabase.from('status_audience_recipients').select('status_id').eq('recipient_id', userId);
+    assertStatusPrivacyDataAvailable({ recipientError });
+    selectedStatusIds = (recipientRows || []).map((row) => row.status_id);
+  }
   let mutedOwners = new Set();
   if (userId) {
     const { data: mutedRows, error: mutedError } = await supabase.from('muted_status_users').select('muted_user_id').eq('user_id', userId);
-    if (!mutedError) mutedOwners = new Set((mutedRows || []).map((row) => row.muted_user_id));
+    assertStatusPrivacyDataAvailable({ mutedError });
+    mutedOwners = new Set((mutedRows || []).map((row) => row.muted_user_id));
   }
   let excludedOwners = new Set();
   if (userId) {
     const { data: excludedRows, error: excludedError } = await supabase.from('status_excluded_users').select('owner_id').eq('excluded_user_id', userId);
-    if (!excludedError) excludedOwners = new Set((excludedRows || []).map((row) => row.owner_id));
+    assertStatusPrivacyDataAvailable({ excludedError });
+    excludedOwners = new Set((excludedRows || []).map((row) => row.owner_id));
   }
-  const rows = (data || []).filter((row) => row.user_id === userId || (!mutedOwners.has(row.user_id) && !excludedOwners.has(row.user_id)));
+  // Defense in depth: never render another user's private-only status even if a query/RLS policy is misconfigured.
+  // Supabase RLS must still enforce this rule server-side; this filter is not a security boundary.
+  const rows = filterVisibleStatusRows(data || [], userId, [...mutedOwners], [...excludedOwners], selectedStatusIds);
   const ownedIds = rows.filter((row) => row.user_id === userId).map((row) => row.id);
   const counts = new Map();
-  if (ownedIds.length) {
-    const { data: views, error: viewsError } = await supabase.from('status_views').select('status_id,viewer_id').in('status_id', ownedIds);
-    if (!viewsError) for (const view of views || []) counts.set(view.status_id, (counts.get(view.status_id) || 0) + 1);
+  // Aggregate receipts in PostgreSQL instead of downloading every viewer row.
+  // Chunk IDs to keep RPC payloads bounded and avoid PostgREST row-cap undercounts.
+  for (let offset = 0; offset < ownedIds.length; offset += 200) {
+    const statusIds = ownedIds.slice(offset, offset + 200);
+    const { data: viewCounts, error: viewCountsError } = await supabase.rpc('get_own_status_view_counts', { p_status_ids: statusIds });
+    if (viewCountsError) {
+      throw new Error('Could not load status view counts. Please refresh and try again.');
+    }
+    for (const item of viewCounts || []) {
+      const count = Number(item.view_count);
+      counts.set(item.status_id, Number.isSafeInteger(count) && count >= 0 ? count : 0);
+    }
   }
   return Promise.all(rows.map(async (row) => {
     const isOwn = row.user_id === userId;
     const base = { ...row, is_own: isOwn, view_count: isOwn ? (counts.get(row.id) || 0) : undefined };
     if (!['image', 'video'].includes(row.media_kind) || !row.media_path) return base;
+    // Never mint a signed URL for a path that does not belong to this exact status row.
+    if (!isSafeStatusMediaPath(row)) return { ...base, media_url: null };
     const { data: signed, error: signError } = await supabase.storage.from('status-media').createSignedUrl(row.media_path, 300);
     return { ...base, media_url: signError ? null : signed?.signedUrl || null };
   }));
 }
 
+
+export async function refreshStatusMediaUrl(statusId) {
+  if (!SUPABASE_ENABLED || !supabase) throw new Error('Status updates require a configured account connection.');
+  if (!statusId) throw new Error('Choose a valid status.');
+  const { data: auth, error: authError } = await supabase.auth.getUser();
+  if (authError || !auth?.user?.id) throw new Error('Sign in to view status updates.');
+  // Read through RLS first: the server must confirm this viewer can still access the active status.
+  const { data: row, error: rowError } = await supabase.from('status_updates')
+    .select('id,user_id,media_kind,media_path,expires_at')
+    .eq('id', statusId).gt('expires_at', new Date().toISOString()).maybeSingle();
+  if (rowError) throw rowError;
+  if (!row || !isSafeStatusMediaPath(row)) {
+    throw new Error('This status media is no longer available. Refresh the status feed and try again.');
+  }
+  const { data: signed, error: signError } = await supabase.storage.from('status-media').createSignedUrl(row.media_path, 300);
+  if (signError || !signed?.signedUrl) throw new Error('Could not refresh this status media. Check your connection and try again.');
+  return signed.signedUrl;
+}
 
 export async function recordStatusView(statusId) {
   if (!SUPABASE_ENABLED || !supabase) throw new Error('Status updates require a configured account connection.');
@@ -73,24 +135,40 @@ export async function recordStatusView(statusId) {
   if (error && error.code !== '23505') throw error;
 }
 
-export async function publishTextStatus(text, audience = 'contacts') {
+function normalizeAudience(audience, selectedContactIds = []) {
+  return normalizeStatusAudience(audience, selectedContactIds);
+}
+
+async function saveStatusAudienceRecipients(statusId, selectedContactIds, ownerId) {
+  if (!selectedContactIds.length) return;
+  const rows = selectedContactIds.map((recipient_id) => ({ status_id: statusId, owner_id: ownerId, recipient_id }));
+  const { error } = await supabase.from('status_audience_recipients').insert(rows);
+  if (error) {
+    await supabase.from('status_updates').delete().eq('id', statusId).eq('user_id', ownerId);
+    throw new Error('Could not save the selected audience. The status was not published. Please try again.');
+  }
+}
+
+export async function publishTextStatus(text, audience = 'contacts', selectedContactIds = [], expiryHours = 24) {
   const normalized = normalizeStatusText(text);
   if (!normalized) throw new Error('Write a status before publishing.');
   if (normalized.length > STATUS_TEXT_LIMIT) throw new Error(`Status must be ${STATUS_TEXT_LIMIT} characters or fewer.`);
-  if (!['contacts', 'only_me'].includes(audience)) throw new Error('Choose a valid status audience.');
+  const selectedIds = normalizeAudience(audience, selectedContactIds);
   if (!SUPABASE_ENABLED || !supabase) throw new Error('Status updates require a configured account connection.');
   const { data: auth, error: authError } = await supabase.auth.getUser();
   if (authError || !auth?.user?.id) throw new Error('Sign in to publish a status.');
+  const lifetimeHours = normalizeStatusExpiryHours(expiryHours);
   const createdAt = new Date().toISOString();
-  const { data, error } = await supabase.from('status_updates').insert({ user_id: auth.user.id, text: normalized, audience, created_at: createdAt, expires_at: statusExpiryFrom(createdAt) }).select('id,user_id,text,audience,media_kind,media_path,created_at,expires_at').single();
+  const { data, error } = await supabase.from('status_updates').insert({ user_id: auth.user.id, text: normalized, audience, created_at: createdAt, expires_at: statusExpiryFrom(createdAt, lifetimeHours) }).select('id,user_id,text,audience,media_kind,media_path,created_at,expires_at').single();
   if (error) throw error;
+  await saveStatusAudienceRecipients(data.id, selectedIds, auth.user.id);
   return { ...data, is_own: true };
 }
 
-export async function publishPhotoStatus(asset, caption = '', audience = 'contacts') {
+export async function publishPhotoStatus(asset, caption = '', audience = 'contacts', selectedContactIds = [], expiryHours = 24) {
   if (!SUPABASE_ENABLED || !supabase) throw new Error('Status updates require a configured account connection.');
   if (!asset?.uri) throw new Error('Choose a photo first.');
-  if (!['contacts', 'only_me'].includes(audience)) throw new Error('Choose a valid status audience.');
+  const selectedIds = normalizeAudience(audience, selectedContactIds);
   const { data: auth, error: authError } = await supabase.auth.getUser();
   if (authError || !auth?.user?.id) throw new Error('Sign in to publish a status.');
   const response = await fetch(asset.uri);
@@ -98,13 +176,15 @@ export async function publishPhotoStatus(asset, caption = '', audience = 'contac
   if (!blob || blob.size < 1 || blob.size > 10 * 1024 * 1024) throw new Error('Photo must be smaller than 10 MB.');
   const mime = asset.mimeType || blob.type || 'image/jpeg';
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(mime)) throw new Error('Choose a JPG, PNG, or WebP photo.');
+  const lifetimeHours = normalizeStatusExpiryHours(expiryHours);
   const createdAt = new Date().toISOString();
-  const expiresAt = statusExpiryFrom(createdAt);
+  const expiresAt = statusExpiryFrom(createdAt, lifetimeHours);
   const { data: row, error: insertError } = await supabase.from('status_updates').insert({
     user_id: auth.user.id, text: String(caption || '').trim().slice(0, STATUS_TEXT_LIMIT), audience,
     media_kind: 'image', media_path: 'pending', created_at: createdAt, expires_at: expiresAt,
   }).select('id,user_id,text,audience,media_kind,media_path,created_at,expires_at').single();
   if (insertError) throw insertError;
+  await saveStatusAudienceRecipients(row.id, selectedIds, auth.user.id);
   const ext = mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
   const path = `${auth.user.id}/${row.id}/photo.${ext}`;
   // Replace the placeholder only after row creation; policy validates exact path.
@@ -118,10 +198,10 @@ export async function publishPhotoStatus(asset, caption = '', audience = 'contac
   return { ...row, is_own: true, text: String(caption || '').trim().slice(0, STATUS_TEXT_LIMIT), media_path: path, media_url: signed.signedUrl };
 }
 
-export async function publishVideoStatus(asset, caption = '', audience = 'contacts') {
+export async function publishVideoStatus(asset, caption = '', audience = 'contacts', selectedContactIds = [], expiryHours = 24) {
   if (!SUPABASE_ENABLED || !supabase) throw new Error('Status updates require a configured account connection.');
   if (!asset?.uri) throw new Error('Choose a video first.');
-  if (!['contacts', 'only_me'].includes(audience)) throw new Error('Choose a valid status audience.');
+  const selectedIds = normalizeAudience(audience, selectedContactIds);
   const { data: auth, error: authError } = await supabase.auth.getUser();
   if (authError || !auth?.user?.id) throw new Error('Sign in to publish a status.');
   const response = await fetch(asset.uri);
@@ -129,14 +209,16 @@ export async function publishVideoStatus(asset, caption = '', audience = 'contac
   if (!blob || blob.size < 1 || blob.size > 50 * 1024 * 1024) throw new Error('Video must be smaller than 50 MB.');
   const mime = asset.mimeType || blob.type || 'video/mp4';
   if (mime !== 'video/mp4') throw new Error('Choose an MP4 video.');
+  const lifetimeHours = normalizeStatusExpiryHours(expiryHours);
   const createdAt = new Date().toISOString();
-  const expiresAt = statusExpiryFrom(createdAt);
+  const expiresAt = statusExpiryFrom(createdAt, lifetimeHours);
   const captionText = String(caption || '').trim().slice(0, STATUS_TEXT_LIMIT);
   const { data: row, error: insertError } = await supabase.from('status_updates').insert({
     user_id: auth.user.id, text: captionText || null, audience,
     media_kind: 'video', media_path: 'pending', created_at: createdAt, expires_at: expiresAt,
   }).select('id,user_id,text,audience,media_kind,media_path,created_at,expires_at').single();
   if (insertError) throw insertError;
+  await saveStatusAudienceRecipients(row.id, selectedIds, auth.user.id);
   const path = `${auth.user.id}/${row.id}/video.mp4`;
   const { error: updateError } = await supabase.from('status_updates').update({ media_path: path }).eq('id', row.id).eq('user_id', auth.user.id);
   if (updateError) { await supabase.from('status_updates').delete().eq('id', row.id); throw updateError; }
@@ -150,11 +232,22 @@ export async function publishVideoStatus(asset, caption = '', audience = 'contac
 
 export async function deleteStatus(statusId) {
   if (!SUPABASE_ENABLED || !supabase) throw new Error('Status updates require a configured account connection.');
-  const { data: row, error: readError } = await supabase.from('status_updates').select('media_path').eq('id', statusId).maybeSingle();
+  const { data: auth, error: authError } = await supabase.auth.getUser();
+  if (authError || !auth?.user?.id) throw new Error('Sign in to delete a status.');
+  const { data: row, error: readError } = await supabase.from('status_updates')
+    .select('id,user_id,media_kind,media_path').eq('id', statusId).eq('user_id', auth.user.id).maybeSingle();
   if (readError) throw readError;
-  const { error } = await supabase.from('status_updates').delete().eq('id', statusId);
+  if (!row) throw new Error('This status is unavailable or you do not have permission to delete it.');
+  const safeMediaPath = isSafeStatusMediaPath(row) ? row.media_path : null;
+  // For a validated object, clean storage first. If storage rejects the removal,
+  // retain the row so the user can retry instead of silently orphaning media.
+  // Invalid legacy paths are never used as deletion targets.
+  if (safeMediaPath) {
+    const { error: mediaError } = await supabase.storage.from('status-media').remove([safeMediaPath]);
+    if (mediaError) throw new Error('Could not remove this status media. The status was kept so you can retry.');
+  }
+  const { error } = await supabase.from('status_updates').delete().eq('id', statusId).eq('user_id', auth.user.id);
   if (error) throw error;
-  if (row?.media_path && row.media_path !== 'pending') { const { error: mediaError } = await supabase.storage.from('status-media').remove([row.media_path]); if (mediaError) console.warn('Status media cleanup failed'); }
 }
 
 export const STATUS_REACTIONS = ['❤️', '😂', '😮', '😢', '👏', '🔥'];
@@ -195,12 +288,23 @@ export async function removeStatusReaction(statusId) {
 }
 
 
-export async function listStatusReplies(statusId) {
+export async function listStatusReplies(statusId, { before = null, limit = 30 } = {}) {
   if (!SUPABASE_ENABLED || !supabase) throw new Error('Status updates require a configured account connection.');
   if (!statusId) throw new Error('Choose a valid status.');
-  const { data, error } = await supabase.from('status_replies').select('id,status_id,sender_id,body,created_at').eq('status_id', statusId).order('created_at', { ascending: true }).limit(100);
+  const pageSize = Number.isSafeInteger(limit) ? Math.max(1, Math.min(limit, 50)) : 30;
+  let query = supabase.from('status_replies').select('id,status_id,sender_id,body,created_at')
+    .eq('status_id', statusId).order('created_at', { ascending: false }).limit(pageSize + 1);
+  if (before) {
+    const cursorDate = new Date(before);
+    if (Number.isNaN(cursorDate.getTime())) throw new Error('Invalid status reply pagination cursor.');
+    query = query.lt('created_at', cursorDate.toISOString());
+  }
+  const { data, error } = await query;
   if (error) throw error;
-  return data || [];
+  const newestFirst = data || [];
+  const hasMore = newestFirst.length > pageSize;
+  const page = newestFirst.slice(0, pageSize).reverse();
+  return { rows: page, hasMore, nextBefore: page[0]?.created_at || null };
 }
 
 export async function sendStatusReply(statusId, body) {

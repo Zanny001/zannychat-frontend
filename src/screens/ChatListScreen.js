@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, RefreshControl, ScrollView, ActivityIndicator, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,8 +34,11 @@ export default function ChatListScreen({ navigation }) {
   const { colors, mood, spacing, typography, radii } = useTheme();
   const tabBarHeight = useBottomTabBarHeight();
   const [conversations, setConversations] = useState([]);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState('');
   const [query, setQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [customFolders, setCustomFolders] = useState([]);
@@ -45,6 +48,8 @@ export default function ChatListScreen({ navigation }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [conversationActionError, setConversationActionError] = useState('');
+  const pendingConversationActions = useRef(new Set());
 
 
   // Real presence: every "online" dot used to be mock data (the
@@ -57,13 +62,21 @@ export default function ChatListScreen({ navigation }) {
   }, []);
 
   const load = useCallback(async () => {
-    const { conversations: data, hasMore: more } = await fetchConversations({ limit: PAGE_SIZE, offset: 0 });
-    setConversations(data);
-    setHasMore(more);
+    setLoadError('');
+    try {
+      const { conversations: data, hasMore: more } = await fetchConversations({ limit: PAGE_SIZE, offset: 0 });
+      setConversations(Array.isArray(data) ? data : []);
+      setHasMore(Boolean(more));
+    } catch (error) {
+      setLoadError(error?.message || 'Could not load your chats. Check your connection and try again.');
+      throw error;
+    } finally {
+      setInitialLoading(false);
+    }
   }, []);
 
   useFocusEffect(useCallback(() => {
-    load();
+    load().catch(() => {});
     let alive = true;
     (async () => {
       try { const user = await getCurrentUser(); const folders = await loadChatFolders(user?.id || 'guest'); if (alive) setCustomFolders(folders); } catch (_) {}
@@ -73,8 +86,8 @@ export default function ChatListScreen({ navigation }) {
 
   async function handleRefresh() {
     setRefreshing(true);
-    await load();
-    setRefreshing(false);
+    try { await load(); } catch (_) { /* Inline error state offers a retry. */ }
+    finally { setRefreshing(false); }
   }
 
   // Older conversations page in on scroll — created_at desc pages from
@@ -82,18 +95,28 @@ export default function ChatListScreen({ navigation }) {
   async function handleLoadMore() {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
+    setLoadMoreError('');
     try {
       const { conversations: older, hasMore: more } = await fetchConversations({
         limit: PAGE_SIZE,
         offset: conversations.length,
       });
+      if (!Array.isArray(older)) throw new Error('The server returned an invalid chat page.');
       setConversations((prev) => {
         const seen = new Set(prev.map((c) => c.id));
-        return [...prev, ...older.filter((c) => !seen.has(c.id))];
+        const next = [...prev];
+        for (const item of older) {
+          if (item && item.id != null && !seen.has(item.id)) {
+            seen.add(item.id);
+            next.push(item);
+          }
+        }
+        return next;
       });
-      setHasMore(more);
+      setHasMore(Boolean(more));
     } catch (err) {
-      // Leave hasMore as-is so another attempt is possible.
+      // Keep pagination available and give the user an explicit retry path.
+      setLoadMoreError(err?.message || 'Could not load older chats. Check your connection and try again.');
     } finally {
       setLoadingMore(false);
     }
@@ -103,25 +126,39 @@ export default function ChatListScreen({ navigation }) {
     setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
   }
 
-  // Optimistic — flips the star immediately rather than waiting on the
-  // round trip, since a favorite toggle has no failure mode worth
-  // blocking on (worst case, a rare write failure quietly reverts on
-  // the next real fetch).
+  // Optimistic actions stay responsive, but now roll back visibly on write
+  // failure. A per-conversation/field lock prevents rapid taps from racing
+  // multiple contradictory writes to the participant row.
+  async function updateConversationFlag(conversation, field, persist) {
+    if (!conversation?.id) return;
+    const actionKey = `${conversation.id}:${field}`;
+    if (pendingConversationActions.current.has(actionKey)) return;
+    const previousValue = Boolean(conversation[field]);
+    const nextValue = !previousValue;
+    pendingConversationActions.current.add(actionKey);
+    setConversationActionError('');
+    patchConversation(conversation.id, { [field]: nextValue });
+    try {
+      await persist(conversation.id, nextValue);
+    } catch (error) {
+      // Roll back only the field involved; preserve unrelated newer updates.
+      patchConversation(conversation.id, { [field]: previousValue });
+      setConversationActionError(`Couldn't save ${field === 'isFavorite' ? 'favorite' : field === 'isMuted' ? 'mute setting' : 'archive setting'}. Please try again.`);
+    } finally {
+      pendingConversationActions.current.delete(actionKey);
+    }
+  }
+
   function handleToggleFavorite(conversation) {
-    patchConversation(conversation.id, { isFavorite: !conversation.isFavorite });
-    toggleFavorite(conversation.id, !conversation.isFavorite).catch(() => {});
+    return updateConversationFlag(conversation, 'isFavorite', (id, value) => toggleFavorite(id, value));
   }
 
   function handleToggleMute(conversation) {
-    patchConversation(conversation.id, { isMuted: !conversation.isMuted });
-    setConversationFlags(conversation.id, { isMuted: !conversation.isMuted }).catch(() => {});
+    return updateConversationFlag(conversation, 'isMuted', (id, value) => setConversationFlags(id, { isMuted: value }));
   }
 
   function handleToggleArchive(conversation) {
-    // Archiving removes it from the visible list immediately (every
-    // filter except "Archived" excludes archived chats anyway).
-    patchConversation(conversation.id, { isArchived: !conversation.isArchived });
-    setConversationFlags(conversation.id, { isArchived: !conversation.isArchived }).catch(() => {});
+    return updateConversationFlag(conversation, 'isArchived', (id, value) => setConversationFlags(id, { isArchived: value }));
   }
 
   async function performDeleteConversation(conversation) {
@@ -276,6 +313,16 @@ export default function ChatListScreen({ navigation }) {
         </View>
       )}
 
+      {conversationActionError ? (
+        <View style={{ marginHorizontal: spacing.md, marginBottom: spacing.sm, padding: spacing.sm, borderRadius: radii.md || 12, borderWidth: 1, borderColor: colors.danger || '#dc2626', backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center' }}>
+          <Ionicons name="alert-circle-outline" size={18} color={colors.danger || '#dc2626'} />
+          <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textPrimary, flex: 1, marginHorizontal: spacing.sm }]}>{conversationActionError}</Text>
+          <TouchableOpacity onPress={() => setConversationActionError('')} accessibilityRole="button" accessibilityLabel="Dismiss chat action error" style={{ minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="close" size={18} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
       <FlatList
         style={{ flex: 1 }}
         data={filtered}
@@ -292,18 +339,64 @@ export default function ChatListScreen({ navigation }) {
           />
         )}
         ListFooterComponent={
-          loadingMore ? <ActivityIndicator style={{ marginVertical: spacing.md }} color={colors.textSecondary} /> : null
+          loadingMore ? (
+            <View accessibilityLiveRegion="polite" style={{ paddingVertical: spacing.md, alignItems: 'center' }}>
+              <ActivityIndicator color={colors.textSecondary} />
+              <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.xs }]}>Loading older chats…</Text>
+            </View>
+          ) : loadMoreError ? (
+            <View style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.md, alignItems: 'center' }}>
+              <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.sm }]}>{loadMoreError}</Text>
+              <TouchableOpacity onPress={handleLoadMore} accessibilityRole="button" accessibilityLabel="Retry loading older chats" style={{ minHeight: 44, paddingHorizontal: spacing.lg, justifyContent: 'center', borderRadius: radii.pill, borderWidth: 1, borderColor: colors.border }}>
+                <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Retry loading older chats</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null
         }
         ListEmptyComponent={
-          <View style={{ padding: spacing.xl, alignItems: 'center' }}>
-            <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: 4 }]}>
-              {activeFilter === 'all' ? 'Nothing here yet' : `No ${activeFilter} chats`}
-            </Text>
-            <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>
-              {activeFilter === 'all'
-                ? 'Tap + to start your first thread.'
-                : 'Long-press a chat for favorite, mute & archive, or switch filters.'}
-            </Text>
+          <View style={{ paddingHorizontal: spacing.xl, paddingVertical: spacing.xxl || spacing.xl, alignItems: 'center' }}>
+            {initialLoading ? (
+              <>
+                <ActivityIndicator color={colors.primary} size="large" />
+                <Text accessibilityRole="text" style={[typography.body, { color: colors.textSecondary, marginTop: spacing.md }]}>Loading your conversations…</Text>
+              </>
+            ) : loadError ? (
+              <>
+                <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md }}>
+                  <Ionicons name="cloud-offline-outline" size={28} color={colors.textSecondary} />
+                </View>
+                <Text accessibilityRole="header" style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: spacing.xs, textAlign: 'center' }]}>Your chats couldn't load</Text>
+                <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.md }]}>{loadError}</Text>
+                <TouchableOpacity onPress={() => load().catch(() => {})} accessibilityRole="button" accessibilityLabel="Retry loading chats" style={{ minHeight: 44, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radii.pill, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={[typography.bodyStrong, { color: '#fff' }]}>Try again</Text>
+                </TouchableOpacity>
+              </>
+            ) : query.trim() ? (
+              <>
+                <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md }}>
+                  <Ionicons name="search-outline" size={28} color={colors.textSecondary} />
+                </View>
+                <Text accessibilityRole="header" style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: spacing.xs }]}>No matches found</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.md }]}>Try another name, group, or message keyword.</Text>
+                <TouchableOpacity onPress={() => setQuery('')} accessibilityRole="button" accessibilityLabel="Clear chat search" style={{ minHeight: 44, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.border, justifyContent: 'center' }}>
+                  <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Clear search</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md }}>
+                  <Ionicons name={activeFilter === 'all' ? 'chatbubbles-outline' : 'filter-outline'} size={30} color={colors.primary} />
+                </View>
+                <Text accessibilityRole="header" style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: spacing.xs }]}>{activeFilter === 'all' ? 'Your conversations start here' : `No ${activeFilter} chats yet`}</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.md }]}>{activeFilter === 'all' ? 'Start a private conversation or create a group. Your chats will appear here.' : 'Try another filter, or start a conversation to build your chat list.'}</Text>
+                {activeFilter === 'all' ? (
+                  <TouchableOpacity onPress={() => navigation.navigate('NewChat')} accessibilityRole="button" accessibilityLabel="Start your first chat" style={{ minHeight: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.lg, borderRadius: radii.pill, backgroundColor: colors.primary }}>
+                    <Ionicons name="add" size={19} color="#fff" />
+                    <Text style={[typography.bodyStrong, { color: '#fff', marginLeft: spacing.xs }]}>Start a chat</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </>
+            )}
           </View>
         }
       />

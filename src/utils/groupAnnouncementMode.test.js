@@ -17,6 +17,6 @@ test('group management exposes a persisted admin-only announcement switch', () =
 });
 
 test('saving group metadata preserves the announcement setting when the API omits it', () => {
-  assert.match(screen, /adminOnlyMessages: typeof saved\.adminOnlyMessages === 'boolean' \? saved\.adminOnlyMessages : Boolean\(groupMetadata\.adminOnlyMessages\)/);
+  assert.match(screen, /adminOnlyMessages: typeof saved\.adminOnlyMessages === 'boolean' \? saved\.adminOnlyMessages : validation\.value\.adminOnlyMessages/);
   assert.match(screen, /group name, topic, description, and announcement setting have been updated/);
 });

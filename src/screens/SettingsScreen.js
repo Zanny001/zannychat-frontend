@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, ActivityIndicator, Switch, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import Header from '../components/Header';
@@ -12,14 +12,19 @@ import { SUPABASE_ENABLED } from '../services/supabaseClient';
 import { BACKEND_ENABLED, checkBackendHealth } from '../services/backendClient';
 
 export default function SettingsScreen({ navigation }) {
-  const { colors, spacing, typography, radii, paletteKey, palettes, setPalette } = useTheme();
+  const { colors, spacing, typography, radii, paletteKey, palettes, setPalette, appearance, setAppearance, resolvedMode, textScale, setTextScale, highContrast, setHighContrast } = useTheme();
 
   async function handleLogout() {
     try {
-      stopPresence();
       await signOut();
-    } finally {
-      navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] });
+      stopPresence();
+      // Supabase SIGNED_OUT changes the registered route group. Demo mode has
+      // no auth listener, so reset locally. Never imply logout succeeded on error.
+      if (!SUPABASE_ENABLED) navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] });
+    } catch (error) {
+      const message = 'Could not sign out securely. Please retry when your connection is available.';
+      if (Platform.OS === 'web' && typeof window !== 'undefined') window.alert(message);
+      else Alert.alert('Sign out failed', message);
     }
   }
 
@@ -28,6 +33,115 @@ export default function SettingsScreen({ navigation }) {
       <Header title="Appearance & theme" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
         <ConnectionsPanel />
+
+        <TouchableOpacity
+          onPress={() => navigation.navigate('PrivacySecurity')}
+          activeOpacity={0.82}
+          accessibilityRole="button"
+          accessibilityLabel="Open privacy and security center"
+          style={{ marginBottom: spacing.md }}
+        >
+          <GlassCard contentStyle={styles.row}>
+            <View style={[styles.appearanceIcon, { backgroundColor: hexToRgba(colors.online, 0.14) }]}>
+              <Ionicons name="shield-checkmark-outline" size={21} color={colors.online} />
+            </View>
+            <View style={{ flex: 1, marginLeft: spacing.sm }}>
+              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Privacy & security center</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>Blocked accounts, password and account protection</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+          </GlassCard>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Sessions')}
+          activeOpacity={0.82}
+          accessibilityRole="button"
+          accessibilityLabel="Review devices and sessions"
+          style={{ marginBottom: spacing.md }}
+        >
+          <GlassCard contentStyle={styles.row}>
+            <View style={[styles.appearanceIcon, { backgroundColor: hexToRgba(colors.primary, 0.14) }]}>
+              <Ionicons name="phone-portrait-outline" size={21} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1, marginLeft: spacing.sm }}>
+              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Devices & sessions</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>Review sign-in and sign out of other devices</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+          </GlassCard>
+        </TouchableOpacity>
+
+        <GlassCard style={{ marginBottom: spacing.md }}>
+          <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.xs }]}>App appearance</Text>
+          <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>Choose a comfortable look for every screen.</Text>
+          <View style={styles.optionRow} accessibilityRole="radiogroup" accessibilityLabel="App appearance">
+            {[
+              { key: 'system', label: 'System', icon: 'phone-portrait-outline' },
+              { key: 'light', label: 'Light', icon: 'sunny-outline' },
+              { key: 'dark', label: 'Dark', icon: 'moon-outline' },
+            ].map((option) => {
+              const selected = appearance === option.key;
+              return (
+                <TouchableOpacity
+                  key={option.key}
+                  onPress={() => setAppearance(option.key)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={`${option.label} appearance`}
+                  style={[styles.appearanceOption, { borderColor: selected ? colors.focusRing : colors.border, backgroundColor: selected ? hexToRgba(colors.focusRing, 0.14) : colors.surface }]}
+                >
+                  <Ionicons name={option.icon} size={20} color={selected ? colors.focusRing : colors.textSecondary} />
+                  <Text style={[typography.caption, { color: colors.textPrimary, marginTop: 5 }]}>{option.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <Text style={[typography.small, { color: colors.textSecondary, marginTop: spacing.sm }]}>Currently using {resolvedMode} mode.</Text>
+        </GlassCard>
+
+        <GlassCard style={{ marginBottom: spacing.md }}>
+          <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.xs }]}>Accessibility</Text>
+          <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>Adjust readability and visual contrast across screens.</Text>
+          <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: spacing.sm }]}>Text size</Text>
+          <View style={styles.optionRow} accessibilityRole="radiogroup" accessibilityLabel="Text size">
+            {[
+              { key: 'standard', label: 'Standard', sample: 'A' },
+              { key: 'large', label: 'Large', sample: 'A+' },
+              { key: 'extraLarge', label: 'Extra large', sample: 'A++' },
+            ].map((option) => {
+              const selected = textScale === option.key;
+              return (
+                <TouchableOpacity
+                  key={option.key}
+                  onPress={() => setTextScale(option.key)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={`${option.label} app text`}
+                  style={[styles.textSizeOption, { borderColor: selected ? colors.focusRing : colors.border, backgroundColor: selected ? hexToRgba(colors.focusRing, 0.14) : colors.surface }]}
+                >
+                  <Text style={{ color: colors.textPrimary, fontSize: option.key === 'standard' ? 16 : option.key === 'large' ? 19 : 22, fontWeight: '700' }}>{option.sample}</Text>
+                  <Text style={[typography.small, { color: colors.textSecondary, textAlign: 'center', marginTop: 4 }]}>{option.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <View style={[styles.accessibilitySwitchRow, { borderTopColor: colors.border, marginTop: spacing.md, paddingTop: spacing.md }]}>
+            <View style={{ flex: 1, paddingRight: spacing.md }}>
+              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Higher contrast</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>Make supporting text and boundaries easier to distinguish.</Text>
+            </View>
+            <Switch
+              value={highContrast}
+              onValueChange={setHighContrast}
+              trackColor={{ false: colors.border, true: colors.focusRing }}
+              thumbColor={colors.surfaceElevated}
+              accessibilityLabel="Higher contrast"
+              accessibilityHint="Increases contrast for text and interface boundaries"
+            />
+          </View>
+          <Text style={[typography.small, { color: colors.textSecondary, marginTop: spacing.sm }]}>Text sizing also respects your device's accessibility font settings where supported.</Text>
+        </GlassCard>
 
         <TouchableOpacity
           onPress={() => navigation.navigate('ChatAppearance')}
@@ -217,6 +331,10 @@ function ConnectionRow({ label, detail, status, last }) {
 }
 
 const styles = StyleSheet.create({
+  optionRow: { flexDirection: 'row', gap: 8 },
+  appearanceOption: { flex: 1, minHeight: 76, borderWidth: 1, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingVertical: 10, paddingHorizontal: 4 },
+  textSizeOption: { flex: 1, minHeight: 70, borderWidth: 1, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingVertical: 8, paddingHorizontal: 3 },
+  accessibilitySwitchRow: { flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
   swatchRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 18 },
   swatchWrap: { alignItems: 'center', width: 68 },
   swatchRing: {

@@ -1,0 +1,29 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { MOODS, resolveMoodColors } from '../theme/colors.js';
+
+test('light theme uses light surfaces and dark readable text', () => {
+  const colors = resolveMoodColors(MOODS.ember, 'light');
+  assert.equal(colors.background, '#F7F8FC');
+  assert.equal(colors.surface, '#FFFFFF');
+  assert.equal(colors.textPrimary, '#171925');
+  assert.equal(colors.primary, '#B93825');
+});
+
+test('dark theme retains the selected mood palette', () => {
+  const colors = resolveMoodColors(MOODS.tide, 'dark');
+  assert.equal(colors.background, MOODS.tide.ink);
+  assert.equal(colors.textPrimary, MOODS.tide.paper);
+  assert.equal(colors.primary, MOODS.tide.signal);
+});
+
+test('high contrast strengthens secondary text and boundaries in both modes', () => {
+  const light = resolveMoodColors(MOODS.ember, 'light', true);
+  const standardLight = resolveMoodColors(MOODS.ember, 'light', false);
+  const dark = resolveMoodColors(MOODS.ember, 'dark', true);
+  const standardDark = resolveMoodColors(MOODS.ember, 'dark', false);
+  assert.notEqual(light.textSecondary, standardLight.textSecondary);
+  assert.notEqual(light.border, standardLight.border);
+  assert.notEqual(dark.textSecondary, standardDark.textSecondary);
+  assert.notEqual(dark.border, standardDark.border);
+});

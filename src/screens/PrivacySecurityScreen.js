@@ -11,6 +11,7 @@ import { SUPABASE_ENABLED } from '../services/supabaseClient';
 import { BACKEND_ENABLED } from '../services/backendClient';
 import GlassInput from '../components/GlassInput';
 import { validatePasswordChange } from '../utils/authValidation';
+import { getPrivacyCheckupItems } from '../utils/privacyCheckup';
 
 // One of the three Profile rows the Oct 2026 audit found rendering but
 // doing nothing ("the single most visible 'looks finished, isn't'
@@ -124,6 +125,33 @@ export default function PrivacySecurityScreen({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Privacy & security" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
+        <GlassCard style={{ marginBottom: spacing.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs }}>
+            <Ionicons name="shield-checkmark-outline" size={20} color={colors.accent} />
+            <Text style={[typography.heading, { color: colors.textPrimary, marginLeft: spacing.sm }]}>Privacy checkup</Text>
+          </View>
+          <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 20, marginBottom: spacing.sm }]}>A quick review of important account controls and the limits of message privacy.</Text>
+          {getPrivacyCheckupItems().map((item, index) => (
+            <View key={item.id} style={{ flexDirection: 'row', alignItems: 'flex-start', paddingVertical: spacing.sm, borderTopWidth: index === 0 ? 0 : StyleSheet.hairlineWidth, borderTopColor: colors.border }}>
+              <Ionicons name={item.icon} size={19} color={colors.textSecondary} style={{ marginTop: 2 }} />
+              <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.title}</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 19, marginTop: 2 }]}>{item.detail}</Text>
+                {item.action && (
+                  <TouchableOpacity
+                    onPress={() => item.action === 'Sessions' ? navigation.navigate('Sessions') : item.action === 'Data export' ? navigation.navigate('DataExport') : null}
+                    accessibilityRole="button"
+                    accessibilityLabel={item.title}
+                    style={{ alignSelf: 'flex-start', paddingVertical: 6 }}
+                  >
+                    <Text style={[typography.caption, { color: colors.primary, fontWeight: '600' }]}>{item.action === 'Sessions' ? 'Manage sessions' : item.action === 'Data export' ? 'Export data' : 'Review'}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          ))}
+        </GlassCard>
+
         <GlassCard style={{ marginBottom: spacing.md }}>
           <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.xs }]}>Blocked users</Text>
           <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>

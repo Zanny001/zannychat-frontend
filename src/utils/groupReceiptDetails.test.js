@@ -33,3 +33,22 @@ test('group receipt details exclude sender and provide a safe fallback name', ()
   assert.equal(details.length, 1);
   assert.equal(details[0].name, 'ZannyChat member');
 });
+
+test('group receipt details safely ignore malformed receipt maps and invalid member IDs', () => {
+  const details = buildGroupReceiptDetails({
+    message: { id: 'm2', createdAtRaw: '2026-10-18T10:00:00.000Z' },
+    members: [{ id: 'a' }, { id: 4 }, null],
+    deliveryState: { m2: 'a' }, participantReadState: [],
+  });
+  assert.equal(details.length, 1);
+  assert.equal(details[0].status, 'Awaiting delivery receipt');
+});
+
+test('group receipt names are bounded and blank names use a fallback', () => {
+  const details = buildGroupReceiptDetails({
+    message: { id: 'm3', createdAtRaw: '2026-10-18T10:00:00.000Z' },
+    members: [{ id: 'a', profile: { name: '   ' } }, { id: 'b', profile: { name: 'x'.repeat(150) } }],
+  });
+  assert.equal(details[0].name, 'ZannyChat member');
+  assert.equal(details[1].name.length, 100);
+});

@@ -5,15 +5,22 @@
 export function buildGroupReceiptDetails({ message, members = [], senderId, participantReadState = {}, deliveryState = {} }) {
   if (!message?.id || String(message.id).startsWith('temp-')) return [];
   const createdAt = new Date(message.createdAtRaw || message.createdAt || '').getTime();
-  if (!Number.isFinite(createdAt)) return [];
-  const delivered = new Set(deliveryState[message.id] || []);
+  if (!Number.isFinite(createdAt) || !Array.isArray(members)) return [];
+  const receipts = deliveryState && typeof deliveryState === 'object' && !Array.isArray(deliveryState)
+    ? deliveryState : {};
+  const delivered = new Set(Array.isArray(receipts[message.id])
+    ? receipts[message.id].filter((id) => typeof id === 'string' && id.length > 0) : []);
+  const readState = participantReadState && typeof participantReadState === 'object' && !Array.isArray(participantReadState)
+    ? participantReadState : {};
   return members
-    .filter((member) => member?.id && member.id !== senderId)
+    .filter((member) => typeof member?.id === 'string' && member.id.length > 0 && member.id !== senderId)
     .map((member) => {
-      const readAt = participantReadState[member.id];
+      const readAt = readState[member.id];
       const readTime = readAt ? new Date(readAt).getTime() : NaN;
       const hasRead = Number.isFinite(readTime) && readTime >= createdAt;
       const status = hasRead ? 'Read' : delivered.has(member.id) ? 'Delivered' : 'Awaiting delivery receipt';
-      return { id: member.id, name: member.profile?.name || 'ZannyChat member', status, readAt: hasRead ? readAt : null };
+      const rawName = member.profile?.name;
+      const name = typeof rawName === 'string' && rawName.trim() ? rawName.trim().slice(0, 100) : 'ZannyChat member';
+      return { id: member.id, name, status, readAt: hasRead ? readAt : null };
     });
 }

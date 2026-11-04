@@ -20,3 +20,15 @@ test('group management can load invite history and revoke active entries', () =>
   assert.match(screen, /invite\.status === 'active'/);
   assert.match(screen, /revokeInvite\(invite\)/);
 });
+
+
+test('group management ignores stale refresh results after a newer request or screen blur', () => {
+  assert.match(screen, /const refreshGeneration = useRef\(0\)/);
+  assert.match(screen, /if \(requestId !== refreshGeneration\.current\) return/);
+  assert.match(screen, /if \(requestId === refreshGeneration\.current\) setGroupInvites/);
+  assert.match(screen, /return \(\) => \{ refreshGeneration\.current \+= 1; \}/);
+});
+
+test('group management validates invite list shape before applying refresh results', () => {
+  assert.match(screen, /Array\.isArray\(invites\) \? invites : \[\]/);
+});

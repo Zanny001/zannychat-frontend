@@ -1,4 +1,7 @@
 import { normalizeEmail, parseRecoveryCallback } from '../utils/authValidation';
+import { Platform } from 'react-native';
+import { getPasswordRecoveryRedirectUrl } from '../utils/oauthRedirect';
+import { getSafeMessageSendError } from '../utils/safeMessagingError';
 import { retryTransient } from '../utils/retry';
 import { clearDraftsForUser } from './drafts';
 import { clearPinnedMessagesForUser } from './pinnedMessages';
@@ -374,9 +377,9 @@ export async function requestPasswordReset(email) {
   if (!SUPABASE_ENABLED) return { mock: true };
   const normalizedEmail = normalizeEmail(email);
   const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
-    // Add this exact URL to Supabase Auth's redirect URL allowlist before
-    // enabling recovery in a hosted environment.
-    redirectTo: 'zannychat://reset-password',
+    // Add the hosted web origin and native scheme to Supabase Auth's redirect
+    // allowlist. The browser callback is required for desktop recovery links.
+    redirectTo: getPasswordRecoveryRedirectUrl(),
   });
   if (error) throw error;
   // Do not return whether an account exists; the UI always shows the same
@@ -397,6 +400,23 @@ export async function changePassword(newPassword) {
 
 export async function completePasswordReset(callbackUrl, newPassword) {
   if (!SUPABASE_ENABLED) throw new Error('Password reset requires a configured Supabase project.');
+  // On web, Supabase JS consumes the PKCE code from the hosted callback URL
+  // during client initialization. Verify that this is our same-origin recovery
+  // route and then update only through the currently authenticated recovery session.
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    let parsedWebCallback = null;
+    try { parsedWebCallback = new URL(callbackUrl); } catch (_) {}
+    const isSameOriginRecovery = parsedWebCallback
+      && parsedWebCallback.origin === window.location.origin
+      && parsedWebCallback.searchParams.get('reset-password') === '1';
+    if (isSameOriginRecovery) {
+      const { data: currentSession, error: currentSessionError } = await supabase.auth.getSession();
+      if (currentSessionError || !currentSession?.session) throw new Error('The recovery link is expired or invalid. Request a new one.');
+      const { error: webUpdateError } = await supabase.auth.updateUser({ password: newPassword });
+      if (webUpdateError) throw webUpdateError;
+      return { updated: true };
+    }
+  }
   const callback = parseRecoveryCallback(callbackUrl);
   if (!callback) throw new Error('The recovery link is expired or invalid. Request a new one.');
   // Supabase can return a PKCE authorization code or implicit-flow tokens.
@@ -494,6 +514,22 @@ export async function fetchContactById(userId) {
   if (error) throw error;
   if (!data) throw new Error('No ZannyChat profile was found for that QR code.');
   return normalizeProfile(data);
+}
+
+// Private phone discovery: send only numbers the user explicitly selects.
+// Never log or persist the submitted phone list on the client.
+export async function getPhoneDiscoverySettings() {
+  return backendFetch('/discovery/enrollment');
+}
+
+export async function setPhoneDiscoverability(discoverable) {
+  if (typeof discoverable !== 'boolean') throw new Error('Choose whether people can find you by phone.');
+  return backendFetch('/discovery/enrollment', { method: 'POST', body: JSON.stringify({ discoverable }) });
+}
+
+export async function matchPhoneContacts(phones) {
+  if (!Array.isArray(phones) || phones.length > 100) throw new Error('Match up to 100 selected phone numbers at a time.');
+  return backendFetch('/discovery/match', { method: 'POST', body: JSON.stringify({ phones }) });
 }
 
 export async function fetchContacts() {
@@ -924,13 +960,9 @@ export async function sendMessage(conversationId, text, replyToId = null, reques
       if (!recovered.error && recovered.data) data = recovered.data;
     }
     if (!data) {
-      console.error('[Messaging] Supabase insert failed:', {
-        code: error?.code,
-        message: error?.message,
-        details: error?.details,
-        hint: error?.hint,
-      });
-      throw new Error(`Message could not be saved (${error?.code || 'network/database error'}): ${error?.message || 'Please check your connection and try again.'}`);
+      // Do not expose raw Postgres errors or row/schema details in production logs
+      // or user-facing alerts. Map known cases to actionable, privacy-safe copy.
+      throw new Error(getSafeMessageSendError(error));
     }
   }
 
@@ -1484,8 +1516,10 @@ export async function fetchChannelPosts(channelId, cursor = null) {
   return backendFetch(`/channels/${encodeURIComponent(channelId)}/posts${query}`);
 }
 
-export async function publishChannelPost(channelId, body) {
-  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts`, { method: 'POST', body: JSON.stringify({ body }) });
+export async function publishChannelPost(channelId, body, clientRequestId = null) {
+  const payload = { body };
+  if (typeof clientRequestId === 'string' && clientRequestId) payload.clientRequestId = clientRequestId;
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts`, { method: 'POST', body: JSON.stringify(payload) });
   return result.post;
 }
 
@@ -1508,14 +1542,29 @@ export async function setChannelPostReaction(channelId, postId, emoji) {
   return result;
 }
 
-export async function fetchChannelPostComments(channelId, postId) {
-  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}/comments`);
-  return Array.isArray(result?.comments) ? result.comments : [];
+export async function fetchChannelPostComments(channelId, postId, cursor = null) {
+  const params = new URLSearchParams();
+  if (cursor && typeof cursor.created_at === 'string' && typeof cursor.id === 'string') {
+    params.set('beforeCreatedAt', cursor.created_at);
+    params.set('beforeId', cursor.id);
+  }
+  const query = params.toString();
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}/comments${query ? `?${query}` : ''}`);
+  return { comments: Array.isArray(result?.comments) ? result.comments : [], nextCursor: result?.nextCursor || null, hasMore: Boolean(result?.hasMore) };
 }
 
 export async function publishChannelPostComment(channelId, postId, body) {
   const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}/comments`, { method: 'POST', body: JSON.stringify({ body }) });
   return result.comment;
+}
+
+export async function updateChannelPostComment(channelId, postId, commentId, body) {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}`, { method: 'PATCH', body: JSON.stringify({ body }) });
+  return result.comment;
+}
+
+export async function setChannelPostCommentReaction(channelId, postId, commentId, emoji) {
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}/reaction`, { method: 'PUT', body: JSON.stringify({ emoji }) });
 }
 
 export async function deleteChannelPostComment(channelId, postId, commentId) {
@@ -1545,9 +1594,20 @@ export async function reportChannelPost(channelId, postId, reason, details = '')
   return result.report;
 }
 
-export async function fetchChannelPostReports(channelId) {
-  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/reports`);
-  return Array.isArray(result?.reports) ? result.reports : [];
+export async function reportChannelPostComment(channelId, postId, commentId, reason, details = '') {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}/reports`, { method: 'POST', body: JSON.stringify({ reason, details }) });
+  return result.report;
+}
+
+export async function fetchChannelPostReports(channelId, cursor = null) {
+  const query = new URLSearchParams();
+  if (cursor?.createdAt && cursor?.id) {
+    query.set('cursorCreatedAt', cursor.createdAt);
+    query.set('cursorId', cursor.id);
+  }
+  const suffix = query.toString();
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/reports${suffix ? `?${suffix}` : ''}`);
+  return { reports: Array.isArray(result?.reports) ? result.reports : [], hasMore: result?.hasMore === true, nextCursor: result?.nextCursor || null };
 }
 
 export async function updateChannelPostReport(channelId, reportId, status) {
