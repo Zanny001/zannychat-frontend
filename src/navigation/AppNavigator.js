@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, View, Platform } from 'react-native';
+import { StyleSheet, View, Platform, Linking } from 'react-native';
 import { NavigationContainer, DarkTheme, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -49,6 +49,7 @@ import IncomingCallScreen from '../screens/IncomingCallScreen';
 import OutgoingCallScreen from '../screens/OutgoingCallScreen';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { getCallParticipantName, subscribeToIncomingCalls } from '../services/calls';
+import { completeGoogleOAuthCallback } from '../services/googleAuth';
 
 // Lets code outside the component tree (the push-notification tap
 // handler in App.js) trigger navigation — the standard React
@@ -121,6 +122,20 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
   // In a configured production build, register private app routes only after a
   // Supabase session exists. Demo mode intentionally keeps its local preview.
   const canAccessApp = !SUPABASE_ENABLED || isAuthenticated;
+  useEffect(() => {
+    if (Platform.OS === 'web' || !SUPABASE_ENABLED || !supabase) return undefined;
+    let active = true;
+    const handleUrl = (url) => {
+      if (!url || !url.startsWith('zannychat://auth/callback')) return;
+      completeGoogleOAuthCallback(supabase, url).catch(() => {
+        // A malformed or expired callback must not crash the app or log OAuth codes.
+      });
+    };
+    Linking.getInitialURL().then((url) => { if (active) handleUrl(url); }).catch(() => {});
+    const subscription = Linking.addEventListener('url', ({ url }) => handleUrl(url));
+    return () => { active = false; subscription?.remove?.(); };
+  }, []);
+
   const incomingUnsubscribeRef = useRef(null);
   const incomingIdsRef = useRef(new Set());
   const pendingIncomingRef = useRef(null);

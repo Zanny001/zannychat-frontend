@@ -3,6 +3,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { supabase, SUPABASE_ENABLED } from './supabaseClient';
+import { getCallParticipantName } from './calls';
 import { getNotificationPrefs, loadNotificationPrefs } from './notificationPrefs';
 import { shouldQuietForegroundNotification } from '../utils/quietHours';
 
@@ -67,6 +68,13 @@ export async function registerForPushNotifications() {
       name: 'default',
       importance: Notifications.AndroidImportance.HIGH,
     });
+    await Notifications.setNotificationChannelAsync('calls', {
+      name: 'Incoming calls',
+      importance: Notifications.AndroidImportance.MAX,
+      sound: 'default',
+      vibrationPattern: [0, 250, 250, 250],
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    });
   }
 
   try {
@@ -116,10 +124,53 @@ export async function unregisterPushNotifications() {
 // resolves those via fetchConversations() when it notices they're
 // missing, so this stays simple rather than duplicating that lookup.
 export function subscribeToNotificationTaps(navigationRef) {
-  return Notifications.addNotificationResponseReceivedListener((response) => {
-    const conversationId = response.notification.request.content.data?.conversationId;
-    if (conversationId && navigationRef.isReady()) {
-      navigationRef.navigate('Chat', { conversation: { id: conversationId, participant: {} } });
+  const handled = new Set();
+  let pending = null;
+  let active = true;
+
+  const navigateResponse = async (response) => {
+    if (!active || !response) return;
+    const data = response.notification?.request?.content?.data || {};
+    const callId = typeof data.callId === 'string' ? data.callId : null;
+    const conversationId = typeof data.conversationId === 'string' ? data.conversationId : null;
+    const key = callId ? `call:${callId}` : conversationId ? `chat:${conversationId}` : null;
+    if (!key || handled.has(key)) return;
+    if (!navigationRef.isReady()) { pending = response; return; }
+    handled.add(key);
+    if (handled.size > 100) handled.delete(handled.values().next().value);
+
+    if (callId && supabase && SUPABASE_ENABLED) {
+      const { data: call, error } = await supabase.from('call_sessions')
+        .select('id,conversation_id,caller_id,callee_id,call_type,status,expires_at')
+        .eq('id', callId).maybeSingle();
+      if (!active || error || !call || call.status !== 'ringing' || new Date(call.expires_at).getTime() <= Date.now()) return;
+      const participantName = await getCallParticipantName(call.caller_id);
+      if (active && navigationRef.isReady()) navigationRef.navigate('IncomingCall', { call, participantName });
+      return;
     }
+    if (conversationId) navigationRef.navigate('Chat', { conversation: { id: conversationId, participant: {} } });
+  };
+
+  const flush = () => {
+    if (!pending || !navigationRef.isReady()) return;
+    const response = pending;
+    pending = null;
+    navigateResponse(response).catch(() => {});
+  };
+  const readySubscription = navigationRef.addListener?.('ready', flush);
+  const responseSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
+    navigateResponse(response).catch(() => {});
   });
+  Promise.resolve(Notifications.getLastNotificationResponseAsync?.()).then((response) => {
+    if (response) navigateResponse(response).catch(() => {});
+  }).catch(() => {});
+
+  return {
+    remove() {
+      active = false;
+      pending = null;
+      responseSubscription.remove();
+      readySubscription?.();
+    },
+  };
 }

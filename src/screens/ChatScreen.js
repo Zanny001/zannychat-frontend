@@ -535,21 +535,19 @@ export default function ChatScreen({ route, navigation }) {
     toggleReaction(message.id, emoji, mine?.emoji || null).catch(() => {});
   }
 
-  async function performDeleteMessage(message) {
+  async function performDeleteMessage(message, mode = 'everyone') {
     if (!message || deletingMessage) return;
 
     setDeletingMessage(true);
     setDeleteMessageError('');
 
     try {
-      await deleteMessage(message.id);
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === message.id
-            ? { ...m, deletedAt: new Date().toISOString() }
-            : m
-        )
-      );
+      await deleteMessage(message.id, mode);
+      setMessages((prev) => mode === 'me'
+        ? prev.filter((m) => m.id !== message.id)
+        : prev.map((m) => m.id === message.id
+          ? { ...m, deletedAt: new Date().toISOString(), text: '', mediaUrl: null }
+          : m));
       setDeleteMessageTarget(null);
     } catch (err) {
       const messageText = err?.message || 'Please try again.';
@@ -564,14 +562,6 @@ export default function ChatScreen({ route, navigation }) {
 
   function confirmDeleteMessage(message) {
     if (!message) return;
-
-    if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
-      const confirmed = window.confirm(
-        'Delete message? This removes the message for everyone in the chat. This action cannot be undone.'
-      );
-      if (confirmed) void performDeleteMessage(message);
-      return;
-    }
 
     setDeleteMessageError('');
     setDeleteMessageTarget(message);
@@ -1616,8 +1606,8 @@ export default function ChatScreen({ route, navigation }) {
                 { color: colors.textSecondary, marginBottom: 16 },
               ]}
             >
-              This removes the message for everyone in the chat. This action
-              cannot be undone.
+Choose whether to remove this message only from your chat or retract it
+              for everyone. Retraction is available only for messages you sent.
             </Text>
 
             {deleteMessageError ? (
@@ -1657,9 +1647,9 @@ export default function ChatScreen({ route, navigation }) {
 
               <TouchableOpacity
                 disabled={deletingMessage}
-                onPress={handleConfirmDeleteMessage}
+                onPress={() => performDeleteMessage(deleteMessageTarget, 'me')}
                 accessibilityRole="button"
-                accessibilityLabel="Confirm message deletion"
+                accessibilityLabel="Delete message for me"
                 style={{
                   paddingHorizontal: 16,
                   paddingVertical: 11,
@@ -1674,10 +1664,21 @@ export default function ChatScreen({ route, navigation }) {
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>
-                    Delete
+                    Delete for me
                   </Text>
                 )}
               </TouchableOpacity>
+              {deleteMessageTarget?.senderId === myUserId ? (
+                <TouchableOpacity
+                  disabled={deletingMessage}
+                  onPress={() => performDeleteMessage(deleteMessageTarget, 'everyone')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Delete message for everyone"
+                  style={{ paddingHorizontal: 16, paddingVertical: 11, borderRadius: radii.md || 10, backgroundColor: '#B42318', opacity: deletingMessage ? 0.65 : 1, minWidth: 120, alignItems: 'center' }}
+                >
+                  {deletingMessage ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Delete for everyone</Text>}
+                </TouchableOpacity>
+              ) : null}
             </View>
           </View>
         </View>

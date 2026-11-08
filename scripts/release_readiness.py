@@ -5,7 +5,7 @@ from refresh_registry_integrity import valid_sri
 from pathlib import Path
 root = Path(__file__).resolve().parents[1]
 repo = root.parent
-backend = repo / "zannychat-back"
+backend = repo / "zannychat-back-github"
 checks = []
 def check(name, ok, detail=""):
     checks.append((name, bool(ok), detail))
@@ -58,6 +58,13 @@ try:
     definer_hardening = backend / "supabase" / "migrations" / "0063_harden_qualified_definer_search_paths.sql"
     definer_hardening_text = definer_hardening.read_text().lower() if definer_hardening.is_file() else ""
     check("Reviewed SECURITY DEFINER routines use empty search_path", definer_hardening.is_file() and definer_hardening_text.count("set search_path = ''") == 10, "migration 0063 must harden all ten reviewed function signatures")
+    cleanup_binding = backend / "supabase" / "migrations" / "0068_bind_attachment_cleanup_to_conversation.sql"
+    cleanup_binding_text = cleanup_binding.read_text().lower() if cleanup_binding.is_file() else ""
+    cleanup_worker = backend / "src" / "jobs" / "messageAttachmentCleanup.js"
+    check("Attachment cleanup is bound to its source conversation", cleanup_binding.is_file() and "old.conversation_id" in cleanup_binding_text and "conversation_id" in cleanup_worker.read_text() and "does not belong to the queued message conversation" in cleanup_worker.read_text(), "worker must refuse cross-conversation Storage deletion")
+    group_privacy = backend / "src" / "routes" / "conversations.js"
+    group_privacy_helper = backend / "src" / "utils" / "groupInvitePrivacy.cjs"
+    check("Group invitation preferences and blocks are enforced before membership writes", group_privacy.is_file() and group_privacy_helper.is_file() and "evaluateGroupInvitePrivacy" in group_privacy.read_text() and "group_invite_permission" in group_privacy.read_text() and "blocked_users" in group_privacy.read_text(), "trusted group creation must enforce recipient privacy and block state")
     security_inventory = backend / "supabase" / "audits" / "security_definer_inventory.sql"
     security_inventory_text = security_inventory.read_text().lower() if security_inventory.is_file() else ""
     check("Read-only SECURITY DEFINER staging inventory exists", security_inventory.is_file() and "p.prosecdef" in security_inventory_text and "has_function_privilege('authenticated'" in security_inventory_text and "search_path_not_pinned" in security_inventory_text and "aclexplode(" in security_inventory_text and "critical review" in security_inventory_text, "inventory must triage unpinned search paths and PUBLIC/role EXECUTE access without mutating database state")

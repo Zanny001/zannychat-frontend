@@ -14,6 +14,22 @@ function getWebRedirect() {
   throw new Error('Web OAuth redirect URL is unavailable.');
 }
 
+const callbackExchanges = new Map();
+
+export async function completeGoogleOAuthCallback(supabase, callbackUrl) {
+  const callback = parseGoogleOAuthCallback(callbackUrl);
+  if (!callback) throw new Error('The Google sign-in callback was invalid or incomplete.');
+  if (callback.error) throw new Error(callback.error);
+  if (!supabase?.auth?.exchangeCodeForSession) throw new Error('Supabase authentication is not available.');
+  if (callbackExchanges.has(callback.code)) return callbackExchanges.get(callback.code);
+  const exchange = supabase.auth.exchangeCodeForSession(callback.code).then(({ error }) => {
+    if (error) throw error;
+    return { completed: true };
+  });
+  callbackExchanges.set(callback.code, exchange);
+  try { return await exchange; } catch (error) { callbackExchanges.delete(callback.code); throw error; }
+}
+
 export async function startGoogleOAuth(supabase) {
   if (!supabase?.auth?.signInWithOAuth) {
     throw new Error('Supabase authentication is not available.');
@@ -51,15 +67,7 @@ export async function startGoogleOAuth(supabase) {
     throw new Error('Google sign-in did not return to ZannyChat.');
   }
 
-  const callback = parseGoogleOAuthCallback(result.url);
-  if (!callback) {
-    throw new Error('The Google sign-in callback was invalid or incomplete.');
-  }
-  if (callback.error) throw new Error(callback.error);
-
-  const { error: exchangeError } =
-    await supabase.auth.exchangeCodeForSession(callback.code);
-  if (exchangeError) throw exchangeError;
+  await completeGoogleOAuthCallback(supabase, result.url);
 
   // Supabase's auth-state listener handles the signed-in navigation.
   return { started: true };

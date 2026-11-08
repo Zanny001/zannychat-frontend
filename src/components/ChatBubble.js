@@ -66,7 +66,7 @@ function VoiceBubbleContent({ message, isMine, captionColor }) {
             ]}
           />
         </View>
-        <Text style={[typography.small, { color: isMine ? 'rgba(255,255,255,0.75)' : colors.textSecondary, marginTop: 4 }]}>
+        <Text style={[typography.small, { color: isMine ? colors.bubbleMineMeta : colors.textSecondary, marginTop: 4 }]}>
           {formatDuration(status.playing || status.currentTime > 0 ? status.currentTime : duration)}
         </Text>
       </View>
@@ -112,14 +112,14 @@ function LinkPreviewCard({ url, isMine }) {
       ) : null}
       <View style={{ padding: spacing.sm }}>
         <Text
-          style={[typography.small, { color: isMine ? 'rgba(255,255,255,0.7)' : colors.textSecondary }]}
+          style={[typography.small, { color: isMine ? colors.bubbleMineMeta : colors.textSecondary }]}
           numberOfLines={1}
         >
           {preview.siteName}
         </Text>
         {preview.title ? (
           <Text
-            style={[typography.bodyStrong, { color: isMine ? '#FFFFFF' : colors.textPrimary, marginTop: 2 }]}
+            style={[typography.bodyStrong, { color: isMine ? colors.bubbleMineText : colors.textPrimary, marginTop: 2 }]}
             numberOfLines={2}
           >
             {preview.title}
@@ -127,7 +127,7 @@ function LinkPreviewCard({ url, isMine }) {
         ) : null}
         {preview.description ? (
           <Text
-            style={[typography.caption, { color: isMine ? 'rgba(255,255,255,0.75)' : colors.textSecondary, marginTop: 2 }]}
+            style={[typography.caption, { color: isMine ? colors.bubbleMineMeta : colors.textSecondary, marginTop: 2 }]}
             numberOfLines={2}
           >
             {preview.description}
@@ -222,7 +222,7 @@ export default function ChatBubble({
   }
 
   const replyBorderColor = isMine ? 'rgba(255,255,255,0.6)' : colors.thread;
-  const captionColor = isMine ? '#FFFFFF' : colors.textPrimary;
+  const captionColor = isMine ? colors.bubbleMineText : colors.textPrimary;
 
   function renderContent() {
     // Soft-deleted message: the row still exists (replies may quote it,
@@ -230,11 +230,11 @@ export default function ChatBubble({
     if (message.deletedAt) {
       return (
         <View style={styles.tombstoneRow}>
-          <Ionicons name="ban-outline" size={14} color={isMine ? 'rgba(255,255,255,0.7)' : colors.textSecondary} />
+          <Ionicons name="ban-outline" size={14} color={isMine ? colors.bubbleMineMeta : colors.textSecondary} />
           <Text
             style={[
               typography.caption,
-              { fontStyle: 'italic', color: isMine ? 'rgba(255,255,255,0.7)' : colors.textSecondary, marginLeft: 6 },
+              { fontStyle: 'italic', color: isMine ? colors.bubbleMineMeta : colors.textSecondary, marginLeft: 6 },
             ]}
           >
             This message was deleted
@@ -288,7 +288,7 @@ export default function ChatBubble({
             <Text style={[typography.bodyStrong, { color: captionColor }]} numberOfLines={1}>
               {message.mediaName || 'File'}
             </Text>
-            <Text style={[typography.small, { color: isMine ? 'rgba(255,255,255,0.7)' : colors.textSecondary }]}>
+            <Text style={[typography.small, { color: isMine ? colors.bubbleMineMeta : colors.textSecondary }]}>
               {formatFileSize(message.mediaSize)}
             </Text>
           </View>
@@ -312,7 +312,7 @@ export default function ChatBubble({
             <Text style={[typography.bodyStrong, { color: captionColor }]} numberOfLines={1}>
               {message.mediaName || 'Contact'}
             </Text>
-            <Text style={[typography.small, { color: isMine ? 'rgba(255,255,255,0.7)' : colors.textSecondary }]}>
+            <Text style={[typography.small, { color: isMine ? colors.bubbleMineMeta : colors.textSecondary }]}>
               Contact card — tap to chat
             </Text>
           </View>
@@ -371,7 +371,7 @@ export default function ChatBubble({
           {replyPreview ? (
             <View style={[styles.replyPreview, { borderLeftColor: replyBorderColor }]}>
               <Text
-                style={[typography.caption, { color: isMine ? 'rgba(255,255,255,0.85)' : colors.textSecondary }]}
+                style={[typography.caption, { color: isMine ? colors.bubbleMineMeta : colors.textSecondary }]}
                 numberOfLines={1}
               >
                 {replyPreview}
@@ -384,12 +384,12 @@ export default function ChatBubble({
           <View style={styles.metaRow}>
             {message.editedAt && !message.deletedAt ? (
               <Text
-                style={[typography.small, { fontStyle: 'italic', color: isMine ? 'rgba(255,255,255,0.7)' : colors.textSecondary }]}
+                style={[typography.small, { fontStyle: 'italic', color: isMine ? colors.bubbleMineMeta : colors.textSecondary }]}
               >
                 edited ·{' '}
               </Text>
             ) : null}
-            <Text style={[typography.small, { color: isMine ? 'rgba(255,255,255,0.7)' : colors.textSecondary }]}>
+            <Text style={[typography.small, { color: isMine ? colors.bubbleMineMeta : colors.textSecondary }]}>
               {message.createdAt}
             </Text>
             {isMine && !message.deletedAt && (

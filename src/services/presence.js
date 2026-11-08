@@ -1,19 +1,14 @@
+import { AppState } from 'react-native';
 import { supabase, SUPABASE_ENABLED } from './supabaseClient';
 
-// Real presence via Supabase Presence, added after the Oct 2026 audit
-// found every "online" dot in the app was mock data (profiles.online
-// existed but nothing ever set it — and a cron-updated column would
-// always be a lie by a few minutes anyway). Presence is a Realtime
-// primitive: each signed-in client tracks itself on a shared channel,
-// and Supabase pushes join/leave events as connections come and go —
-// including the abrupt ones (app killed, network drop) via the
-// server's own heartbeat, which is exactly what a column can't do.
-//
-// The dots mean "this person has ZannyChat open right now", nothing
-// more — that's the honest reading of presence, and why this doesn't
-// touch the database at all.
-
-let channel = null;
+// Presence is now server-projected. We deliberately do not subscribe to a
+// globally enumerable Realtime Presence topic: only the authenticated RPC
+// can return contacts whose privacy settings permit visibility.
+let heartbeatTimer = null;
+let pollTimer = null;
+let appStateSubscription = null;
+let started = false;
+let inFlight = false;
 let onlineIds = new Set();
 const listeners = new Set();
 
@@ -21,45 +16,60 @@ function notify() {
   listeners.forEach((cb) => cb(new Set(onlineIds)));
 }
 
-function syncFromChannel() {
-  if (!channel) return;
-  const state = channel.presenceState();
-  onlineIds = new Set(Object.keys(state));
-  notify();
+async function heartbeat(active) {
+  if (!SUPABASE_ENABLED) return;
+  const { error } = await supabase.rpc('heartbeat_presence', { p_active: Boolean(active) });
+  if (error) throw error;
 }
 
-// Idempotent — safe to call on every login and app start. In mock mode
-// this does nothing and screens keep showing mockData's online flags.
+async function refreshVisiblePresence() {
+  if (!SUPABASE_ENABLED || inFlight || AppState.currentState !== 'active') return;
+  inFlight = true;
+  try {
+    const { data, error } = await supabase.rpc('get_visible_presence');
+    if (error) throw error;
+    onlineIds = new Set((data || []).filter((row) => row.is_online).map((row) => row.user_id));
+    notify();
+  } catch (_) {
+    // A transient network failure must not turn unknown users into "offline".
+  } finally {
+    inFlight = false;
+  }
+}
+
 export async function startPresence() {
-  if (!SUPABASE_ENABLED || channel) return;
-
-  const { data } = await supabase.auth.getUser();
-  const userId = data?.user?.id;
-  if (!userId) return;
-
-  channel = supabase.channel('presence:global', {
-    config: { presence: { key: userId } },
-  });
-
-  channel.on('presence', { event: 'sync' }, syncFromChannel);
-
-  channel.subscribe(async (status) => {
-    if (status === 'SUBSCRIBED') {
-      await channel.track({ online_at: new Date().toISOString() });
+  if (!SUPABASE_ENABLED || started) return;
+  started = true;
+  try { await heartbeat(AppState.currentState === 'active'); } catch (_) {}
+  await refreshVisiblePresence();
+  heartbeatTimer = setInterval(() => {
+    if (AppState.currentState === 'active') heartbeat(true).catch(() => {});
+  }, 30000);
+  pollTimer = setInterval(() => refreshVisiblePresence(), 30000);
+  appStateSubscription = AppState.addEventListener('change', (state) => {
+    if (state === 'active') {
+      heartbeat(true).then(refreshVisiblePresence).catch(() => {});
+    } else {
+      heartbeat(false).catch(() => {});
+      onlineIds = new Set();
+      notify();
     }
   });
 }
 
 export function stopPresence() {
-  if (!channel) return;
-  supabase.removeChannel(channel);
-  channel = null;
+  if (heartbeatTimer) clearInterval(heartbeatTimer);
+  if (pollTimer) clearInterval(pollTimer);
+  heartbeatTimer = null;
+  pollTimer = null;
+  appStateSubscription?.remove?.();
+  appStateSubscription = null;
+  if (started) heartbeat(false).catch(() => {});
+  started = false;
   onlineIds = new Set();
   notify();
 }
 
-// cb receives a Set of currently-online user ids (immediately with the
-// current snapshot, then on every change). Returns an unsubscribe fn.
 export function subscribePresence(cb) {
   listeners.add(cb);
   cb(new Set(onlineIds));

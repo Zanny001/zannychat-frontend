@@ -117,6 +117,8 @@ export function resolveMoodColors(mood, mode = 'dark', highContrast = false) {
     thread,
     gold: mood.gold,
     bubbleMine: light ? '#FFE4DC' : signal,
+    bubbleMineText: light ? '#512018' : '#FFFFFF',
+    bubbleMineMeta: light ? '#744238' : 'rgba(255,255,255,0.82)',
     bubbleTheirs: light ? '#E9EDF5' : mood.inkRaisedAlt,
     danger: light ? '#B4233A' : mood.danger,
     online: ONLINE,

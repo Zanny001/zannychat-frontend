@@ -35,16 +35,19 @@ export async function createPersonalDataExport() {
   const account = authResult?.user;
   if (!account?.id) throw new Error('Please sign in again before exporting your data.');
 
-  const [profileResult, membershipResult, preferences] = await Promise.all([
+  const [profileResult, membershipResult, readCursorResult, preferences] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', account.id).maybeSingle(),
     supabase.from('conversation_participants')
-      .select('conversation_id, joined_at, last_read_at, is_favorite, is_muted, is_archived')
+      .select('conversation_id, joined_at, is_favorite, is_muted, is_archived')
       .eq('user_id', account.id),
+    supabase.rpc('get_my_read_cursors'),
     loadMediaPreferences(),
   ]);
   if (profileResult.error) throw profileResult.error;
   if (membershipResult.error) throw membershipResult.error;
-  const memberships = membershipResult.data || [];
+  if (readCursorResult.error) throw readCursorResult.error;
+  const readCursorByConversation = new Map((readCursorResult.data || []).map((row) => [row.conversation_id, row.last_read_at]));
+  const memberships = (membershipResult.data || []).map((row) => ({ ...row, last_read_at: readCursorByConversation.get(row.conversation_id) || null }));
   const conversationIds = memberships.map((row) => row.conversation_id).filter(Boolean);
 
   let conversations = [];
