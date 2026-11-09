@@ -631,6 +631,9 @@ export async function fetchContactById(userId) {
   const { data, error } = await supabase.rpc('get_contact_directory', { p_user_id: userId });
   if (error) throw error;
   const profile = Array.isArray(data) ? data[0] : null;
+  if (!profile) {
+    throw new Error('profile is private, unavailable, or not discoverable');
+  }
   return normalizeProfile(profile);
 }
 
