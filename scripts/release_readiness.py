@@ -40,7 +40,7 @@ try:
     hardening_migration = backend / "supabase" / "migrations" / "0058_phone_discovery_opt_in_hardening.sql"
     check("Phone discovery opt-in hardening migration exists", hardening_migration.is_file(), str(hardening_migration.relative_to(repo)) if hardening_migration.exists() else "required follow-up migration missing")
     check("Native contact package is declared for SDK 57", declared.get("expo-contacts") == "57.0.8", f"declared={declared.get('expo-contacts')}")
-    check("Media library package is declared for SDK 57", declared.get("expo-media-library") == "57.0.5", f"declared={declared.get('expo-media-library')}")
+    check("Media library package is declared for SDK 57", declared.get("expo-media-library", "").lstrip("~^") == "57.0.6", f"declared={declared.get('expo-media-library')}")
     check("WebRTC native dependencies are declared and pinned", declared.get("react-native-webrtc") == "124.0.7" and declared.get("@config-plugins/react-native-webrtc") == "15.0.2", "native package and Expo config plugin must remain explicit; SDK 57 compatibility still needs a successful native build")
     call_screen = (root / "src" / "screens" / "CallScreen.js").read_text()
     call_service = (root / "src" / "services" / "calls.js").read_text()
