@@ -628,23 +628,9 @@ export async function fetchContactById(userId) {
   const { data: authData } = await supabase.auth.getUser();
   if (!authData?.user) throw new Error('Sign in before connecting to a contact.');
   if (authData.user.id === userId) throw new Error("That's your own QR code. Scan someone else's code.");
-  let data;
-  const { data: rpcData, error: rpcError } = await supabase.rpc('get_contact_directory', { p_user_id: userId });
-  if (rpcError) {
-    if (!isMissingRpcFunction(rpcError, 'get_contact_directory')) throw rpcError;
-    // Compatibility path for projects where the RPC migration has not yet been applied.
-    const { data: profileRow, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, name, avatar_color, avatar_url, status, online')
-      .eq('id', userId)
-      .maybeSingle();
-    if (profileError) throw profileError;
-    data = profileRow ? [profileRow] : [];
-  } else {
-    data = rpcData;
-  }
+  const { data, error } = await supabase.rpc('get_contact_directory', { p_user_id: userId });
+  if (error) throw error;
   const profile = Array.isArray(data) ? data[0] : null;
-  if (!profile) throw new Error('This profile is private, unavailable, or not discoverable.');
   return normalizeProfile(profile);
 }
 
@@ -667,26 +653,8 @@ export async function matchPhoneContacts(phones) {
 export async function fetchContacts() {
   if (!SUPABASE_ENABLED) return MOCK_CONTACTS;
 
-  const { data: authData, error: authError } = await supabase.auth.getUser();
-  if (authError) throw authError;
-  const currentUserId = authData?.user?.id;
-  if (!currentUserId) throw new Error('Sign in to view contacts.');
-
-  let data;
-  const { data: rpcData, error: rpcError } = await supabase.rpc('get_contact_directory');
-  if (rpcError) {
-    if (!isMissingRpcFunction(rpcError, 'get_contact_directory')) throw rpcError;
-    // Keep contact discovery usable while the matching SQL RPC is being deployed.
-    const { data: profileRows, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, name, avatar_color, avatar_url, status, online')
-      .neq('id', currentUserId)
-      .order('name', { ascending: true });
-    if (profileError) throw profileError;
-    data = profileRows;
-  } else {
-    data = rpcData;
-  }
+  const { data, error } = await supabase.rpc('get_contact_directory');
+  if (error) throw error;
   return (Array.isArray(data) ? data : []).map(normalizeProfile);
 }
 
