@@ -7,6 +7,7 @@ import { clearDraftsForUser } from './drafts';
 import { clearPinnedMessagesForUser } from './pinnedMessages';
 import { supabase, SUPABASE_ENABLED, SUPABASE_URL } from './supabaseClient';
 import { backendFetch, BACKEND_ENABLED } from './backendClient';
+import { isMissingRpcFunction } from './rpcErrors';
 import {
   CURRENT_USER,
   MOCK_CONTACTS,
@@ -627,8 +628,21 @@ export async function fetchContactById(userId) {
   const { data: authData } = await supabase.auth.getUser();
   if (!authData?.user) throw new Error('Sign in before connecting to a contact.');
   if (authData.user.id === userId) throw new Error("That's your own QR code. Scan someone else's code.");
-  const { data, error } = await supabase.rpc('get_contact_directory', { p_user_id: userId });
-  if (error) throw error;
+  let data;
+  const { data: rpcData, error: rpcError } = await supabase.rpc('get_contact_directory', { p_user_id: userId });
+  if (rpcError) {
+    if (!isMissingRpcFunction(rpcError, 'get_contact_directory')) throw rpcError;
+    // Compatibility path for projects where the RPC migration has not yet been applied.
+    const { data: profileRow, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, name, avatar_color, avatar_url, status, online')
+      .eq('id', userId)
+      .maybeSingle();
+    if (profileError) throw profileError;
+    data = profileRow ? [profileRow] : [];
+  } else {
+    data = rpcData;
+  }
   const profile = Array.isArray(data) ? data[0] : null;
   if (!profile) throw new Error('This profile is private, unavailable, or not discoverable.');
   return normalizeProfile(profile);
@@ -653,8 +667,26 @@ export async function matchPhoneContacts(phones) {
 export async function fetchContacts() {
   if (!SUPABASE_ENABLED) return MOCK_CONTACTS;
 
-  const { data, error } = await supabase.rpc('get_contact_directory');
-  if (error) throw error;
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError) throw authError;
+  const currentUserId = authData?.user?.id;
+  if (!currentUserId) throw new Error('Sign in to view contacts.');
+
+  let data;
+  const { data: rpcData, error: rpcError } = await supabase.rpc('get_contact_directory');
+  if (rpcError) {
+    if (!isMissingRpcFunction(rpcError, 'get_contact_directory')) throw rpcError;
+    // Keep contact discovery usable while the matching SQL RPC is being deployed.
+    const { data: profileRows, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, name, avatar_color, avatar_url, status, online')
+      .neq('id', currentUserId)
+      .order('name', { ascending: true });
+    if (profileError) throw profileError;
+    data = profileRows;
+  } else {
+    data = rpcData;
+  }
   return (Array.isArray(data) ? data : []).map(normalizeProfile);
 }
 
@@ -708,8 +740,24 @@ export async function fetchConversations({ limit = 50, offset = 0 } = {}) {
 
   if (error) throw error;
 
-  const { data: readCursors, error: readCursorError } = await supabase.rpc('get_my_read_cursors');
-  if (readCursorError) throw readCursorError;
+  let readCursors;
+  const { data: rpcReadCursors, error: readCursorError } = await supabase.rpc('get_my_read_cursors');
+  if (readCursorError) {
+    if (!isMissingRpcFunction(readCursorError, 'get_my_read_cursors')) throw readCursorError;
+    // This RLS-scoped query returns only the signed-in user's own read cursors.
+    if (currentUserId) {
+      const { data: participantRows, error: participantError } = await supabase
+        .from('conversation_participants')
+        .select('conversation_id, last_read_at')
+        .eq('user_id', currentUserId);
+      if (participantError) throw participantError;
+      readCursors = participantRows;
+    } else {
+      readCursors = [];
+    }
+  } else {
+    readCursors = rpcReadCursors;
+  }
   const readCursorByConversation = new Map((readCursors || []).map((item) => [item.conversation_id, item.last_read_at]));
   for (const row of data || []) row.my_last_read_at = readCursorByConversation.get(row.id) || null;
 
