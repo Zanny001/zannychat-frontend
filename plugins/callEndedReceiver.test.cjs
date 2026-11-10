@@ -31,7 +31,7 @@ test('Android killed-app receiver reconciles native end and reported-end events'
   assert.ok(plugin.includes('zannychat.callkit.nativeForServer'));
   assert.ok(plugin.includes('zannychatFindMappedCallSession'));
   assert.ok(plugin.includes('CallStore.allSessions()'));
-  assert.ok(plugin.includes('NativeCallMappingCrypto.encrypt(mapping)'));
+  assert.ok(plugin.includes('zannychatEncryptMapping(mapping)'));
   assert.ok(plugin.includes('event.metadata?.get("serverEventToken")'));
   assert.ok(plugin.includes('it.origin.value == "outgoingApp"'));
   assert.ok(plugin.includes('CallNotificationManager.cancel(applicationContext)'));
