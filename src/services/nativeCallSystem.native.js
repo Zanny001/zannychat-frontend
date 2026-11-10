@@ -101,6 +101,16 @@ export async function bindPendingNativeCallMapping(nativeCallId) {
   }
 }
 
+export async function clearPendingNativeCallMapping() {
+  if (!nativeMappingModule) return false;
+  try {
+    return Boolean(await nativeMappingModule.clearPendingCallMapping());
+  } catch (error) {
+    console.warn('[calls] could not clear pending native call mapping:', error?.message || error);
+    return false;
+  }
+}
+
 export async function registerNativeCallMapping(nativeCallId, serverCallId, token) {
   if (!nativeCallId || !serverCallId || !token || !nativeMappingModule) return false;
   try {
