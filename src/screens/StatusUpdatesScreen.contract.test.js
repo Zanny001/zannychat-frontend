@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const screen = fs.readFileSync(new URL('./StatusUpdatesScreen.js', import.meta.url), 'utf8');
 const service = fs.readFileSync(new URL('../services/statusUpdates.js', import.meta.url), 'utf8');
+const appConfig = fs.readFileSync(new URL('../../app.json', import.meta.url), 'utf8');
 
 test('Stories screen presents contact story rings and a privacy-safe contact discovery shelf', () => {
   assert.ok(screen.includes('friendStatusGroups'));
@@ -23,4 +24,10 @@ test('Status publishing keeps the server-timed RPC and existing media publishing
   assert.ok(screen.includes('publishTextStatus'));
   assert.ok(screen.includes('publishPhotoStatus'));
   assert.ok(screen.includes('publishVideoStatus'));
+});
+
+
+test('Expo metadata points at the current production backend hostname', () => {
+  assert.ok(appConfig.includes('https://zannychat-backend-1.onrender.com'));
+  assert.equal(appConfig.includes('https://zannychat-backend.onrender.com'), false);
 });
