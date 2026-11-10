@@ -84,18 +84,53 @@ function withCallEndedReceiver(config) {
       throw new Error('withCallEndedReceiver: expo-callkit-telecom iOS CallManager was not found');
     }
     let manager = fs.readFileSync(managerPath, 'utf8');
-    const callbackSignature = 'func reportIncomingCall(event: IncomingCallEvent, completion: @escaping (Error?) -> Void) {';
-    if (!manager.includes('zannychat.callkit.server.\\(event.serverCallId)')) {
-      const callbackStart = manager.indexOf(callbackSignature);
-      if (callbackStart < 0) throw new Error('withCallEndedReceiver: unsupported iOS incoming-call manager source');
-      const idLine = manager.indexOf('    let id = UUID()', callbackStart);
-      if (idLine < 0) throw new Error('withCallEndedReceiver: could not locate incoming CallKit UUID creation');
-      const afterId = idLine + '    let id = UUID()'.length;
-      manager = manager.slice(0, afterId)
-        + '\n    UserDefaults.standard.set(id.uuidString, forKey: "zannychat.callkit.server.\\(event.serverCallId)")'
-        + manager.slice(afterId);
+    if (!manager.includes('import Foundation')) manager = manager.replace('import CallKit', 'import CallKit\nimport Foundation');
+    const incomingSignatures = [
+      'func reportIncomingCall(event: IncomingCallEvent) async throws {',
+      'func reportIncomingCall(event: IncomingCallEvent, completion: @escaping (Error?) -> Void) {',
+    ];
+    for (const signature of incomingSignatures) {
+      const start = manager.indexOf(signature);
+      if (start < 0) throw new Error('withCallEndedReceiver: unsupported iOS incoming-call manager source');
+      const end = manager.indexOf('\n  }', start);
+      const section = manager.slice(start, end < 0 ? manager.length : end);
+      if (!section.includes('zannychat.callkit.server.\\(event.serverCallId)')) {
+        const idLine = manager.indexOf('    let id = UUID()', start);
+        if (idLine < 0 || (end >= 0 && idLine > end)) {
+          throw new Error('withCallEndedReceiver: could not locate incoming CallKit UUID creation');
+        }
+        const afterId = idLine + '    let id = UUID()'.length;
+        manager = manager.slice(0, afterId)
+          + '\n    UserDefaults.standard.set(id.uuidString, forKey: "zannychat.callkit.server.\\(event.serverCallId)")'
+          + manager.slice(afterId);
+      }
+    }
+    const reportSignature = 'func reportCallEnded(for id: UUID, reason: CXCallEndedReason) async {';
+    if (!manager.includes('UserDefaults.standard.removeObject(forKey: "zannychat.callkit.server.\\(serverCallId)")')) {
+      const reportStart = manager.indexOf(reportSignature);
+      const reportLog = manager.indexOf('    Log.call.debug("Reporting call ended - id: \\(id), reason: \\(reason.rawValue)")', reportStart);
+      if (reportStart < 0 || reportLog < 0) throw new Error('withCallEndedReceiver: could not locate iOS call-end cleanup');
+      const afterLog = reportLog + '    Log.call.debug("Reporting call ended - id: \\(id), reason: \\(reason.rawValue)")'.length;
+      manager = manager.slice(0, afterLog)
+        + '\n    if let session = await store.session(for: id), let serverCallId = session.incomingCallEvent?.serverCallId {\n      UserDefaults.standard.removeObject(forKey: "zannychat.callkit.server.\\(serverCallId)")\n    }'
+        + manager.slice(afterLog);
     }
     fs.writeFileSync(managerPath, manager);
+
+    const delegatePath = path.join(
+      config.modRequest.projectRoot,
+      'node_modules/expo-callkit-telecom/ios/Managers/CallManager+CXProviderDelegate.swift',
+    );
+    if (!fs.existsSync(delegatePath)) {
+      throw new Error('withCallEndedReceiver: expo-callkit-telecom iOS CallKit delegate was not found');
+    }
+    let delegate = fs.readFileSync(delegatePath, 'utf8');
+    const endActionMarker = '      if var session = await store.session(for: action.callUUID) {';
+    if (!delegate.includes('zannychat.callkit.server.\\(serverCallId)')) {
+      if (!delegate.includes(endActionMarker)) throw new Error('withCallEndedReceiver: unsupported iOS end-call delegate source');
+      delegate = delegate.replace(endActionMarker, endActionMarker + '\n        if let serverCallId = session.incomingCallEvent?.serverCallId {\n          UserDefaults.standard.removeObject(forKey: "zannychat.callkit.server.\\(serverCallId)")\n        }');
+    }
+    fs.writeFileSync(delegatePath, delegate);
     return config;
   }]);
 }
