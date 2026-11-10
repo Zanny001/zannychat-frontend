@@ -141,9 +141,11 @@ export function subscribeToNotificationTaps(navigationRef) {
     if (!active || !response) return;
     const data = response.notification?.request?.content?.data || {};
     const callId = typeof data.callId === 'string' ? data.callId : null;
+    const groupCallId = typeof data.groupCallId === 'string' ? data.groupCallId : null;
+    const callType = data.callType === 'video' ? 'video' : 'audio';
     const conversationId = typeof data.conversationId === 'string' ? data.conversationId : null;
     const actionIdentifier = response.actionIdentifier;
-    const key = callId ? `call:${callId}:${actionIdentifier}` : conversationId ? `chat:${conversationId}` : null;
+    const key = callId ? `call:${callId}:${actionIdentifier}` : groupCallId ? `group-call:${groupCallId}` : conversationId ? `chat:${conversationId}` : null;
     if (!key || handled.has(key)) return;
     if (!navigationRef.isReady()) { pending = response; return; }
     handled.add(key);
@@ -162,6 +164,10 @@ export function subscribeToNotificationTaps(navigationRef) {
       if (active && navigationRef.isReady()) {
         navigationRef.navigate('IncomingCall', { call, participantName, autoAnswer: actionIdentifier === 'ANSWER_CALL' });
       }
+      return;
+    }
+    if (groupCallId) {
+      navigationRef.navigate('GroupCall', { roomId: groupCallId, conversationId, conversationName: 'Group call', callType });
       return;
     }
     if (conversationId) navigationRef.navigate('Chat', { conversation: { id: conversationId, participant: {} } });
