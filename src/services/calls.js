@@ -29,11 +29,46 @@ export async function startCall({ conversationId, calleeId, callType }) {
 
 export async function updateCallStatus(callId, status) {
   requireCalls();
-  if (!callId || !['accepted', 'declined', 'cancelled', 'ended'].includes(status)) throw new Error('Invalid call state.');
+  if (!callId || !['accepted', 'declined', 'cancelled', 'ended', 'missed'].includes(status)) throw new Error('Invalid call state.');
   const { data, error } = await supabase.from('call_sessions').update({ status }).eq('id', callId)
     .select('id,status,caller_id,callee_id,call_type,conversation_id').single();
   if (error) throw new Error(error.message || 'Unable to update call.');
   return data;
+}
+
+export async function listCallHistory(limit = 100) {
+  if (!SUPABASE_ENABLED || !supabase) return [];
+  const userId = await getCallUserId();
+  const selection = 'id,conversation_id,caller_id,callee_id,call_type,status,created_at,accepted_at,ended_at,expires_at';
+  const loadRows = async () => {
+    const { data, error } = await supabase.from('call_sessions').select(selection)
+      .or(`caller_id.eq.${userId},callee_id.eq.${userId}`)
+      .order('created_at', { ascending: false })
+      .limit(Math.max(1, Math.min(Number(limit) || 100, 200)));
+    if (error) throw error;
+    return data || [];
+  };
+  let rows = await loadRows();
+  const expired = rows.filter((row) => row.status === 'ringing'
+    && Number.isFinite(Date.parse(row.expires_at)) && Date.parse(row.expires_at) <= Date.now());
+  if (expired.length) {
+    await Promise.all(expired.map((row) => updateCallStatus(row.id, 'missed').catch(() => null)));
+    rows = await loadRows();
+  }
+  const peerIds = [...new Set(rows.map((row) => row.caller_id === userId ? row.callee_id : row.caller_id).filter(Boolean))];
+  let profilesById = {};
+  if (peerIds.length) {
+    const { data: profiles, error: profileError } = await supabase.from('profiles').select('id,name,avatar_color').in('id', peerIds);
+    if (!profileError) profilesById = Object.fromEntries((profiles || []).map((profile) => [profile.id, profile]));
+  }
+  return rows.map((row) => {
+    const peerId = row.caller_id === userId ? row.callee_id : row.caller_id;
+    const profile = profilesById[peerId] || {};
+    const duration = row.accepted_at && row.ended_at ? Math.max(0, Math.floor((Date.parse(row.ended_at) - Date.parse(row.accepted_at)) / 1000)) : 0;
+    return { ...row, direction: row.caller_id === userId ? 'outgoing' : 'incoming',
+      participantName: profile.name || 'ZannyChat contact', avatarColor: profile.avatar_color || '#6C5CE7',
+      durationSeconds: Number.isFinite(duration) ? duration : 0 };
+  });
 }
 
 export async function sendCallSignal({ call, type, payload }) {
