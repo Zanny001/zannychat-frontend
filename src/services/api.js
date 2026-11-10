@@ -355,6 +355,14 @@ export async function getPublicProfileDetails(userId) {
   return data || {};
 }
 
+async function readUploadArrayBuffer(source) {
+  if (source && typeof source !== 'string' && typeof source.arrayBuffer === 'function') return source.arrayBuffer();
+  if (typeof source !== 'string' || !source) throw new Error('The selected media file is unavailable.');
+  const response = await fetch(source);
+  if (!response.ok) throw new Error('Could not read the selected media file.');
+  return response.arrayBuffer();
+}
+
 export async function uploadProfileCover(localUri, mimeType = 'image/jpeg') {
   if (!SUPABASE_ENABLED) return { path: null, url: localUri };
   const { data: authData } = await supabase.auth.getUser();
@@ -362,7 +370,7 @@ export async function uploadProfileCover(localUri, mimeType = 'image/jpeg') {
   if (!userId) throw new Error('Not signed in');
   const extension = (mimeType.split('/')[1] || 'jpg').replace(/[^a-z0-9]/gi, '').slice(0, 8) || 'jpg';
   const objectPath = `${userId}/cover-${Date.now()}.${extension}`;
-  const arrayBuffer = await (await fetch(localUri)).arrayBuffer();
+  const arrayBuffer = await readUploadArrayBuffer(localUri);
   const { error: uploadError } = await supabase.storage
     .from('private-avatars')
     .upload(objectPath, arrayBuffer, { contentType: mimeType, upsert: true });
@@ -393,7 +401,7 @@ export async function uploadAvatar(localUri, mimeType = 'image/jpeg') {
   const extension = mimeType.split('/')[1] || 'jpg';
   const path = `${userId}/avatar-${Date.now()}.${extension}`;
 
-  const arrayBuffer = await (await fetch(localUri)).arrayBuffer();
+  const arrayBuffer = await readUploadArrayBuffer(localUri);
   // Dual-write during the compatibility window: private media is the new
   // authorization path, while the legacy public object and URL remain valid
   // for older app versions and already-shared image links.
@@ -1370,7 +1378,7 @@ export async function uploadChatImage(conversationId, localUri, mimeType = 'imag
   const extension = mimeType.split('/')[1] || 'jpg';
   const path = `${conversationId}/${Date.now()}-${Math.round(Math.random() * 1e6)}.${extension}`;
 
-  const arrayBuffer = await (await fetch(localUri)).arrayBuffer();
+  const arrayBuffer = await readUploadArrayBuffer(localUri);
   const { error } = await supabase.storage
     .from('chat-media')
     .upload(path, arrayBuffer, { contentType: mimeType });
@@ -1385,7 +1393,7 @@ export async function uploadChatFile(conversationId, localUri, fileName, mimeTyp
   const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
   const path = `${conversationId}/${Date.now()}-${safeName}`;
 
-  const arrayBuffer = await (await fetch(localUri)).arrayBuffer();
+  const arrayBuffer = await readUploadArrayBuffer(localUri);
   const { error } = await supabase.storage
     .from('chat-media')
     .upload(path, arrayBuffer, { contentType: mimeType || 'application/octet-stream' });
@@ -1399,7 +1407,7 @@ export async function uploadVoiceNote(conversationId, localUri, durationSeconds)
 
   const path = `${conversationId}/${Date.now()}-voice.m4a`;
 
-  const arrayBuffer = await (await fetch(localUri)).arrayBuffer();
+  const arrayBuffer = await readUploadArrayBuffer(localUri);
   const { error } = await supabase.storage
     .from('chat-media')
     .upload(path, arrayBuffer, { contentType: 'audio/m4a' });
