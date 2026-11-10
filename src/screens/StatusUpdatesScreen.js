@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as MediaLibrary from 'expo-media-library/legacy';
 import * as FileSystem from 'expo-file-system/legacy';
 import { saveMediaToLibrary } from '../services/saveMediaToLibrary';
-import { ActivityIndicator, Alert, AppState, Image, Modal, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, Image, Modal, Platform, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useFocusEffect } from '@react-navigation/native';
@@ -70,6 +70,8 @@ export default function StatusUpdatesScreen({ navigation }) {
   const [statuses, setStatuses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [publishError, setPublishError] = useState('');
+  const [publishSuccess, setPublishSuccess] = useState('');
   const [error, setError] = useState('');
   const [viewing, setViewing] = useState(null);
   const [statusPaused, setStatusPaused] = useState(false);
@@ -227,32 +229,42 @@ export default function StatusUpdatesScreen({ navigation }) {
   }, [refresh]));
 
   const choosePhoto = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, quality: 0.85 });
-    if (!result.canceled && result.assets?.[0]) { setPhoto(result.assets[0]); setVideo(null); }
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, quality: 0.85 });
+      if (!result.canceled && result.assets?.[0]) { setPhoto(result.assets[0]); setVideo(null); setPublishError(''); setPublishSuccess(''); }
+    } catch (pickerError) { setPublishError(pickerError?.message || 'The photo picker could not be opened.'); }
   };
 
   const chooseVideo = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'], allowsEditing: false, videoMaxDuration: 30 });
-    if (!result.canceled && result.assets?.[0]) { setVideo(result.assets[0]); setPhoto(null); }
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'], allowsEditing: false, videoMaxDuration: 30 });
+      if (!result.canceled && result.assets?.[0]) { setVideo(result.assets[0]); setPhoto(null); setPublishError(''); setPublishSuccess(''); }
+    } catch (pickerError) { setPublishError(pickerError?.message || 'The video picker could not be opened.'); }
   };
 
   const publish = async () => {
     const normalized = normalizeStatusText(text);
-    if (!normalized && !photo && !video) { Alert.alert('Add a status', 'Write a few words or choose a photo or video before publishing.'); return; }
-    setSaving(true);
+    if (!normalized && !photo && !video) { setPublishError('Write a status or choose a photo or video before publishing.'); return; }
+    setSaving(true); setPublishError(''); setPublishSuccess('');
     try {
-      // Re-fetch contact eligibility and exclusions at publish time. The picker state may be stale
-      // if contacts/privacy changed on another screen or device; never publish to stale recipients.
       let audienceRecipientIds = [];
       if (audience === 'selected_contacts') {
         const [latestContacts, latestExclusions] = await Promise.all([listStatusContacts(), listStatusExclusions()]);
         audienceRecipientIds = resolveStatusPublishAudience(audience, selectedAudienceIds, latestContacts, latestExclusions);
       }
-      const item = photo ? await publishPhotoStatus(photo, normalized, audience, audienceRecipientIds, expiryHours) : video ? await publishVideoStatus(video, normalized, audience, audienceRecipientIds, expiryHours) : await publishTextStatus(normalized, audience, audienceRecipientIds, expiryHours);
-      setStatuses((old) => [item, ...old]); setText(''); setPhoto(null); setVideo(null); await clearStatusDraft(AsyncStorage); setStatusDraftSaved(false); Alert.alert('Status published', `This status expires automatically in ${expiryHours} hours.`);
-    }
-    catch (e) { Alert.alert('Could not publish status', e?.message || 'Please try again.'); }
-    finally { setSaving(false); }
+      const item = photo
+        ? await publishPhotoStatus(photo, normalized, audience, audienceRecipientIds, expiryHours)
+        : video
+          ? await publishVideoStatus(video, normalized, audience, audienceRecipientIds, expiryHours)
+          : await publishTextStatus(normalized, audience, audienceRecipientIds, expiryHours);
+      setStatuses((old) => [item, ...old]); setText(''); setPhoto(null); setVideo(null);
+      await clearStatusDraft(AsyncStorage); setStatusDraftSaved(false);
+      setPublishSuccess(`Status published successfully. It expires in ${expiryHours} hours.`);
+    } catch (e) {
+      const message = e?.message || 'Please try again.';
+      setPublishError(message);
+      if (Platform.OS !== 'web') Alert.alert('Could not publish status', message);
+    } finally { setSaving(false); }
   };
 
   const openStatus = useCallback(async (item) => {
@@ -485,6 +497,8 @@ export default function StatusUpdatesScreen({ navigation }) {
         </View>
         {photo ? <Image source={{ uri: photo.uri }} accessibilityLabel="Selected status photo preview" style={{ width: '100%', height: 190, borderRadius: radii.md }} resizeMode="cover" /> : null}
         {video ? <View style={{ padding: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border }}><Ionicons name="videocam" size={24} color={colors.primary} /><Text style={[typography.small, { color: colors.textPrimary, marginTop: 5 }]}>{video.fileName || 'Video selected'} · maximum 30 seconds / 50 MB</Text></View> : null}
+        {publishError ? <Text accessibilityRole="alert" style={[typography.caption, { color: '#D64545' }]}>{publishError}</Text> : null}
+        {publishSuccess ? <Text accessibilityRole="status" style={[typography.caption, { color: colors.primary }]}>{publishSuccess}</Text> : null}
         <Text style={[typography.small, { color: colors.textSecondary }]}>Story lifetime</Text>
         <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', gap: spacing.xs }}>
           {[6, 12, 24, 48].map((hours) => <TouchableOpacity key={hours} onPress={() => setExpiryHours(hours)} accessibilityRole="radio" accessibilityLabel={`Story expires after ${hours} hours`} accessibilityState={{ checked: expiryHours === hours }} style={{ flex: 1, minHeight: 42, borderRadius: radii.md, borderWidth: 1, borderColor: expiryHours === hours ? colors.primary : colors.border, backgroundColor: expiryHours === hours ? `${colors.primary}18` : colors.surface, alignItems: 'center', justifyContent: 'center' }}><Text style={[typography.small, { color: expiryHours === hours ? colors.primary : colors.textPrimary, fontWeight: expiryHours === hours ? '700' : '400' }]}>{hours}h</Text></TouchableOpacity>)}
