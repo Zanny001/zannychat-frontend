@@ -103,7 +103,7 @@ export async function listCallHistory(limit = 100) {
     const { data: profiles, error: profileError } = await supabase.from('profiles').select('id,name,avatar_color').in('id', peerIds);
     if (!profileError) profilesById = Object.fromEntries((profiles || []).map((profile) => [profile.id, profile]));
   }
-  return rows.map((row) => {
+  const directCalls = rows.map((row) => {
     const peerId = row.caller_id === userId ? row.callee_id : row.caller_id;
     const profile = profilesById[peerId] || {};
     const duration = row.accepted_at && row.ended_at ? Math.max(0, Math.floor((Date.parse(row.ended_at) - Date.parse(row.accepted_at)) / 1000)) : 0;
@@ -111,6 +111,16 @@ export async function listCallHistory(limit = 100) {
       participantName: profile.name || 'ZannyChat contact', avatarColor: profile.avatar_color || '#6C5CE7',
       durationSeconds: Number.isFinite(duration) ? duration : 0 };
   });
+  try {
+    const groupResult = await backendFetch(`/group-calls/history?limit=${Math.max(1, Math.min(Number(limit) || 100, 200))}`);
+    const groupCalls = Array.isArray(groupResult?.calls) ? groupResult.calls : [];
+    return [...directCalls, ...groupCalls]
+      .sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0))
+      .slice(0, Math.max(1, Math.min(Number(limit) || 100, 200)));
+  } catch (error) {
+    console.warn('[calls] group call history unavailable:', error?.message || error);
+    return directCalls;
+  }
 }
 
 export async function sendCallSignal({ call, type, payload }) {
