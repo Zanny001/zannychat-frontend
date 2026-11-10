@@ -11,7 +11,9 @@ public final class ZannyChatNativeCallMappingModule: Module {
 
     AsyncFunction("setPendingCallMapping") { (serverCallId: String, token: String) -> Bool in
       try Self.validate(serverCallId: serverCallId, token: token)
-      return Self.store(Self.encode(serverCallId: serverCallId, token: token, origin: "outgoingApp"), key: Self.pendingKey)
+      let stored = Self.store(Self.encode(serverCallId: serverCallId, token: token, origin: "outgoingApp"), key: Self.pendingKey)
+      if stored { UserDefaults.standard.set(serverCallId, forKey: "zannychat.callkit.pendingServerId") }
+      return stored
     }
 
     AsyncFunction("bindPendingCallMapping") { (nativeCallId: String) -> Bool in
@@ -28,10 +30,12 @@ public final class ZannyChatNativeCallMappingModule: Module {
       let attributes: [String: Any] = [kSecAttrAccount as String: nativeCallId]
       guard SecItemUpdate(query as CFDictionary, attributes as CFDictionary) == errSecSuccess else { return false }
       UserDefaults.standard.set(nativeCallId, forKey: "zannychat.callkit.nativeForServer.\\(serverCallId)")
+      UserDefaults.standard.removeObject(forKey: "zannychat.callkit.pendingServerId")
       return true
     }
 
     AsyncFunction("clearPendingCallMapping") {
+      UserDefaults.standard.removeObject(forKey: "zannychat.callkit.pendingServerId")
       Self.remove(key: Self.pendingKey)
     }
 
