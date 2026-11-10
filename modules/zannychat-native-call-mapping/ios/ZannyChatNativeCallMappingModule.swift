@@ -11,18 +11,24 @@ public final class ZannyChatNativeCallMappingModule: Module {
 
     AsyncFunction("setPendingCallMapping") { (serverCallId: String, token: String) -> Bool in
       try Self.validate(serverCallId: serverCallId, token: token)
-      return Self.store(Self.encode(serverCallId: serverCallId, token: token), key: Self.pendingKey)
+      return Self.store(Self.encode(serverCallId: serverCallId, token: token, origin: "outgoingApp"), key: Self.pendingKey)
     }
 
     AsyncFunction("bindPendingCallMapping") { (nativeCallId: String) -> Bool in
       guard !nativeCallId.isEmpty, nativeCallId.count <= 128 else { return false }
+      guard let data = Self.read(key: Self.pendingKey),
+            let mapping = try? JSONSerialization.jsonObject(with: data) as? [String: String],
+            let serverCallId = mapping["serverCallId"]
+      else { return false }
       let query: [String: Any] = [
         kSecClass as String: kSecClassGenericPassword,
         kSecAttrService as String: Self.service,
         kSecAttrAccount as String: Self.pendingKey,
       ]
       let attributes: [String: Any] = [kSecAttrAccount as String: nativeCallId]
-      return SecItemUpdate(query as CFDictionary, attributes as CFDictionary) == errSecSuccess
+      guard SecItemUpdate(query as CFDictionary, attributes as CFDictionary) == errSecSuccess else { return false }
+      UserDefaults.standard.set(nativeCallId, forKey: "zannychat.callkit.nativeForServer.\\(serverCallId)")
+      return true
     }
 
     AsyncFunction("clearPendingCallMapping") {
@@ -32,7 +38,11 @@ public final class ZannyChatNativeCallMappingModule: Module {
     AsyncFunction("setCallMapping") { (nativeCallId: String, serverCallId: String, token: String) -> Bool in
       guard !nativeCallId.isEmpty, nativeCallId.count <= 128 else { return false }
       try Self.validate(serverCallId: serverCallId, token: token)
-      return Self.store(Self.encode(serverCallId: serverCallId, token: token), key: nativeCallId)
+      let stored = Self.store(Self.encode(serverCallId: serverCallId, token: token, origin: "outgoingApp"), key: nativeCallId)
+      if stored {
+        UserDefaults.standard.set(nativeCallId, forKey: "zannychat.callkit.nativeForServer.\\(serverCallId)")
+      }
+      return stored
     }
 
     AsyncFunction("getCallMapping") { (nativeCallId: String) -> [String: String]? in
@@ -43,6 +53,11 @@ public final class ZannyChatNativeCallMappingModule: Module {
     }
 
     AsyncFunction("clearCallMapping") { (nativeCallId: String) -> Bool in
+      if let data = Self.read(key: nativeCallId),
+         let mapping = try? JSONSerialization.jsonObject(with: data) as? [String: String],
+         let serverCallId = mapping["serverCallId"] {
+        UserDefaults.standard.removeObject(forKey: "zannychat.callkit.nativeForServer.\\(serverCallId)")
+      }
       Self.remove(key: nativeCallId)
     }
   }
@@ -56,8 +71,12 @@ public final class ZannyChatNativeCallMappingModule: Module {
     }
   }
 
-  private static func encode(serverCallId: String, token: String) -> Data {
-    (try? JSONSerialization.data(withJSONObject: ["serverCallId": serverCallId, "token": token])) ?? Data()
+  private static func encode(serverCallId: String, token: String, origin: String) -> Data {
+    (try? JSONSerialization.data(withJSONObject: [
+      "serverCallId": serverCallId,
+      "token": token,
+      "origin": origin,
+    ])) ?? Data()
   }
 
   private static func store(_ data: Data, key: String) -> Bool {
