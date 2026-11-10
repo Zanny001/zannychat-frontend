@@ -1,5 +1,6 @@
 import { supabase, SUPABASE_ENABLED } from './supabaseClient';
 import { backendFetch } from './backendClient';
+import { startNativeOutgoingCall, registerNativeCallMapping } from './nativeCallSystem';
 
 function requireCalls() {
   if (!SUPABASE_ENABLED || !supabase) throw new Error('Calls require a configured, signed-in ZannyChat account.');
@@ -26,12 +27,23 @@ export async function startCall({ conversationId, calleeId, callType }) {
   }).select('id,conversation_id,caller_id,callee_id,call_type,status,created_at,expires_at').single();
   if (error) throw new Error(error.message || 'Unable to start call.');
   // The database trigger queues a durable invitation. Kick the trusted
-  // backend worker immediately so background/closed devices receive push;
-  // Realtime remains the foreground path. Push failure never blocks calling.
+  // backend worker immediately; native VoIP push handles lock-screen calls,
+  // while Expo push and Realtime remain compatibility fallbacks.
   backendFetch(`/calls/${data.id}/notify`, { method: 'POST' }).catch((pushError) => {
     console.warn('[calls] push invitation kick failed; queue will retry:', pushError?.message || pushError);
   });
-  return data;
+  let nativeCallId = null;
+  try {
+    const displayName = await getCallParticipantName(calleeId);
+    nativeCallId = await startNativeOutgoingCall(
+      { id: calleeId, displayName },
+      { hasVideo: callType === 'video' },
+    );
+    if (nativeCallId) await registerNativeCallMapping(nativeCallId, data.id);
+  } catch (nativeError) {
+    console.warn('[calls] native outgoing UI unavailable:', nativeError?.message || nativeError);
+  }
+  return { ...data, nativeCallId };
 }
 
 export async function updateCallStatus(callId, status) {
@@ -40,7 +52,30 @@ export async function updateCallStatus(callId, status) {
   const { data, error } = await supabase.from('call_sessions').update({ status }).eq('id', callId)
     .select('id,status,caller_id,callee_id,call_type,conversation_id').single();
   if (error) throw new Error(error.message || 'Unable to update call.');
+  if (['declined', 'cancelled', 'ended', 'missed', 'failed'].includes(status)) {
+    backendFetch(`/calls/${callId}/end-notify`, { method: 'POST', body: JSON.stringify({ status }) }).catch((pushError) => {
+      console.warn('[calls] native call-end notification unavailable:', pushError?.message || pushError);
+    });
+  }
   return data;
+}
+
+export async function getCallSessionById(callId) {
+  requireCalls();
+  if (!callId) return null;
+  const { data, error } = await supabase.from('call_sessions')
+    .select('id,conversation_id,caller_id,callee_id,call_type,status,created_at,expires_at')
+    .eq('id', callId).maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+
+export async function registerCallVoipToken(token, type) {
+  if (!token || !['APNS_VOIP', 'FCM'].includes(type)) return null;
+  return backendFetch('/calls/voip-token', {
+    method: 'POST',
+    body: JSON.stringify({ token, type }),
+  });
 }
 
 export async function listCallHistory(limit = 100) {
