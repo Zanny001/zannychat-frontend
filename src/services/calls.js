@@ -1,6 +1,6 @@
 import { supabase, SUPABASE_ENABLED } from './supabaseClient';
 import { backendFetch } from './backendClient';
-import { startNativeOutgoingCall, setPendingNativeCallMapping, bindPendingNativeCallMapping } from './nativeCallSystem';
+import { startNativeOutgoingCall, setPendingNativeCallMapping, bindPendingNativeCallMapping, clearPendingNativeCallMapping } from './nativeCallSystem';
 
 function requireCalls() {
   if (!SUPABASE_ENABLED || !supabase) throw new Error('Calls require a configured, signed-in ZannyChat account.');
@@ -34,6 +34,8 @@ export async function startCall({ conversationId, calleeId, callType }) {
   });
   let nativeCallId = null;
   try {
+    // Remove any orphaned pre-session record left by a previous failed native start.
+    await clearPendingNativeCallMapping();
     // Obtain a short-lived, server-signed token before creating the OS call.
     // It is bound to this caller and call, and is stored only by the native
     // app-private mapping module so Android can reconcile an end event when
@@ -56,8 +58,11 @@ export async function startCall({ conversationId, calleeId, callType }) {
     if (nativeCallId && pendingMappingPersisted) {
       const bound = await bindPendingNativeCallMapping(nativeCallId);
       if (!bound) console.warn('[calls] native outgoing call mapping remains pending for killed-app recovery');
+    } else {
+      await clearPendingNativeCallMapping();
     }
   } catch (nativeError) {
+    await clearPendingNativeCallMapping();
     console.warn('[calls] native outgoing UI unavailable:', nativeError?.message || nativeError);
   }
   return { ...data, nativeCallId };
