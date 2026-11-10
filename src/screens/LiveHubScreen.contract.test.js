@@ -19,6 +19,8 @@ test('LIVE hub creates private invitations and displays pending invitations', ()
   assert.ok(screen.includes("backendFetch('/live/invite-candidates')"));
   assert.ok(screen.includes('selectedInvitees.includes(person.id)'));
   assert.ok(screen.includes('toggleInvitee(person.id)'));
+  assert.ok(screen.includes('inviteeIds: invitees'));
+  assert.equal(screen.includes('`/live/${connection.stream.id}/invites`'), false);
 });
 
 test('LIVE hub follows creators and loads follower-only broadcasts', () => {
