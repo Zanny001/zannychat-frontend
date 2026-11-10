@@ -24,6 +24,7 @@ test('native outgoing call credentials are stored in Android private preferences
   const moduleSource = fs.readFileSync(path.join(__dirname, '../modules/zannychat-native-call-mapping/android/src/main/java/expo/modules/zannychatcallmapping/ZannyChatNativeCallMappingModule.kt'), 'utf8');
   const nativeService = fs.readFileSync(path.join(__dirname, '../src/services/nativeCallSystem.native.js'), 'utf8');
   const cryptoSource = fs.readFileSync(path.join(__dirname, '../modules/zannychat-native-call-mapping/android/src/main/java/expo/modules/zannychatcallmapping/NativeCallMappingCrypto.kt'), 'utf8');
+  const kotlin = fs.readFileSync(path.join(__dirname, '../plugins/CallEndedReceiver.kt'), 'utf8');
   assert.deepEqual(moduleConfig.platforms, ['android']);
   assert.ok(moduleSource.includes('getSharedPreferences("zannychat_native_call_mapping"'));
   assert.ok(moduleSource.includes('NativeCallMappingCrypto.encrypt(value)'));
