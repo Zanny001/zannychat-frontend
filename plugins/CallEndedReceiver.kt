@@ -80,9 +80,12 @@ class CallEndedReceiver : BroadcastReceiver() {
                 val responseCode = connection?.responseCode ?: -1
                 Log.i(TAG, "Native call reconciliation returned HTTP $responseCode")
                 val permanentClientError = responseCode in 400..499 && responseCode != 408 && responseCode != 429
-                if ((responseCode in 200..299 || permanentClientError) && nativeCallId.isNotBlank() && outgoingMapping != null) {
-                    context.getSharedPreferences("zannychat_native_call_mapping", Context.MODE_PRIVATE)
-                        .edit().remove(nativeCallId).remove("pending_outgoing_call").apply()
+                if ((responseCode in 200..299 || permanentClientError) && nativeCallId.isNotBlank()
+                    && (incomingCall != null || outgoingMapping != null)) {
+                    val editor = context.getSharedPreferences("zannychat_native_call_mapping", Context.MODE_PRIVATE)
+                        .edit().remove(nativeCallId)
+                    if (outgoingMapping != null) editor.remove("pending_outgoing_call")
+                    editor.apply()
                 }
             } catch (error: Exception) {
                 Log.w(TAG, "Native call reconciliation failed: ${error.message}")
