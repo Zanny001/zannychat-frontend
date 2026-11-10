@@ -69,5 +69,8 @@ test('incoming native calls from push fallback carry a signed reconciliation cre
   assert.ok(nativeService.includes("import { backendFetch } from './backendClient'"));
   assert.ok(nativeService.includes('/native-event-token'));
   assert.ok(nativeService.includes('serverEventToken'));
+  assert.ok(nativeService.includes('if (!serverEventToken) return null'));
+  assert.ok(nativeService.includes('active.incomingCallEvent?.metadata?.serverEventToken'));
+  assert.ok(nativeService.includes('await api.endCall(active.id).catch(() => {})'));
   assert.ok(nativeService.includes('metadata: { conversationId: call.conversation_id'));
 });
