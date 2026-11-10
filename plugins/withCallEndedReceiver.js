@@ -18,6 +18,73 @@ function withCallEndedReceiver(config) {
       .replace(/^package .*$/m, `package ${packageName}`)
       .replace('__ZANNYCHAT_BACKEND_URL__', backendUrl);
     fs.writeFileSync(path.join(packageDir, 'CallEndedReceiver.kt'), source);
+
+    // The upstream FCM handler indexes only incomingCallEvent.serverCallId.
+    // Resolve outgoing Telecom sessions through the encrypted native mapping
+    // so a callee's remote decline/end also dismisses the caller's OS surface.
+    const messagingPath = path.join(
+      config.modRequest.projectRoot,
+      'node_modules/expo-callkit-telecom/android/src/main/java/expo/modules/callkittelecom/services/ExpoCallKitTelecomMessagingService.kt',
+    );
+    if (!fs.existsSync(messagingPath)) {
+      throw new Error('withCallEndedReceiver: expo-callkit-telecom Android messaging service was not found');
+    }
+    let messaging = fs.readFileSync(messagingPath, 'utf8');
+    if (!messaging.includes('zannychatFindOutgoingCallSession')) {
+      const imports = [
+        'import android.content.Context',
+        'import android.util.Base64',
+        'import java.security.KeyStore',
+        'import java.util.UUID',
+        'import javax.crypto.Cipher',
+        'import javax.crypto.SecretKey',
+        'import javax.crypto.spec.GCMParameterSpec',
+      ];
+      for (const line of imports) {
+        if (!messaging.includes(line)) messaging = messaging.replace('import android.os.Handler', line + '\\nimport android.os.Handler');
+      }
+      const method = String.raw`
+    private fun zannychatFindOutgoingCallSession(serverCallId: String): expo.modules.callkittelecom.models.CallSession? {
+        val preferences = applicationContext.getSharedPreferences("zannychat_native_call_mapping", Context.MODE_PRIVATE)
+        val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        val key = keyStore.getKey("zannychat.native-call-mapping.v1", null) as? SecretKey ?: return null
+        fun decrypt(value: String): JSONObject? {
+            return try {
+                val combined = Base64.decode(value, Base64.NO_WRAP)
+                if (combined.size <= 12) return null
+                val iv = combined.copyOfRange(0, 12)
+                val encrypted = combined.copyOfRange(12, combined.size)
+                val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+                cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, iv))
+                JSONObject(String(cipher.doFinal(encrypted), Charsets.UTF_8))
+            } catch (_: Exception) {
+                null
+            }
+        }
+        for ((nativeId, value) in preferences.all) {
+            if (value !is String) continue
+            val mapping = decrypt(value) ?: continue
+            if (mapping.optString("serverCallId") != serverCallId) continue
+            if (nativeId == "pending_outgoing_call") {
+                return expo.modules.callkittelecom.store.CallStore.allSessions()
+                    .firstOrNull { it.origin.value == "outgoingApp" }
+            }
+            val uuid = try { UUID.fromString(nativeId) } catch (_: Exception) { null } ?: continue
+            return expo.modules.callkittelecom.store.CallStore.session(uuid)
+        }
+        return null
+    }
+
+`;
+      const processMarker = '    private fun processCallEnded(push: CallEndedPush) {';
+      if (!messaging.includes(processMarker)) throw new Error('withCallEndedReceiver: unsupported Android call-ended handler source');
+      messaging = messaging.replace(processMarker, method + processMarker);
+      messaging = messaging.replace(
+        '            val session = CallStore.sessionForServerCallId(push.serverCallId)',
+        '            val session = CallStore.sessionForServerCallId(push.serverCallId) ?: zannychatFindOutgoingCallSession(push.serverCallId)',
+      );
+      fs.writeFileSync(messagingPath, messaging);
+    }
     return config;
   }]);
 
