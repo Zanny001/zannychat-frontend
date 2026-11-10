@@ -94,8 +94,11 @@ function withCallEndedReceiver(config) {
                 val session = expo.modules.callkittelecom.store.CallStore.allSessions()
                     .firstOrNull { it.origin.value == "outgoingApp" }
                 if (session == null) {
-                    expo.modules.callkittelecom.managers.CallNotificationManager.cancel(applicationContext)
-                    preferences.edit().remove(nativeId).apply()
+                    // Core-Telecom's CallStore and CallControlScope are process-local.
+                    // A cold-start FCM delivery cannot safely recreate the Telecom call.
+                    // Preserve the encrypted mapping for diagnosis/reconciliation rather
+                    // than deleting it or cancelling an unrelated notification.
+                    android.util.Log.w("ZannyChatCallEnded", "No live outgoing Telecom session for persisted call mapping; native dismissal requires device-level verification")
                 }
                 return session
             }
