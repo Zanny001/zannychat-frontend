@@ -20,6 +20,11 @@ test('Android killed-app receiver reconciles native end and reported-end events'
   assert.ok(kotlin.includes('responseCode in 400..499 && responseCode != 408 && responseCode != 429'));
   assert.ok(plugin.includes('android.package'));
   assert.ok(plugin.includes('extra.backendUrl'));
+  assert.ok(plugin.includes("withDangerousMod(config, ['ios'"));
+  assert.ok(plugin.includes('CallEndedPushEnvelope'));
+  assert.ok(plugin.includes('CallManager.shared.reportCallEnded'));
+  assert.ok(plugin.includes('UserDefaults.standard.set(id.uuidString'));
+  assert.ok(plugin.includes('UserDefaults.standard.removeObject'));
 });
 
 test('native outgoing call credentials are stored in Android private preferences, not JS storage', () => {
