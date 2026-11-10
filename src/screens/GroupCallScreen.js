@@ -99,6 +99,11 @@ export default function GroupCallScreen({ route, navigation }) {
           const connected = { ...result, roomId: result.room.id, callType: result.room.call_type || callType };
           connectionRef.current = connected;
           setConnection(connected);
+        } else if (result?.room?.id) {
+          // The screen may have been dismissed while the create/join request
+          // was in flight. Release the participant slot instead of orphaning
+          // a connected participant in the SFU room.
+          await backendFetch(`/group-calls/${result.room.id}/leave`, { method: 'POST' }).catch(() => {});
         }
       } catch (error) {
         if (active) setErrorText(error?.message || 'Group calling is not configured yet.');
