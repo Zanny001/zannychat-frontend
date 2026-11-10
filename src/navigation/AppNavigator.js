@@ -240,7 +240,8 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
         }
       },
       onEnded: async ({ id, session, reason }) => {
-        const callId = session?.incomingCallEvent?.serverCallId || await getNativeCallMapping(id);
+        const nativeMapping = session?.incomingCallEvent?.serverCallId ? null : await getNativeCallMapping(id);
+        const callId = session?.incomingCallEvent?.serverCallId || nativeMapping?.serverCallId || null;
         if (!callId) return;
         try {
           const call = await getCallSessionById(callId);
