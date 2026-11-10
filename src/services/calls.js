@@ -103,7 +103,7 @@ export async function getCallSessionById(callId) {
 }
 
 export async function registerCallVoipToken(token, type) {
-  if (!token || !['APNS_VOIP', 'FCM'].includes(type)) return null;
+  if (!token || !['APNS_VOIP', 'APNS_ALERT', 'FCM'].includes(type)) return null;
   return backendFetch('/calls/voip-token', {
     method: 'POST',
     body: JSON.stringify({ token, type }),
