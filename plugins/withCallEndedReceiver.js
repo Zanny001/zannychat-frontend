@@ -88,61 +88,9 @@ function withCallEndedReceiver(config) {
     return config;
   }]);
 
-  // expo-callkit-telecom currently handles server-side callEnded pushes on
-  // Android. Patch its PushKit delegate at prebuild so iOS can also dismiss an
-  // already-reported CallKit session when the app is launched by APNs VoIP.
+  // iOS CallKit end actions and native timeouts report signed events over
+  // the existing server connection; APNs VoIP remains incoming-call-only.
   return withDangerousMod(config, ['ios', (config) => {
-    const sourcePath = path.join(
-      config.modRequest.projectRoot,
-      'node_modules/expo-callkit-telecom/ios/Managers/VoIPPushManager+PKPushRegistryDelegate.swift',
-    );
-    if (!fs.existsSync(sourcePath)) {
-      throw new Error('withCallEndedReceiver: expo-callkit-telecom iOS PushKit delegate was not found');
-    }
-    let source = fs.readFileSync(sourcePath, 'utf8');
-    const marker = '    guard let event = IncomingCallEventParser.parse(from: dictionaryPayload) else {';
-    if (!source.includes(marker) && !source.includes('CallEndedPushEnvelope')) {
-      throw new Error('withCallEndedReceiver: unsupported expo-callkit-telecom PushKit delegate source');
-    }
-    if (!source.includes('import CallKit')) source = source.replace('import Foundation', 'import CallKit\nimport Foundation');
-    if (!source.includes('CallEndedPushEnvelope')) {
-      const handler = `    // CallEndedPushEnvelope: server-originated end signal for an existing CallKit session.
-    if let callEnded = dictionaryPayload["callEnded"] as? [String: Any],
-      let eventId = callEnded["eventId"] as? String,
-      UUID(uuidString: eventId) != nil,
-      let serverCallId = callEnded["serverCallId"] as? String,
-      !serverCallId.isEmpty
-    {
-      let reason: CXCallEndedReason
-      switch callEnded["reason"] as? String ?? "remoteEnded" {
-      case "failed": reason = .failed
-      case "unanswered", "missed": reason = .unanswered
-      case "answeredElsewhere": reason = .answeredElsewhere
-      case "declinedElsewhere", "declined": reason = .declinedElsewhere
-      default: reason = .remoteEnded
-      }
-      let storageKey = "zannychat.callkit.server.\\(serverCallId)"
-      Task {
-        let sessions = await CallManager.shared.store.allSessions
-        let session = sessions.first { $0.incomingCallEvent?.serverCallId == serverCallId }
-        let storedId = UserDefaults.standard.string(forKey: storageKey).flatMap(UUID.init(uuidString:))
-        let pendingServerId = UserDefaults.standard.string(forKey: "zannychat.callkit.pendingServerId")
-        let pendingNativeId = pendingServerId == serverCallId
-          ? CXCallObserver().calls.first(where: { $0.isOutgoing && !$0.hasEnded })?.uuid
-          : nil
-        if let callId = session?.id ?? storedId ?? pendingNativeId {
-          await CallManager.shared.reportCallEnded(for: callId, reason: reason)
-        }
-        completion()
-      }
-      return
-    }
-
-`;
-      source = source.replace(marker, handler + marker);
-    }
-    fs.writeFileSync(sourcePath, source);
-
     // Persist serverCallId -> CallKit UUID because CallStore is in-memory and
     // iOS may relaunch the process for a later PushKit callEnded event.
     const managerPath = path.join(
