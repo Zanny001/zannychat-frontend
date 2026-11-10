@@ -39,7 +39,7 @@ function LiveMedia({ creatorMode, moderatorMode, title, comments, reports, showR
             <Text style={{ color: '#FFFFFF', fontWeight: '900', marginBottom: 6 }}>Manage LIVE moderators</Text>
             <FlatList data={participants} keyExtractor={(item) => item.userId} renderItem={({ item }) => (
               <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 7, borderTopWidth: 1, borderTopColor: '#39364B' }}>
-                <Text numberOfLines={1} style={{ color: '#FFFFFF', flex: 1, fontSize: 12 }}>{item.name}</Text>
+                <Text numberOfLines={1} style={{ color: '#FFFFFF', flex: 1, fontSize: 12 }}>{item.name}{!item.joined ? ' · offline' : ''}</Text>
                 <TouchableOpacity onPress={() => onSetModerator(item.userId, !item.moderator)}>
                   <Text style={{ color: item.moderator ? '#F0B4C0' : '#B6AFFF', fontWeight: '800', fontSize: 11 }}>{item.moderator ? 'Remove moderator' : 'Make moderator'}</Text>
                 </TouchableOpacity>
