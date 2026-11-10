@@ -109,19 +109,14 @@ function withCallEndedReceiver(config) {
       if (start < 0) throw new Error('withCallEndedReceiver: unsupported iOS incoming-call manager source');
       const end = manager.indexOf('\n  }', start);
       const section = manager.slice(start, end < 0 ? manager.length : end);
-      if (!section.includes('zannychat.callkit.server.\\(event.serverCallId)')) {
-        const idLine = manager.indexOf('    let id = UUID()
-    if let token = event.metadata?["serverEventToken"] as? String {
-      zannychatStoreMapping(id, serverCallId: event.serverCallId, token: token, origin: "incoming")
-    }
-    UserDefaults.standard.set(id.uuidString, forKey: "zannychat.callkit.nativeForServer.\\(event.serverCallId)")', start);
+      if (!section.includes('zannychatStoreMapping(id')) {
+        const idLine = manager.indexOf('    let id = UUID()', start);
         if (idLine < 0 || (end >= 0 && idLine > end)) {
           throw new Error('withCallEndedReceiver: could not locate incoming CallKit UUID creation');
         }
         const afterId = idLine + '    let id = UUID()'.length;
-        manager = manager.slice(0, afterId)
-          + '\n    UserDefaults.standard.set(id.uuidString, forKey: "zannychat.callkit.server.\\(event.serverCallId)")'
-          + manager.slice(afterId);
+        const injection = '\\n    if let token = event.metadata?["serverEventToken"] as? String {\\n      zannychatStoreMapping(id, serverCallId: event.serverCallId, token: token, origin: "incoming")\\n    }\\n    UserDefaults.standard.set(id.uuidString, forKey: "zannychat.callkit.nativeForServer.\\\\(event.serverCallId)")';
+        manager = manager.slice(0, afterId) + injection + manager.slice(afterId);
       }
     }
     const reportSignature = 'func reportCallEnded(for id: UUID, reason: CXCallEndedReason) async {';
@@ -132,15 +127,7 @@ function withCallEndedReceiver(config) {
       const afterLog = reportLog + '    Log.call.debug("Reporting call ended - id: \\(id), reason: \\(reason.rawValue)")'.length;
       manager = manager.slice(0, afterLog) + '\n    await reportZannyChatNativeEnd(for: id, reason: zannychatReasonString(reason))' + manager.slice(afterLog);
     }
-    if (!manager.includes('UserDefaults.standard.removeObject(forKey: "zannychat.callkit.server.\\(serverCallId)")')) {
-      const reportStart = manager.indexOf(reportSignature);
-      const reportLog = manager.indexOf('    Log.call.debug("Reporting call ended - id: \\(id), reason: \\(reason.rawValue)")', reportStart);
-      if (reportStart < 0 || reportLog < 0) throw new Error('withCallEndedReceiver: could not locate iOS call-end cleanup');
-      const afterLog = reportLog + '    Log.call.debug("Reporting call ended - id: \\(id), reason: \\(reason.rawValue)")'.length;
-      manager = manager.slice(0, afterLog)
-        + '\n    if let session = await store.session(for: id), let serverCallId = session.incomingCallEvent?.serverCallId {\n      UserDefaults.standard.removeObject(forKey: "zannychat.callkit.server.\\(serverCallId)")\n    }'
-        + manager.slice(afterLog);
-    }
+
     fs.writeFileSync(managerPath, manager);
 
     const delegatePath = path.join(
