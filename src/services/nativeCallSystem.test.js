@@ -22,3 +22,9 @@ test('native call lifecycle covers incoming, answer, end, mute and media-connect
   assert.ok(callScreen.includes('setRTCAudioSessionConfiguration'));
   assert.ok(navigator.includes('initializeNativeCallSystem'));
 });
+
+test('outgoing native end events resolve the backend call id from encrypted mapping records', () => {
+  assert.ok(navigator.includes('nativeMapping?.serverCallId'));
+  assert.ok(navigator.includes('getNativeCallMapping(id)'));
+  assert.ok(navigator.includes('getCallSessionById(callId)'));
+});
