@@ -9,7 +9,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "fix-versions": "npx expo install --fix",
-    "test:unit": "node --experimental-default-type=module --test src/utils/*.test.js src/services/*.test.js",
+    "test:unit": "node --experimental-default-type=module --test src/utils/*.test.js src/services/*.test.js src/screens/*.contract.test.js",
     "audit:release": "python3 scripts/audit_frontend_release.py",
     "audit:contract": "python3 scripts/check_release_contract.py",
     "audit:readiness": "python3 scripts/release_readiness.py",
