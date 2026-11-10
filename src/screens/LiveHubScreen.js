@@ -3,14 +3,22 @@ import { ActivityIndicator, Alert, FlatList, SafeAreaView, ScrollView, Text, Tex
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
+import { useTheme } from '../theme/ThemeContext';
+import GlassCard from '../components/GlassCard';
 
 const VISIBILITIES = [
+  { value: 'public', label: 'Public', detail: 'Anyone can discover your LIVE' },
+  { value: 'followers', label: 'Followers', detail: 'Only people following you' },
+  { value: 'private', label: 'Private', detail: 'Invite people from your chats' },
+];
+const STREAM_FILTERS = [
+  { value: 'all', label: 'All LIVE' },
+  { value: 'following', label: 'Following' },
   { value: 'public', label: 'Public' },
-  { value: 'followers', label: 'Followers' },
-  { value: 'private', label: 'Private' },
 ];
 
 export default function LiveHubScreen({ navigation }) {
+  const { colors, spacing, radii, typography } = useTheme();
   const [streams, setStreams] = useState([]);
   const [invitations, setInvitations] = useState([]);
   const [followingIds, setFollowingIds] = useState([]);
@@ -25,6 +33,13 @@ export default function LiveHubScreen({ navigation }) {
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activeFilter, setActiveFilter] = useState('all');
+
+  const visibleStreams = streams.filter((item) => {
+    if (activeFilter === 'following') return followingIds.includes(item.creator_id);
+    if (activeFilter === 'public') return item.visibility === 'public';
+    return true;
+  });
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -79,7 +94,8 @@ export default function LiveHubScreen({ navigation }) {
       const connection = await backendFetch('/live', {
         method: 'POST',
         body: JSON.stringify({
-          title: title.trim(), description: description.trim(), visibility, allowGuests, inviteeIds: visibility === 'private' ? invitees : [],
+          title: title.trim(), description: description.trim(), visibility, allowGuests,
+          inviteeIds: visibility === 'private' ? invitees : [],
         }),
       });
       setTitle('');
@@ -96,7 +112,7 @@ export default function LiveHubScreen({ navigation }) {
   const joinLive = async (stream) => {
     setBusy(true);
     try {
-      const connection = await backendFetch(`/live/${stream.id}/join`, { method: 'POST' });
+      const connection = await backendFetch('/live/' + stream.id + '/join', { method: 'POST' });
       navigation.navigate('LiveStream', { connection, creatorMode: connection.role === 'creator' });
     } catch (e) {
       Alert.alert('Could not join LIVE', e?.message || 'This stream may have ended or requires an invitation.');
@@ -109,12 +125,14 @@ export default function LiveHubScreen({ navigation }) {
     const isFollowing = followingIds.includes(creatorId);
     setBusy(true);
     try {
-      await backendFetch(`/live/creators/${creatorId}/follow`, { method: isFollowing ? 'DELETE' : 'POST' });
+      await backendFetch('/live/creators/' + creatorId + '/follow', { method: isFollowing ? 'DELETE' : 'POST' });
       setFollowingIds((current) => isFollowing ? current.filter((id) => id !== creatorId) : [...current, creatorId]);
       if (isFollowing) {
         setFollowingCreators((current) => current.filter((item) => item.creator_id !== creatorId));
         setStreams((current) => current.filter((item) => item.creator_id !== creatorId || item.visibility === 'public'));
-      } else refresh();
+      } else {
+        await refresh();
+      }
     } catch (e) {
       Alert.alert('Could not update follow', e?.message || 'Please try again.');
     } finally {
@@ -123,118 +141,227 @@ export default function LiveHubScreen({ navigation }) {
   };
 
   const acceptInvitation = (item) => joinLive(item.stream);
+  const fieldStyle = {
+    color: colors.textPrimary,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6FB' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <FlatList
-        data={streams}
+        data={visibleStreams}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: 28 }}
+        contentContainerStyle={{ paddingBottom: spacing.xxl || spacing.xl }}
         ListHeaderComponent={
           <View>
-            <View style={{ padding: 20, paddingBottom: 12 }}>
-              <Text style={{ color: '#6C5CE7', fontSize: 12, fontWeight: '900', letterSpacing: 1.4 }}>ZANNYCHAT LIVE</Text>
-              <Text style={{ color: '#171526', fontSize: 28, fontWeight: '900', marginTop: 6 }}>Go live together.</Text>
-              <Text style={{ color: '#6C687C', fontSize: 14, lineHeight: 21, marginTop: 6 }}>Broadcast publicly, share with followers, or invite a private audience. Approved guests can join you on stage.</Text>
-            </View>
-            <View style={{ marginHorizontal: 16, padding: 16, borderRadius: 22, backgroundColor: '#FFFFFF', gap: 10, elevation: 2 }}>
-              <Text style={{ color: '#171526', fontSize: 16, fontWeight: '800' }}>Start a broadcast</Text>
-              <TextInput value={title} onChangeText={(v) => setTitle(v.slice(0, 80))} maxLength={80} placeholder="What are you going live about?" placeholderTextColor="#9B98AB" style={{ color: '#171526', borderWidth: 1, borderColor: '#E5E2F0', borderRadius: 13, paddingHorizontal: 13, paddingVertical: 12 }} />
-              <TextInput value={description} onChangeText={(v) => setDescription(v.slice(0, 500))} maxLength={500} multiline placeholder="Description (optional)" placeholderTextColor="#9B98AB" style={{ color: '#171526', borderWidth: 1, borderColor: '#E5E2F0', borderRadius: 13, paddingHorizontal: 13, paddingVertical: 12, minHeight: 66, textAlignVertical: 'top' }} />
-              <Text style={{ color: '#6C687C', fontSize: 12, fontWeight: '800' }}>WHO CAN WATCH?</Text>
-              <View style={{ flexDirection: 'row', gap: 7 }}>
-                {VISIBILITIES.map((item) => (
-                  <TouchableOpacity key={item.value} onPress={() => setVisibility(item.value)} style={{ flex: 1, paddingVertical: 10, borderRadius: 11, alignItems: 'center', backgroundColor: visibility === item.value ? '#6C5CE7' : '#F0EEF7' }}>
-                    <Text style={{ color: visibility === item.value ? '#FFFFFF' : '#5E5A70', fontSize: 12, fontWeight: '800' }}>{item.label}</Text>
-                  </TouchableOpacity>
-                ))}
+            <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.md }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                <View style={{ width: 34, height: 34, borderRadius: 12, backgroundColor: colors.primary + '20', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="radio" size={19} color={colors.primary} />
+                </View>
+                <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.5 }]}>ZANNYCHAT LIVE</Text>
+                <View style={{ flex: 1 }} />
+                <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh LIVE streams" style={{ width: 38, height: 38, borderRadius: 13, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="refresh" size={18} color={colors.textSecondary} />
+                </TouchableOpacity>
               </View>
+              <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 29, marginTop: spacing.md }]}>Your stage. Your people.</Text>
+              <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs, lineHeight: 22 }]}>Go live, bring your community together, and invite trusted guests on stage.</Text>
+              <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>
+                <View style={{ flex: 1, borderRadius: radii.md, padding: spacing.sm, backgroundColor: colors.surface }}>
+                  <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{streams.length}</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>Live now</Text>
+                </View>
+                <View style={{ flex: 1, borderRadius: radii.md, padding: spacing.sm, backgroundColor: colors.surface }}>
+                  <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{followingCreators.length}</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>Creators followed</Text>
+                </View>
+                <View style={{ flex: 1, borderRadius: radii.md, padding: spacing.sm, backgroundColor: colors.surface }}>
+                  <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{invitations.length}</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>Invitations</Text>
+                </View>
+              </View>
+            </View>
+
+            <GlassCard style={{ marginHorizontal: spacing.md, marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.md }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#E34D68' + '20', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="videocam" size={22} color="#E34D68" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Start a broadcast</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>Set the mood before you go live</Text>
+                </View>
+                <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, backgroundColor: '#E34D68' + '18' }}>
+                  <Text style={[typography.caption, { color: '#E34D68', fontWeight: '800' }]}>LIVE</Text>
+                </View>
+              </View>
+
+              <TextInput value={title} onChangeText={(v) => setTitle(v.slice(0, 80))} maxLength={80} placeholder="What are you going live about?" placeholderTextColor={colors.textSecondary} accessibilityLabel="LIVE stream title" style={fieldStyle} />
+              <TextInput value={description} onChangeText={(v) => setDescription(v.slice(0, 500))} maxLength={500} multiline placeholder="Add a description so people know what to expect…" placeholderTextColor={colors.textSecondary} accessibilityLabel="LIVE stream description" style={[fieldStyle, { minHeight: 76, textAlignVertical: 'top' }]} />
+
+              <View style={{ gap: spacing.xs }}>
+                <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800', letterSpacing: 0.8 }]}>WHO CAN WATCH?</Text>
+                <View style={{ flexDirection: 'row', gap: spacing.xs }}>
+                  {VISIBILITIES.map((item) => {
+                    const selected = visibility === item.value;
+                    return (
+                      <TouchableOpacity key={item.value} onPress={() => setVisibility(item.value)} accessibilityRole="radio" accessibilityState={{ checked: selected }} style={{ flex: 1, minHeight: 48, paddingVertical: spacing.xs, paddingHorizontal: 4, borderRadius: radii.md, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary + '18' : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                        <Text style={[typography.small, { color: selected ? colors.primary : colors.textPrimary, fontWeight: '800' }]}>{item.label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>{VISIBILITIES.find((item) => item.value === visibility)?.detail}</Text>
+              </View>
+
               {visibility === 'private' && (
-                <View style={{ gap: 8 }}>
-                  <TouchableOpacity onPress={loadInviteCandidates} disabled={loadingCandidates} style={{ borderWidth: 1, borderColor: '#DCD7EF', borderRadius: 12, padding: 11, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                    <Ionicons name="people-outline" size={17} color="#6C5CE7" />
-                    <Text style={{ color: '#6C5CE7', fontWeight: '800', fontSize: 12 }}>{loadingCandidates ? 'Loading chat contacts…' : 'Choose people from your chats'}</Text>
+                <View style={{ gap: spacing.sm }}>
+                  <TouchableOpacity onPress={loadInviteCandidates} disabled={loadingCandidates} accessibilityRole="button" style={{ borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.sm, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs }}>
+                    {loadingCandidates ? <ActivityIndicator color={colors.primary} /> : <Ionicons name="people-outline" size={18} color={colors.primary} />}
+                    <Text style={[typography.small, { color: colors.primary, fontWeight: '800' }]}>{loadingCandidates ? 'Loading chat contacts…' : 'Choose people from your chats'}</Text>
                   </TouchableOpacity>
                   <ScrollView nestedScrollEnabled style={{ maxHeight: 150 }} contentContainerStyle={{ gap: 5 }}>
                     {inviteCandidates.map((person) => {
                       const selected = selectedInvitees.includes(person.id);
                       return (
-                        <TouchableOpacity key={person.id} onPress={() => toggleInvitee(person.id)} style={{ flexDirection: 'row', alignItems: 'center', padding: 8, borderRadius: 10, backgroundColor: selected ? '#EEEAFE' : '#F7F6FB' }}>
-                          <Ionicons name={selected ? 'checkbox' : 'square-outline'} size={19} color="#6C5CE7" />
-                          <Text numberOfLines={1} style={{ color: '#373448', marginLeft: 9, fontWeight: '700', flex: 1 }}>{person.name}</Text>
+                        <TouchableOpacity key={person.id} onPress={() => toggleInvitee(person.id)} accessibilityRole="checkbox" accessibilityState={{ checked: selected }} style={{ flexDirection: 'row', alignItems: 'center', padding: spacing.sm, borderRadius: radii.md, backgroundColor: selected ? colors.primary + '18' : colors.surface }}>
+                          <Ionicons name={selected ? 'checkbox' : 'square-outline'} size={19} color={colors.primary} />
+                          <Text numberOfLines={1} style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm, flex: 1 }]}>{person.name}</Text>
                         </TouchableOpacity>
                       );
                     })}
-                    {inviteCandidates.length === 0 && <Text style={{ color: '#777286', fontSize: 12 }}>Load people from your existing chats to invite them.</Text>}
+                    {inviteCandidates.length === 0 && <Text style={[typography.caption, { color: colors.textSecondary }]}>Load people from your existing chats to invite them.</Text>}
                   </ScrollView>
-                  <Text style={{ color: '#6C687C', fontSize: 11 }}>{selectedInvitees.length} invitee(s) selected</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>{selectedInvitees.length} invitee(s) selected</Text>
                 </View>
               )}
-              <TouchableOpacity onPress={() => setAllowGuests((value) => !value)} style={{ flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 4 }}>
-                <Ionicons name={allowGuests ? 'checkbox' : 'square-outline'} size={21} color="#6C5CE7" />
-                <Text style={{ color: '#373448', fontWeight: '700', fontSize: 13 }}>Allow approved viewers to join me on stage</Text>
+
+              <TouchableOpacity onPress={() => setAllowGuests((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: allowGuests }} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs }}>
+                <Ionicons name={allowGuests ? 'checkbox' : 'square-outline'} size={21} color={colors.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.small, { color: colors.textPrimary, fontWeight: '700' }]}>Allow approved viewers on stage</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>You decide who gets publishing access.</Text>
+                </View>
               </TouchableOpacity>
-              <TouchableOpacity disabled={busy} onPress={startLive} style={{ backgroundColor: busy ? '#AAA5D8' : '#6C5CE7', borderRadius: 14, minHeight: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}>
-                <Ionicons name="radio" size={19} color="#FFFFFF" />
-                <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{busy ? 'Connecting…' : 'Go LIVE'}</Text>
+
+              <TouchableOpacity disabled={busy} onPress={startLive} accessibilityRole="button" style={{ backgroundColor: busy ? colors.border : colors.primary, borderRadius: radii.md, minHeight: 52, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.sm }}>
+                {busy ? <ActivityIndicator color={colors.background} /> : <Ionicons name="radio" size={20} color={colors.background} />}
+                <Text style={[typography.bodyStrong, { color: colors.background }]}>{busy ? 'Connecting…' : 'Go LIVE'}</Text>
               </TouchableOpacity>
-            </View>
+            </GlassCard>
+
             {invitations.length > 0 && (
-              <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
-                <Text style={{ color: '#171526', fontSize: 18, fontWeight: '900', marginBottom: 9 }}>Private LIVE invitations</Text>
+              <View style={{ paddingHorizontal: spacing.md, marginBottom: spacing.md, gap: spacing.sm }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                  <Ionicons name="mail-unread-outline" size={18} color={colors.primary} />
+                  <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Private LIVE invitations</Text>
+                  <View style={{ flex: 1 }} />
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>{invitations.length}</Text>
+                </View>
                 {invitations.map((item) => (
-                  <View key={item.stream_id} style={{ backgroundColor: '#FFFFFF', borderRadius: 15, padding: 13, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#171526', fontWeight: '800' }}>{item.stream.title}</Text>
-                      <Text style={{ color: '#777286', fontSize: 11, marginTop: 3 }}>Private invitation</Text>
+                  <GlassCard key={item.stream_id} contentStyle={{ padding: spacing.md }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                      <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: colors.primary + '18', alignItems: 'center', justifyContent: 'center' }}>
+                        <Ionicons name="lock-closed" size={17} color={colors.primary} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.stream.title}</Text>
+                        <Text style={[typography.caption, { color: colors.textSecondary }]}>Private invitation</Text>
+                      </View>
+                      <TouchableOpacity disabled={busy} onPress={() => acceptInvitation(item)} style={{ backgroundColor: colors.primary, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.md }}>
+                        <Text style={[typography.small, { color: colors.background, fontWeight: '800' }]}>Join</Text>
+                      </TouchableOpacity>
                     </View>
-                    <TouchableOpacity disabled={busy} onPress={() => acceptInvitation(item)} style={{ backgroundColor: '#6C5CE7', paddingHorizontal: 14, paddingVertical: 9, borderRadius: 10 }}>
-                      <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 12 }}>Join</Text>
-                    </TouchableOpacity>
-                  </View>
+                  </GlassCard>
                 ))}
               </View>
             )}
+
             {followingCreators.length > 0 && (
-              <View style={{ paddingHorizontal: 20, paddingTop: 18 }}>
-                <Text style={{ color: '#171526', fontSize: 16, fontWeight: '900', marginBottom: 8 }}>Creators you follow</Text>
-                <ScrollView nestedScrollEnabled style={{ maxHeight: 130 }} contentContainerStyle={{ gap: 6 }}>
+              <View style={{ paddingHorizontal: spacing.md, marginBottom: spacing.md, gap: spacing.sm }}>
+                <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Creators you follow</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
                   {followingCreators.map((creator) => (
-                    <View key={creator.creator_id} style={{ backgroundColor: '#FFFFFF', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, flexDirection: 'row', alignItems: 'center' }}>
-                      <Text numberOfLines={1} style={{ color: '#373448', fontWeight: '700', flex: 1 }}>{creator.name}</Text>
-                      <TouchableOpacity disabled={busy} onPress={() => toggleFollow(creator.creator_id)}>
-                        <Text style={{ color: '#6C5CE7', fontWeight: '800', fontSize: 11 }}>Unfollow</Text>
+                    <View key={creator.creator_id} style={{ minWidth: 150, padding: spacing.sm, borderRadius: radii.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+                      <Text numberOfLines={1} style={[typography.small, { color: colors.textPrimary, fontWeight: '800' }]}>{creator.name}</Text>
+                      <TouchableOpacity disabled={busy} onPress={() => toggleFollow(creator.creator_id)} style={{ marginTop: spacing.xs }}>
+                        <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>Unfollow</Text>
                       </TouchableOpacity>
                     </View>
                   ))}
                 </ScrollView>
               </View>
             )}
-            <View style={{ paddingHorizontal: 20, paddingTop: 22, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ color: '#171526', fontSize: 18, fontWeight: '900' }}>Live now</Text>
-              <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh LIVE streams"><Ionicons name="refresh" size={20} color="#6C5CE7" /></TouchableOpacity>
+
+            <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.xs, paddingBottom: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              <View style={{ flex: 1 }}>
+                <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Live now</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>Join a conversation happening right now</Text>
+              </View>
+              <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh LIVE streams" style={{ padding: spacing.sm }}>
+                <Ionicons name="refresh" size={19} color={colors.primary} />
+              </TouchableOpacity>
             </View>
-            {loading && <ActivityIndicator color="#6C5CE7" style={{ marginTop: 16 }} />}
-            {!!error && <Text style={{ color: '#B83245', paddingHorizontal: 20, paddingVertical: 8 }}>{error}</Text>}
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.md, gap: spacing.xs, paddingBottom: spacing.sm }}>
+              {STREAM_FILTERS.map((filter) => {
+                const selected = activeFilter === filter.value;
+                return (
+                  <TouchableOpacity key={filter.value} onPress={() => setActiveFilter(filter.value)} accessibilityRole="radio" accessibilityState={{ checked: selected }} style={{ minHeight: 36, paddingHorizontal: spacing.md, borderRadius: 18, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={[typography.small, { color: selected ? colors.background : colors.textSecondary, fontWeight: '800' }]}>{filter.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            {loading && <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing.md }} />}
+            {!!error && <Text accessibilityRole="alert" style={[typography.caption, { color: '#D64545', paddingHorizontal: spacing.md, paddingBottom: spacing.sm }]}>{error}</Text>}
           </View>
         }
         renderItem={({ item }) => (
-          <View style={{ marginHorizontal: 16, marginBottom: 9, backgroundColor: '#FFFFFF', borderRadius: 18, padding: 13, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <TouchableOpacity disabled={busy} onPress={() => joinLive(item)} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <View style={{ width: 44, height: 44, borderRadius: 15, backgroundColor: '#FFE8ED', alignItems: 'center', justifyContent: 'center' }}><Ionicons name="radio" size={22} color="#D83A59" /></View>
-              <View style={{ flex: 1 }}>
-                <Text numberOfLines={2} style={{ color: '#171526', fontWeight: '800', fontSize: 15 }}>{item.title}</Text>
-                {!!item.description && <Text numberOfLines={2} style={{ color: '#777286', marginTop: 4, fontSize: 12 }}>{item.description}</Text>}
-                <Text style={{ color: '#D83A59', fontSize: 11, fontWeight: '900', marginTop: 6 }}>● LIVE NOW {item.visibility === 'followers' ? '· FOLLOWERS' : ''}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={19} color="#9894A8" />
-            </TouchableOpacity>
-            {item.creator_id && !item.is_creator && <TouchableOpacity disabled={busy} onPress={() => toggleFollow(item.creator_id)} style={{ paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: followingIds.includes(item.creator_id) ? '#F0EEF7' : '#EEEAFE' }}>
-              <Text style={{ color: '#6C5CE7', fontWeight: '800', fontSize: 11 }}>{followingIds.includes(item.creator_id) ? 'Following' : 'Follow'}</Text>
-            </TouchableOpacity>}
-          </View>
+          <GlassCard style={{ marginHorizontal: spacing.md, marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              <TouchableOpacity disabled={busy} onPress={() => joinLive(item)} accessibilityRole="button" accessibilityLabel={'Join LIVE: ' + item.title} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                <View style={{ width: 48, height: 48, borderRadius: 16, backgroundColor: '#E34D68' + '18', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="videocam" size={23} color="#E34D68" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.xs }}>
+                    <Text numberOfLines={2} style={[typography.bodyStrong, { color: colors.textPrimary, flexShrink: 1 }]}>{item.title}</Text>
+                    <View style={{ paddingHorizontal: 7, paddingVertical: 3, borderRadius: 10, backgroundColor: '#E34D68' + '18' }}>
+                      <Text style={[typography.caption, { color: '#E34D68', fontWeight: '900' }]}>● LIVE</Text>
+                    </View>
+                  </View>
+                  {!!item.description && <Text numberOfLines={2} style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>{item.description}</Text>}
+                  <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 5 }]}>{item.visibility === 'followers' ? 'Followers only' : item.visibility === 'private' ? 'Private invitation' : 'Public broadcast'}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
+              {item.creator_id && !item.is_creator && (
+                <TouchableOpacity disabled={busy} onPress={() => toggleFollow(item.creator_id)} accessibilityRole="button" style={{ paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, borderRadius: radii.md, backgroundColor: followingIds.includes(item.creator_id) ? colors.surface : colors.primary + '18', borderWidth: 1, borderColor: colors.border }}>
+                  <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>{followingIds.includes(item.creator_id) ? 'Following' : 'Follow'}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </GlassCard>
         )}
-        ListEmptyComponent={!loading && !error ? <View style={{ padding: 28, alignItems: 'center' }}><Ionicons name="videocam-outline" size={34} color="#A7A2BB" /><Text style={{ color: '#777286', textAlign: 'center', marginTop: 10 }}>No public or followed LIVE streams right now. Follow creators to see follower-only broadcasts.</Text></View> : null}
+        ListEmptyComponent={!loading && !error ? (
+          <GlassCard style={{ marginHorizontal: spacing.md, marginTop: spacing.sm }} contentStyle={{ padding: spacing.lg, alignItems: 'center', gap: spacing.sm }}>
+            <View style={{ width: 58, height: 58, borderRadius: 20, backgroundColor: colors.primary + '18', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="videocam-outline" size={28} color={colors.primary} />
+            </View>
+            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>No LIVE streams in this view</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', lineHeight: 19 }]}>
+              {activeFilter === 'following' ? 'Follow creators to see their broadcasts here.' : 'Start a broadcast or check back when your community is live.'}
+            </Text>
+          </GlassCard>
+        ) : null}
       />
     </SafeAreaView>
   );
