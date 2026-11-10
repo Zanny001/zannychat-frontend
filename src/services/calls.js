@@ -34,12 +34,26 @@ export async function startCall({ conversationId, calleeId, callType }) {
   });
   let nativeCallId = null;
   try {
+    // Obtain a short-lived, server-signed token before creating the OS call.
+    // It is bound to this caller and call, and is stored only by the native
+    // app-private mapping module so Android can reconcile an end event when
+    // the JavaScript process has been killed.
+    let nativeEventToken = null;
+    try {
+      const eventCredential = await backendFetch(`/calls/${data.id}/native-event-token`, { method: 'POST' });
+      nativeEventToken = eventCredential?.token || null;
+    } catch (tokenError) {
+      console.warn('[calls] native end reconciliation credential unavailable:', tokenError?.message || tokenError);
+    }
     const displayName = await getCallParticipantName(calleeId);
     nativeCallId = await startNativeOutgoingCall(
       { id: calleeId, displayName },
       { hasVideo: callType === 'video' },
     );
-    if (nativeCallId) await registerNativeCallMapping(nativeCallId, data.id);
+    if (nativeCallId && nativeEventToken) {
+      const persisted = await registerNativeCallMapping(nativeCallId, data.id, nativeEventToken);
+      if (!persisted) console.warn('[calls] native outgoing call mapping was not persisted');
+    }
   } catch (nativeError) {
     console.warn('[calls] native outgoing UI unavailable:', nativeError?.message || nativeError);
   }
