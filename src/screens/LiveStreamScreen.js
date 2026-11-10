@@ -5,7 +5,7 @@ import { AudioSession, LiveKitRoom, VideoTrack, isTrackReference, useTracks } fr
 import { Track } from 'livekit-client';
 import { backendFetch } from '../services/backendClient';
 
-function LiveMedia({ creatorMode, title, comments, draft, setDraft, onComment, onReact, onReport, onHide, onEnd, busy }) {
+function LiveMedia({ creatorMode, moderatorMode, title, comments, reports, showReports, draft, setDraft, onComment, onReact, onReport, onHide, onEnd, onToggleReports, onReviewReport, busy }) {
   const tracks = useTracks([Track.Source.Camera]);
   const videos = tracks.filter(isTrackReference);
   return (
@@ -14,6 +14,7 @@ function LiveMedia({ creatorMode, title, comments, draft, setDraft, onComment, o
         <View style={{ position: 'absolute', zIndex: 2, top: 10, left: 14, right: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View style={{ backgroundColor: '#D83A59', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 12 }}><Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '900' }}>● LIVE</Text></View>
           <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '800', flex: 1, marginHorizontal: 12 }}>{title}</Text>
+          {moderatorMode && <TouchableOpacity onPress={onToggleReports} accessibilityRole="button" accessibilityLabel="Open LIVE safety reports" style={{ backgroundColor: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: 12, marginRight: 8 }}><Ionicons name="shield-checkmark-outline" size={19} color="#FFFFFF" /></TouchableOpacity>}
           <TouchableOpacity onPress={onEnd} accessibilityRole="button" accessibilityLabel={creatorMode ? 'End LIVE stream' : 'Leave LIVE stream'} style={{ backgroundColor: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: 12 }}><Ionicons name="close" size={20} color="#FFFFFF" /></TouchableOpacity>
         </View>
         <View style={{ flex: 1, justifyContent: 'center' }}>
@@ -28,10 +29,26 @@ function LiveMedia({ creatorMode, title, comments, draft, setDraft, onComment, o
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 }}>
               <Text style={{ color: '#B6AFFF', fontSize: 11, fontWeight: '900' }}>{String(item.user_id).slice(0, 7)}</Text>
               <Text style={{ color: '#FFFFFF', flex: 1, fontSize: 13 }}>{item.body}</Text>
-              {creatorMode && <TouchableOpacity onPress={() => onHide(item.id)} accessibilityRole="button" accessibilityLabel="Hide LIVE comment"><Ionicons name="eye-off-outline" color="#D6D2E5" size={17} /></TouchableOpacity>}
+              {moderatorMode && <TouchableOpacity onPress={() => onHide(item.id)} accessibilityRole="button" accessibilityLabel="Hide LIVE comment"><Ionicons name="eye-off-outline" color="#D6D2E5" size={17} /></TouchableOpacity>}
             </View>
           )} ListEmptyComponent={<Text style={{ color: '#AAA7BD', paddingVertical: 8 }}>Be the first to say hello.</Text>} />
         </View>
+        {showReports && moderatorMode && (
+          <View style={{ maxHeight: 190, marginHorizontal: 14, marginBottom: 8, padding: 10, borderRadius: 14, backgroundColor: '#242235' }}>
+            <Text style={{ color: '#FFFFFF', fontWeight: '900', marginBottom: 6 }}>LIVE safety reports ({reports.length})</Text>
+            <FlatList data={reports} keyExtractor={(item) => item.id} renderItem={({ item }) => (
+              <View style={{ paddingVertical: 7, borderTopWidth: 1, borderTopColor: '#39364B' }}>
+                <Text style={{ color: '#FFFFFF', fontWeight: '800' }}>{item.reason} · {item.status}</Text>
+                {!!item.details && <Text style={{ color: '#C5C1D3', fontSize: 12, marginTop: 3 }}>{item.details}</Text>}
+                <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
+                  {item.status === 'open' && <TouchableOpacity onPress={() => onReviewReport(item.id, 'reviewing')}><Text style={{ color: '#B6AFFF', fontWeight: '800', fontSize: 11 }}>Review</Text></TouchableOpacity>}
+                  {item.status !== 'resolved' && <TouchableOpacity onPress={() => onReviewReport(item.id, 'resolved')}><Text style={{ color: '#80D8A8', fontWeight: '800', fontSize: 11 }}>Resolve</Text></TouchableOpacity>}
+                  {item.status !== 'dismissed' && <TouchableOpacity onPress={() => onReviewReport(item.id, 'dismissed')}><Text style={{ color: '#F0B4C0', fontWeight: '800', fontSize: 11 }}>Dismiss</Text></TouchableOpacity>}
+                </View>
+              </View>
+            )} ListEmptyComponent={<Text style={{ color: '#AAA7BD', fontSize: 12 }}>No reports have been submitted.</Text>} />
+          </View>
+        )}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, paddingBottom: 18 }}>
           <TextInput value={draft} onChangeText={(v) => setDraft(v.slice(0, 500))} maxLength={500} placeholder="Say something kind…" placeholderTextColor="#AAA7BD" style={{ flex: 1, backgroundColor: '#262436', color: '#FFFFFF', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 11 }} />
           <TouchableOpacity disabled={busy || !draft.trim()} onPress={onComment} accessibilityRole="button" accessibilityLabel="Send LIVE comment" style={{ backgroundColor: '#6557D9', padding: 12, borderRadius: 14 }}><Ionicons name="send" size={19} color="#FFFFFF" /></TouchableOpacity>
@@ -46,8 +63,11 @@ function LiveMedia({ creatorMode, title, comments, draft, setDraft, onComment, o
 export default function LiveStreamScreen({ route, navigation }) {
   const connection = route.params?.connection;
   const creatorMode = Boolean(route.params?.creatorMode || connection?.role === 'creator');
+  const moderatorMode = Boolean(creatorMode || connection?.canModerate);
   const stream = connection?.stream;
   const [comments, setComments] = useState([]);
+  const [reports, setReports] = useState([]);
+  const [showReports, setShowReports] = useState(false);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -124,13 +144,30 @@ export default function LiveStreamScreen({ route, navigation }) {
     } catch (e) { Alert.alert('Could not hide comment', e?.message || 'Please try again.'); }
   };
 
+  const loadReports = async () => {
+    try {
+      const result = await backendFetch(`/live/${stream.id}/reports`);
+      setReports(Array.isArray(result?.reports) ? result.reports : []);
+      setShowReports(true);
+    } catch (e) { Alert.alert('Reports unavailable', e?.message || 'Please try again.'); }
+  };
+
+  const reviewReport = async (reportId, status) => {
+    try {
+      const result = await backendFetch(`/live/${stream.id}/reports/${reportId}`, {
+        method: 'PATCH', body: JSON.stringify({ status }),
+      });
+      setReports((current) => current.map((item) => item.id === reportId ? { ...item, ...result.report } : item));
+    } catch (e) { Alert.alert('Could not update report', e?.message || 'Please try again.'); }
+  };
+
   if (!connection || !stream) return <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#100F18' }}><Text style={{ color: '#FFFFFF' }}>This LIVE room is unavailable.</Text></SafeAreaView>;
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#100F18' }}>
       <StatusBar barStyle="light-content" />
       {error ? <Text style={{ color: '#FFB6C3', paddingHorizontal: 12, paddingTop: 4 }}>{error}</Text> : null}
       <LiveKitRoom serverUrl={connection.livekitUrl} token={connection.token} connect={true} audio={creatorMode} video={creatorMode} options={{ adaptiveStream: true, dynacast: true }}>
-        <LiveMedia creatorMode={creatorMode} title={stream.title} comments={comments} draft={draft} setDraft={setDraft} onComment={sendComment} onReact={react} onReport={report} onHide={hideComment} onEnd={leave} busy={busy} />
+        <LiveMedia creatorMode={creatorMode} moderatorMode={moderatorMode} title={stream.title} comments={comments} reports={reports} showReports={showReports} draft={draft} setDraft={setDraft} onComment={sendComment} onReact={react} onReport={report} onHide={hideComment} onEnd={leave} onToggleReports={() => showReports ? setShowReports(false) : loadReports()} onReviewReport={reviewReport} busy={busy} />
       </LiveKitRoom>
       {busy && <View style={{ position: 'absolute', top: '50%', alignSelf: 'center' }}><ActivityIndicator color="#FFFFFF" /></View>}
     </SafeAreaView>
