@@ -46,7 +46,7 @@ function withCallEndedReceiver(config) {
       for (const line of imports) {
         if (!messaging.includes(line)) messaging = messaging.replace('import android.os.Handler', line + '\nimport android.os.Handler');
       }
-      const method = String.raw
+      const method = String.raw`
     private fun zannychatMappingKey(): SecretKey {
         val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         (keyStore.getKey("zannychat.native-call-mapping.v1", null) as? SecretKey)?.let { return it }
@@ -109,8 +109,7 @@ function withCallEndedReceiver(config) {
         }
         return null
     }
-
-
+`;
       const processMarker = '    private fun processCallEnded(push: CallEndedPush) {';
       if (!messaging.includes(processMarker)) throw new Error('withCallEndedReceiver: unsupported Android call-ended handler source');
       messaging = messaging.replace(processMarker, method + processMarker);
