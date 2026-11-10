@@ -51,17 +51,23 @@ export async function startCall({ conversationId, calleeId, callType }) {
     const pendingMappingPersisted = nativeEventToken
       ? await setPendingNativeCallMapping(data.id, nativeEventToken)
       : false;
-    const displayName = await getCallParticipantName(calleeId);
-    nativeSessionCreationStarted = true;
-    nativeCallId = await startNativeOutgoingCall(
-      { id: calleeId, displayName },
-      { hasVideo: callType === 'video' },
-    );
-    if (nativeCallId && pendingMappingPersisted) {
-      const bound = await bindPendingNativeCallMapping(nativeCallId);
-      if (!bound) console.warn('[calls] native outgoing call mapping remains pending for killed-app recovery');
-    } else {
+    if (!pendingMappingPersisted) {
+      // Do not create an OS call that cannot be reconciled after process death.
       await clearPendingNativeCallMapping();
+      console.warn('[calls] native outgoing UI skipped; signed reconciliation storage is unavailable');
+    } else {
+      const displayName = await getCallParticipantName(calleeId);
+      nativeSessionCreationStarted = true;
+      nativeCallId = await startNativeOutgoingCall(
+        { id: calleeId, displayName },
+        { hasVideo: callType === 'video' },
+      );
+      if (nativeCallId) {
+        const bound = await bindPendingNativeCallMapping(nativeCallId);
+        if (!bound) console.warn('[calls] native outgoing call mapping remains pending for killed-app recovery');
+      } else {
+        await clearPendingNativeCallMapping();
+      }
     }
   } catch (nativeError) {
     // Keep the pending mapping if Telecom creation began: the native session
