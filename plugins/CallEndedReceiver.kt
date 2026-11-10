@@ -25,6 +25,7 @@ class CallEndedReceiver : BroadcastReceiver() {
         val callId = incomingCall.optString("serverCallId", "")
         val metadata = incomingCall.optJSONObject("metadata")
         val eventToken = metadata?.optString("serverEventToken", "") ?: ""
+        val reason = payload.optString("reason", "")
         if (callId.isBlank() || eventToken.isBlank()) {
             Log.w(TAG, "Call ended without a server reconciliation token")
             return
@@ -45,6 +46,7 @@ class CallEndedReceiver : BroadcastReceiver() {
                 val body = JSONObject()
                     .put("callId", callId)
                     .put("token", eventToken)
+                    .put("reason", reason)
                     .toString()
                 connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
                 Log.i(TAG, "Native call-end reconciliation returned HTTP ${connection?.responseCode}")

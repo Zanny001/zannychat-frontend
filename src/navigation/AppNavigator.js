@@ -236,14 +236,14 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
           console.warn('[calls] native answer could not be completed:', error?.message || error);
         }
       },
-      onEnded: async ({ id, session }) => {
+      onEnded: async ({ id, session, reason }) => {
         const callId = session?.incomingCallEvent?.serverCallId || await getNativeCallMapping(id);
         if (!callId) return;
         try {
           const call = await getCallSessionById(callId);
           if (call && ['ringing', 'accepted'].includes(call.status)) {
             const status = call.status === 'ringing'
-              ? (session?.origin === 'incoming' ? 'declined' : 'cancelled')
+              ? (reason === 'unanswered' ? 'missed' : (session?.origin === 'incoming' ? 'declined' : 'cancelled'))
               : 'ended';
             await updateCallStatus(callId, status);
           }
