@@ -13,6 +13,8 @@ test('Android killed-app receiver reconciles native end and reported-end events'
   assert.ok(kotlin.includes('outgoingMapping?.optString("serverCallId"'));
   assert.ok(kotlin.includes('outgoingMapping?.optString("token"'));
   assert.ok(kotlin.includes('remove(nativeCallId)'));
+  assert.ok(kotlin.includes('(incomingCall != null || outgoingMapping != null)'));
+  assert.ok(kotlin.includes('if (outgoingMapping != null) editor.remove("pending_outgoing_call")'));
   assert.ok(kotlin.includes('/calls/native-event'));
   assert.ok(kotlin.includes('goAsync()'));
   assert.ok(kotlin.includes('connectTimeout = 4000'));
