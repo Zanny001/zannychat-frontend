@@ -16,7 +16,10 @@ test('sign-out cleanup can identify the current device VoIP token', () => {
   const registrar = fs.readFileSync(new URL('./VoIPPushRegistrar.native.js', import.meta.url), 'utf8');
   const api = fs.readFileSync(new URL('../services/api.js', import.meta.url), 'utf8');
   assert.ok(registrar.includes('setActiveVoipPushToken(token?.token || null)'));
+  assert.ok(registrar.includes('setActiveApnsAlertToken(alertToken)'));
   assert.ok(api.includes('getActiveVoipPushToken()'));
+  assert.ok(api.includes('getActiveApnsAlertToken()'));
+  assert.ok(api.includes('const tokens = [...new Set([getActiveVoipPushToken(), getActiveApnsAlertToken()].filter(Boolean))]'));
   assert.ok(api.includes("backendFetch('/calls/voip-token'"));
   assert.ok(api.includes("removeVoipTokensBeforeSignOut('global')"));
   assert.ok(api.includes("removeVoipTokensBeforeSignOut('local')"));
@@ -27,4 +30,5 @@ test('iOS registers a separate standard APNs alert token for terminated call-end
   assert.ok(registrar.includes("'APNS_ALERT'"));
   assert.ok(registrar.includes("Platform.OS !== 'ios'"));
   assert.ok(calls.includes("'APNS_ALERT'"));
+  assert.ok(api.includes('setActiveApnsAlertToken(null)') === false); // Registrar clears the in-memory token on unmount.
 });
