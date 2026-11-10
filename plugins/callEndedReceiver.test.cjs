@@ -21,12 +21,11 @@ test('Android killed-app receiver reconciles native end and reported-end events'
   assert.ok(plugin.includes('android.package'));
   assert.ok(plugin.includes('extra.backendUrl'));
   assert.ok(plugin.includes("withDangerousMod(config, ['ios'"));
-  assert.ok(plugin.includes('CallEndedPushEnvelope'));
-  assert.ok(plugin.includes('CallManager.shared.reportCallEnded'));
+  assert.ok(!plugin.includes('CallEndedPushEnvelope'));
+  assert.ok(plugin.includes('reportZannyChatNativeEnd(for: id, reason: zannychatReasonString(reason))'));
   assert.ok(plugin.includes('zannychatSendNativeEndEvent'));
   assert.ok(plugin.includes('reportZannyChatNativeEnd(for: action.callUUID'));
   assert.ok(plugin.includes('zannychat.callkit.nativeForServer'));
-  assert.ok(plugin.includes('CXCallObserver().calls'));
   assert.ok(plugin.includes('zannychatFindOutgoingCallSession'));
   assert.ok(plugin.includes('AndroidKeyStore'));
   assert.ok(plugin.includes('AES/GCM/NoPadding'));
