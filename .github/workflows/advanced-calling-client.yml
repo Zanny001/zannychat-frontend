@@ -26,10 +26,11 @@ jobs:
       # This is a compile-only check; it does not assemble or publish an APK.
       - run: cd android && ./gradlew :app:compileDebugKotlin
       - run: npx expo prebuild --platform ios --no-install
-      - name: Verify iOS PushKit end-event patch
+      - name: Verify iOS native CallKit end-event patch
         run: |
-          grep -q "CallEndedPushEnvelope" node_modules/expo-callkit-telecom/ios/Managers/VoIPPushManager+PKPushRegistryDelegate.swift
+          grep -q "reportZannyChatNativeEnd" node_modules/expo-callkit-telecom/ios/Managers/CallManager.swift
           grep -q "zannychatSendNativeEndEvent" node_modules/expo-callkit-telecom/ios/Managers/CallManager.swift
+          grep -q "reportZannyChatNativeEnd(for: action.callUUID" node_modules/expo-callkit-telecom/ios/Managers/CallManager+CXProviderDelegate.swift
           grep -q "ZannyChatNativeCallMappingModule" modules/zannychat-native-call-mapping/expo-module.config.json
       - run: npx expo export --platform web --output-dir /tmp/zannychat-web-export
       - run: npm run test:unit
