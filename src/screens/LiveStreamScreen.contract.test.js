@@ -23,3 +23,10 @@ test('LIVE moderator controls can hide comments while ordinary viewers retain re
   assert.ok(screen.includes("moderatorMode && <TouchableOpacity onPress={() => onHide(item.id)}"));
   assert.ok(screen.includes("!creatorMode && <TouchableOpacity disabled={busy} onPress={onReport}"));
 });
+
+test('LIVE creator can appoint and remove moderators from currently joined viewers', () => {
+  assert.ok(screen.includes('`/live/${stream.id}/participants`'));
+  assert.ok(screen.includes("onSetModerator(item.userId, !item.moderator)"));
+  assert.ok(screen.includes('`/live/${stream.id}/moderators${makeModerator ? \'\' : `/${userId}`}`'));
+  assert.ok(screen.includes("method: makeModerator ? 'POST' : 'DELETE'"));
+});
