@@ -31,12 +31,18 @@ test('native outgoing call credentials are stored in Android private preferences
   assert.ok(cryptoSource.includes('AndroidKeyStore'));
   assert.ok(cryptoSource.includes('AES/GCM/NoPadding'));
   assert.ok(kotlin.includes('NativeCallMappingCrypto.decrypt(encrypted)'));
+  assert.ok(moduleSource.includes('AsyncFunction("setPendingCallMapping")'));
+  assert.ok(moduleSource.includes('AsyncFunction("bindPendingCallMapping")'));
+  assert.ok(moduleSource.includes('PENDING_CALL_MAPPING_KEY'));
+  assert.ok(moduleSource.includes('.remove(PENDING_CALL_MAPPING_KEY)'));
   assert.ok(moduleSource.includes('AsyncFunction("setCallMapping")'));
   assert.ok(moduleSource.includes('AsyncFunction("getCallMapping")'));
   assert.ok(moduleSource.includes('AsyncFunction("clearCallMapping")'));
   assert.ok(fs.existsSync(path.join(__dirname, '../modules/zannychat-native-call-mapping/android/build.gradle')));
   assert.ok(fs.existsSync(path.join(__dirname, '../modules/zannychat-native-call-mapping/android/src/main/AndroidManifest.xml')));
   assert.ok(nativeService.includes("requireOptionalNativeModule('ZannyChatNativeCallMapping')"));
+  assert.ok(nativeService.includes('setPendingNativeCallMapping'));
+  assert.ok(nativeService.includes('bindPendingNativeCallMapping'));
   assert.ok(!nativeService.includes('@react-native-async-storage/async-storage'));
 });
 
@@ -44,6 +50,11 @@ test('outgoing calls obtain the server credential before native session creation
   const callsService = fs.readFileSync(path.join(__dirname, '../src/services/calls.js'), 'utf8');
   const tokenRequest = callsService.indexOf('/native-event-token');
   const nativeStart = callsService.indexOf('startNativeOutgoingCall(');
-  const mappingWrite = callsService.indexOf('registerNativeCallMapping(nativeCallId, data.id, nativeEventToken)');
-  assert.ok(tokenRequest >= 0 && nativeStart > tokenRequest && mappingWrite > nativeStart);
+  const pendingWrite = callsService.indexOf('setPendingNativeCallMapping(data.id, nativeEventToken)');
+  const mappingBind = callsService.indexOf('bindPendingNativeCallMapping(nativeCallId)');
+  assert.ok(tokenRequest >= 0 && pendingWrite > tokenRequest && nativeStart > pendingWrite && mappingBind > nativeStart);
+  const receiver = fs.readFileSync(path.join(__dirname, '../plugins/CallEndedReceiver.kt'), 'utf8');
+  assert.ok(receiver.includes('session.optString("origin") == "outgoingApp"'));
+  assert.ok(receiver.includes('prefs.getString("pending_outgoing_call", null)'));
+  assert.ok(receiver.includes('.remove("pending_outgoing_call")'));
 });
