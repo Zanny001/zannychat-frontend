@@ -220,7 +220,7 @@ export default function CallScreen({ route, navigation }) {
   useEffect(() => {
     if (!isCaller || call?.status !== 'ringing' || !call?.id) return undefined;
     const timeout = setTimeout(() => {
-      updateCallStatus(call.id, 'cancelled').catch(() => {});
+      updateCallStatus(call.id, 'missed').catch(() => {});
       if (activeRef.current) setPhase('No answer');
     }, 60000);
     return () => clearTimeout(timeout);
