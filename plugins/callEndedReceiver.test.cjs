@@ -15,6 +15,9 @@ test('Android killed-app receiver reconciles native end and reported-end events'
   assert.ok(kotlin.includes('remove(nativeCallId)'));
   assert.ok(kotlin.includes('/calls/native-event'));
   assert.ok(kotlin.includes('goAsync()'));
+  assert.ok(kotlin.includes('connectTimeout = 4000'));
+  assert.ok(kotlin.includes('readTimeout = 4000'));
+  assert.ok(kotlin.includes('responseCode in 400..499 && responseCode != 408 && responseCode != 429'));
   assert.ok(plugin.includes('android.package'));
   assert.ok(plugin.includes('extra.backendUrl'));
 });
