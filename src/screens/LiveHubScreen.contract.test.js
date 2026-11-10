@@ -27,5 +27,7 @@ test('LIVE hub follows creators and loads follower-only broadcasts', () => {
   assert.ok(screen.includes("`/live/creators/${creatorId}/follow`"));
   assert.ok(screen.includes("backendFetch('/live/following/streams')"));
   assert.ok(screen.includes("backendFetch('/live/following')"));
+  assert.ok(screen.includes('Creators you follow'));
+  assert.ok(screen.includes('followingCreators.map'));
   assert.ok(screen.includes("item.visibility === 'followers'"));
 });
