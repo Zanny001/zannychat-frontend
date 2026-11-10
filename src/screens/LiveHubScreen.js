@@ -181,7 +181,7 @@ export default function LiveHubScreen({ navigation }) {
               </View>
               <Ionicons name="chevron-forward" size={19} color="#9894A8" />
             </TouchableOpacity>
-            {item.creator_id && <TouchableOpacity disabled={busy} onPress={() => toggleFollow(item.creator_id)} style={{ paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: followingIds.includes(item.creator_id) ? '#F0EEF7' : '#EEEAFE' }}>
+            {item.creator_id && !item.is_creator && <TouchableOpacity disabled={busy} onPress={() => toggleFollow(item.creator_id)} style={{ paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: followingIds.includes(item.creator_id) ? '#F0EEF7' : '#EEEAFE' }}>
               <Text style={{ color: '#6C5CE7', fontWeight: '800', fontSize: 11 }}>{followingIds.includes(item.creator_id) ? 'Following' : 'Follow'}</Text>
             </TouchableOpacity>}
           </View>
