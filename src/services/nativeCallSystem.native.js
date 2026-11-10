@@ -18,7 +18,13 @@ export async function reportIncomingCallIfNeeded(call, callerName, avatarUrl) {
   if (!api || !call?.id) return null;
   try {
     const active = await api.getActiveCallSession();
-    if (active?.incomingCallEvent?.serverCallId === call.id) return active.id;
+    if (active?.incomingCallEvent?.serverCallId === call.id) {
+      if (active.incomingCallEvent?.metadata?.serverEventToken) return active.id;
+      // Never leave a native incoming surface that cannot report a killed-app
+      // decline/timeout back to the server.
+      await api.endCall(active.id).catch(() => {});
+      return null;
+    }
     let serverEventToken = null;
     try {
       const credential = await backendFetch(`/calls/${call.id}/native-event-token`, { method: 'POST' });
@@ -26,6 +32,7 @@ export async function reportIncomingCallIfNeeded(call, callerName, avatarUrl) {
     } catch (tokenError) {
       console.warn('[calls] incoming native end credential unavailable:', tokenError?.message || tokenError);
     }
+    if (!serverEventToken) return null;
     const event = {
       eventId: call.id,
       serverCallId: call.id,
