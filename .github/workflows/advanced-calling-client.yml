@@ -1,5 +1,9 @@
 name: Advanced calling client checks
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [feat/advanced-calling-live-1.2.241]
