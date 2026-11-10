@@ -16,6 +16,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npx expo config --type prebuild --json > /tmp/zannychat-expo-config.json
       - run: npm run test:unit
       - run: npm run test:call-recovery
       - run: npm run audit:release
