@@ -32,6 +32,7 @@ export default function OutgoingCallScreen({ route, navigation }) {
         navigation.replace('Call', { call: next, callType: next.call_type, isCaller: true, participantName, avatarColor, nativeCallId: initialCall.nativeCallId });
       } else if (isTerminalCallStatus(next.status)) {
         stopCallTone();
+        if (initialCall.nativeCallId) endNativeCall(initialCall.nativeCallId).catch(() => {});
         completedRef.current = true;
         setStatusText(next.status === 'declined' ? 'Call declined' : next.status === 'missed' ? 'No answer' : 'Call ended');
         timeout = setTimeout(() => { if (activeRef.current) navigation.goBack(); }, 800);
