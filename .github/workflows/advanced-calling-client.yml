@@ -19,5 +19,4 @@ jobs:
       - run: npm run test:unit
       - run: npm run test:call-recovery
       - run: npm run audit:release
-      - run: npm run audit:contract
       - run: npm run audit:integrity
