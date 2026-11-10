@@ -1,3 +1,4 @@
+import { backendFetch } from './backendClient';
 import { requireOptionalNativeModule } from 'expo-modules-core';
 
 // Optional native-module detection keeps existing binaries safe until the
@@ -18,6 +19,13 @@ export async function reportIncomingCallIfNeeded(call, callerName, avatarUrl) {
   try {
     const active = await api.getActiveCallSession();
     if (active?.incomingCallEvent?.serverCallId === call.id) return active.id;
+    let serverEventToken = null;
+    try {
+      const credential = await backendFetch(`/calls/${call.id}/native-event-token`, { method: 'POST' });
+      serverEventToken = credential?.token || null;
+    } catch (tokenError) {
+      console.warn('[calls] incoming native end credential unavailable:', tokenError?.message || tokenError);
+    }
     const event = {
       eventId: call.id,
       serverCallId: call.id,
@@ -28,7 +36,7 @@ export async function reportIncomingCallIfNeeded(call, callerName, avatarUrl) {
         displayName: callerName || 'ZannyChat contact',
         ...(avatarUrl ? { avatarUrl } : {}),
       },
-      metadata: { conversationId: call.conversation_id },
+      metadata: { conversationId: call.conversation_id, ...(serverEventToken ? { serverEventToken } : {}) },
     };
     return await new Promise((resolve) => {
       let settled = false;
