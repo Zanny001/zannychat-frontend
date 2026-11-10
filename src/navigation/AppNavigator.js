@@ -166,11 +166,11 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
       incomingUnsubscribeRef.current = null;
       if (userId) incomingUnsubscribeRef.current = subscribeToIncomingCalls(userId, async (incoming) => {
         if (!active || incomingIdsRef.current.has(incoming.id)) return;
-        incomingIdsRef.current.add(incoming.id);
-        if (incomingIdsRef.current.size > 50) incomingIdsRef.current.delete(incomingIdsRef.current.values().next().value);
         const callerName = await getCallParticipantName(incoming.caller_id);
         const nativeCallId = await reportIncomingCallIfNeeded(incoming, callerName);
-        if (!active) return;
+        if (!active || incomingIdsRef.current.has(incoming.id)) return;
+        incomingIdsRef.current.add(incoming.id);
+        if (incomingIdsRef.current.size > 50) incomingIdsRef.current.delete(incomingIdsRef.current.values().next().value);
         const params = { call: incoming, participantName: callerName, ...(nativeCallId ? { nativeCallId } : {}) };
         if (navigationRef.isReady()) navigationRef.navigate('IncomingCall', params);
         else pendingIncomingRef.current = params;

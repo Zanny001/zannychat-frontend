@@ -19,7 +19,7 @@ export async function reportIncomingCallIfNeeded(call, callerName, avatarUrl) {
   try {
     const active = await api.getActiveCallSession();
     if (active?.incomingCallEvent?.serverCallId === call.id) return active.id;
-    await api.reportIncomingCall({
+    const event = {
       eventId: call.id,
       serverCallId: call.id,
       hasVideo: call.call_type === 'video',
@@ -30,9 +30,26 @@ export async function reportIncomingCallIfNeeded(call, callerName, avatarUrl) {
         ...(avatarUrl ? { avatarUrl } : {}),
       },
       metadata: { conversationId: call.conversation_id },
+    };
+    return await new Promise((resolve) => {
+      let settled = false;
+      let subscription;
+      const finish = (id) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        subscription?.remove?.();
+        resolve(id || null);
+      };
+      const timeout = setTimeout(() => finish(null), 2500);
+      subscription = api.addCallSessionAddedListener(({ session }) => {
+        if (session?.incomingCallEvent?.serverCallId === call.id) finish(session.id);
+      });
+      api.reportIncomingCall(event).then(async () => {
+        const current = await api.getActiveCallSession();
+        if (current?.incomingCallEvent?.serverCallId === call.id) finish(current.id);
+      }).catch(() => finish(null));
     });
-    const current = await api.getActiveCallSession();
-    return current?.incomingCallEvent?.serverCallId === call.id ? current.id : null;
   } catch (error) {
     console.warn('[calls] native incoming-call UI unavailable:', error?.message || error);
     return null;
