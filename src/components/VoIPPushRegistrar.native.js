@@ -4,7 +4,7 @@ import * as Notifications from 'expo-notifications';
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { registerCallVoipToken } from '../services/calls';
-import { setActiveVoipPushToken } from '../services/voipPushTokenState';
+import { setActiveVoipPushToken, setActiveApnsAlertToken } from '../services/voipPushTokenState';
 
 function NativeVoIPRegistrar() {
   const { registerVoIPPush, useVoIPPushToken } = require('expo-callkit-telecom');
@@ -50,7 +50,9 @@ function NativeVoIPRegistrar() {
       try {
         const deviceToken = await Notifications.getDevicePushTokenAsync();
         if (active && deviceToken?.data) {
-          await registerCallVoipToken(String(deviceToken.data), 'APNS_ALERT');
+          const alertToken = String(deviceToken.data);
+          setActiveApnsAlertToken(alertToken);
+          await registerCallVoipToken(alertToken, 'APNS_ALERT');
         }
       } catch (error) {
         console.warn('[calls] standard APNs alert registration pending:', error?.message || error);
@@ -60,6 +62,7 @@ function NativeVoIPRegistrar() {
     const { data } = supabase.auth.onAuthStateChange((_event, session) => syncAlertToken(session));
     return () => {
       active = false;
+      setActiveApnsAlertToken(null);
       data?.subscription?.unsubscribe();
     };
   }, []);
