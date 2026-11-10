@@ -1,8 +1,5 @@
 import 'react-native-url-polyfill/auto';
-import { registerGlobals } from '@livekit/react-native';
-
-// LiveKit must register WebRTC globals before any group-call or LIVE room mounts.
-registerGlobals();
+import './src/utils/registerLiveKitGlobals';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
