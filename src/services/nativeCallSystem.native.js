@@ -1,11 +1,10 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { requireOptionalNativeModule } from 'expo-modules-core';
 
 // Optional native-module detection keeps existing binaries safe until the
 // approved native rebuild includes expo-callkit-telecom.
 const nativeModule = requireOptionalNativeModule('ExpoCallKitTelecom');
 const api = nativeModule ? require('expo-callkit-telecom') : null;
-const MAPPING_KEY = '@zannychat/native-call-mapping';
+const nativeMappingModule = requireOptionalNativeModule('ZannyChatNativeCallMapping');
 
 export const isNativeCallUiAvailable = Boolean(api);
 
@@ -74,37 +73,32 @@ export function initializeNativeCallSystem(callbacks = {}) {
   return () => subscriptions.forEach((subscription) => subscription?.remove?.());
 }
 
-export async function registerNativeCallMapping(nativeCallId, serverCallId) {
-  if (!nativeCallId || !serverCallId) return;
+export async function registerNativeCallMapping(nativeCallId, serverCallId, token) {
+  if (!nativeCallId || !serverCallId || !token || !nativeMappingModule) return false;
   try {
-    const raw = await AsyncStorage.getItem(MAPPING_KEY);
-    const mapping = raw ? JSON.parse(raw) : {};
-    mapping[nativeCallId] = serverCallId;
-    await AsyncStorage.setItem(MAPPING_KEY, JSON.stringify(mapping));
+    return Boolean(await nativeMappingModule.setCallMapping(nativeCallId, serverCallId, token));
   } catch (error) {
     console.warn('[calls] could not persist native call mapping:', error?.message || error);
+    return false;
   }
 }
 
 export async function getNativeCallMapping(nativeCallId) {
-  if (!nativeCallId) return null;
+  if (!nativeCallId || !nativeMappingModule) return null;
   try {
-    const raw = await AsyncStorage.getItem(MAPPING_KEY);
-    const mapping = raw ? JSON.parse(raw) : {};
-    return mapping[nativeCallId] || null;
+    return await nativeMappingModule.getCallMapping(nativeCallId);
   } catch (_) {
     return null;
   }
 }
 
 export async function clearNativeCallMapping(nativeCallId) {
-  if (!nativeCallId) return;
+  if (!nativeCallId || !nativeMappingModule) return false;
   try {
-    const raw = await AsyncStorage.getItem(MAPPING_KEY);
-    const mapping = raw ? JSON.parse(raw) : {};
-    delete mapping[nativeCallId];
-    await AsyncStorage.setItem(MAPPING_KEY, JSON.stringify(mapping));
-  } catch (_) {}
+    return Boolean(await nativeMappingModule.clearCallMapping(nativeCallId));
+  } catch (_) {
+    return false;
+  }
 }
 
 export function answerNativeCall(nativeCallId) {
