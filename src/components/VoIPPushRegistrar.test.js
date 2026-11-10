@@ -21,3 +21,10 @@ test('sign-out cleanup can identify the current device VoIP token', () => {
   assert.ok(api.includes("removeVoipTokensBeforeSignOut('global')"));
   assert.ok(api.includes("removeVoipTokensBeforeSignOut('local')"));
 });
+
+test('iOS registers a separate standard APNs alert token for terminated call-end notices', () => {
+  assert.ok(registrar.includes("getDevicePushTokenAsync()"));
+  assert.ok(registrar.includes("'APNS_ALERT'"));
+  assert.ok(registrar.includes("Platform.OS !== 'ios'"));
+  assert.ok(calls.includes("'APNS_ALERT'"));
+});
