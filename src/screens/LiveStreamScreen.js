@@ -91,13 +91,18 @@ function LiveMedia({ creatorMode, moderatorMode, canRequestGuest, guestApproved,
 export default function LiveStreamScreen({ route, navigation }) {
   const connection = route.params?.connection;
   const creatorMode = Boolean(route.params?.creatorMode || connection?.role === 'creator');
-  const moderatorMode = Boolean(creatorMode || connection?.canModerate);\n  const publisherMode = Boolean(creatorMode || connection?.role === 'guest');\n  const canRequestGuest = Boolean(!publisherMode && stream?.allow_guests);
+  const moderatorMode = Boolean(creatorMode || connection?.canModerate);
   const stream = connection?.stream;
+  const publisherMode = Boolean(creatorMode || connection?.role === 'guest');
+  const canRequestGuest = Boolean(!publisherMode && stream?.allow_guests);
   const [comments, setComments] = useState([]);
   const [reports, setReports] = useState([]);
   const [showReports, setShowReports] = useState(false);
   const [participants, setParticipants] = useState([]);
-  const [showParticipants, setShowParticipants] = useState(false);\n  const [guestRequests, setGuestRequests] = useState([]);\n  const [showGuestRequests, setShowGuestRequests] = useState(false);\n  const [guestApproved, setGuestApproved] = useState(false);
+  const [showParticipants, setShowParticipants] = useState(false);
+  const [guestRequests, setGuestRequests] = useState([]);
+  const [showGuestRequests, setShowGuestRequests] = useState(false);
+  const [guestApproved, setGuestApproved] = useState(false);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
