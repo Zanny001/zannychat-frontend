@@ -22,6 +22,6 @@ jobs:
       - run: npx expo export --platform web --output-dir /tmp/zannychat-web-export
       - run: npm run test:unit
       - run: npm run test:call-recovery
-      - run: node --test plugins/callEndedReceiver.test.cjs
+      - run: npm run test:native-call-receiver
       - run: npm run audit:release
       - run: npm run audit:integrity
