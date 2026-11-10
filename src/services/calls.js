@@ -33,6 +33,7 @@ export async function startCall({ conversationId, calleeId, callType }) {
     console.warn('[calls] push invitation kick failed; queue will retry:', pushError?.message || pushError);
   });
   let nativeCallId = null;
+  let nativeSessionCreationStarted = false;
   try {
     // Remove any orphaned pre-session record left by a previous failed native start.
     await clearPendingNativeCallMapping();
@@ -51,6 +52,7 @@ export async function startCall({ conversationId, calleeId, callType }) {
       ? await setPendingNativeCallMapping(data.id, nativeEventToken)
       : false;
     const displayName = await getCallParticipantName(calleeId);
+    nativeSessionCreationStarted = true;
     nativeCallId = await startNativeOutgoingCall(
       { id: calleeId, displayName },
       { hasVideo: callType === 'video' },
@@ -62,7 +64,9 @@ export async function startCall({ conversationId, calleeId, callType }) {
       await clearPendingNativeCallMapping();
     }
   } catch (nativeError) {
-    await clearPendingNativeCallMapping();
+    // Keep the pending mapping if Telecom creation began: the native session
+    // may exist even if its generated ID never made it back to JavaScript.
+    if (!nativeSessionCreationStarted) await clearPendingNativeCallMapping();
     console.warn('[calls] native outgoing UI unavailable:', nativeError?.message || nativeError);
   }
   return { ...data, nativeCallId };
