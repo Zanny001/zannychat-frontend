@@ -4,6 +4,7 @@ export const reportIncomingCallIfNeeded = async () => null;
 export const initializeNativeCallSystem = () => () => {};
 export const setPendingNativeCallMapping = async () => false;
 export const bindPendingNativeCallMapping = async () => false;
+export const clearPendingNativeCallMapping = async () => false;
 export const registerNativeCallMapping = async () => false;
 export const getNativeCallMapping = async () => null;
 export const clearNativeCallMapping = async () => {};
