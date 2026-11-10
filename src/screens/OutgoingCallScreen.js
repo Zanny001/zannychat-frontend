@@ -5,6 +5,7 @@ import Avatar from '../components/Avatar';
 import { isTerminalCallStatus } from '../utils/callPolicy';
 import { subscribeToCallSession, updateCallStatus } from '../services/calls';
 import { supabase } from '../services/supabaseClient';
+import { startCallTone, stopCallTone } from '../services/callAudio';
 
 export default function OutgoingCallScreen({ route, navigation }) {
   const { call: initialCall, callType = 'audio', participantName = 'ZannyChat contact', avatarColor = '#6C5CE7' } = route.params || {};
@@ -18,15 +19,18 @@ export default function OutgoingCallScreen({ route, navigation }) {
   useEffect(() => {
     if (!initialCall?.id) return undefined;
     activeRef.current = true;
+    startCallTone();
     let unsubscribe = () => {};
     let timeout;
     const finish = (next) => {
       if (!activeRef.current || completedRef.current || !next) return;
       setCall(next);
       if (next.status === 'accepted') {
+        stopCallTone();
         completedRef.current = true;
         navigation.replace('Call', { call: next, callType: next.call_type, isCaller: true, participantName, avatarColor });
       } else if (isTerminalCallStatus(next.status)) {
+        stopCallTone();
         completedRef.current = true;
         setStatusText(next.status === 'declined' ? 'Call declined' : next.status === 'missed' ? 'No answer' : 'Call ended');
         timeout = setTimeout(() => { if (activeRef.current) navigation.goBack(); }, 800);
@@ -48,11 +52,12 @@ export default function OutgoingCallScreen({ route, navigation }) {
         });
       }
     }, 1000);
-    return () => { activeRef.current = false; clearInterval(timer); if (timeout) clearTimeout(timeout); unsubscribe(); };
+    return () => { activeRef.current = false; clearInterval(timer); if (timeout) clearTimeout(timeout); unsubscribe(); stopCallTone(); };
   }, [initialCall?.id, initialCall?.expires_at, navigation, participantName, avatarColor]);
 
   const cancel = async () => {
     if (busy || completedRef.current) return;
+    stopCallTone();
     setBusy(true);
     completedRef.current = true;
     try { await updateCallStatus(initialCall.id, 'cancelled'); } catch (_) {}
