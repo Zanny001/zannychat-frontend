@@ -35,4 +35,6 @@ test('outgoing ringback uses native dialtone for Telecom and bundled audio for J
   const callPlugin = appConfig.expo.plugins.find((plugin) => Array.isArray(plugin) && plugin[0] === 'expo-callkit-telecom');
   assert.ok(outgoing.includes("if (!initialCall.nativeCallId) startCallTone('outgoing')"));
   assert.equal(callPlugin?.[1]?.defaultDialtone, 'call_dialtone.wav');
+  assert.equal(callPlugin?.[1]?.incomingCallTimeout, 65);
+  assert.equal(callPlugin?.[1]?.outgoingCallTimeout, 65);
 });
