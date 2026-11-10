@@ -30,3 +30,19 @@ test('LIVE creator can appoint and remove moderators from currently joined viewe
   assert.ok(screen.includes('`/live/${stream.id}/moderators${makeModerator ? \'\' : `/${userId}`}`'));
   assert.ok(screen.includes("method: makeModerator ? 'POST' : 'DELETE'"));
 });
+
+test('LIVE approved guests receive publishing permissions and can rejoin after creator approval', () => {
+  assert.ok(screen.includes("connection?.role === 'guest'"));
+  assert.ok(screen.includes('audio={publisherMode}'));
+  assert.ok(screen.includes('video={publisherMode}'));
+  assert.ok(screen.includes("`/live/${stream.id}/guest-status`"));
+  assert.ok(screen.includes("nextConnection?.role !== 'guest'"));
+  assert.ok(screen.includes("navigation.setParams({ connection: nextConnection, creatorMode: false })"));
+});
+
+test('LIVE viewers can request guest access and creators can approve or decline requests', () => {
+  assert.ok(screen.includes("`/live/${stream.id}/guest-requests`"));
+  assert.ok(screen.includes("`/live/${stream.id}/guest-requests/${userId}`"));
+  assert.ok(screen.includes("onReviewGuestRequest(item.user_id, 'accepted')"));
+  assert.ok(screen.includes("onReviewGuestRequest(item.user_id, 'declined')"));
+});
