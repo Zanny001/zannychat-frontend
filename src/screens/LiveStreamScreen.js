@@ -142,7 +142,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       } catch (_) {}
     };
     checkApproval();
-    const interval = setInterval(checkApproval, 5000);
+    const interval = setInterval(checkApproval, 15000);
     return () => { active = false; clearInterval(interval); };
   }, [stream?.id, creatorMode, publisherMode, stream?.allow_guests]);
 
