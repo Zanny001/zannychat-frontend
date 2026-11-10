@@ -78,6 +78,7 @@ export default function GroupCallScreen({ route, navigation }) {
   const [errorText, setErrorText] = useState('');
   const [busy, setBusy] = useState(true);
   const endingRef = useRef(false);
+  const connectionRef = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -94,7 +95,11 @@ export default function GroupCallScreen({ route, navigation }) {
             body: JSON.stringify({ conversationId, callType }),
           });
         }
-        if (active) setConnection({ ...result, roomId: result.room.id, callType: result.room.call_type || callType });
+        if (active) {
+          const connected = { ...result, roomId: result.room.id, callType: result.room.call_type || callType };
+          connectionRef.current = connected;
+          setConnection(connected);
+        }
       } catch (error) {
         if (active) setErrorText(error?.message || 'Group calling is not configured yet.');
       } finally {
