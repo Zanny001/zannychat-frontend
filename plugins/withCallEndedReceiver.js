@@ -30,7 +30,7 @@ function withCallEndedReceiver(config) {
       throw new Error('withCallEndedReceiver: expo-callkit-telecom Android messaging service was not found');
     }
     let messaging = fs.readFileSync(messagingPath, 'utf8');
-    if (!messaging.includes('zannychatFindOutgoingCallSession')) {
+    if (!messaging.includes('zannychatFindMappedCallSession')) {
       const imports = [
         'import expo.modules.zannychatcallmapping.NativeCallMappingCrypto',
         'import android.content.Context',
@@ -45,7 +45,7 @@ function withCallEndedReceiver(config) {
         if (!messaging.includes(line)) messaging = messaging.replace('import android.os.Handler', line + '\nimport android.os.Handler');
       }
       const method = String.raw`
-    private fun zannychatFindOutgoingCallSession(serverCallId: String): expo.modules.callkittelecom.models.CallSession? {
+    private fun zannychatFindMappedCallSession(serverCallId: String): expo.modules.callkittelecom.models.CallSession? {
         val preferences = applicationContext.getSharedPreferences("zannychat_native_call_mapping", Context.MODE_PRIVATE)
         val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         val key = keyStore.getKey("zannychat.native-call-mapping.v1", null) as? SecretKey ?: return null
@@ -105,7 +105,7 @@ function withCallEndedReceiver(config) {
       }
       messaging = messaging.replace(
         '            val session = CallStore.sessionForServerCallId(push.serverCallId)',
-        '            val session = CallStore.sessionForServerCallId(push.serverCallId) ?: zannychatFindOutgoingCallSession(push.serverCallId)',
+        '            val session = CallStore.sessionForServerCallId(push.serverCallId) ?: zannychatFindMappedCallSession(push.serverCallId)',
       );
       messaging = messaging.replace(
         '            CallManager.shared.reportCallEnded(session.id, push.reason)',
