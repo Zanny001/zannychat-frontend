@@ -173,7 +173,8 @@
           "androidEventReceiver": ".CallEndedReceiver"
         }
       ],
-      "./plugins/withCallEndedReceiver"
+      "./plugins/withCallEndedReceiver",
+      "@livekit/react-native-expo-plugin"
     ],
     "extra": {
       "eas": {
