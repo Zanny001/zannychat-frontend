@@ -18,6 +18,7 @@ jobs:
       - run: npm ci
       - run: npx expo config --type prebuild --json > /tmp/zannychat-expo-config.json
       - run: npx expo prebuild --platform android --no-install --non-interactive
+      - run: npx expo prebuild --platform ios --no-install --non-interactive
       - run: npm run test:unit
       - run: npm run test:call-recovery
       - run: node --test plugins/callEndedReceiver.test.cjs
