@@ -37,6 +37,10 @@ class ZannyChatNativeCallMappingModule : Module() {
       prefs.edit().putString(nativeCallId, raw).remove(PENDING_CALL_MAPPING_KEY).commit()
     }
 
+    AsyncFunction("clearPendingCallMapping") {
+      preferences().edit().remove(PENDING_CALL_MAPPING_KEY).commit()
+    }
+
     AsyncFunction("setCallMapping") { nativeCallId: String, serverCallId: String, token: String ->
       require(nativeCallId.isNotBlank() && nativeCallId.length <= 128) { "Invalid native call id" }
       validateCredential(serverCallId, token)
