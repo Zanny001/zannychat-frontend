@@ -509,6 +509,16 @@ export default function ChannelsScreen({ navigation }) {
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
     <Header title="Channels" subtitle="Discover public updates and private channels" onBack={() => selected ? clearSelectedChannel() : navigation.goBack()} />
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, gap: spacing.md }}>
+      <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+          <View style={{ width: 42, height: 42, borderRadius: radii.md, backgroundColor: '#FCE8ED', alignItems: 'center', justifyContent: 'center' }}><Ionicons name="radio" size={21} color="#D83A59" /></View>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>ZannyChat LIVE</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>Broadcast or watch live video with audience chat.</Text>
+          </View>
+          <TouchableOpacity onPress={() => navigation.navigate('LiveHub')} accessibilityRole="button" accessibilityLabel="Open creator LIVE" style={[buttonStyle(false), { minHeight: 38 }]}><Text style={buttonText}>Open</Text></TouchableOpacity>
+        </View>
+      </GlassCard>
       {error ? <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.xs }}><Text style={[typography.body, { color: colors.danger || '#D84C4C' }]}>{error}</Text><TouchableOpacity onPress={refresh}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
       {selected ? <>
         <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
