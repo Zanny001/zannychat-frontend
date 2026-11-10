@@ -37,7 +37,7 @@ try:
     check("SDK 57 native modules are pinned", dependencies.get("expo-contacts") == "57.0.8" and dependencies.get("expo-media-library", "").lstrip("~^") == "57.0.6" and dependencies.get("expo-video") == "57.0.5")
     check("WebRTC dependencies are explicitly pinned", dependencies.get("@livekit/react-native-webrtc") == "150.1.1" and "react-native-webrtc" not in dependencies and dependencies.get("@config-plugins/react-native-webrtc") == "15.0.2")
     check("WebRTC config plugin is enabled", any((entry == "@config-plugins/react-native-webrtc" or (isinstance(entry, list) and entry and entry[0] == "@config-plugins/react-native-webrtc")) for entry in json.loads((root / "app.json").read_text()).get("expo", {}).get("plugins", [])))
-    check("Native CallKit and Telecom plugin is enabled", any((entry == "expo-callkit-telecom" or (isinstance(entry, list) and entry and entry[0] == "expo-callkit-telecom")) for entry in json.loads((root / "app.json").read_text()).get("expo", {}).get("plugins", [])))
+    check("Native CallKit and Telecom plugin is enabled", any((isinstance(entry, list) and entry and entry[0] == "expo-callkit-telecom" and entry[1].get("androidEventReceiver") == ".CallEndedReceiver") for entry in json.loads((root / "app.json").read_text()).get("expo", {}).get("plugins", [])))
 except Exception as exc:
     check("Dependency manifests parse", False, str(exc))
 check("Legacy contacts API imported from compatibility entrypoint", "from 'expo-contacts/legacy'" in (root/"src/screens/ContactDiscoveryScreen.js").read_text())
