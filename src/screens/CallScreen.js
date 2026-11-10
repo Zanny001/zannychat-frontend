@@ -6,6 +6,7 @@ import { useTheme } from '../theme/ThemeContext';
 import Avatar from '../components/Avatar';
 import { sendCallSignal, subscribeToCallSession, subscribeToCallSignals, updateCallStatus } from '../services/calls';
 import { backendFetch } from '../services/backendClient';
+import { endNativeCall, failNativeIncomingConnected, fulfillNativeIncomingConnected, reportNativeCallEnded, reportNativeOutgoingConnected, setAudioSessionPortOverride, setNativeMuted, setRTCAudioSessionConfiguration } from '../services/nativeCallSystem';
 import { supabase } from '../services/supabaseClient';
 import { formatCallDuration, getCallEndStatus, isTerminalCallStatus } from '../utils/callPolicy';
 import { getIceNetworkNotice } from '../utils/callNetworkStatus';
@@ -14,7 +15,7 @@ const FALLBACK_ICE_SERVERS = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stu
 
 export default function CallScreen({ route, navigation }) {
   const { colors } = useTheme();
-  const { call: initialCall, callId, conversationId, callType = 'audio', isCaller = false, participantName = 'ZannyChat contact', avatarColor } = route.params || {};
+  const { call: initialCall, callId, conversationId, callType = 'audio', isCaller = false, participantName = 'ZannyChat contact', avatarColor, nativeCallId = null, nativeRequestId = null } = route.params || {};
   const [call, setCall] = useState(initialCall || { id: callId, conversation_id: conversationId, call_type: callType, status: isCaller ? 'ringing' : 'accepted' });
   const [phase, setPhase] = useState(isCaller ? 'Calling…' : 'Connecting…');
   const [muted, setMuted] = useState(false);
@@ -33,6 +34,8 @@ export default function CallScreen({ route, navigation }) {
   const offerStarted = useRef(false);
   const iceRestartInProgress = useRef(false);
   const activeRef = useRef(true);
+  const nativeConnectedRef = useRef(false);
+  const nativeEndedRef = useRef(false);
   const callIdRef = useRef(initialCall?.id || callId);
   const callRef = useRef(initialCall || { id: callId, conversation_id: conversationId, call_type: callType, status: isCaller ? 'ringing' : 'accepted' });
   const callTypeRef = useRef(initialCall?.call_type || callType);
@@ -42,12 +45,13 @@ export default function CallScreen({ route, navigation }) {
       const current = call;
       if (current?.id && ['ringing', 'accepted'].includes(current.status)) {
         const status = getCallEndStatus({ reason, isCaller, status: current.status });
+        if (nativeCallId) endNativeCall(nativeCallId).catch(() => {});
         await updateCallStatus(current.id, status).catch(() => {});
       }
     } finally {
       navigation.goBack();
     }
-  }, [call, isCaller, navigation]);
+  }, [call, isCaller, navigation, nativeCallId]);
 
   useEffect(() => {
     activeRef.current = true;
@@ -67,6 +71,7 @@ export default function CallScreen({ route, navigation }) {
       if (liveCallError || !liveCall || (isCaller ? !['ringing', 'accepted'].includes(liveCall.status) : liveCall.status !== 'accepted')) throw new Error('This call is no longer available. Please start or answer the call again.');
       callRef.current = liveCall;
       if (activeRef.current) setCall(liveCall);
+      setRTCAudioSessionConfiguration(callTypeRef.current === 'video');
       const stream = await mediaDevices.getUserMedia({ audio: true, video: callTypeRef.current === 'video' ? { facingMode: 'user', width: 960, height: 540, frameRate: 24 } : false });
       mountedStream = stream;
       localRef.current = stream;
@@ -97,7 +102,15 @@ export default function CallScreen({ route, navigation }) {
       pc.onconnectionstatechange = () => {
         if (!activeRef.current) return;
         const state = pc.connectionState;
-        if (state === 'connected') { connectedAtRef.current = connectedAtRef.current || Date.now(); setPhase('Connected'); }
+        if (state === 'connected') {
+          connectedAtRef.current = connectedAtRef.current || Date.now();
+          setPhase('Connected');
+          if (nativeCallId && !nativeConnectedRef.current) {
+            nativeConnectedRef.current = true;
+            if (isCaller) reportNativeOutgoingConnected(nativeCallId).catch(() => {});
+            else if (nativeRequestId) fulfillNativeIncomingConnected(nativeRequestId).catch(() => {});
+          }
+        }
         else if (state === 'connecting') setPhase('Connecting…');
         else if (state === 'disconnected') setPhase('Reconnecting…');
         else if (state === 'failed') setErrorText('Connection failed. Trying to restore the media route…');
@@ -182,6 +195,10 @@ export default function CallScreen({ route, navigation }) {
           maybeStartOffer();
         } else if (isTerminalCallStatus(next.status)) {
           setPhase(next.status === 'declined' ? 'Call declined' : next.status === 'missed' ? 'No answer' : 'Call ended');
+          if (nativeCallId && !nativeEndedRef.current) {
+            nativeEndedRef.current = true;
+            reportNativeCallEnded(nativeCallId, 'remoteEnded').catch(() => {});
+          }
           setTimeout(() => { if (activeRef.current) navigation.goBack(); }, 700);
         }
       };
@@ -199,6 +216,8 @@ export default function CallScreen({ route, navigation }) {
       // must not strand an accepted session and block future calls for both users.
       const current = callRef.current || call;
       if (current?.id && current.status === 'accepted') {
+        if (nativeRequestId) await failNativeIncomingConnected(nativeRequestId).catch(() => {});
+        if (nativeCallId) await reportNativeCallEnded(nativeCallId, 'failed').catch(() => {});
         await updateCallStatus(current.id, 'ended').catch(() => {});
       }
       if (activeRef.current) {
@@ -251,8 +270,24 @@ export default function CallScreen({ route, navigation }) {
   const toggleMute = () => {
     const next = !muted;
     localRef.current?.getAudioTracks?.().forEach((track) => { track.enabled = !next; });
+    if (nativeCallId) setNativeMuted(nativeCallId, next).catch(() => {});
     setMuted(next);
   };
+  const toggleSpeaker = () => {
+    const next = !speakerOn;
+    setAudioSessionPortOverride(next);
+    setSpeakerOn(next);
+  };
+  useEffect(() => {
+    if (!nativeCallId) return undefined;
+    const subscription = DeviceEventEmitter.addListener('zannychat:native-call-muted', ({ id, isMuted }) => {
+      if (id !== nativeCallId) return;
+      localRef.current?.getAudioTracks?.().forEach((track) => { track.enabled = !isMuted; });
+      setMuted(Boolean(isMuted));
+    });
+    return () => subscription.remove();
+  }, [nativeCallId]);
+
   const toggleCamera = () => {
     const next = !cameraOff;
     localRef.current?.getVideoTracks?.().forEach((track) => { track.enabled = !next; });
@@ -291,6 +326,7 @@ export default function CallScreen({ route, navigation }) {
       </View>
       <View style={styles.bottom}>
         <View style={styles.controlsRow}>
+          {iconButton(speakerOn ? 'volume-high' : 'volume-low', speakerOn ? 'Speaker' : 'Earpiece', toggleSpeaker, speakerOn)}
           {iconButton(muted ? 'mic-off' : 'mic', muted ? 'Unmute' : 'Mute', toggleMute, muted)}
           {callType === 'video' ? iconButton(cameraOff ? 'videocam-off' : 'videocam', cameraOff ? 'Camera on' : 'Camera off', toggleCamera, cameraOff) : null}
           {callType === 'video' ? iconButton('camera-reverse', 'Flip', switchCamera) : null}

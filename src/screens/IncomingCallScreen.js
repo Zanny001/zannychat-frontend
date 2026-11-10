@@ -5,9 +5,10 @@ import Avatar from '../components/Avatar';
 import { isTerminalCallStatus } from '../utils/callPolicy';
 import { subscribeToCallSession, updateCallStatus } from '../services/calls';
 import { startCallTone, stopCallTone } from '../services/callAudio';
+import { answerNativeCall, endNativeCall } from '../services/nativeCallSystem';
 
 export default function IncomingCallScreen({ route, navigation }) {
-  const { call, participantName = 'ZannyChat contact', avatarColor = '#6C5CE7', autoAnswer = false } = route.params || {};
+  const { call, participantName = 'ZannyChat contact', avatarColor = '#6C5CE7', autoAnswer = false, nativeCallId = null } = route.params || {};
   const [busy, setBusy] = useState(false);
   const closingRef = useRef(false);
   const autoAnswerHandledRef = useRef(false);
@@ -16,9 +17,11 @@ export default function IncomingCallScreen({ route, navigation }) {
   useEffect(() => {
     if (!call?.id || call.status !== 'ringing' || new Date(call.expires_at).getTime() <= Date.now()) return undefined;
     let active = true;
-    startCallTone();
-    if (Platform.OS === 'android') Vibration.vibrate([0, 900, 600], true);
-    else Vibration.vibrate();
+    if (!nativeCallId) {
+      startCallTone();
+      if (Platform.OS === 'android') Vibration.vibrate([0, 900, 600], true);
+      else Vibration.vibrate();
+    }
     const unsubscribe = subscribeToCallSession(call.id, (next) => {
       if (active && isTerminalCallStatus(next.status) && !closingRef.current) { stopCallTone(); Vibration.cancel(); closingRef.current = true; navigation.goBack(); }
     });
@@ -32,22 +35,32 @@ export default function IncomingCallScreen({ route, navigation }) {
         updateCallStatus(call.id, 'missed').catch(() => {}).finally(() => { if (active) navigation.goBack(); });
       }
     }, 1000);
-    return () => { active = false; clearInterval(timer); unsubscribe(); stopCallTone(); Vibration.cancel(); };
-  }, [call?.id, call?.expires_at, navigation]);
+    return () => { active = false; clearInterval(timer); unsubscribe(); if (!nativeCallId) stopCallTone(); Vibration.cancel(); };
+  }, [call?.id, call?.expires_at, navigation, nativeCallId]);
 
   const decline = async () => {
     if (busy || closingRef.current) return;
-    stopCallTone(); Vibration.cancel();
+    if (!nativeCallId) stopCallTone();
+    Vibration.cancel();
     closingRef.current = true;
     setBusy(true);
+    if (nativeCallId) endNativeCall(nativeCallId).catch(() => {});
     try { await updateCallStatus(call.id, 'declined'); } catch (_) {}
     navigation.goBack();
   };
 
   const answer = async () => {
     if (busy || closingRef.current) return;
-    stopCallTone(); Vibration.cancel();
+    if (!nativeCallId) stopCallTone();
+    Vibration.cancel();
     setBusy(true);
+    if (nativeCallId) {
+      answerNativeCall(nativeCallId).catch((error) => {
+        console.warn('[calls] native answer action failed:', error?.message || error);
+        setBusy(false);
+      });
+      return;
+    }
     try {
       const accepted = await updateCallStatus(call.id, 'accepted');
       if (accepted.status !== 'accepted') throw new Error('Call expired');
