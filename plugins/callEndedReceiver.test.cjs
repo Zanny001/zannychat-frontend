@@ -28,6 +28,8 @@ test('native outgoing call credentials are stored in Android private preferences
   assert.ok(moduleSource.includes('AsyncFunction("setCallMapping")'));
   assert.ok(moduleSource.includes('AsyncFunction("getCallMapping")'));
   assert.ok(moduleSource.includes('AsyncFunction("clearCallMapping")'));
+  assert.ok(fs.existsSync(path.join(__dirname, '../modules/zannychat-native-call-mapping/android/build.gradle')));
+  assert.ok(fs.existsSync(path.join(__dirname, '../modules/zannychat-native-call-mapping/android/src/main/AndroidManifest.xml')));
   assert.ok(nativeService.includes("requireOptionalNativeModule('ZannyChatNativeCallMapping')"));
   assert.ok(!nativeService.includes('@react-native-async-storage/async-storage'));
 });
