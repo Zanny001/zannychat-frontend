@@ -7,6 +7,7 @@ import { clearDraftsForUser } from './drafts';
 import { clearPinnedMessagesForUser } from './pinnedMessages';
 import { supabase, SUPABASE_ENABLED, SUPABASE_URL } from './supabaseClient';
 import { backendFetch, BACKEND_ENABLED } from './backendClient';
+import { getActiveVoipPushToken } from './voipPushTokenState';
 import { isMissingRpcFunction } from './rpcErrors';
 import {
   CURRENT_USER,
@@ -605,8 +606,26 @@ export async function getSessionSecurityInfo() {
   };
 }
 
+async function removeVoipTokensBeforeSignOut(scope) {
+  if (!BACKEND_ENABLED || !SUPABASE_ENABLED) return;
+  try {
+    const token = getActiveVoipPushToken();
+    if (scope === 'local' && !token) return;
+    await backendFetch('/calls/voip-token', {
+      method: 'DELETE',
+      body: JSON.stringify(scope === 'global' ? { all: true } : { token }),
+    });
+  } catch (error) {
+    // Push cleanup is best-effort so a temporary backend outage never traps
+    // the user in an authenticated session. The next sign-in re-registers
+    // the current device token and replaces its previous owner association.
+    console.warn('[calls] VoIP token cleanup during sign-out failed:', error?.message || error);
+  }
+}
+
 export async function signOutThisDevice() {
   if (!SUPABASE_ENABLED || !supabase) throw new Error('Session management requires a connected account.');
+  await removeVoipTokensBeforeSignOut('local');
   const { error } = await supabase.auth.signOut({ scope: 'local' });
   if (error) throw error;
   return { signedOut: true, scope: 'local' };
@@ -614,13 +633,15 @@ export async function signOutThisDevice() {
 
 export async function signOutEverywhere() {
   if (!SUPABASE_ENABLED || !supabase) throw new Error('Session management requires a connected account.');
+  await removeVoipTokensBeforeSignOut('global');
   const { error } = await supabase.auth.signOut({ scope: 'global' });
   if (error) throw error;
   return { signedOut: true, scope: 'global' };
 }
 
 export async function signOut() {
-  if (!SUPABASE_ENABLED) return;
+  if (!SUPABASE_ENABLED || !supabase) return;
+  await removeVoipTokensBeforeSignOut('global');
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }
