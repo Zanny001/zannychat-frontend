@@ -66,8 +66,8 @@ class CallEndedReceiver : BroadcastReceiver() {
                 val endpoint = BACKEND_URL.trimEnd('/') + "/calls/native-event"
                 connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
                     requestMethod = "POST"
-                    connectTimeout = 5000
-                    readTimeout = 5000
+                    connectTimeout = 4000
+                    readTimeout = 4000
                     doOutput = true
                     setRequestProperty("Content-Type", "application/json")
                 }
@@ -79,7 +79,8 @@ class CallEndedReceiver : BroadcastReceiver() {
                 connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
                 val responseCode = connection?.responseCode ?: -1
                 Log.i(TAG, "Native call reconciliation returned HTTP $responseCode")
-                if (responseCode in 200..299 && nativeCallId.isNotBlank() && outgoingMapping != null) {
+                val permanentClientError = responseCode in 400..499 && responseCode != 408 && responseCode != 429
+                if ((responseCode in 200..299 || permanentClientError) && nativeCallId.isNotBlank() && outgoingMapping != null) {
                     context.getSharedPreferences("zannychat_native_call_mapping", Context.MODE_PRIVATE)
                         .edit().remove(nativeCallId).remove("pending_outgoing_call").apply()
                 }
