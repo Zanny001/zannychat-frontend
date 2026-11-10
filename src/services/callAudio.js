@@ -2,7 +2,7 @@ import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 
 // A single local ringtone player is shared by incoming and outgoing call
 // screens so navigation transitions cannot leave multiple tones running.
-const source = require('../../assets/sounds/call-ring.wav');
+const source = require('../../assets/sounds/call_ring.wav');
 let player = null;
 let starting = null;
 let generation = 0;
