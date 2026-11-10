@@ -29,11 +29,14 @@ test('outgoing native end events resolve the backend call id from encrypted mapp
   assert.ok(navigator.includes('getCallSessionById(callId)'));
 });
 
-test('outgoing ringback uses native dialtone for Telecom and bundled audio for JS fallback', () => {
+test('outgoing ringback always plays locally while retaining native Telecom dialtone configuration', () => {
   const outgoing = fs.readFileSync(new URL('../screens/OutgoingCallScreen.js', import.meta.url), 'utf8');
   const appConfig = JSON.parse(fs.readFileSync(new URL('../../app.json', import.meta.url), 'utf8'));
   const callPlugin = appConfig.expo.plugins.find((plugin) => Array.isArray(plugin) && plugin[0] === 'expo-callkit-telecom');
-  assert.ok(outgoing.includes("if (!initialCall.nativeCallId) startCallTone('outgoing')"));
+  assert.ok(outgoing.includes("startCallTone('outgoing')"));
+  assert.equal(outgoing.includes("if (!initialCall.nativeCallId) startCallTone('outgoing')"), false);
+  assert.ok(outgoing.includes("if (next.status === 'accepted')"));
+  assert.ok(outgoing.includes('stopCallTone()'));
   assert.equal(callPlugin?.[1]?.defaultDialtone, 'call_dialtone.wav');
   assert.equal(callPlugin?.[1]?.incomingCallTimeout, 65);
   assert.equal(callPlugin?.[1]?.outgoingCallTimeout, 65);
