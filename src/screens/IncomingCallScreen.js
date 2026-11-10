@@ -32,7 +32,10 @@ export default function IncomingCallScreen({ route, navigation }) {
         stopCallTone(); Vibration.cancel();
         closingRef.current = true;
         clearInterval(timer);
-        updateCallStatus(call.id, 'missed').catch(() => {}).finally(() => { if (active) navigation.goBack(); });
+        updateCallStatus(call.id, 'missed').catch(() => {}).finally(() => {
+          if (nativeCallId) endNativeCall(nativeCallId).catch(() => {});
+          if (active) navigation.goBack();
+        });
       }
     }, 1000);
     return () => { active = false; clearInterval(timer); unsubscribe(); if (!nativeCallId) stopCallTone(); Vibration.cancel(); };
@@ -44,8 +47,8 @@ export default function IncomingCallScreen({ route, navigation }) {
     Vibration.cancel();
     closingRef.current = true;
     setBusy(true);
-    if (nativeCallId) endNativeCall(nativeCallId).catch(() => {});
     try { await updateCallStatus(call.id, 'declined'); } catch (_) {}
+    if (nativeCallId) endNativeCall(nativeCallId).catch(() => {});
     navigation.goBack();
   };
 

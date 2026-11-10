@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, View, Platform, Linking } from 'react-native';
+import { DeviceEventEmitter, StyleSheet, View, Platform, Linking } from 'react-native';
 import { NavigationContainer, DarkTheme, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -197,7 +197,8 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
       if (!callId || !active || incomingIdsRef.current.has(callId)) return;
       try {
         const call = await getCallSessionById(callId);
-        if (!active || !call || call.status !== 'ringing') {
+        if (!active || !call || call.status !== 'ringing' || new Date(call.expires_at).getTime() <= Date.now()) {
+          if (call?.status === 'ringing') await updateCallStatus(callId, 'missed').catch(() => {});
           if (session?.id) await reportNativeCallEnded(session.id, 'unanswered');
           return;
         }
@@ -218,7 +219,8 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
         if (!active || !callId) return;
         try {
           const call = await getCallSessionById(callId);
-          if (!call || call.status !== 'ringing') {
+          if (!call || call.status !== 'ringing' || new Date(call.expires_at).getTime() <= Date.now()) {
+            if (call?.status === 'ringing') await updateCallStatus(callId, 'missed').catch(() => {});
             await reportNativeCallEnded(id, 'unanswered');
             return;
           }

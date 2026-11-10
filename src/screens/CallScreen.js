@@ -45,8 +45,8 @@ export default function CallScreen({ route, navigation }) {
       const current = call;
       if (current?.id && ['ringing', 'accepted'].includes(current.status)) {
         const status = getCallEndStatus({ reason, isCaller, status: current.status });
-        if (nativeCallId) endNativeCall(nativeCallId).catch(() => {});
         await updateCallStatus(current.id, status).catch(() => {});
+        if (nativeCallId) endNativeCall(nativeCallId).catch(() => {});
       }
     } finally {
       navigation.goBack();

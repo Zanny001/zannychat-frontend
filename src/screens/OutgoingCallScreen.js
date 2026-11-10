@@ -50,6 +50,7 @@ export default function OutgoingCallScreen({ route, navigation }) {
         stopCallTone();
         setStatusText('No answer');
         updateCallStatus(initialCall.id, 'missed').catch(() => {}).finally(() => {
+          if (initialCall.nativeCallId) endNativeCall(initialCall.nativeCallId).catch(() => {});
           if (activeRef.current) navigation.goBack();
         });
       }
@@ -60,10 +61,10 @@ export default function OutgoingCallScreen({ route, navigation }) {
   const cancel = async () => {
     if (busy || completedRef.current) return;
     if (!initialCall.nativeCallId) stopCallTone();
-    if (initialCall.nativeCallId) endNativeCall(initialCall.nativeCallId).catch(() => {});
     setBusy(true);
     completedRef.current = true;
     try { await updateCallStatus(initialCall.id, 'cancelled'); } catch (_) {}
+    if (initialCall.nativeCallId) endNativeCall(initialCall.nativeCallId).catch(() => {});
     navigation.goBack();
   };
 
