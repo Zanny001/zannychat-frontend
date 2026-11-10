@@ -243,18 +243,24 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
         const nativeMapping = session?.incomingCallEvent?.serverCallId ? null : await getNativeCallMapping(id);
         const callId = session?.incomingCallEvent?.serverCallId || nativeMapping?.serverCallId || null;
         if (!callId) return;
+        let mappingCanBeCleared = false;
         try {
           const call = await getCallSessionById(callId);
-          if (call && ['ringing', 'accepted'].includes(call.status)) {
+          if (!call || !['ringing', 'accepted'].includes(call.status)) {
+            mappingCanBeCleared = true;
+          } else {
             const status = call.status === 'ringing'
               ? (reason === 'unanswered' ? 'missed' : (session?.origin === 'incoming' ? 'declined' : 'cancelled'))
               : 'ended';
             await updateCallStatus(callId, status);
+            mappingCanBeCleared = true;
           }
         } catch (error) {
+          // Keep the encrypted mapping so the killed-app receiver or a later
+          // lifecycle event can retry reconciliation after transient failures.
           console.warn('[calls] native call end could not be synchronized:', error?.message || error);
         } finally {
-          await clearNativeCallMapping(id);
+          if (mappingCanBeCleared) await clearNativeCallMapping(id);
         }
       },
       onMuted: ({ id, isMuted }) => {
