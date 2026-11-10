@@ -1222,6 +1222,14 @@ export default function ChatScreen({ route, navigation }) {
       ]
     : [];
 
+  const handleStartGroupCall = useCallback((callType) => {
+    navigation.navigate('GroupCall', {
+      conversationId: display.id,
+      conversationName: display.participant?.name || 'Group',
+      callType,
+    });
+  }, [display, navigation]);
+
   const handleStartCall = useCallback(async (callType) => {
     if (!canStartCall({ conversationId: display.id, participantId: display.participant?.id, isGroup: display.isGroup, callType })) {
       Alert.alert('Calls unavailable', 'Audio and video calls are currently available in direct conversations.');
@@ -1258,6 +1266,16 @@ export default function ChatScreen({ route, navigation }) {
                   <Ionicons name="call-outline" size={20} color={colors.textPrimary} />
                 </TouchableOpacity>
                 <TouchableOpacity style={{ marginRight: spacing.sm }} onPress={() => handleStartCall('video')} accessibilityLabel="Start video call" accessibilityRole="button">
+                  <Ionicons name="videocam-outline" size={21} color={colors.textPrimary} />
+                </TouchableOpacity>
+              </>
+            ) : null}
+            {display.isGroup ? (
+              <>
+                <TouchableOpacity style={{ marginRight: spacing.sm }} onPress={() => handleStartGroupCall('audio')} accessibilityLabel="Start group audio call" accessibilityRole="button">
+                  <Ionicons name="call-outline" size={20} color={colors.textPrimary} />
+                </TouchableOpacity>
+                <TouchableOpacity style={{ marginRight: spacing.sm }} onPress={() => handleStartGroupCall('video')} accessibilityLabel="Start group video call" accessibilityRole="button">
                   <Ionicons name="videocam-outline" size={21} color={colors.textPrimary} />
                 </TouchableOpacity>
               </>
