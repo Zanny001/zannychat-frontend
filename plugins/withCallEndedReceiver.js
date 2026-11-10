@@ -105,8 +105,9 @@ function withCallEndedReceiver(config) {
             val uuid = try { UUID.fromString(nativeId) } catch (_: Exception) { null } ?: continue
             val session = expo.modules.callkittelecom.store.CallStore.session(uuid)
             if (session == null) {
-                expo.modules.callkittelecom.managers.CallNotificationManager.cancel(applicationContext)
-                preferences.edit().remove(nativeId).apply()
+                // Do not clear persisted incoming mappings or cancel a generic
+                // notification when Core-Telecom has no live process-local session.
+                android.util.Log.w("ZannyChatCallEnded", "No live incoming Telecom session for persisted call mapping; native dismissal requires device-level verification")
             }
             return session
         }
