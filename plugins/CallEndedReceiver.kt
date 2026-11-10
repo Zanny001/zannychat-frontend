@@ -47,7 +47,7 @@ class CallEndedReceiver : BroadcastReceiver() {
                     .put("token", eventToken)
                     .toString()
                 connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
-                Log.i(TAG, "Native call-end reconciliation returned HTTP ${connection.responseCode}")
+                Log.i(TAG, "Native call-end reconciliation returned HTTP ${connection?.responseCode}")
             } catch (error: Exception) {
                 Log.w(TAG, "Native call-end reconciliation failed: ${error.message}")
             } finally {
