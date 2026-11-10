@@ -23,7 +23,13 @@ export default function IncomingCallScreen({ route, navigation }) {
       else Vibration.vibrate();
     }
     const unsubscribe = subscribeToCallSession(call.id, (next) => {
-      if (active && isTerminalCallStatus(next.status) && !closingRef.current) { stopCallTone(); Vibration.cancel(); closingRef.current = true; navigation.goBack(); }
+      if (active && isTerminalCallStatus(next.status) && !closingRef.current) {
+        stopCallTone();
+        Vibration.cancel();
+        closingRef.current = true;
+        if (nativeCallId) endNativeCall(nativeCallId).catch(() => {});
+        navigation.goBack();
+      }
     });
     const timer = setInterval(() => {
       const left = Math.max(0, Math.ceil((new Date(call.expires_at).getTime() - Date.now()) / 1000));
