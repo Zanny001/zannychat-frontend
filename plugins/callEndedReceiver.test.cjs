@@ -33,7 +33,13 @@ test('native outgoing call credentials are stored in Android private preferences
   const nativeService = fs.readFileSync(path.join(__dirname, '../src/services/nativeCallSystem.native.js'), 'utf8');
   const cryptoSource = fs.readFileSync(path.join(__dirname, '../modules/zannychat-native-call-mapping/android/src/main/java/expo/modules/zannychatcallmapping/NativeCallMappingCrypto.kt'), 'utf8');
   const kotlin = fs.readFileSync(path.join(__dirname, '../plugins/CallEndedReceiver.kt'), 'utf8');
-  assert.deepEqual(moduleConfig.platforms, ['android']);
+  assert.deepEqual(moduleConfig.platforms, ['apple', 'android']);
+  assert.deepEqual(moduleConfig.apple.modules, ['ZannyChatNativeCallMappingModule']);
+  const iosModule = fs.readFileSync(path.join(__dirname, '../modules/zannychat-native-call-mapping/ios/ZannyChatNativeCallMappingModule.swift'), 'utf8');
+  assert.ok(iosModule.includes('kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly'));
+  assert.ok(iosModule.includes('SecItemAdd'));
+  assert.ok(iosModule.includes('SecItemCopyMatching'));
+  assert.ok(iosModule.includes('AsyncFunction("bindPendingCallMapping")'));
   assert.ok(moduleSource.includes('getSharedPreferences("zannychat_native_call_mapping"'));
   assert.ok(moduleSource.includes('NativeCallMappingCrypto.encrypt(value)'));
   assert.ok(moduleSource.includes('NativeCallMappingCrypto.decrypt(raw)'));
@@ -49,6 +55,7 @@ test('native outgoing call credentials are stored in Android private preferences
   assert.ok(moduleSource.includes('AsyncFunction("getCallMapping")'));
   assert.ok(moduleSource.includes('AsyncFunction("clearCallMapping")'));
   assert.ok(fs.existsSync(path.join(__dirname, '../modules/zannychat-native-call-mapping/android/build.gradle')));
+  assert.ok(fs.existsSync(path.join(__dirname, '../modules/zannychat-native-call-mapping/ios/ZannyChatNativeCallMapping.podspec')));
   assert.ok(fs.existsSync(path.join(__dirname, '../modules/zannychat-native-call-mapping/android/src/main/AndroidManifest.xml')));
   assert.ok(nativeService.includes("requireOptionalNativeModule('ZannyChatNativeCallMapping')"));
   assert.ok(nativeService.includes('setPendingNativeCallMapping'));
