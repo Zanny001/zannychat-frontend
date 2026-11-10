@@ -56,9 +56,8 @@ function withCallEndedReceiver(config) {
       }
       let storageKey = "zannychat.callkit.server.\\(serverCallId)"
       Task {
-        let session = await CallManager.shared.store.allSessions.first {
-          $0.incomingCallEvent?.serverCallId == serverCallId
-        }
+        let sessions = await CallManager.shared.store.allSessions
+        let session = sessions.first { $0.incomingCallEvent?.serverCallId == serverCallId }
         let storedId = UserDefaults.standard.string(forKey: storageKey).flatMap(UUID.init(uuidString:))
         let pendingServerId = UserDefaults.standard.string(forKey: "zannychat.callkit.pendingServerId")
         let pendingNativeId = pendingServerId == serverCallId
