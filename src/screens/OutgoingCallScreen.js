@@ -43,7 +43,7 @@ export default function OutgoingCallScreen({ route, navigation }) {
       if (left <= 0 && !completedRef.current) {
         completedRef.current = true;
         setStatusText('No answer');
-        updateCallStatus(initialCall.id, 'cancelled').catch(() => {}).finally(() => {
+        updateCallStatus(initialCall.id, 'missed').catch(() => {}).finally(() => {
           if (activeRef.current) navigation.goBack();
         });
       }
