@@ -2,10 +2,16 @@ import React, { useEffect } from 'react';
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { registerCallVoipToken } from '../services/calls';
+import { setActiveVoipPushToken } from '../services/voipPushTokenState';
 
 function NativeVoIPRegistrar() {
   const { registerVoIPPush, useVoIPPushToken } = require('expo-callkit-telecom');
   const token = useVoIPPushToken();
+
+  useEffect(() => {
+    setActiveVoipPushToken(token?.token || null);
+    return () => setActiveVoipPushToken(null);
+  }, [token?.token]);
 
   useEffect(() => {
     try { registerVoIPPush(); }
