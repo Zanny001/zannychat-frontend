@@ -11,3 +11,13 @@ test('native devices register APNs VoIP or FCM tokens only after authenticated s
   assert.ok(registrar.includes('supabase.auth.getSession()'));
   assert.ok(calls.includes("backendFetch('/calls/voip-token'"));
 });
+
+test('sign-out cleanup can identify the current device VoIP token', () => {
+  const registrar = fs.readFileSync(new URL('./VoIPPushRegistrar.native.js', import.meta.url), 'utf8');
+  const api = fs.readFileSync(new URL('../services/api.js', import.meta.url), 'utf8');
+  assert.ok(registrar.includes('setActiveVoipPushToken(token?.token || null)'));
+  assert.ok(api.includes('getActiveVoipPushToken()'));
+  assert.ok(api.includes("backendFetch('/calls/voip-token'"));
+  assert.ok(api.includes("removeVoipTokensBeforeSignOut('global')"));
+  assert.ok(api.includes("removeVoipTokensBeforeSignOut('local')"));
+});
