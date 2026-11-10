@@ -5,7 +5,7 @@ import fs from 'node:fs';
 const incoming = fs.readFileSync(new URL('../screens/IncomingCallScreen.js', import.meta.url), 'utf8');
 const outgoing = fs.readFileSync(new URL('../screens/OutgoingCallScreen.js', import.meta.url), 'utf8');
 const audio = fs.readFileSync(new URL('./callAudio.js', import.meta.url), 'utf8');
-const ringtone = fs.readFileSync(new URL('../../assets/sounds/call-ring.wav', import.meta.url));
+const ringtone = fs.readFileSync(new URL('../../assets/sounds/call_ring.wav', import.meta.url));
 
 test('incoming call screen starts and always stops its ringtone and vibration', () => {
   assert.ok(incoming.includes('startCallTone()'));
@@ -23,7 +23,7 @@ test('outgoing call screen plays ringback until accepted, terminal, cancelled, o
 });
 
 test('ringtone player uses a bundled local source and a single looping player', () => {
-  assert.ok(audio.includes("require('../../assets/sounds/call-ring.wav')"));
+  assert.ok(audio.includes("require('../../assets/sounds/call_ring.wav')"));
   assert.ok(audio.includes('createAudioPlayer'));
   assert.ok(audio.includes('activePlayer.loop = true'));
   assert.ok(audio.includes('export function stopCallTone'));
