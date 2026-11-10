@@ -49,7 +49,8 @@ import IncomingCallScreen from '../screens/IncomingCallScreen';
 import OutgoingCallScreen from '../screens/OutgoingCallScreen';
 import CallHistoryScreen from '../screens/CallHistoryScreen';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
-import { getCallParticipantName, subscribeToIncomingCalls } from '../services/calls';
+import { getCallParticipantName, getCallSessionById, subscribeToIncomingCalls, updateCallStatus } from '../services/calls';
+import { clearNativeCallMapping, getNativeCallMapping, initializeNativeCallSystem, reportIncomingCallIfNeeded, reportNativeCallEnded } from '../services/nativeCallSystem';
 import { completeGoogleOAuthCallback } from '../services/googleAuth';
 
 // Lets code outside the component tree (the push-notification tap
@@ -168,8 +169,9 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
         incomingIdsRef.current.add(incoming.id);
         if (incomingIdsRef.current.size > 50) incomingIdsRef.current.delete(incomingIdsRef.current.values().next().value);
         const callerName = await getCallParticipantName(incoming.caller_id);
+        const nativeCallId = await reportIncomingCallIfNeeded(incoming, callerName);
         if (!active) return;
-        const params = { call: incoming, participantName: callerName };
+        const params = { call: incoming, participantName: callerName, ...(nativeCallId ? { nativeCallId } : {}) };
         if (navigationRef.isReady()) navigationRef.navigate('IncomingCall', params);
         else pendingIncomingRef.current = params;
       });
@@ -183,6 +185,79 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
       authListener?.subscription?.unsubscribe();
       incomingIdsRef.current.clear();
       pendingIncomingRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS === 'web' || !SUPABASE_ENABLED || !supabase) return undefined;
+    let active = true;
+    const handleIncomingSession = async (event) => {
+      const session = event?.session;
+      const callId = session?.incomingCallEvent?.serverCallId;
+      if (!callId || !active || incomingIdsRef.current.has(callId)) return;
+      try {
+        const call = await getCallSessionById(callId);
+        if (!active || !call || call.status !== 'ringing') {
+          if (session?.id) await reportNativeCallEnded(session.id, 'unanswered');
+          return;
+        }
+        incomingIdsRef.current.add(callId);
+        const participantName = await getCallParticipantName(call.caller_id);
+        if (!active) return;
+        const params = { call, participantName, nativeCallId: session.id };
+        if (navigationRef.isReady()) navigationRef.navigate('IncomingCall', params);
+        else pendingIncomingRef.current = params;
+      } catch (error) {
+        console.warn('[calls] could not restore native incoming call:', error?.message || error);
+      }
+    };
+    const unsubscribe = initializeNativeCallSystem({
+      onSessionAdded: handleIncomingSession,
+      onAnswered: async ({ id, requestId, session }) => {
+        const callId = session?.incomingCallEvent?.serverCallId;
+        if (!active || !callId) return;
+        try {
+          const call = await getCallSessionById(callId);
+          if (!call || call.status !== 'ringing') {
+            await reportNativeCallEnded(id, 'unanswered');
+            return;
+          }
+          const accepted = await updateCallStatus(callId, 'accepted');
+          const participantName = await getCallParticipantName(call.caller_id);
+          if (active && navigationRef.isReady()) {
+            navigationRef.navigate('Call', {
+              call: accepted, callType: call.call_type, isCaller: false,
+              participantName, nativeCallId: id, nativeRequestId: requestId,
+            });
+          }
+        } catch (error) {
+          console.warn('[calls] native answer could not be completed:', error?.message || error);
+        }
+      },
+      onEnded: async ({ id, session }) => {
+        const callId = session?.incomingCallEvent?.serverCallId || await getNativeCallMapping(id);
+        if (!callId) return;
+        try {
+          const call = await getCallSessionById(callId);
+          if (call && ['ringing', 'accepted'].includes(call.status)) {
+            const status = call.status === 'ringing'
+              ? (session?.origin === 'incoming' ? 'declined' : 'cancelled')
+              : 'ended';
+            await updateCallStatus(callId, status);
+          }
+        } catch (error) {
+          console.warn('[calls] native call end could not be synchronized:', error?.message || error);
+        } finally {
+          await clearNativeCallMapping(id);
+        }
+      },
+      onMuted: ({ id, isMuted }) => {
+        DeviceEventEmitter.emit('zannychat:native-call-muted', { id, isMuted });
+      },
+    });
+    return () => {
+      active = false;
+      unsubscribe?.();
     };
   }, []);
 

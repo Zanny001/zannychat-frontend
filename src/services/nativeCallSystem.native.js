@@ -51,6 +51,9 @@ export function initializeNativeCallSystem(callbacks = {}) {
     api.addCallEndedListener((event) => callbacks.onEnded?.(event)),
     api.addSetMutedActionListener((event) => callbacks.onMuted?.(event)),
   ];
+  Promise.resolve(api.getActiveCallSession()).then((session) => {
+    if (session?.origin === 'incoming') callbacks.onSessionAdded?.({ session });
+  }).catch(() => {});
   return () => subscriptions.forEach((subscription) => subscription?.remove?.());
 }
 
