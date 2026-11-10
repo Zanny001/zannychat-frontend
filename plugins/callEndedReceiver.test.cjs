@@ -9,8 +9,25 @@ test('Android killed-app receiver reconciles native end and reported-end events'
   assert.ok(kotlin.includes('"onCallEnded", "onCallReportedEnded"'));
   assert.ok(kotlin.includes('payload.optString("reason"'));
   assert.ok(kotlin.includes('serverEventToken'));
+  assert.ok(kotlin.includes('zannychat_native_call_mapping'));
+  assert.ok(kotlin.includes('outgoingMapping?.optString("serverCallId"'));
+  assert.ok(kotlin.includes('outgoingMapping?.optString("token"'));
+  assert.ok(kotlin.includes('remove(nativeCallId)'));
   assert.ok(kotlin.includes('/calls/native-event'));
   assert.ok(kotlin.includes('goAsync()'));
   assert.ok(plugin.includes('android.package'));
   assert.ok(plugin.includes('extra.backendUrl'));
+});
+
+test('native outgoing call credentials are stored in Android private preferences, not JS storage', () => {
+  const moduleConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../modules/zannychat-native-call-mapping/expo-module.config.json'), 'utf8'));
+  const moduleSource = fs.readFileSync(path.join(__dirname, '../modules/zannychat-native-call-mapping/android/src/main/java/expo/modules/zannychatcallmapping/ZannyChatNativeCallMappingModule.kt'), 'utf8');
+  const nativeService = fs.readFileSync(path.join(__dirname, '../src/services/nativeCallSystem.native.js'), 'utf8');
+  assert.deepEqual(moduleConfig.platforms, ['android']);
+  assert.ok(moduleSource.includes('getSharedPreferences("zannychat_native_call_mapping"'));
+  assert.ok(moduleSource.includes('AsyncFunction("setCallMapping")'));
+  assert.ok(moduleSource.includes('AsyncFunction("getCallMapping")'));
+  assert.ok(moduleSource.includes('AsyncFunction("clearCallMapping")'));
+  assert.ok(nativeService.includes("requireOptionalNativeModule('ZannyChatNativeCallMapping')"));
+  assert.ok(!nativeService.includes('@react-native-async-storage/async-storage'));
 });
