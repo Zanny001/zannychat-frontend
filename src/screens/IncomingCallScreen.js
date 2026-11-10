@@ -13,7 +13,7 @@ export default function IncomingCallScreen({ route, navigation }) {
   const [remaining, setRemaining] = useState(() => Math.max(0, Math.ceil((new Date(call?.expires_at || Date.now()).getTime() - Date.now()) / 1000)));
 
   useEffect(() => {
-    if (!call?.id) return undefined;
+    if (!call?.id || call.status !== 'ringing' || new Date(call.expires_at).getTime() <= Date.now()) return undefined;
     let active = true;
     startCallTone();
     if (Platform.OS === 'android') Vibration.vibrate([0, 900, 600], true);

@@ -17,12 +17,13 @@ loadNotificationPrefs();
 // still announce itself even while the app is open. Both honor the
 // user's notification preferences (see NotificationsScreen).
 Notifications.setNotificationHandler({
-  handleNotification: async () => {
+  handleNotification: async ({ notification } = {}) => {
     const prefs = getNotificationPrefs();
+    const isIncomingCall = notification?.request?.content?.data?.type === 'incoming_call';
     const quietNow = shouldQuietForegroundNotification(new Date(), prefs);
     return {
       shouldShowAlert: prefs.bannersEnabled && !quietNow,
-      shouldPlaySound: prefs.soundEnabled && !quietNow,
+      shouldPlaySound: !isIncomingCall && prefs.soundEnabled && !quietNow,
       shouldSetBadge: false,
     };
   },
@@ -71,7 +72,7 @@ export async function registerForPushNotifications() {
     await Notifications.setNotificationChannelAsync('calls', {
       name: 'Incoming calls',
       importance: Notifications.AndroidImportance.MAX,
-      sound: 'default',
+      sound: 'call-ring.wav',
       vibrationPattern: [0, 250, 250, 250],
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
     });

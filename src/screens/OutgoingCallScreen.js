@@ -17,7 +17,7 @@ export default function OutgoingCallScreen({ route, navigation }) {
   const completedRef = useRef(false);
 
   useEffect(() => {
-    if (!initialCall?.id) return undefined;
+    if (!initialCall?.id || initialCall.status !== 'ringing' || new Date(initialCall.expires_at).getTime() <= Date.now()) return undefined;
     activeRef.current = true;
     startCallTone();
     let unsubscribe = () => {};
@@ -46,6 +46,7 @@ export default function OutgoingCallScreen({ route, navigation }) {
       setRemaining(left);
       if (left <= 0 && !completedRef.current) {
         completedRef.current = true;
+        stopCallTone();
         setStatusText('No answer');
         updateCallStatus(initialCall.id, 'missed').catch(() => {}).finally(() => {
           if (activeRef.current) navigation.goBack();

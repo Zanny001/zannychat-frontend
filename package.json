@@ -1,6 +1,6 @@
 {
   "name": "zannychat",
-  "version": "1.2.239",
+  "version": "1.2.241",
   "private": true,
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
