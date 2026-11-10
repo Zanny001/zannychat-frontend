@@ -48,7 +48,7 @@ export default function LiveHubScreen({ navigation }) {
 
   const startLive = async () => {
     if (!title.trim()) return Alert.alert('Add a title', 'Give your LIVE stream a short title first.');
-    const invitees = [...new Set(inviteeIds.split(/[\\s,;]+/).map((id) => id.trim()).filter(Boolean))];
+    const invitees = [...new Set(inviteeIds.split(/[\s,;]+/).map((id) => id.trim()).filter(Boolean))];
     if (visibility === 'private' && invitees.length === 0) {
       return Alert.alert('Add invitees', 'Private LIVE needs at least one invitee user ID.');
     }
