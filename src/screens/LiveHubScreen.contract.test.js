@@ -30,3 +30,13 @@ test('LIVE hub follows creators and loads follower-only broadcasts', () => {
   assert.ok(screen.includes('followingCreators.map'));
   assert.ok(screen.includes("item.visibility === 'followers'"));
 });
+
+
+test('LIVE hub uses the shared premium theme and supports focused discovery filters', () => {
+  assert.ok(screen.includes("import { useTheme } from '../theme/ThemeContext'"));
+  assert.ok(screen.includes("import GlassCard from '../components/GlassCard'"));
+  assert.ok(screen.includes("const STREAM_FILTERS"));
+  assert.ok(screen.includes("activeFilter === 'following'"));
+  assert.ok(screen.includes("activeFilter === 'public'"));
+  assert.ok(screen.includes('Your stage. Your people.'));
+});
