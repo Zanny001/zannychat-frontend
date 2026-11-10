@@ -41,7 +41,7 @@ function withCallEndedReceiver(config) {
         'import javax.crypto.spec.GCMParameterSpec',
       ];
       for (const line of imports) {
-        if (!messaging.includes(line)) messaging = messaging.replace('import android.os.Handler', line + '\\nimport android.os.Handler');
+        if (!messaging.includes(line)) messaging = messaging.replace('import android.os.Handler', line + '\nimport android.os.Handler');
       }
       const method = String.raw`
     private fun zannychatFindOutgoingCallSession(serverCallId: String): expo.modules.callkittelecom.models.CallSession? {
