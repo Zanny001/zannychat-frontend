@@ -7,7 +7,7 @@ import { clearDraftsForUser } from './drafts';
 import { clearPinnedMessagesForUser } from './pinnedMessages';
 import { supabase, SUPABASE_ENABLED, SUPABASE_URL } from './supabaseClient';
 import { backendFetch, BACKEND_ENABLED } from './backendClient';
-import { getActiveVoipPushToken } from './voipPushTokenState';
+import { getActiveVoipPushToken, getActiveApnsAlertToken } from './voipPushTokenState';
 import { isMissingRpcFunction } from './rpcErrors';
 import {
   CURRENT_USER,
@@ -609,12 +609,22 @@ export async function getSessionSecurityInfo() {
 async function removeVoipTokensBeforeSignOut(scope) {
   if (!BACKEND_ENABLED || !SUPABASE_ENABLED) return;
   try {
-    const token = getActiveVoipPushToken();
-    if (scope === 'local' && !token) return;
-    await backendFetch('/calls/voip-token', {
-      method: 'DELETE',
-      body: JSON.stringify(scope === 'global' ? { all: true } : { token }),
-    });
+    if (scope === 'global') {
+      await backendFetch('/calls/voip-token', {
+        method: 'DELETE',
+        body: JSON.stringify({ all: true }),
+      });
+      return;
+    }
+    // A local sign-out must remove every native push credential for this
+    // device, including the separate standard APNs alert token on iOS.
+    const tokens = [...new Set([getActiveVoipPushToken(), getActiveApnsAlertToken()].filter(Boolean))];
+    for (const token of tokens) {
+      await backendFetch('/calls/voip-token', {
+        method: 'DELETE',
+        body: JSON.stringify({ token }),
+      });
+    }
   } catch (error) {
     // Push cleanup is best-effort so a temporary backend outage never traps
     // the user in an authenticated session. The next sign-in re-registers
