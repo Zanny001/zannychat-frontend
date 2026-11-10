@@ -20,14 +20,14 @@ export default function OutgoingCallScreen({ route, navigation }) {
   useEffect(() => {
     if (!initialCall?.id || initialCall.status !== 'ringing' || new Date(initialCall.expires_at).getTime() <= Date.now()) return undefined;
     activeRef.current = true;
-    if (!initialCall.nativeCallId) startCallTone('outgoing');
+    startCallTone('outgoing');
     let unsubscribe = () => {};
     let timeout;
     const finish = (next) => {
       if (!activeRef.current || completedRef.current || !next) return;
       setCall(next);
       if (next.status === 'accepted') {
-        if (!initialCall.nativeCallId) stopCallTone();
+        stopCallTone();
         completedRef.current = true;
         navigation.replace('Call', { call: next, callType: next.call_type, isCaller: true, participantName, avatarColor, nativeCallId: initialCall.nativeCallId });
       } else if (isTerminalCallStatus(next.status)) {
@@ -61,7 +61,7 @@ export default function OutgoingCallScreen({ route, navigation }) {
 
   const cancel = async () => {
     if (busy || completedRef.current) return;
-    if (!initialCall.nativeCallId) stopCallTone();
+    stopCallTone();
     setBusy(true);
     completedRef.current = true;
     try { await updateCallStatus(initialCall.id, 'cancelled'); } catch (_) {}
