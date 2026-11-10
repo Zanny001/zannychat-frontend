@@ -30,6 +30,9 @@ export default function EditProfileScreen({ navigation }) {
   const [username, setUsername] = useState('');
   const [status, setStatus] = useState('');
   const [avatarUrl, setAvatarUrl] = useState(null);
+  const [avatarPreviewUri, setAvatarPreviewUri] = useState(null);
+  const [coverPreviewUri, setCoverPreviewUri] = useState(null);
+  const [mediaError, setMediaError] = useState('');
   const [details, setDetails] = useState(DEFAULT_DETAILS);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -60,27 +63,35 @@ export default function EditProfileScreen({ navigation }) {
   }
 
   async function chooseImage(kind) {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'], allowsEditing: true,
-      aspect: kind === 'cover' ? [16, 9] : [1, 1], quality: 0.82,
-    });
-    if (result.canceled || !result.assets?.[0]) return;
-    const asset = result.assets[0];
-    const setter = kind === 'cover' ? setUploadingCover : setUploadingPhoto;
-    setter(true);
     try {
-      if (kind === 'cover') {
-        const cover = await uploadProfileCover(asset.uri, asset.mimeType || 'image/jpeg');
-        setDetail('cover_path', cover.path);
-        setDetail('cover_image_url', cover.url);
-      } else {
-        const url = await uploadAvatar(asset.uri, asset.mimeType || 'image/jpeg');
-        setAvatarUrl(url);
-      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'], allowsEditing: true,
+        aspect: kind === 'cover' ? [16, 9] : [1, 1], quality: 0.82,
+      });
+      if (result.canceled || !result.assets?.[0]) return;
+      const asset = result.assets[0];
+      const setter = kind === 'cover' ? setUploadingCover : setUploadingPhoto;
+      setMediaError('');
+      if (kind === 'cover') setCoverPreviewUri(asset.uri);
+      else setAvatarPreviewUri(asset.uri);
+      setter(true);
+      try {
+        const uploadSource = asset.file || asset.uri;
+        if (kind === 'cover') {
+          const cover = await uploadProfileCover(uploadSource, asset.mimeType || 'image/jpeg');
+          setDetail('cover_path', cover.path);
+          setDetail('cover_image_url', cover.url);
+          setCoverPreviewUri(null);
+        } else {
+          const url = await uploadAvatar(uploadSource, asset.mimeType || 'image/jpeg');
+          setAvatarUrl(url);
+          setAvatarPreviewUri(null);
+        }
+      } catch (err) {
+        setMediaError(err?.message || 'The image could not be uploaded. Please try again.');
+      } finally { setter(false); }
     } catch (err) {
-      Alert.alert(kind === 'cover' ? "Couldn't update cover" : "Couldn't update photo", err.message || 'Please try again.');
-    } finally {
-      setter(false);
+      setMediaError(err?.message || 'The image picker could not be opened. Please try again.');
     }
   }
 
@@ -147,18 +158,19 @@ export default function EditProfileScreen({ navigation }) {
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl }}>
           <Section title="Profile appearance">
             <TouchableOpacity onPress={() => chooseImage('cover')} disabled={uploadingCover} style={[styles.cover, { backgroundColor: colors.surfaceElevated, borderRadius: radii.md }]}>
-              {details.cover_image_url ? <Image source={{ uri: details.cover_image_url }} resizeMode="cover" style={StyleSheet.absoluteFillObject} /> : <Ionicons name="image-outline" size={26} color={colors.textSecondary} />}
+              {(coverPreviewUri || details.cover_image_url) ? <Image source={{ uri: coverPreviewUri || details.cover_image_url }} resizeMode="cover" style={StyleSheet.absoluteFillObject} /> : <Ionicons name="image-outline" size={26} color={colors.textSecondary} />}
               {uploadingCover ? <ActivityIndicator color={colors.primary} /> : <Text style={[typography.caption, { color: colors.textSecondary }]}>Add or change cover image</Text>}
             </TouchableOpacity>
             <View style={{ alignItems: 'center', marginVertical: spacing.md }}>
               <TouchableOpacity onPress={() => chooseImage('avatar')} disabled={uploadingPhoto} style={styles.avatarWrap} accessibilityLabel="Change profile picture">
-                <Avatar name={name || 'You'} color={user?.avatarColor || colors.primary} size={96} imageUrl={avatarUrl} />
+                <Avatar name={name || 'You'} color={user?.avatarColor || colors.primary} size={96} imageUrl={avatarPreviewUri || avatarUrl} />
                 <View style={[styles.cameraBadge, { backgroundColor: colors.primary, borderColor: colors.surface }]}>
                   {uploadingPhoto ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="camera" size={16} color="#fff" />}
                 </View>
               </TouchableOpacity>
               <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Profile photo</Text>
             </View>
+            {mediaError ? <Text accessibilityRole="alert" style={[typography.caption, { color: '#D64545', marginBottom: spacing.sm }]}>{mediaError}</Text> : null}
             <Field label="Display name" value={name} onChangeText={setName} placeholder="Your name" />
             <Field label="Username" value={username} onChangeText={setUsername} placeholder="your_username" />
             <Field label="About / status" value={status} onChangeText={setStatus} placeholder="Hey there, I'm using ZannyChat" />
