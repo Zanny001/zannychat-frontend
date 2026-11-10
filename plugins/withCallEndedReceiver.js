@@ -84,6 +84,19 @@ function withCallEndedReceiver(config) {
       throw new Error('withCallEndedReceiver: expo-callkit-telecom iOS CallManager was not found');
     }
     let manager = fs.readFileSync(managerPath, 'utf8');
+    if (!manager.includes('import Security')) manager = manager.replace('import CallKit', 'import CallKit\\nimport Security');
+    if (!manager.includes('zannychatSendNativeEndEvent')) {
+      const helpers = "\nprivate let ZANNYCHAT_BACKEND_URL = \"__ZANNYCHAT_BACKEND_URL__\"\nprivate let zannychatKeychainService = \"com.zannychat.native-call-mapping\"\n\nprivate func zannychatReadMapping(_ id: UUID) -> [String: String]? {\n  let query: [String: Any] = [\n    kSecClass as String: kSecClassGenericPassword,\n    kSecAttrService as String: zannychatKeychainService,\n    kSecAttrAccount as String: id.uuidString,\n    kSecReturnData as String: true,\n    kSecMatchLimit as String: kSecMatchLimitOne,\n  ]\n  var result: CFTypeRef?\n  guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,\n    let data = result as? Data,\n    let mapping = try? JSONSerialization.jsonObject(with: data) as? [String: String]\n  else { return nil }\n  return mapping\n}\n\nprivate func zannychatStoreMapping(_ id: UUID, serverCallId: String, token: String, origin: String) {\n  guard let data = try? JSONSerialization.data(withJSONObject: [\n    \"serverCallId\": serverCallId, \"token\": token, \"origin\": origin,\n  ]) else { return }\n  let query: [String: Any] = [\n    kSecClass as String: kSecClassGenericPassword,\n    kSecAttrService as String: zannychatKeychainService,\n    kSecAttrAccount as String: id.uuidString,\n  ]\n  let attributes: [String: Any] = [\n    kSecValueData as String: data,\n    kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,\n  ]\n  let status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)\n  if status == errSecItemNotFound {\n    var addQuery = query\n    attributes.forEach { addQuery[$0.key] = $0.value }\n    SecItemAdd(addQuery as CFDictionary, nil)\n  }\n  UserDefaults.standard.set(id.uuidString, forKey: \"zannychat.callkit.nativeForServer.\\(serverCallId)\")\n}\n\nprivate func zannychatRemoveMapping(_ id: UUID, serverCallId: String?) {\n  let query: [String: Any] = [\n    kSecClass as String: kSecClassGenericPassword,\n    kSecAttrService as String: zannychatKeychainService,\n    kSecAttrAccount as String: id.uuidString,\n  ]\n  SecItemDelete(query as CFDictionary)\n  if let serverCallId {\n    UserDefaults.standard.removeObject(forKey: \"zannychat.callkit.nativeForServer.\\(serverCallId)\")\n  }\n}\n\nprivate func zannychatSendNativeEndEvent(serverCallId: String, token: String, reason: String, nativeId: UUID) {\n  guard let url = URL(string: ZANNYCHAT_BACKEND_URL.trimmingCharacters(in: CharacterSet(charactersIn: \"/\")) + \"/calls/native-event\"),\n    let body = try? JSONSerialization.data(withJSONObject: [\"callId\": serverCallId, \"token\": token, \"reason\": reason])\n  else { return }\n  var request = URLRequest(url: url)\n  request.httpMethod = \"POST\"\n  request.timeoutInterval = 4\n  request.setValue(\"application/json\", forHTTPHeaderField: \"Content-Type\")\n  request.httpBody = body\n  URLSession.shared.dataTask(with: request) { _, response, _ in\n    guard let http = response as? HTTPURLResponse else { return }\n    let permanentClientError = (400...499).contains(http.statusCode) && http.statusCode != 408 && http.statusCode != 429\n    if (200...299).contains(http.statusCode) || permanentClientError {\n      zannychatRemoveMapping(nativeId, serverCallId: serverCallId)\n    }\n  }.resume()\n}\n\nprivate func zannychatReasonString(_ reason: CXCallEndedReason) -> String {\n  switch reason {\n  case .failed: return \"failed\"\n  case .remoteEnded: return \"remoteEnded\"\n  case .unanswered: return \"unanswered\"\n  case .answeredElsewhere: return \"answeredElsewhere\"\n  case .declinedElsewhere: return \"declinedElsewhere\"\n  @unknown default: return \"unknown\"\n  }\n}\n";
+      const classMarker = 'class CallManager: NSObject {';
+      if (!manager.includes(classMarker)) throw new Error('withCallEndedReceiver: unsupported iOS CallManager class source');
+      manager = manager.replace(classMarker, helpers.replace('__ZANNYCHAT_BACKEND_URL__', String(config.extra?.backendUrl || '').replace(/\\/$/, '')) + classMarker);
+    }
+    if (!manager.includes('func reportZannyChatNativeEnd(for id: UUID')) {
+      const classMarker = 'class CallManager: NSObject {';
+      const method = "\n  func reportZannyChatNativeEnd(for id: UUID, reason: String? = nil) async {\n    let session = await store.session(for: id)\n    let mapping = zannychatReadMapping(id)\n    let serverCallId = session?.incomingCallEvent?.serverCallId ?? mapping?[\"serverCallId\"]\n    let token = (session?.incomingCallEvent?.metadata?[\"serverEventToken\"] as? String) ?? mapping?[\"token\"]\n    let origin = session?.origin.rawValue ?? mapping?[\"origin\"]\n    guard let serverCallId, let token else { return }\n    let resolvedReason = reason ?? (origin == \"incoming\" ? \"declined\" : \"cancelled\")\n    zannychatSendNativeEndEvent(serverCallId: serverCallId, token: token, reason: resolvedReason, nativeId: id)\n  }\n\n";
+      manager = manager.replace(classMarker, classMarker + method);
+    }
+
     if (!manager.includes('import Foundation')) manager = manager.replace('import CallKit', 'import CallKit\nimport Foundation');
     const incomingSignatures = [
       'func reportIncomingCall(event: IncomingCallEvent) async throws {',
@@ -95,7 +108,11 @@ function withCallEndedReceiver(config) {
       const end = manager.indexOf('\n  }', start);
       const section = manager.slice(start, end < 0 ? manager.length : end);
       if (!section.includes('zannychat.callkit.server.\\(event.serverCallId)')) {
-        const idLine = manager.indexOf('    let id = UUID()', start);
+        const idLine = manager.indexOf('    let id = UUID()
+    if let token = event.metadata?["serverEventToken"] as? String {
+      zannychatStoreMapping(id, serverCallId: event.serverCallId, token: token, origin: "incoming")
+    }
+    UserDefaults.standard.set(id.uuidString, forKey: "zannychat.callkit.nativeForServer.\\(event.serverCallId)")', start);
         if (idLine < 0 || (end >= 0 && idLine > end)) {
           throw new Error('withCallEndedReceiver: could not locate incoming CallKit UUID creation');
         }
@@ -106,6 +123,13 @@ function withCallEndedReceiver(config) {
       }
     }
     const reportSignature = 'func reportCallEnded(for id: UUID, reason: CXCallEndedReason) async {';
+    if (!manager.includes('await reportZannyChatNativeEnd(for: id, reason: zannychatReasonString(reason))')) {
+      const reportStart = manager.indexOf(reportSignature);
+      const reportLog = manager.indexOf('    Log.call.debug("Reporting call ended - id: \\(id), reason: \\(reason.rawValue)")', reportStart);
+      if (reportStart < 0 || reportLog < 0) throw new Error('withCallEndedReceiver: could not locate iOS call-end reporting method');
+      const afterLog = reportLog + '    Log.call.debug("Reporting call ended - id: \\(id), reason: \\(reason.rawValue)")'.length;
+      manager = manager.slice(0, afterLog) + '\n    await reportZannyChatNativeEnd(for: id, reason: zannychatReasonString(reason))' + manager.slice(afterLog);
+    }
     if (!manager.includes('UserDefaults.standard.removeObject(forKey: "zannychat.callkit.server.\\(serverCallId)")')) {
       const reportStart = manager.indexOf(reportSignature);
       const reportLog = manager.indexOf('    Log.call.debug("Reporting call ended - id: \\(id), reason: \\(reason.rawValue)")', reportStart);
@@ -125,6 +149,11 @@ function withCallEndedReceiver(config) {
       throw new Error('withCallEndedReceiver: expo-callkit-telecom iOS CallKit delegate was not found');
     }
     let delegate = fs.readFileSync(delegatePath, 'utf8');
+    const localEndMarker = '    Task {\n      // Snapshot the session as ended so the embedded session reflects the terminal state.';
+    if (!delegate.includes('await reportZannyChatNativeEnd(for: action.callUUID')) {
+      if (!delegate.includes(localEndMarker)) throw new Error('withCallEndedReceiver: unsupported iOS end-call action source');
+      delegate = delegate.replace(localEndMarker, '    Task {\n      let endSession = await store.session(for: action.callUUID)\n      let endReason = endSession?.status == .ringing ? (endSession?.origin == .incoming ? "declined" : "cancelled") : nil\n      await reportZannyChatNativeEnd(for: action.callUUID, reason: endReason)\n      // Snapshot the session as ended so the embedded session reflects the terminal state.');
+    }
     const endActionMarker = '      if var session = await store.session(for: action.callUUID) {';
     if (!delegate.includes('zannychat.callkit.server.\\(serverCallId)')) {
       if (!delegate.includes(endActionMarker)) throw new Error('withCallEndedReceiver: unsupported iOS end-call delegate source');
