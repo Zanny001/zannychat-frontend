@@ -56,8 +56,8 @@ function LiveMedia({ creatorMode, moderatorMode, title, comments, reports, showR
                 {!!item.details && <Text style={{ color: '#C5C1D3', fontSize: 12, marginTop: 3 }}>{item.details}</Text>}
                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
                   {item.status === 'open' && <TouchableOpacity onPress={() => onReviewReport(item.id, 'reviewing')}><Text style={{ color: '#B6AFFF', fontWeight: '800', fontSize: 11 }}>Review</Text></TouchableOpacity>}
-                  {item.status !== 'resolved' && <TouchableOpacity onPress={() => onReviewReport(item.id, 'resolved')}><Text style={{ color: '#80D8A8', fontWeight: '800', fontSize: 11 }}>Resolve</Text></TouchableOpacity>}
-                  {item.status !== 'dismissed' && <TouchableOpacity onPress={() => onReviewReport(item.id, 'dismissed')}><Text style={{ color: '#F0B4C0', fontWeight: '800', fontSize: 11 }}>Dismiss</Text></TouchableOpacity>}
+                  {['open','reviewing'].includes(item.status) && <TouchableOpacity onPress={() => onReviewReport(item.id, 'resolved')}><Text style={{ color: '#80D8A8', fontWeight: '800', fontSize: 11 }}>Resolve</Text></TouchableOpacity>}
+                  {['open','reviewing'].includes(item.status) && <TouchableOpacity onPress={() => onReviewReport(item.id, 'dismissed')}><Text style={{ color: '#F0B4C0', fontWeight: '800', fontSize: 11 }}>Dismiss</Text></TouchableOpacity>}
                 </View>
               </View>
             )} ListEmptyComponent={<Text style={{ color: '#AAA7BD', fontSize: 12 }}>No reports have been submitted.</Text>} />
