@@ -1,8 +1,14 @@
 {
   "platforms": [
+    "ios",
     "android"
   ],
   "android": {
+    "modules": [
+      "expo.modules.zannychatcallmapping.ZannyChatNativeCallMappingModule"
+    ]
+  },
+  "ios": {
     "modules": [
       "expo.modules.zannychatcallmapping.ZannyChatNativeCallMappingModule"
     ]
