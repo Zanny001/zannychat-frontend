@@ -14,6 +14,7 @@ export default function LiveHubScreen({ navigation }) {
   const [streams, setStreams] = useState([]);
   const [invitations, setInvitations] = useState([]);
   const [followingIds, setFollowingIds] = useState([]);
+  const [followingCreators, setFollowingCreators] = useState([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [visibility, setVisibility] = useState('public');
@@ -36,6 +37,7 @@ export default function LiveHubScreen({ navigation }) {
       ]);
       const allStreams = [...(publicResult?.streams || []), ...(followedResult?.streams || [])];
       setStreams([...new Map(allStreams.map((item) => [item.id, item])).values()]);
+      setFollowingCreators(followResult?.following || []);
       setFollowingIds((followResult?.following || []).map((item) => item.creator_id));
       setInvitations((inviteResult?.invitations || []).filter((item) => item.stream));
       setError('');
@@ -109,8 +111,10 @@ export default function LiveHubScreen({ navigation }) {
     try {
       await backendFetch(`/live/creators/${creatorId}/follow`, { method: isFollowing ? 'DELETE' : 'POST' });
       setFollowingIds((current) => isFollowing ? current.filter((id) => id !== creatorId) : [...current, creatorId]);
-      if (isFollowing) setStreams((current) => current.filter((item) => item.creator_id !== creatorId || item.visibility === 'public'));
-      else refresh();
+      if (isFollowing) {
+        setFollowingCreators((current) => current.filter((item) => item.creator_id !== creatorId));
+        setStreams((current) => current.filter((item) => item.creator_id !== creatorId || item.visibility === 'public'));
+      } else refresh();
     } catch (e) {
       Alert.alert('Could not update follow', e?.message || 'Please try again.');
     } finally {
@@ -189,6 +193,21 @@ export default function LiveHubScreen({ navigation }) {
                     </TouchableOpacity>
                   </View>
                 ))}
+              </View>
+            )}
+            {followingCreators.length > 0 && (
+              <View style={{ paddingHorizontal: 20, paddingTop: 18 }}>
+                <Text style={{ color: '#171526', fontSize: 16, fontWeight: '900', marginBottom: 8 }}>Creators you follow</Text>
+                <ScrollView nestedScrollEnabled style={{ maxHeight: 130 }} contentContainerStyle={{ gap: 6 }}>
+                  {followingCreators.map((creator) => (
+                    <View key={creator.creator_id} style={{ backgroundColor: '#FFFFFF', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, flexDirection: 'row', alignItems: 'center' }}>
+                      <Text numberOfLines={1} style={{ color: '#373448', fontWeight: '700', flex: 1 }}>{creator.name}</Text>
+                      <TouchableOpacity disabled={busy} onPress={() => toggleFollow(creator.creator_id)}>
+                        <Text style={{ color: '#6C5CE7', fontWeight: '800', fontSize: 11 }}>Unfollow</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </ScrollView>
               </View>
             )}
             <View style={{ paddingHorizontal: 20, paddingTop: 22, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
