@@ -16,13 +16,13 @@ test('incoming call screen starts and always stops its ringtone and vibration', 
 });
 
 test('outgoing call screen plays ringback until accepted, terminal, cancelled, or unmounted', () => {
-  assert.ok(outgoing.includes('startCallTone()'));
+  assert.ok(outgoing.includes("startCallTone('outgoing')"));
   assert.ok(outgoing.includes('stopCallTone()'));
   assert.ok(outgoing.includes("next.status === 'accepted'"));
   assert.ok(outgoing.includes('isTerminalCallStatus(next.status)'));
 });
 
-test('ringtone player uses a bundled local source and a single looping player', () => {
+test('ringtone service uses separate bundled looping sources for incoming and outgoing calls', () => {
   assert.ok(audio.includes("require('../../assets/sounds/call_ring.wav')"));
   assert.ok(audio.includes("require('../../assets/sounds/call_dialtone.wav')"));
   assert.ok(outgoing.includes("startCallTone('outgoing')"));
