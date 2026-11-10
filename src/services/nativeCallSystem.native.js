@@ -73,6 +73,26 @@ export function initializeNativeCallSystem(callbacks = {}) {
   return () => subscriptions.forEach((subscription) => subscription?.remove?.());
 }
 
+export async function setPendingNativeCallMapping(serverCallId, token) {
+  if (!serverCallId || !token || !nativeMappingModule) return false;
+  try {
+    return Boolean(await nativeMappingModule.setPendingCallMapping(serverCallId, token));
+  } catch (error) {
+    console.warn('[calls] could not persist pending native call mapping:', error?.message || error);
+    return false;
+  }
+}
+
+export async function bindPendingNativeCallMapping(nativeCallId) {
+  if (!nativeCallId || !nativeMappingModule) return false;
+  try {
+    return Boolean(await nativeMappingModule.bindPendingCallMapping(nativeCallId));
+  } catch (error) {
+    console.warn('[calls] could not bind pending native call mapping:', error?.message || error);
+    return false;
+  }
+}
+
 export async function registerNativeCallMapping(nativeCallId, serverCallId, token) {
   if (!nativeCallId || !serverCallId || !token || !nativeMappingModule) return false;
   try {
