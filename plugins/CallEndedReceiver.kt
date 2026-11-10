@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import org.json.JSONObject
+import expo.modules.zannychatcallmapping.NativeCallMappingCrypto
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -33,8 +34,8 @@ class CallEndedReceiver : BroadcastReceiver() {
         // remains available to this receiver when the JS runtime is killed.
         val outgoingMapping = if (incomingCall == null && nativeCallId.isNotBlank()) {
             context.getSharedPreferences("zannychat_native_call_mapping", Context.MODE_PRIVATE)
-                .getString(nativeCallId, null)?.let { raw ->
-                    try { JSONObject(raw) } catch (_: Exception) { null }
+                .getString(nativeCallId, null)?.let { encrypted ->
+                    try { JSONObject(NativeCallMappingCrypto.decrypt(encrypted)) } catch (_: Exception) { null }
                 }
         } else null
         val callId = incomingCall?.optString("serverCallId", "")
