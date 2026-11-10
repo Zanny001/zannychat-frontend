@@ -32,11 +32,15 @@ class CallEndedReceiver : BroadcastReceiver() {
         // Outgoing sessions have no incomingCallEvent, so resolve their
         // call-scoped credential from app-private SharedPreferences. This
         // remains available to this receiver when the JS runtime is killed.
-        val outgoingMapping = if (incomingCall == null && nativeCallId.isNotBlank()) {
-            context.getSharedPreferences("zannychat_native_call_mapping", Context.MODE_PRIVATE)
-                .getString(nativeCallId, null)?.let { encrypted ->
-                    try { JSONObject(NativeCallMappingCrypto.decrypt(encrypted)) } catch (_: Exception) { null }
-                }
+        val outgoingMapping = if (incomingCall == null
+            && session.optString("origin") == "outgoingApp"
+            && nativeCallId.isNotBlank()) {
+            val prefs = context.getSharedPreferences("zannychat_native_call_mapping", Context.MODE_PRIVATE)
+            val encrypted = prefs.getString(nativeCallId, null)
+                ?: prefs.getString("pending_outgoing_call", null)
+            encrypted?.let {
+                try { JSONObject(NativeCallMappingCrypto.decrypt(it)) } catch (_: Exception) { null }
+            }
         } else null
         val callId = incomingCall?.optString("serverCallId", "")
             ?: outgoingMapping?.optString("serverCallId", "")
@@ -77,7 +81,7 @@ class CallEndedReceiver : BroadcastReceiver() {
                 Log.i(TAG, "Native call reconciliation returned HTTP $responseCode")
                 if (responseCode in 200..299 && nativeCallId.isNotBlank() && outgoingMapping != null) {
                     context.getSharedPreferences("zannychat_native_call_mapping", Context.MODE_PRIVATE)
-                        .edit().remove(nativeCallId).apply()
+                        .edit().remove(nativeCallId).remove("pending_outgoing_call").apply()
                 }
             } catch (error: Exception) {
                 Log.w(TAG, "Native call reconciliation failed: ${error.message}")
