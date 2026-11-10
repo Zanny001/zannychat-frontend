@@ -4,11 +4,12 @@ import fs from 'node:fs';
 
 const screen = fs.readFileSync(new URL('./LiveStreamScreen.js', import.meta.url), 'utf8');
 
-test('LIVE creator-appointed moderators receive moderation controls without media publishing privileges', () => {
+test('LIVE creator and approved guest publishing roles receive media publishing controls', () => {
   assert.ok(screen.includes('connection?.canModerate'));
   assert.ok(screen.includes('moderatorMode &&'));
-  assert.ok(screen.includes('video={creatorMode}'));
-  assert.ok(screen.includes('audio={creatorMode}'));
+  assert.ok(screen.includes('video={publisherMode}'));
+  assert.ok(screen.includes('audio={publisherMode}'));
+  assert.ok(screen.includes("connection?.role === 'guest'"));
 });
 
 test('LIVE moderator screen can load reports and resolve or dismiss them', () => {
