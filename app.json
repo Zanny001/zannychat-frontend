@@ -84,7 +84,7 @@
         {
           "color": "#FF6A4D",
           "sounds": [
-            "./assets/sounds/call-ring.wav"
+            "./assets/sounds/call_ring.wav"
           ]
         }
       ],
@@ -144,12 +144,12 @@
         "expo-callkit-telecom",
         {
           "sounds": [
-            "./assets/sounds/call-ring.wav",
-            "./assets/sounds/call-dialtone.wav"
+            "./assets/sounds/call_ring.wav",
+            "./assets/sounds/call_dialtone.wav"
           ],
-          "defaultRingtoneIos": "call-ring.wav",
-          "defaultRingtoneAndroid": "call-ring.wav",
-          "defaultDialtone": "call-dialtone.wav",
+          "defaultRingtoneIos": "call_ring.wav",
+          "defaultRingtoneAndroid": "call_ring.wav",
+          "defaultDialtone": "call_dialtone.wav",
           "incomingCallTimeout": 45,
           "outgoingCallTimeout": 60,
           "fulfillAnswerCallTimeout": 30,
