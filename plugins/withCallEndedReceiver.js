@@ -32,6 +32,7 @@ function withCallEndedReceiver(config) {
     let messaging = fs.readFileSync(messagingPath, 'utf8');
     if (!messaging.includes('zannychatFindOutgoingCallSession')) {
       const imports = [
+        'import expo.modules.zannychatcallmapping.NativeCallMappingCrypto',
         'import android.content.Context',
         'import android.util.Base64',
         'import java.security.KeyStore',
@@ -89,6 +90,19 @@ function withCallEndedReceiver(config) {
       const processMarker = '    private fun processCallEnded(push: CallEndedPush) {';
       if (!messaging.includes(processMarker)) throw new Error('withCallEndedReceiver: unsupported Android call-ended handler source');
       messaging = messaging.replace(processMarker, method + processMarker);
+      const incomingReport = '            CallManager.shared.reportIncomingCall(event)';
+      const incomingReportWithMapping = `            CallManager.shared.reportIncomingCall(event)
+            val incomingSession = CallStore.sessionForServerCallId(event.serverCallId)
+            val eventToken = event.metadata?.get("serverEventToken") as? String
+            if (incomingSession != null && !eventToken.isNullOrBlank()) {
+                val mapping = JSONObject().put("serverCallId", event.serverCallId).put("token", eventToken).put("origin", "incoming").toString()
+                applicationContext.getSharedPreferences("zannychat_native_call_mapping", Context.MODE_PRIVATE)
+                    .edit().putString(incomingSession.id.toString(), NativeCallMappingCrypto.encrypt(mapping)).apply()
+            }`;
+      if (!messaging.includes('NativeCallMappingCrypto.encrypt(mapping)')) {
+        if (!messaging.includes(incomingReport)) throw new Error('withCallEndedReceiver: unsupported Android incoming-call handler source');
+        messaging = messaging.replace(incomingReport, incomingReportWithMapping);
+      }
       messaging = messaging.replace(
         '            val session = CallStore.sessionForServerCallId(push.serverCallId)',
         '            val session = CallStore.sessionForServerCallId(push.serverCallId) ?: zannychatFindOutgoingCallSession(push.serverCallId)',
