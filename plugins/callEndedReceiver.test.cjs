@@ -27,6 +27,10 @@ test('Android killed-app receiver reconciles native end and reported-end events'
   assert.ok(plugin.includes('reportZannyChatNativeEnd(for: action.callUUID'));
   assert.ok(plugin.includes('zannychat.callkit.nativeForServer'));
   assert.ok(plugin.includes('CXCallObserver().calls'));
+  assert.ok(plugin.includes('zannychatFindOutgoingCallSession'));
+  assert.ok(plugin.includes('AndroidKeyStore'));
+  assert.ok(plugin.includes('AES/GCM/NoPadding'));
+  assert.ok(plugin.includes('pending_outgoing_call'));
   assert.ok(plugin.includes('UserDefaults.standard.set(id.uuidString'));
   assert.ok(plugin.includes('UserDefaults.standard.removeObject'));
 });
