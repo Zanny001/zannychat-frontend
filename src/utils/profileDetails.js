@@ -6,7 +6,7 @@
 const PROFILE_FIELDS = [
   { key: 'pronouns', aliases: ['pronouns'], label: 'Pronouns', icon: 'person-outline' },
   { key: 'location', aliases: ['location', 'city', 'city_name'], label: 'Location', icon: 'location-outline' },
-  { key: 'work', aliases: ['work', 'workplace', 'company', 'organization'], label: 'Work', icon: 'briefcase-outline' },
+  { key: 'work', aliases: ['occupation', 'work', 'workplace', 'company', 'organization'], label: 'Occupation', icon: 'briefcase-outline' },
   { key: 'website', aliases: ['website', 'website_url', 'web_url'], label: 'Website', icon: 'globe-outline' },
   { key: 'birthday', aliases: ['birthday', 'birth_date'], label: 'Birthday', icon: 'gift-outline' },
   { key: 'languages', aliases: ['languages', 'language'], label: 'Languages', icon: 'chatbubbles-outline' },

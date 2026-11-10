@@ -5,6 +5,8 @@ import Avatar from '../components/Avatar';
 import { isTerminalCallStatus } from '../utils/callPolicy';
 import { subscribeToCallSession, updateCallStatus } from '../services/calls';
 import { supabase } from '../services/supabaseClient';
+import { startCallTone, stopCallTone } from '../services/callAudio';
+import { endNativeCall } from '../services/nativeCallSystem';
 
 export default function OutgoingCallScreen({ route, navigation }) {
   const { call: initialCall, callType = 'audio', participantName = 'ZannyChat contact', avatarColor = '#6C5CE7' } = route.params || {};
@@ -16,17 +18,21 @@ export default function OutgoingCallScreen({ route, navigation }) {
   const completedRef = useRef(false);
 
   useEffect(() => {
-    if (!initialCall?.id) return undefined;
+    if (!initialCall?.id || initialCall.status !== 'ringing' || new Date(initialCall.expires_at).getTime() <= Date.now()) return undefined;
     activeRef.current = true;
+    startCallTone('outgoing');
     let unsubscribe = () => {};
     let timeout;
     const finish = (next) => {
       if (!activeRef.current || completedRef.current || !next) return;
       setCall(next);
       if (next.status === 'accepted') {
+        stopCallTone();
         completedRef.current = true;
-        navigation.replace('Call', { call: next, callType: next.call_type, isCaller: true, participantName, avatarColor });
+        navigation.replace('Call', { call: next, callType: next.call_type, isCaller: true, participantName, avatarColor, nativeCallId: initialCall.nativeCallId });
       } else if (isTerminalCallStatus(next.status)) {
+        stopCallTone();
+        if (initialCall.nativeCallId) endNativeCall(initialCall.nativeCallId).catch(() => {});
         completedRef.current = true;
         setStatusText(next.status === 'declined' ? 'Call declined' : next.status === 'missed' ? 'No answer' : 'Call ended');
         timeout = setTimeout(() => { if (activeRef.current) navigation.goBack(); }, 800);
@@ -42,20 +48,24 @@ export default function OutgoingCallScreen({ route, navigation }) {
       setRemaining(left);
       if (left <= 0 && !completedRef.current) {
         completedRef.current = true;
+        stopCallTone();
         setStatusText('No answer');
-        updateCallStatus(initialCall.id, 'cancelled').catch(() => {}).finally(() => {
+        updateCallStatus(initialCall.id, 'missed').catch(() => {}).finally(() => {
+          if (initialCall.nativeCallId) endNativeCall(initialCall.nativeCallId).catch(() => {});
           if (activeRef.current) navigation.goBack();
         });
       }
     }, 1000);
-    return () => { activeRef.current = false; clearInterval(timer); if (timeout) clearTimeout(timeout); unsubscribe(); };
+    return () => { activeRef.current = false; clearInterval(timer); if (timeout) clearTimeout(timeout); unsubscribe(); stopCallTone(); };
   }, [initialCall?.id, initialCall?.expires_at, navigation, participantName, avatarColor]);
 
   const cancel = async () => {
     if (busy || completedRef.current) return;
+    stopCallTone();
     setBusy(true);
     completedRef.current = true;
     try { await updateCallStatus(initialCall.id, 'cancelled'); } catch (_) {}
+    if (initialCall.nativeCallId) endNativeCall(initialCall.nativeCallId).catch(() => {});
     navigation.goBack();
   };
 

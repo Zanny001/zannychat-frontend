@@ -1,19 +1,21 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { DeviceEventEmitter, ActivityIndicator, Alert, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { RTCView, mediaDevices, RTCPeerConnection, RTCSessionDescription, RTCIceCandidate } from 'react-native-webrtc';
+import { RTCView, mediaDevices, RTCPeerConnection, RTCSessionDescription, RTCIceCandidate } from '@livekit/react-native-webrtc';
 import { useTheme } from '../theme/ThemeContext';
 import Avatar from '../components/Avatar';
 import { sendCallSignal, subscribeToCallSession, subscribeToCallSignals, updateCallStatus } from '../services/calls';
 import { backendFetch } from '../services/backendClient';
+import { endNativeCall, failNativeIncomingConnected, fulfillNativeIncomingConnected, reportNativeCallEnded, reportNativeOutgoingConnected, setAudioSessionPortOverride, setNativeMuted, setRTCAudioSessionConfiguration } from '../services/nativeCallSystem';
 import { supabase } from '../services/supabaseClient';
 import { formatCallDuration, getCallEndStatus, isTerminalCallStatus } from '../utils/callPolicy';
+import { getIceNetworkNotice } from '../utils/callNetworkStatus';
 
 const FALLBACK_ICE_SERVERS = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
 
 export default function CallScreen({ route, navigation }) {
   const { colors } = useTheme();
-  const { call: initialCall, callId, conversationId, callType = 'audio', isCaller = false, participantName = 'ZannyChat contact', avatarColor } = route.params || {};
+  const { call: initialCall, callId, conversationId, callType = 'audio', isCaller = false, participantName = 'ZannyChat contact', avatarColor, nativeCallId = null, nativeRequestId = null } = route.params || {};
   const [call, setCall] = useState(initialCall || { id: callId, conversation_id: conversationId, call_type: callType, status: isCaller ? 'ringing' : 'accepted' });
   const [phase, setPhase] = useState(isCaller ? 'Calling…' : 'Connecting…');
   const [muted, setMuted] = useState(false);
@@ -23,13 +25,17 @@ export default function CallScreen({ route, navigation }) {
   const [seconds, setSeconds] = useState(0);
   const connectedAtRef = useRef(null);
   const [errorText, setErrorText] = useState('');
+  const [networkNotice, setNetworkNotice] = useState('');
   const pcRef = useRef(null);
   const localRef = useRef(null);
   const remoteDescriptionReady = useRef(false);
   const queuedIce = useRef([]);
   const seenSignals = useRef(new Set());
   const offerStarted = useRef(false);
+  const iceRestartInProgress = useRef(false);
   const activeRef = useRef(true);
+  const nativeConnectedRef = useRef(false);
+  const nativeEndedRef = useRef(false);
   const callIdRef = useRef(initialCall?.id || callId);
   const callRef = useRef(initialCall || { id: callId, conversation_id: conversationId, call_type: callType, status: isCaller ? 'ringing' : 'accepted' });
   const callTypeRef = useRef(initialCall?.call_type || callType);
@@ -40,11 +46,12 @@ export default function CallScreen({ route, navigation }) {
       if (current?.id && ['ringing', 'accepted'].includes(current.status)) {
         const status = getCallEndStatus({ reason, isCaller, status: current.status });
         await updateCallStatus(current.id, status).catch(() => {});
+        if (nativeCallId) endNativeCall(nativeCallId).catch(() => {});
       }
     } finally {
       navigation.goBack();
     }
-  }, [call, isCaller, navigation]);
+  }, [call, isCaller, navigation, nativeCallId]);
 
   useEffect(() => {
     activeRef.current = true;
@@ -61,19 +68,24 @@ export default function CallScreen({ route, navigation }) {
       if (!callIdRef.current) throw new Error('Call session is missing. Please start the call again.');
       if (!supabase) throw new Error('Sign in to ZannyChat before starting a call.');
       const { data: liveCall, error: liveCallError } = await supabase.from('call_sessions').select('id,conversation_id,caller_id,callee_id,call_type,status,created_at,accepted_at,ended_at,expires_at').eq('id', callIdRef.current).maybeSingle();
-      if (liveCallError || !liveCall || liveCall.status !== 'accepted') throw new Error('The call must be accepted before microphone or camera access is enabled.');
+      if (liveCallError || !liveCall || (isCaller ? !['ringing', 'accepted'].includes(liveCall.status) : liveCall.status !== 'accepted')) throw new Error('This call is no longer available. Please start or answer the call again.');
       callRef.current = liveCall;
       if (activeRef.current) setCall(liveCall);
+      setRTCAudioSessionConfiguration(callTypeRef.current === 'video');
       const stream = await mediaDevices.getUserMedia({ audio: true, video: callTypeRef.current === 'video' ? { facingMode: 'user', width: 960, height: 540, frameRate: 24 } : false });
       mountedStream = stream;
       localRef.current = stream;
       if (activeRef.current) setLocalStream(stream);
       let iceServers = FALLBACK_ICE_SERVERS;
+      let networkNoticeMessage = getIceNetworkNotice(null);
       try {
         const config = await backendFetch('/calls/ice-config');
         if (Array.isArray(config?.iceServers) && config.iceServers.length) iceServers = config.iceServers;
-      } catch (_) { /* STUN-only fallback; some NATs require a configured TURN relay. */ }
+        networkNoticeMessage = getIceNetworkNotice(config);
+      } catch (_) {
+      }
       if (!activeRef.current) { stream.getTracks().forEach((track) => track.stop()); return; }
+      setNetworkNotice(networkNoticeMessage);
       pc = new RTCPeerConnection({ iceServers, iceCandidatePoolSize: 4 });
       pcRef.current = pc;
       stream.getTracks().forEach((track) => pc.addTrack(track, stream));
@@ -90,10 +102,40 @@ export default function CallScreen({ route, navigation }) {
       pc.onconnectionstatechange = () => {
         if (!activeRef.current) return;
         const state = pc.connectionState;
-        if (state === 'connected') { connectedAtRef.current = connectedAtRef.current || Date.now(); setPhase('Connected'); }
+        if (state === 'connected') {
+          connectedAtRef.current = connectedAtRef.current || Date.now();
+          setPhase('Connected');
+          if (nativeCallId && !nativeConnectedRef.current) {
+            nativeConnectedRef.current = true;
+            if (isCaller) reportNativeOutgoingConnected(nativeCallId).catch(() => {});
+            else if (nativeRequestId) fulfillNativeIncomingConnected(nativeRequestId).catch(() => {});
+          }
+        }
         else if (state === 'connecting') setPhase('Connecting…');
         else if (state === 'disconnected') setPhase('Reconnecting…');
-        else if (state === 'failed') setErrorText('Connection failed. A TURN relay may be required on this network.');
+        else if (state === 'failed') setErrorText('Connection failed. Trying to restore the media route…');
+      };
+      pc.oniceconnectionstatechange = async () => {
+        if (!activeRef.current) return;
+        const state = pc.iceConnectionState;
+        if (state === 'connected' || state === 'completed') {
+          iceRestartInProgress.current = false;
+          setErrorText('');
+          return;
+        }
+        if ((state === 'disconnected' || state === 'failed') && isCaller && currentStatus === 'accepted' && !iceRestartInProgress.current) {
+          iceRestartInProgress.current = true;
+          try {
+            pc.restartIce?.();
+            const restartOffer = await pc.createOffer({ iceRestart: true });
+            await pc.setLocalDescription(restartOffer);
+            await sendCallSignal({ call: callRef.current, type: 'offer', payload: { type: restartOffer.type, sdp: restartOffer.sdp } });
+            if (activeRef.current) setPhase('Reconnecting…');
+          } catch (_) {
+            iceRestartInProgress.current = false;
+            if (activeRef.current) setErrorText('Unable to restore the call. Check your network and try again.');
+          }
+        }
       };
 
       const processSignal = async (signal) => {
@@ -108,8 +150,8 @@ export default function CallScreen({ route, navigation }) {
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
             await sendCallSignal({ call: callRef.current, type: 'answer', payload: { type: answer.type, sdp: answer.sdp } });
-            if (activeRef.current) setPhase('Ringing…');
-          } else if (signal.signal_type === 'answer' && isCaller && !remoteDescriptionReady.current) {
+            if (activeRef.current) setPhase('Connecting…');
+          } else if (signal.signal_type === 'answer' && isCaller) {
             await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
             remoteDescriptionReady.current = true;
             for (const candidate of queuedIce.current.splice(0)) await pc.addIceCandidate(new RTCIceCandidate(candidate));
@@ -153,6 +195,10 @@ export default function CallScreen({ route, navigation }) {
           maybeStartOffer();
         } else if (isTerminalCallStatus(next.status)) {
           setPhase(next.status === 'declined' ? 'Call declined' : next.status === 'missed' ? 'No answer' : 'Call ended');
+          if (nativeCallId && !nativeEndedRef.current) {
+            nativeEndedRef.current = true;
+            reportNativeCallEnded(nativeCallId, 'remoteEnded').catch(() => {});
+          }
           setTimeout(() => { if (activeRef.current) navigation.goBack(); }, 700);
         }
       };
@@ -170,6 +216,8 @@ export default function CallScreen({ route, navigation }) {
       // must not strand an accepted session and block future calls for both users.
       const current = callRef.current || call;
       if (current?.id && current.status === 'accepted') {
+        if (nativeRequestId) await failNativeIncomingConnected(nativeRequestId).catch(() => {});
+        if (nativeCallId) await reportNativeCallEnded(nativeCallId, 'failed').catch(() => {});
         await updateCallStatus(current.id, 'ended').catch(() => {});
       }
       if (activeRef.current) {
@@ -191,7 +239,7 @@ export default function CallScreen({ route, navigation }) {
   useEffect(() => {
     if (!isCaller || call?.status !== 'ringing' || !call?.id) return undefined;
     const timeout = setTimeout(() => {
-      updateCallStatus(call.id, 'cancelled').catch(() => {});
+      updateCallStatus(call.id, 'missed').catch(() => {});
       if (activeRef.current) setPhase('No answer');
     }, 60000);
     return () => clearTimeout(timeout);
@@ -222,8 +270,24 @@ export default function CallScreen({ route, navigation }) {
   const toggleMute = () => {
     const next = !muted;
     localRef.current?.getAudioTracks?.().forEach((track) => { track.enabled = !next; });
+    if (nativeCallId) setNativeMuted(nativeCallId, next).catch(() => {});
     setMuted(next);
   };
+  const toggleSpeaker = () => {
+    const next = !speakerOn;
+    setAudioSessionPortOverride(next);
+    setSpeakerOn(next);
+  };
+  useEffect(() => {
+    if (!nativeCallId) return undefined;
+    const subscription = DeviceEventEmitter.addListener('zannychat:native-call-muted', ({ id, isMuted }) => {
+      if (id !== nativeCallId) return;
+      localRef.current?.getAudioTracks?.().forEach((track) => { track.enabled = !isMuted; });
+      setMuted(Boolean(isMuted));
+    });
+    return () => subscription.remove();
+  }, [nativeCallId]);
+
   const toggleCamera = () => {
     const next = !cameraOff;
     localRef.current?.getVideoTracks?.().forEach((track) => { track.enabled = !next; });
@@ -255,12 +319,14 @@ export default function CallScreen({ route, navigation }) {
         {!(callType === 'video' && remoteStream) ? <Avatar name={participantName} color={avatarColor || '#6C5CE7'} size={108} /> : null}
         <Text style={styles.name}>{participantName}</Text>
         <Text style={styles.phase}>{phase === 'Connected' ? formatTime(seconds) : phase}</Text>
+        {networkNotice ? <Text style={styles.networkNotice}>{networkNotice}</Text> : null}
         {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
         {phase === 'Unavailable' ? <TouchableOpacity onPress={() => Alert.alert('Call unavailable', errorText || 'Please try again.')} style={styles.retry}><Text style={styles.retryText}>Call details</Text></TouchableOpacity> : null}
         {phase !== 'Connected' && phase !== 'Unavailable' ? <ActivityIndicator style={{ marginTop: 18 }} color="#FFFFFF" /> : null}
       </View>
       <View style={styles.bottom}>
         <View style={styles.controlsRow}>
+          {iconButton(speakerOn ? 'volume-high' : 'volume-low', speakerOn ? 'Speaker' : 'Earpiece', toggleSpeaker, speakerOn)}
           {iconButton(muted ? 'mic-off' : 'mic', muted ? 'Unmute' : 'Mute', toggleMute, muted)}
           {callType === 'video' ? iconButton(cameraOff ? 'videocam-off' : 'videocam', cameraOff ? 'Camera on' : 'Camera off', toggleCamera, cameraOff) : null}
           {callType === 'video' ? iconButton('camera-reverse', 'Flip', switchCamera) : null}
@@ -281,6 +347,7 @@ const styles = StyleSheet.create({
   identity: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28 },
   name: { color: '#FFFFFF', fontSize: 27, fontWeight: '700', marginTop: 24, textAlign: 'center' },
   phase: { color: '#C4C2D2', fontSize: 15, marginTop: 9 },
+  networkNotice: { color: '#F2D28B', fontSize: 12, textAlign: 'center', marginTop: 12, maxWidth: 320, lineHeight: 17 },
   error: { color: '#FFB8C0', fontSize: 13, textAlign: 'center', marginTop: 16, maxWidth: 290 },
   retry: { padding: 10, marginTop: 8 },
   retryText: { color: '#FFFFFF', fontWeight: '600' },

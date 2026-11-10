@@ -3,7 +3,7 @@
 import json, sys
 from pathlib import Path
 root = Path(__file__).resolve().parents[1]
-backend = root.parent / "zannychat-back"
+backend = root.parent / "zannychat-back-github"
 checks=[]
 def check(name, ok, detail=""):
     checks.append((name, bool(ok), detail))

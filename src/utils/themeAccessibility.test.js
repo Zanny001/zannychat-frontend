@@ -27,3 +27,16 @@ test('high contrast strengthens secondary text and boundaries in both modes', ()
   assert.notEqual(dark.textSecondary, standardDark.textSecondary);
   assert.notEqual(dark.border, standardDark.border);
 });
+
+test('outgoing message text has strong contrast against the light bubble surface', () => {
+  const colors = resolveMoodColors(MOODS.ember, 'light');
+  assert.equal(colors.bubbleMine, '#FFE4DC');
+  assert.equal(colors.bubbleMineText, '#512018');
+  assert.equal(colors.bubbleMineMeta, '#744238');
+});
+
+test('outgoing message text remains white on dark signal bubbles', () => {
+  const colors = resolveMoodColors(MOODS.ember, 'dark');
+  assert.equal(colors.bubbleMineText, '#FFFFFF');
+  assert.equal(colors.bubbleMineMeta, 'rgba(255,255,255,0.82)');
+});

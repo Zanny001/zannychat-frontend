@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, StyleSheet, Modal, Image, Pressable, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
@@ -9,6 +9,7 @@ import { hexToRgba } from '../utils/color';
 import { getSafeProfilePhotoUrl } from '../utils/profilePhoto';
 import { getProfilePresence } from '../utils/profilePresence';
 import { getProfileDetails } from '../utils/profileDetails';
+import { getPublicProfileDetails, getPrivateProfileCoverUrl } from '../services/api';
 
 function DetailRow({ icon, label, value, last = false }) {
   const { colors, spacing, typography, radii } = useTheme();
@@ -40,26 +41,50 @@ function QuickAction({ icon, label, onPress, primary = false }) {
 
 export default function PeerProfileScreen({ route, navigation }) {
   const { colors, spacing, radii, typography, mood } = useTheme();
-  const [photoViewerVisible, setPhotoViewerVisible] = useState(false);
   const participant = route.params?.participant || {};
+  const [photoViewerVisible, setPhotoViewerVisible] = useState(false);
+  const [sharedDetails, setSharedDetails] = useState({});
+  const [coverUrl, setCoverUrl] = useState(null);
+  useEffect(() => {
+    const userId = participant.id || participant.user_id;
+    if (!userId) return undefined;
+    let active = true;
+    setSharedDetails({});
+    setCoverUrl(null);
+    getPublicProfileDetails(userId).then(async (details) => {
+      if (!active) return;
+      const visibleDetails = details || {};
+      setSharedDetails(visibleDetails);
+      if (Object.keys(visibleDetails).length > 0) {
+        try {
+          const signedCover = await getPrivateProfileCoverUrl(userId);
+          if (active) setCoverUrl(signedCover || null);
+        } catch (_) {
+          if (active) setCoverUrl(null);
+        }
+      }
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [participant.id, participant.user_id]);
   const conversation = route.params?.conversation;
   const name = participant.name || 'ZannyChat user';
-  const resolvedPresence = getProfilePresence(participant);
+  const resolvedPresence = getProfilePresence({ ...participant, ...sharedDetails });
   const online = resolvedPresence.online;
-  const about = participant.status || participant.about || participant.bio || 'Hey there, I’m using ZannyChat';
+  const about = sharedDetails.about || participant.status || participant.about || participant.bio || 'Hey there, I’m using ZannyChat';
   const joined = participant.createdAt || participant.created_at;
   const joinedDate = joined ? new Date(joined) : null;
   const joinedLabel = joinedDate && !Number.isNaN(joinedDate.getTime()) ? joinedDate.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : null;
   const presence = resolvedPresence.presence;
   const username = participant.username ? `@${String(participant.username).replace(/^@/, '')}` : null;
   const avatarUrl = getSafeProfilePhotoUrl(participant.avatarUrl || participant.avatar_url);
-  const extraDetails = getProfileDetails(participant);
+  const extraDetails = getProfileDetails({ ...participant, ...sharedDetails });
 
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
     <Header title="Profile" onBack={() => navigation.goBack()} right={<View style={{ flexDirection: 'row', alignItems: 'center', paddingRight: spacing.xs }}><View style={[styles.livePill, { backgroundColor: hexToRgba(online ? colors.online : colors.textSecondary, 0.12), borderColor: hexToRgba(online ? colors.online : colors.textSecondary, 0.26) }]}><View style={[styles.liveDot, { backgroundColor: online ? colors.online : colors.textSecondary }]} /><Text style={[typography.caption, { color: online ? colors.online : colors.textSecondary, fontWeight: '700' }]}>{online ? 'ONLINE' : 'CONTACT'}</Text></View></View>} />
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.xl }}>
       <GlassCard style={{ borderRadius: 30, overflow: 'hidden' }} contentStyle={{ padding: 0 }} intensity={48} tintAlpha={0.56}>
         <View style={[styles.heroBackdrop, { backgroundColor: hexToRgba(mood.signal, 0.13) }]}>
+          {coverUrl ? <Image source={{ uri: coverUrl }} style={styles.coverBackdrop} resizeMode="cover" /> : null}
           <View style={[styles.orb, styles.orbOne, { backgroundColor: hexToRgba(mood.signal, 0.15) }]} />
           <View style={[styles.orb, styles.orbTwo, { backgroundColor: hexToRgba(colors.primary, 0.12) }]} />
           <TouchableOpacity
@@ -152,6 +177,7 @@ export default function PeerProfileScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
+  coverBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, height: 190, width: '100%', opacity: 0.24 },
   heroBackdrop: { paddingHorizontal: 20, paddingTop: 28, paddingBottom: 2, alignItems: 'center', overflow: 'hidden' },
   orb: { position: 'absolute', borderRadius: 999 },
   orbOne: { width: 220, height: 220, top: -135, left: -80 },

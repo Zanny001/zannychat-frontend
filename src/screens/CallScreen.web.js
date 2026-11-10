@@ -6,6 +6,7 @@ import { sendCallSignal, subscribeToCallSession, subscribeToCallSignals, updateC
 import { backendFetch } from '../services/backendClient';
 import { supabase } from '../services/supabaseClient';
 import { formatCallDuration, getCallEndStatus, isTerminalCallStatus } from '../utils/callPolicy';
+import { getIceNetworkNotice } from '../utils/callNetworkStatus';
 
 const FALLBACK_ICE_SERVERS = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
 
@@ -19,6 +20,7 @@ export default function CallScreenWeb({ route, navigation }) {
   const [cameraOff, setCameraOff] = useState((initial.call_type || callType) !== 'video');
   const [seconds, setSeconds] = useState(0);
   const [errorText, setErrorText] = useState('');
+  const [networkNotice, setNetworkNotice] = useState('');
   const [remoteStream, setRemoteStream] = useState(null);
   const [localStream, setLocalStream] = useState(null);
   const remoteVideoRef = useRef(null);
@@ -32,6 +34,7 @@ export default function CallScreenWeb({ route, navigation }) {
   const seenSignals = useRef(new Set());
   const connectedAtRef = useRef(null);
   const offerStartedRef = useRef(false);
+  const iceRestartInProgressRef = useRef(false);
 
   const activeCallType = call?.call_type || callType;
 
@@ -81,7 +84,7 @@ export default function CallScreenWeb({ route, navigation }) {
           await pc.setLocalDescription(answer);
           await sendCallSignal({ call: callRef.current, type: 'answer', payload: { type: answer.type, sdp: answer.sdp } });
           setPhase('Connecting…');
-        } else if (signal.signal_type === 'answer' && isCaller && !remoteDescriptionReady.current) {
+        } else if (signal.signal_type === 'answer' && isCaller) {
           await pc.setRemoteDescription(new window.RTCSessionDescription(signal.payload));
           remoteDescriptionReady.current = true;
           for (const candidate of queuedIce.current.splice(0)) await pc.addIceCandidate(new window.RTCIceCandidate(candidate));
@@ -103,8 +106,8 @@ export default function CallScreenWeb({ route, navigation }) {
       const { data: liveCall, error: liveCallError } = await supabase.from('call_sessions')
         .select('id,conversation_id,caller_id,callee_id,call_type,status,created_at,accepted_at,ended_at,expires_at')
         .eq('id', callRef.current.id).maybeSingle();
-      if (liveCallError || !liveCall || liveCall.status !== 'accepted') {
-        throw new Error('The call must be accepted before microphone or camera access is enabled.');
+      if (liveCallError || !liveCall || (isCaller ? !['ringing', 'accepted'].includes(liveCall.status) : liveCall.status !== 'accepted')) {
+        throw new Error('This call is no longer available. Please start or answer the call again.');
       }
       callRef.current = liveCall;
       if (activeRef.current) setCall(liveCall);
@@ -117,11 +120,15 @@ export default function CallScreenWeb({ route, navigation }) {
       if (activeRef.current) setLocalStream(stream);
 
       let iceServers = FALLBACK_ICE_SERVERS;
+      let networkNoticeMessage = getIceNetworkNotice(null);
       try {
         const config = await backendFetch('/calls/ice-config');
         if (Array.isArray(config?.iceServers) && config.iceServers.length) iceServers = config.iceServers;
-      } catch (_) { /* STUN fallback; some networks require TURN. */ }
+        networkNoticeMessage = getIceNetworkNotice(config);
+      } catch (_) {
+      }
       if (!activeRef.current) { stream.getTracks().forEach((track) => track.stop()); return; }
+      setNetworkNotice(networkNoticeMessage);
 
       pc = new window.RTCPeerConnection({ iceServers, iceCandidatePoolSize: 4 });
       pcRef.current = pc;
@@ -145,6 +152,41 @@ export default function CallScreenWeb({ route, navigation }) {
         } else if (pc.connectionState === 'connecting') setPhase('Connecting…');
         else if (pc.connectionState === 'disconnected') setPhase('Reconnecting…');
         else if (pc.connectionState === 'failed') setErrorText('Connection failed. This network may require a TURN relay.');
+      };
+      pc.oniceconnectionstatechange = async () => {
+        if (!activeRef.current) return;
+        const state = pc.iceConnectionState;
+
+        if (state === 'connected' || state === 'completed') {
+          iceRestartInProgressRef.current = false;
+          setErrorText('');
+          return;
+        }
+
+        if (
+          (state === 'disconnected' || state === 'failed') &&
+          isCaller &&
+          currentStatus === 'accepted' &&
+          !iceRestartInProgressRef.current
+        ) {
+          iceRestartInProgressRef.current = true;
+          try {
+            pc.restartIce?.();
+            const restartOffer = await pc.createOffer({ iceRestart: true });
+            await pc.setLocalDescription(restartOffer);
+            await sendCallSignal({
+              call: callRef.current,
+              type: 'offer',
+              payload: { type: restartOffer.type, sdp: restartOffer.sdp },
+            });
+            if (activeRef.current) setPhase('Reconnecting…');
+          } catch (_) {
+            iceRestartInProgressRef.current = false;
+            if (activeRef.current) {
+              setErrorText('Unable to restore the call. Check your network and try again.');
+            }
+          }
+        }
       };
 
       const maybeStartOffer = async () => {
@@ -283,6 +325,7 @@ export default function CallScreenWeb({ route, navigation }) {
         {!(activeCallType === 'video' && remoteStream) ? <Avatar name={participantName} color={avatarColor || '#6C5CE7'} size={108} /> : null}
         <Text style={styles.name}>{participantName}</Text>
         <Text style={styles.phase}>{phase === 'Connected' ? formatCallDuration(seconds) : phase}</Text>
+        {networkNotice ? <Text style={styles.networkNotice}>{networkNotice}</Text> : null}
         {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
         {phase !== 'Connected' && phase !== 'Unavailable' && !isTerminalCallStatus(call?.status) ? <ActivityIndicator style={{ marginTop: 18 }} color="#FFFFFF" /> : null}
       </View>
@@ -307,6 +350,7 @@ const styles = StyleSheet.create({
   identity: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28 },
   name: { color: '#FFFFFF', fontSize: 27, fontWeight: '700', marginTop: 24, textAlign: 'center' },
   phase: { color: '#C4C2D2', fontSize: 15, marginTop: 9 },
+  networkNotice: { color: '#F2D28B', fontSize: 12, textAlign: 'center', marginTop: 12, maxWidth: 320, lineHeight: 17 },
   error: { color: '#FFB8C0', fontSize: 13, textAlign: 'center', marginTop: 16, maxWidth: 340 },
   bottom: { paddingHorizontal: 22, paddingBottom: 28, alignItems: 'center' },
   controlsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 28 },

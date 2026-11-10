@@ -7,6 +7,8 @@ import { clearDraftsForUser } from './drafts';
 import { clearPinnedMessagesForUser } from './pinnedMessages';
 import { supabase, SUPABASE_ENABLED, SUPABASE_URL } from './supabaseClient';
 import { backendFetch, BACKEND_ENABLED } from './backendClient';
+import { getActiveVoipPushToken, getActiveApnsAlertToken } from './voipPushTokenState';
+import { isMissingRpcFunction } from './rpcErrors';
 import {
   CURRENT_USER,
   MOCK_CONTACTS,
@@ -86,6 +88,7 @@ function normalizeProfile(row) {
     avatarUrl: row.avatar_url,
     status: row.status,
     online: row.online,
+    username: row.username || null,
   };
 }
 
@@ -202,7 +205,7 @@ function normalizeConversation(row, currentUserId) {
   const lastMessageAt = formatTimestamp(sortKey);
 
   const mine = participants.find((p) => p.user_id === currentUserId);
-  const myLastReadAt = mine?.last_read_at ? new Date(mine.last_read_at) : null;
+  const myLastReadAt = row.my_last_read_at ? new Date(row.my_last_read_at) : null;
   const unreadCount = messages.filter(
     (m) => m.sender_id !== currentUserId && (!myLastReadAt || new Date(m.created_at) > myLastReadAt)
   ).length;
@@ -279,23 +282,105 @@ export async function getCurrentUser() {
 // Edits made in mock mode persist on mockUser for the session but
 // don't survive an app restart — same honesty tradeoff as everything
 // else that's mock-backed.
-export async function updateProfile({ name, status }) {
+export async function updateProfile({ name, status, username }) {
   if (!SUPABASE_ENABLED) {
     if (name !== undefined) mockUser.name = name;
     if (status !== undefined) mockUser.status = status;
+    if (username !== undefined) mockUser.username = username;
     return mockUser;
   }
 
   const { data: authData } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from('profiles')
-    .update({ ...(name !== undefined && { name }), ...(status !== undefined && { status }) })
+    .update({ ...(name !== undefined && { name }), ...(status !== undefined && { status }), ...(username !== undefined && { username: username || null }) })
     .eq('id', authData?.user?.id)
     .select()
     .single();
 
   if (error) throw error;
   return normalizeProfile(data);
+}
+
+const PROFILE_DETAIL_DEFAULTS = Object.freeze({
+  about: '', occupation: '', location: '', website: '', birthday: null, pronouns: '',
+  cover_image_url: null, cover_path: null, profile_visibility: 'everyone', show_location: false,
+  show_occupation: false, show_website: true, show_birthday: false, show_pronouns: true,
+  show_last_seen: false, show_online_status: true, show_read_receipts: true,
+  photo_visibility: 'everyone', group_invite_permission: 'everyone',
+  call_permission: 'everyone', status_audience: 'contacts',
+});
+
+export async function getMyProfileDetails() {
+  if (!SUPABASE_ENABLED) return { ...PROFILE_DETAIL_DEFAULTS };
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData?.user) throw new Error('Sign in to edit your profile.');
+  const { data, error } = await supabase.from('profile_details').select('*').eq('user_id', authData.user.id).maybeSingle();
+  if (error) throw error;
+  const details = { ...PROFILE_DETAIL_DEFAULTS, ...(data || {}) };
+  details.cover_image_url = details.cover_path
+    ? await getPrivateProfileCoverUrl(authData.user.id)
+    : null;
+  return details;
+}
+
+export async function updateMyProfileDetails(details = {}) {
+  if (!SUPABASE_ENABLED) return { ...PROFILE_DETAIL_DEFAULTS, ...details };
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData?.user) throw new Error('Sign in to edit your profile.');
+  // cover_image_url is a temporary signed URL for rendering only.
+  // Persist only cover_path; never write a signed or public URL to the row.
+  const allowed = Object.keys(PROFILE_DETAIL_DEFAULTS).filter((key) => key !== 'cover_image_url');
+  const row = { user_id: authData.user.id };
+  for (const key of allowed) if (Object.prototype.hasOwnProperty.call(details, key)) row[key] = details[key];
+  if (typeof row.website === 'string' && row.website.trim()) {
+    const candidate = /^[a-z][a-z0-9+.-]*:/i.test(row.website.trim()) ? row.website.trim() : `https://${row.website.trim()}`;
+    const parsed = new URL(candidate);
+    if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname || parsed.username || parsed.password) throw new Error('Enter a valid website URL.');
+    row.website = parsed.href;
+  }
+  if (row.birthday === '') row.birthday = null;
+  const { data, error } = await supabase.from('profile_details').upsert(row, { onConflict: 'user_id' }).select('*').single();
+  if (error) throw error;
+  const saved = { ...PROFILE_DETAIL_DEFAULTS, ...data };
+  saved.cover_image_url = saved.cover_path
+    ? await getPrivateProfileCoverUrl(authData.user.id)
+    : null;
+  return saved;
+}
+
+export async function getPublicProfileDetails(userId) {
+  if (!SUPABASE_ENABLED || !userId) return {};
+  const { data, error } = await supabase.rpc('get_public_profile_details', { p_user_id: userId });
+  if (error) throw error;
+  return data || {};
+}
+
+async function readUploadArrayBuffer(source) {
+  if (source && typeof source !== 'string' && typeof source.arrayBuffer === 'function') return source.arrayBuffer();
+  if (typeof source !== 'string' || !source) throw new Error('The selected media file is unavailable.');
+  const response = await fetch(source);
+  if (!response.ok) throw new Error('Could not read the selected media file.');
+  return response.arrayBuffer();
+}
+
+export async function uploadProfileCover(localUri, mimeType = 'image/jpeg') {
+  if (!SUPABASE_ENABLED) return { path: null, url: localUri };
+  const { data: authData } = await supabase.auth.getUser();
+  const userId = authData?.user?.id;
+  if (!userId) throw new Error('Not signed in');
+  const extension = (mimeType.split('/')[1] || 'jpg').replace(/[^a-z0-9]/gi, '').slice(0, 8) || 'jpg';
+  const objectPath = `${userId}/cover-${Date.now()}.${extension}`;
+  const arrayBuffer = await readUploadArrayBuffer(localUri);
+  const { error: uploadError } = await supabase.storage
+    .from('private-avatars')
+    .upload(objectPath, arrayBuffer, { contentType: mimeType, upsert: true });
+  if (uploadError) throw uploadError;
+  const { data: signed, error: signError } = await supabase.storage
+    .from('private-avatars')
+    .createSignedUrl(objectPath, 3600);
+  if (signError) throw signError;
+  return { path: objectPath, url: signed?.signedUrl || null };
 }
 
 // Uploads a picked photo to the "avatars" bucket and points the
@@ -317,19 +402,61 @@ export async function uploadAvatar(localUri, mimeType = 'image/jpeg') {
   const extension = mimeType.split('/')[1] || 'jpg';
   const path = `${userId}/avatar-${Date.now()}.${extension}`;
 
-  const arrayBuffer = await (await fetch(localUri)).arrayBuffer();
-  const { error: uploadError } = await supabase.storage
+  const arrayBuffer = await readUploadArrayBuffer(localUri);
+  // Dual-write during the compatibility window: private media is the new
+  // authorization path, while the legacy public object and URL remain valid
+  // for older app versions and already-shared image links.
+  const privatePath = `${userId}/${path.split('/').pop()}`;
+  const { error: privateUploadError } = await supabase.storage
+    .from('private-avatars')
+    .upload(privatePath, arrayBuffer, { contentType: mimeType, upsert: true });
+  if (privateUploadError) throw privateUploadError;
+
+  const { error: legacyUploadError } = await supabase.storage
     .from('avatars')
     .upload(path, arrayBuffer, { contentType: mimeType, upsert: true });
-  if (uploadError) throw uploadError;
+  if (legacyUploadError) throw legacyUploadError;
 
   const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(path);
   const avatarUrl = publicUrlData.publicUrl;
-
+  const { error: detailsError } = await supabase.from('profile_details')
+    .upsert({ user_id: userId, avatar_path: privatePath }, { onConflict: 'user_id' });
+  if (detailsError) throw detailsError;
   const { error: updateError } = await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', userId);
   if (updateError) throw updateError;
 
   return avatarUrl;
+}
+
+// Resolves a private cover only after the database checks profile visibility,
+// photo visibility, contact relationship and bidirectional blocks.
+export async function getPrivateProfileCoverUrl(userId, expiresIn = 3600) {
+  if (!SUPABASE_ENABLED || !userId) return null;
+  const { data: coverPath, error } = await supabase.rpc(
+    'get_visible_profile_cover_path',
+    { p_user_id: userId },
+  );
+  if (error) throw error;
+  if (!coverPath || typeof coverPath !== 'string'
+      || !coverPath.startsWith(`${userId}/`) || coverPath.includes('..')) return null;
+  const { data: signed, error: signError } = await supabase.storage
+    .from('private-avatars')
+    .createSignedUrl(coverPath, expiresIn);
+  if (signError) throw signError;
+  return signed?.signedUrl || null;
+}
+
+// Resolves a private avatar only after Storage RLS evaluates the viewer's
+// photo_visibility/contact/block relationship. The public legacy URL remains
+// the fallback until every client has completed the staged cutover.
+export async function getPrivateProfileAvatarUrl(userId, expiresIn = 3600) {
+  if (!SUPABASE_ENABLED || !userId) return null;
+  const { data: avatarPath, error } = await supabase.rpc('get_visible_profile_avatar_path', { p_user_id: userId });
+  if (error) throw error;
+  if (!avatarPath || typeof avatarPath !== 'string' || !avatarPath.startsWith(`${userId}/`) || avatarPath.includes('..')) return null;
+  const { data: signed, error: signError } = await supabase.storage.from('private-avatars').createSignedUrl(avatarPath, expiresIn);
+  if (signError) throw signError;
+  return signed?.signedUrl || null;
 }
 
 export async function signInWithEmail(email, password) {
@@ -479,8 +606,36 @@ export async function getSessionSecurityInfo() {
   };
 }
 
+async function removeVoipTokensBeforeSignOut(scope) {
+  if (!BACKEND_ENABLED || !SUPABASE_ENABLED) return;
+  try {
+    if (scope === 'global') {
+      await backendFetch('/calls/voip-token', {
+        method: 'DELETE',
+        body: JSON.stringify({ all: true }),
+      });
+      return;
+    }
+    // A local sign-out must remove every native push credential for this
+    // device, including the separate standard APNs alert token on iOS.
+    const tokens = [...new Set([getActiveVoipPushToken(), getActiveApnsAlertToken()].filter(Boolean))];
+    for (const token of tokens) {
+      await backendFetch('/calls/voip-token', {
+        method: 'DELETE',
+        body: JSON.stringify({ token }),
+      });
+    }
+  } catch (error) {
+    // Push cleanup is best-effort so a temporary backend outage never traps
+    // the user in an authenticated session. The next sign-in re-registers
+    // the current device token and replaces its previous owner association.
+    console.warn('[calls] VoIP token cleanup during sign-out failed:', error?.message || error);
+  }
+}
+
 export async function signOutThisDevice() {
   if (!SUPABASE_ENABLED || !supabase) throw new Error('Session management requires a connected account.');
+  await removeVoipTokensBeforeSignOut('local');
   const { error } = await supabase.auth.signOut({ scope: 'local' });
   if (error) throw error;
   return { signedOut: true, scope: 'local' };
@@ -488,13 +643,15 @@ export async function signOutThisDevice() {
 
 export async function signOutEverywhere() {
   if (!SUPABASE_ENABLED || !supabase) throw new Error('Session management requires a connected account.');
+  await removeVoipTokensBeforeSignOut('global');
   const { error } = await supabase.auth.signOut({ scope: 'global' });
   if (error) throw error;
   return { signedOut: true, scope: 'global' };
 }
 
 export async function signOut() {
-  if (!SUPABASE_ENABLED) return;
+  if (!SUPABASE_ENABLED || !supabase) return;
+  await removeVoipTokensBeforeSignOut('global');
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }
@@ -510,10 +667,13 @@ export async function fetchContactById(userId) {
   const { data: authData } = await supabase.auth.getUser();
   if (!authData?.user) throw new Error('Sign in before connecting to a contact.');
   if (authData.user.id === userId) throw new Error("That's your own QR code. Scan someone else's code.");
-  const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+  const { data, error } = await supabase.rpc('get_contact_directory', { p_user_id: userId });
   if (error) throw error;
-  if (!data) throw new Error('No ZannyChat profile was found for that QR code.');
-  return normalizeProfile(data);
+  const profile = Array.isArray(data) ? data[0] : null;
+  if (!profile) {
+    throw new Error('profile is private, unavailable, or not discoverable');
+  }
+  return normalizeProfile(profile);
 }
 
 // Private phone discovery: send only numbers the user explicitly selects.
@@ -535,14 +695,9 @@ export async function matchPhoneContacts(phones) {
 export async function fetchContacts() {
   if (!SUPABASE_ENABLED) return MOCK_CONTACTS;
 
-  const { data: authData } = await supabase.auth.getUser();
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .neq('id', authData?.user?.id || '');
-
+  const { data, error } = await supabase.rpc('get_contact_directory');
   if (error) throw error;
-  return data.map(normalizeProfile);
+  return (Array.isArray(data) ? data : []).map(normalizeProfile);
 }
 
 // Paginated since the Oct 2026 audit ("no pagination anywhere"): the
@@ -585,8 +740,8 @@ export async function fetchConversations({ limit = 50, offset = 0 } = {}) {
     .from('conversations')
     .select(
       `id, created_at, name, is_group,
-       conversation_participants(user_id, profiles(*), last_read_at, is_favorite, is_muted, is_archived),
-       messages(sender_id, text, created_at, media_type)`
+       conversation_participants(user_id, profiles(id, name, avatar_color, avatar_url, status, online), is_favorite, is_muted, is_archived),
+       messages!messages_conversation_id_fkey(sender_id, text, created_at, media_type)`
     )
     .order('created_at', { ascending: false, referencedTable: 'messages' })
     .limit(30, { referencedTable: 'messages' })
@@ -594,6 +749,27 @@ export async function fetchConversations({ limit = 50, offset = 0 } = {}) {
     .range(offset, offset + limit - 1);
 
   if (error) throw error;
+
+  let readCursors;
+  const { data: rpcReadCursors, error: readCursorError } = await supabase.rpc('get_my_read_cursors');
+  if (readCursorError) {
+    if (!isMissingRpcFunction(readCursorError, 'get_my_read_cursors')) throw readCursorError;
+    // This RLS-scoped query returns only the signed-in user's own read cursors.
+    if (currentUserId) {
+      const { data: participantRows, error: participantError } = await supabase
+        .from('conversation_participants')
+        .select('conversation_id, last_read_at')
+        .eq('user_id', currentUserId);
+      if (participantError) throw participantError;
+      readCursors = participantRows;
+    } else {
+      readCursors = [];
+    }
+  } else {
+    readCursors = rpcReadCursors;
+  }
+  const readCursorByConversation = new Map((readCursors || []).map((item) => [item.conversation_id, item.last_read_at]));
+  for (const row of data || []) row.my_last_read_at = readCursorByConversation.get(row.id) || null;
 
   // Sorted here (not via .order() in the query) by actual last-activity
   // rather than the conversation row's own created_at, so a thread that
@@ -677,13 +853,12 @@ export async function toggleFavorite(conversationId, isFavorite) {
 export async function fetchParticipantReadState(conversationId) {
   if (!SUPABASE_ENABLED) return {};
 
-  const { data, error } = await supabase
-    .from('conversation_participants')
-    .select('user_id, last_read_at')
-    .eq('conversation_id', conversationId);
+  const { data, error } = await supabase.rpc('get_conversation_read_state', {
+    p_conversation_id: conversationId,
+  });
 
   if (error) throw error;
-  return Object.fromEntries(data.map((row) => [row.user_id, row.last_read_at]));
+  return Object.fromEntries((data || []).map((row) => [row.user_id, row.last_read_at]));
 }
 
 // Live "seen" ticks: fires whenever ANYONE's last_read_at in this
@@ -692,22 +867,21 @@ export async function fetchParticipantReadState(conversationId) {
 // uses, just watching UPDATE on a different table.
 export function subscribeToParticipantUpdates(conversationId, onUpdate) {
   if (!SUPABASE_ENABLED) return () => {};
-
-  const channel = supabase
-    .channel(`participants:${conversationId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'conversation_participants',
-        filter: `conversation_id=eq.${conversationId}`,
-      },
-      (payload) => onUpdate(payload.new)
-    )
-    .subscribe();
-
-  return () => supabase.removeChannel(channel);
+  let active = true;
+  let previous = null;
+  const poll = async () => {
+    try {
+      const state = await fetchParticipantReadState(conversationId);
+      if (!active) return;
+      for (const [user_id, last_read_at] of Object.entries(state)) {
+        if (previous && previous[user_id] !== last_read_at) onUpdate({ user_id, last_read_at });
+      }
+      previous = state;
+    } catch (_) { /* Preserve the last known read state during transient outages. */ }
+  };
+  poll();
+  const timer = setInterval(poll, 5000);
+  return () => { active = false; clearInterval(timer); };
 }
 
 // Starts a conversation with a contact. When the backend is deployed,
@@ -856,22 +1030,25 @@ export async function editMessage(messageId, text) {
   if (error) throw error;
 }
 
-// Soft delete — sets deleted_at, the content stays in the DB (replies
-// may quote it, reports may point at it) but every client renders a
-// "message was deleted" tombstone instead.
-export async function deleteMessage(messageId) {
+// Per-user hiding and sender-only global retraction are enforced by the
+// delete_message RPC. This avoids direct client writes to deletion metadata.
+export async function deleteMessage(messageId, mode = 'everyone') {
+  if (!messageId) throw new Error('A message is required.');
+  if (!['me', 'everyone'].includes(mode)) throw new Error('Invalid deletion mode.');
   if (!SUPABASE_ENABLED) {
     for (const list of Object.values(mockMessageStore)) {
       const found = list.find((m) => m.id === messageId);
-      if (found) found.deletedAt = new Date().toISOString();
+      if (found) {
+        if (mode === 'everyone') found.deletedAt = new Date().toISOString();
+        else found.hiddenForMe = true;
+      }
     }
     return;
   }
-
-  const { error } = await supabase
-    .from('messages')
-    .update({ deleted_at: new Date().toISOString() })
-    .eq('id', messageId);
+  const { error } = await supabase.rpc('delete_message', {
+    p_message_id: messageId,
+    p_mode: mode,
+  });
   if (error) throw error;
 }
 
@@ -1232,7 +1409,7 @@ export async function uploadChatImage(conversationId, localUri, mimeType = 'imag
   const extension = mimeType.split('/')[1] || 'jpg';
   const path = `${conversationId}/${Date.now()}-${Math.round(Math.random() * 1e6)}.${extension}`;
 
-  const arrayBuffer = await (await fetch(localUri)).arrayBuffer();
+  const arrayBuffer = await readUploadArrayBuffer(localUri);
   const { error } = await supabase.storage
     .from('chat-media')
     .upload(path, arrayBuffer, { contentType: mimeType });
@@ -1247,7 +1424,7 @@ export async function uploadChatFile(conversationId, localUri, fileName, mimeTyp
   const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
   const path = `${conversationId}/${Date.now()}-${safeName}`;
 
-  const arrayBuffer = await (await fetch(localUri)).arrayBuffer();
+  const arrayBuffer = await readUploadArrayBuffer(localUri);
   const { error } = await supabase.storage
     .from('chat-media')
     .upload(path, arrayBuffer, { contentType: mimeType || 'application/octet-stream' });
@@ -1261,7 +1438,7 @@ export async function uploadVoiceNote(conversationId, localUri, durationSeconds)
 
   const path = `${conversationId}/${Date.now()}-voice.m4a`;
 
-  const arrayBuffer = await (await fetch(localUri)).arrayBuffer();
+  const arrayBuffer = await readUploadArrayBuffer(localUri);
   const { error } = await supabase.storage
     .from('chat-media')
     .upload(path, arrayBuffer, { contentType: 'audio/m4a' });

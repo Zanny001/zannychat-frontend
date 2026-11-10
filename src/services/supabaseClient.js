@@ -56,6 +56,7 @@ export const supabase = SUPABASE_ENABLED
         storage: authStorage,
         autoRefreshToken: true,
         persistSession: true,
+        flowType: 'pkce',
         detectSessionInUrl: true,
       },
     })

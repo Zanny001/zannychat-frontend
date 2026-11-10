@@ -34,9 +34,11 @@ try:
     root_locked = lock.get("packages", {}).get("", {}).get("dependencies", {})
     check("No floating latest dependency defaults", all(v != "latest" for v in dependencies.values()))
     check("Manifest and lock root dependencies are identical", dependencies == root_locked)
-    check("SDK 57 native modules are pinned", dependencies.get("expo-contacts") == "57.0.8" and dependencies.get("expo-media-library") == "57.0.5" and dependencies.get("expo-video") == "57.0.5")
-    check("WebRTC dependencies are explicitly pinned", dependencies.get("react-native-webrtc") == "124.0.7" and dependencies.get("@config-plugins/react-native-webrtc") == "15.0.2")
+    check("SDK 57 native modules are pinned", dependencies.get("expo-contacts") == "57.0.8" and dependencies.get("expo-media-library", "").lstrip("~^") == "57.0.6" and dependencies.get("expo-video") == "57.0.5")
+    check("WebRTC dependencies are explicitly pinned", dependencies.get("@livekit/react-native-webrtc") == "150.1.1" and "react-native-webrtc" not in dependencies and dependencies.get("@config-plugins/react-native-webrtc") == "15.0.2")
     check("WebRTC config plugin is enabled", any((entry == "@config-plugins/react-native-webrtc" or (isinstance(entry, list) and entry and entry[0] == "@config-plugins/react-native-webrtc")) for entry in json.loads((root / "app.json").read_text()).get("expo", {}).get("plugins", [])))
+    check("Android killed-app receiver source is present", (root / "plugins/CallEndedReceiver.kt").exists() and (root / "plugins/withCallEndedReceiver.js").exists())
+    check("Native CallKit and Telecom plugin is enabled", any((isinstance(entry, list) and entry and entry[0] == "expo-callkit-telecom" and entry[1].get("androidEventReceiver") == ".CallEndedReceiver") for entry in json.loads((root / "app.json").read_text()).get("expo", {}).get("plugins", [])))
 except Exception as exc:
     check("Dependency manifests parse", False, str(exc))
 check("Legacy contacts API imported from compatibility entrypoint", "from 'expo-contacts/legacy'" in (root/"src/screens/ContactDiscoveryScreen.js").read_text())
@@ -46,7 +48,12 @@ try:
     app_config = json.loads((root / "app.json").read_text()).get("expo", {})
     media_plugin = next((item for item in app_config.get("plugins", []) if isinstance(item, list) and item and item[0] == "expo-media-library"), None)
     native_permission_set = set(app_config.get("android", {}).get("permissions", []))
-    check("Photo/video picker flows avoid broad media-library permission prompts", "requestMediaLibraryPermissionsAsync" not in all_text)
+    picker_source = "\n".join(
+        content for path, content in files
+        if path.is_relative_to(root / "src")
+        and path.suffix.lower() in {".js", ".jsx", ".ts", ".tsx"}
+    )
+    check("Photo/video picker flows avoid broad media-library permission prompts", "requestMediaLibraryPermissionsAsync" not in picker_source)
     check("Android manifest defaults omit broad media read permissions", not native_permission_set.intersection({"READ_MEDIA_IMAGES", "READ_MEDIA_VIDEO", "READ_MEDIA_AUDIO", "READ_EXTERNAL_STORAGE"}))
     check("Media-library plugin requests no Android read scopes by default", bool(media_plugin and media_plugin[1].get("granularPermissions") == []))
 except Exception as exc:

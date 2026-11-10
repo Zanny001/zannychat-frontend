@@ -1,45 +1,75 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, Vibration, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Avatar from '../components/Avatar';
 import { isTerminalCallStatus } from '../utils/callPolicy';
 import { subscribeToCallSession, updateCallStatus } from '../services/calls';
+import { startCallTone, stopCallTone } from '../services/callAudio';
+import { answerNativeCall, endNativeCall } from '../services/nativeCallSystem';
 
 export default function IncomingCallScreen({ route, navigation }) {
-  const { call, participantName = 'ZannyChat contact', avatarColor = '#6C5CE7' } = route.params || {};
+  const { call, participantName = 'ZannyChat contact', avatarColor = '#6C5CE7', autoAnswer = false, nativeCallId = null } = route.params || {};
   const [busy, setBusy] = useState(false);
   const closingRef = useRef(false);
+  const autoAnswerHandledRef = useRef(false);
   const [remaining, setRemaining] = useState(() => Math.max(0, Math.ceil((new Date(call?.expires_at || Date.now()).getTime() - Date.now()) / 1000)));
 
   useEffect(() => {
-    if (!call?.id) return undefined;
+    if (!call?.id || call.status !== 'ringing' || new Date(call.expires_at).getTime() <= Date.now()) return undefined;
     let active = true;
+    if (!nativeCallId) {
+      startCallTone();
+      if (Platform.OS === 'android') Vibration.vibrate([0, 900, 600], true);
+      else Vibration.vibrate();
+    }
     const unsubscribe = subscribeToCallSession(call.id, (next) => {
-      if (active && isTerminalCallStatus(next.status) && !closingRef.current) { closingRef.current = true; navigation.goBack(); }
+      if (active && isTerminalCallStatus(next.status) && !closingRef.current) {
+        stopCallTone();
+        Vibration.cancel();
+        closingRef.current = true;
+        if (nativeCallId) endNativeCall(nativeCallId).catch(() => {});
+        navigation.goBack();
+      }
     });
     const timer = setInterval(() => {
       const left = Math.max(0, Math.ceil((new Date(call.expires_at).getTime() - Date.now()) / 1000));
       setRemaining(left);
       if (left <= 0 && !closingRef.current) {
+        stopCallTone(); Vibration.cancel();
         closingRef.current = true;
         clearInterval(timer);
-        updateCallStatus(call.id, 'declined').catch(() => {}).finally(() => { if (active) navigation.goBack(); });
+        updateCallStatus(call.id, 'missed').catch(() => {}).finally(() => {
+          if (nativeCallId) endNativeCall(nativeCallId).catch(() => {});
+          if (active) navigation.goBack();
+        });
       }
     }, 1000);
-    return () => { active = false; clearInterval(timer); unsubscribe(); };
-  }, [call?.id, call?.expires_at, navigation]);
+    return () => { active = false; clearInterval(timer); unsubscribe(); if (!nativeCallId) stopCallTone(); Vibration.cancel(); };
+  }, [call?.id, call?.expires_at, navigation, nativeCallId]);
 
   const decline = async () => {
     if (busy || closingRef.current) return;
+    if (!nativeCallId) stopCallTone();
+    Vibration.cancel();
     closingRef.current = true;
     setBusy(true);
     try { await updateCallStatus(call.id, 'declined'); } catch (_) {}
+    if (nativeCallId) endNativeCall(nativeCallId).catch(() => {});
     navigation.goBack();
   };
 
   const answer = async () => {
     if (busy || closingRef.current) return;
+    if (!nativeCallId) stopCallTone();
+    Vibration.cancel();
     setBusy(true);
+    if (nativeCallId) {
+      answerNativeCall(nativeCallId).catch((error) => {
+        console.warn('[calls] native answer action failed:', error?.message || error);
+        setBusy(false);
+      });
+      return;
+    }
     try {
       const accepted = await updateCallStatus(call.id, 'accepted');
       if (accepted.status !== 'accepted') throw new Error('Call expired');
@@ -51,6 +81,12 @@ export default function IncomingCallScreen({ route, navigation }) {
       navigation.goBack();
     }
   };
+
+  useEffect(() => {
+    if (!autoAnswer || !call?.id || autoAnswerHandledRef.current) return;
+    autoAnswerHandledRef.current = true;
+    answer();
+  }, [autoAnswer, call?.id]);
 
   const isVideo = call?.call_type === 'video';
   return (

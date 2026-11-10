@@ -1,6 +1,6 @@
 {
   "name": "zannychat",
-  "version": "1.2.237",
+  "version": "1.2.243",
   "private": true,
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
@@ -9,12 +9,14 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "fix-versions": "npx expo install --fix",
-    "test:unit": "node --experimental-default-type=module --test src/utils/*.test.js src/services/*.test.js",
+    "test:unit": "node --experimental-default-type=module --test src/utils/*.test.js src/services/*.test.js src/screens/*.contract.test.js",
     "audit:release": "python3 scripts/audit_frontend_release.py",
     "audit:contract": "python3 scripts/check_release_contract.py",
     "audit:readiness": "python3 scripts/release_readiness.py",
     "audit:integrity": "python3 scripts/refresh_registry_integrity.py",
-    "test:integrity": "python3 -m unittest discover -s tests -p \"test_*.py\""
+    "test:integrity": "python3 -m unittest discover -s tests -p \"test_*.py\"",
+    "test:call-recovery": "node --test src/screens/callNetworkRecovery.contract.test.cjs",
+    "test:native-call-receiver": "node --test plugins/callEndedReceiver.test.cjs"
   },
   "dependencies": {
     "@config-plugins/react-native-webrtc": "15.0.2",
@@ -26,7 +28,8 @@
     "@react-navigation/native": "7.5.0",
     "@react-navigation/native-stack": "7.20.0",
     "@supabase/supabase-js": "2.117.3",
-    "expo": "~57.0.31",
+    "expo": "~57.0.32",
+    "expo-asset": "~57.0.20",
     "expo-audio": "57.0.5",
     "expo-blur": "57.0.3",
     "expo-camera": "57.0.6",
@@ -36,13 +39,14 @@
     "expo-document-picker": "57.0.3",
     "expo-file-system": "57.0.7",
     "expo-font": "57.0.4",
-    "expo-image-picker": "57.0.20",
+    "expo-image-picker": "~57.0.21",
     "expo-linking": "~57.0.13",
-    "expo-media-library": "57.0.5",
-    "expo-notifications": "~57.0.24",
-    "expo-sharing": "~57.0.24",
-    "expo-splash-screen": "~57.0.10",
+    "expo-media-library": "~57.0.6",
+    "expo-notifications": "~57.0.25",
+    "expo-sharing": "~57.0.25",
+    "expo-splash-screen": "~57.0.11",
     "expo-status-bar": "57.0.1",
+    "expo-system-ui": "~57.0.4",
     "expo-video": "57.0.5",
     "expo-web-browser": "~57.0.3",
     "react": "19.2.3",
@@ -56,8 +60,11 @@
     "react-native-svg": "15.15.4",
     "react-native-url-polyfill": "4.0.0",
     "react-native-web": "^0.21.2",
-    "react-native-webrtc": "124.0.7",
     "react-native-worklets": "0.10.1",
-    "expo-asset": "~57.0.20"
+    "@livekit/react-native-webrtc": "150.1.1",
+    "expo-callkit-telecom": "1.0.1",
+    "@livekit/react-native": "3.1.0",
+    "@livekit/react-native-expo-plugin": "1.1.0",
+    "livekit-client": "2.23.0"
   }
 }

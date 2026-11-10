@@ -1,4 +1,5 @@
 import 'react-native-url-polyfill/auto';
+import './src/utils/registerLiveKitGlobals';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
@@ -14,6 +15,7 @@ import {
   subscribeToNotificationTaps,
 } from './src/services/notifications';
 import AppNavigator, { navigationRef } from './src/navigation/AppNavigator';
+import VoIPPushRegistrar from './src/components/VoIPPushRegistrar';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -157,6 +159,7 @@ export default function App() {
       <SafeAreaProvider>
         <ThemeProvider>
           <ThemedStatusBar />
+          <VoIPPushRegistrar />
           <AppNavigator initialRouteName={initialRoute} isAuthenticated={initialRoute === 'Main'} />
         </ThemeProvider>
       </SafeAreaProvider>

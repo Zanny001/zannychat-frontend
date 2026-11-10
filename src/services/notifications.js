@@ -3,6 +3,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { supabase, SUPABASE_ENABLED } from './supabaseClient';
+import { updateCallStatus, getCallParticipantName } from './calls';
 import { getNotificationPrefs, loadNotificationPrefs } from './notificationPrefs';
 import { shouldQuietForegroundNotification } from '../utils/quietHours';
 
@@ -16,12 +17,13 @@ loadNotificationPrefs();
 // still announce itself even while the app is open. Both honor the
 // user's notification preferences (see NotificationsScreen).
 Notifications.setNotificationHandler({
-  handleNotification: async () => {
+  handleNotification: async ({ notification } = {}) => {
     const prefs = getNotificationPrefs();
+    const isIncomingCall = notification?.request?.content?.data?.type === 'incoming_call';
     const quietNow = shouldQuietForegroundNotification(new Date(), prefs);
     return {
       shouldShowAlert: prefs.bannersEnabled && !quietNow,
-      shouldPlaySound: prefs.soundEnabled && !quietNow,
+      shouldPlaySound: !isIncomingCall && prefs.soundEnabled && !quietNow,
       shouldSetBadge: false,
     };
   },
@@ -38,6 +40,14 @@ Notifications.setNotificationHandler({
 // build — it does not work in Expo Go on Android (SDK 53+) or in
 // Snack's Web/iframe preview at all. See the frontend README.
 export async function registerForPushNotifications() {
+  try {
+    await Notifications.setNotificationCategoryAsync('incoming-call', [
+      { identifier: 'ANSWER_CALL', buttonTitle: 'Answer', options: { opensAppToForeground: true } },
+      { identifier: 'DECLINE_CALL', buttonTitle: 'Decline', options: { opensAppToForeground: true, isDestructive: true } },
+    ]);
+  } catch (error) {
+    console.warn('[notifications] call actions unavailable:', error?.message || error);
+  }
   if (!SUPABASE_ENABLED) return null;
 
   if (!Device.isDevice) {
@@ -56,7 +66,7 @@ export async function registerForPushNotifications() {
     return null;
   }
 
-  const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+  const projectId = Constants.expoConfig?.extra?.eas?.projectId || Constants.easConfig?.projectId;
   if (!projectId) {
     console.warn('[push] skipped — no EAS project ID found. Run `eas init` (see README) first.');
     return null;
@@ -66,6 +76,13 @@ export async function registerForPushNotifications() {
     await Notifications.setNotificationChannelAsync('default', {
       name: 'default',
       importance: Notifications.AndroidImportance.HIGH,
+    });
+    await Notifications.setNotificationChannelAsync('calls', {
+      name: 'Incoming calls',
+      importance: Notifications.AndroidImportance.MAX,
+      sound: 'call_ring.wav',
+      vibrationPattern: [0, 250, 250, 250],
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
     });
   }
 
@@ -116,10 +133,66 @@ export async function unregisterPushNotifications() {
 // resolves those via fetchConversations() when it notices they're
 // missing, so this stays simple rather than duplicating that lookup.
 export function subscribeToNotificationTaps(navigationRef) {
-  return Notifications.addNotificationResponseReceivedListener((response) => {
-    const conversationId = response.notification.request.content.data?.conversationId;
-    if (conversationId && navigationRef.isReady()) {
-      navigationRef.navigate('Chat', { conversation: { id: conversationId, participant: {} } });
+  const handled = new Set();
+  let pending = null;
+  let active = true;
+
+  const navigateResponse = async (response) => {
+    if (!active || !response) return;
+    const data = response.notification?.request?.content?.data || {};
+    const callId = typeof data.callId === 'string' ? data.callId : null;
+    const groupCallId = typeof data.groupCallId === 'string' ? data.groupCallId : null;
+    const callType = data.callType === 'video' ? 'video' : 'audio';
+    const conversationId = typeof data.conversationId === 'string' ? data.conversationId : null;
+    const actionIdentifier = response.actionIdentifier;
+    const key = callId ? `call:${callId}:${actionIdentifier}` : groupCallId ? `group-call:${groupCallId}` : conversationId ? `chat:${conversationId}` : null;
+    if (!key || handled.has(key)) return;
+    if (!navigationRef.isReady()) { pending = response; return; }
+    handled.add(key);
+    if (handled.size > 100) handled.delete(handled.values().next().value);
+
+    if (callId && supabase && SUPABASE_ENABLED) {
+      const { data: call, error } = await supabase.from('call_sessions')
+        .select('id,conversation_id,caller_id,callee_id,call_type,status,expires_at')
+        .eq('id', callId).maybeSingle();
+      if (!active || error || !call || call.status !== 'ringing' || new Date(call.expires_at).getTime() <= Date.now()) return;
+      if (actionIdentifier === 'DECLINE_CALL') {
+        await updateCallStatus(callId, 'declined');
+        return;
+      }
+      const participantName = await getCallParticipantName(call.caller_id);
+      if (active && navigationRef.isReady()) {
+        navigationRef.navigate('IncomingCall', { call, participantName, autoAnswer: actionIdentifier === 'ANSWER_CALL' });
+      }
+      return;
     }
+    if (groupCallId) {
+      navigationRef.navigate('GroupCall', { roomId: groupCallId, conversationId, conversationName: 'Group call', callType });
+      return;
+    }
+    if (conversationId) navigationRef.navigate('Chat', { conversation: { id: conversationId, participant: {} } });
+  };
+
+  const flush = () => {
+    if (!pending || !navigationRef.isReady()) return;
+    const response = pending;
+    pending = null;
+    navigateResponse(response).catch(() => {});
+  };
+  const readySubscription = navigationRef.addListener?.('ready', flush);
+  const responseSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
+    navigateResponse(response).catch(() => {});
   });
+  Promise.resolve(Notifications.getLastNotificationResponseAsync?.()).then((response) => {
+    if (response) navigateResponse(response).catch(() => {});
+  }).catch(() => {});
+
+  return {
+    remove() {
+      active = false;
+      pending = null;
+      responseSubscription.remove();
+      readySubscription?.();
+    },
+  };
 }

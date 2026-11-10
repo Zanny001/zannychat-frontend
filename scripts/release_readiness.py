@@ -5,7 +5,7 @@ from refresh_registry_integrity import valid_sri
 from pathlib import Path
 root = Path(__file__).resolve().parents[1]
 repo = root.parent
-backend = repo / "zannychat-back"
+backend = repo / "zannychat-back-github"
 checks = []
 def check(name, ok, detail=""):
     checks.append((name, bool(ok), detail))
@@ -32,6 +32,9 @@ try:
     check("Expo core and React Native SDK line is explicit", expo_major == "57" and declared.get("expo", "").lstrip("~^") == expo_core, f"expo locked={expo_core or 'missing'}, declared={declared.get('expo')}")
     check("Direct dependencies are not floating on latest", not floating_sdk, ", ".join(floating_sdk) or "all direct dependency versions are explicit")
     check("Backend package version is explicit", bool(backend_pkg.get("version")), str(backend_pkg.get("version")))
+    netlify_config = root / "netlify.toml"
+    netlify_config_text = netlify_config.read_text() if netlify_config.is_file() else ""
+    check("Netlify SPA history fallback serves client-side deep links", netlify_config.is_file() and 'from = "/*"' in netlify_config_text and 'to = "/index.html"' in netlify_config_text and "status = 200" in netlify_config_text, "Netlify must rewrite app routes to the Expo index.html shell")
     backend_entry = (backend / "src" / "index.js").read_text()
     security_test = backend / "tests" / "securityHeaders.test.cjs"
     check("Backend disables fingerprinting and defines baseline response security headers", "app.disable('x-powered-by')" in backend_entry and "X-Content-Type-Options" in backend_entry and "X-Frame-Options" in backend_entry and "Referrer-Policy" in backend_entry and "Cache-Control" in backend_entry and "Strict-Transport-Security" in backend_entry and security_test.is_file(), "API security headers must be present and regression-tested")
@@ -40,7 +43,7 @@ try:
     hardening_migration = backend / "supabase" / "migrations" / "0058_phone_discovery_opt_in_hardening.sql"
     check("Phone discovery opt-in hardening migration exists", hardening_migration.is_file(), str(hardening_migration.relative_to(repo)) if hardening_migration.exists() else "required follow-up migration missing")
     check("Native contact package is declared for SDK 57", declared.get("expo-contacts") == "57.0.8", f"declared={declared.get('expo-contacts')}")
-    check("Media library package is declared for SDK 57", declared.get("expo-media-library") == "57.0.5", f"declared={declared.get('expo-media-library')}")
+    check("Media library package is declared for SDK 57", declared.get("expo-media-library", "").lstrip("~^") == "57.0.6", f"declared={declared.get('expo-media-library')}")
     check("WebRTC native dependencies are declared and pinned", declared.get("react-native-webrtc") == "124.0.7" and declared.get("@config-plugins/react-native-webrtc") == "15.0.2", "native package and Expo config plugin must remain explicit; SDK 57 compatibility still needs a successful native build")
     call_screen = (root / "src" / "screens" / "CallScreen.js").read_text()
     call_service = (root / "src" / "services" / "calls.js").read_text()
@@ -58,6 +61,13 @@ try:
     definer_hardening = backend / "supabase" / "migrations" / "0063_harden_qualified_definer_search_paths.sql"
     definer_hardening_text = definer_hardening.read_text().lower() if definer_hardening.is_file() else ""
     check("Reviewed SECURITY DEFINER routines use empty search_path", definer_hardening.is_file() and definer_hardening_text.count("set search_path = ''") == 10, "migration 0063 must harden all ten reviewed function signatures")
+    cleanup_binding = backend / "supabase" / "migrations" / "0068_bind_attachment_cleanup_to_conversation.sql"
+    cleanup_binding_text = cleanup_binding.read_text().lower() if cleanup_binding.is_file() else ""
+    cleanup_worker = backend / "src" / "jobs" / "messageAttachmentCleanup.js"
+    check("Attachment cleanup is bound to its source conversation", cleanup_binding.is_file() and "old.conversation_id" in cleanup_binding_text and "conversation_id" in cleanup_worker.read_text() and "does not belong to the queued message conversation" in cleanup_worker.read_text(), "worker must refuse cross-conversation Storage deletion")
+    group_privacy = backend / "src" / "routes" / "conversations.js"
+    group_privacy_helper = backend / "src" / "utils" / "groupInvitePrivacy.cjs"
+    check("Group invitation preferences and blocks are enforced before membership writes", group_privacy.is_file() and group_privacy_helper.is_file() and "evaluateGroupInvitePrivacy" in group_privacy.read_text() and "group_invite_permission" in group_privacy.read_text() and "blocked_users" in group_privacy.read_text(), "trusted group creation must enforce recipient privacy and block state")
     security_inventory = backend / "supabase" / "audits" / "security_definer_inventory.sql"
     security_inventory_text = security_inventory.read_text().lower() if security_inventory.is_file() else ""
     check("Read-only SECURITY DEFINER staging inventory exists", security_inventory.is_file() and "p.prosecdef" in security_inventory_text and "has_function_privilege('authenticated'" in security_inventory_text and "search_path_not_pinned" in security_inventory_text and "aclexplode(" in security_inventory_text and "critical review" in security_inventory_text, "inventory must triage unpinned search paths and PUBLIC/role EXECUTE access without mutating database state")

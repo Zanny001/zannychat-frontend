@@ -1,0 +1,9 @@
+[build]
+  publish = "dist"
+
+# Expo web uses client-side navigation. Serve the app shell for deep links
+# such as /NewChat and /Main/Chats so refresh/direct navigation works.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, View, Platform } from 'react-native';
+import { DeviceEventEmitter, StyleSheet, View, Platform, Linking } from 'react-native';
 import { NavigationContainer, DarkTheme, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -47,8 +47,14 @@ import ScheduledMessagesScreen from '../screens/ScheduledMessagesScreen';
 import CallScreen from '../screens/CallScreen';
 import IncomingCallScreen from '../screens/IncomingCallScreen';
 import OutgoingCallScreen from '../screens/OutgoingCallScreen';
+import CallHistoryScreen from '../screens/CallHistoryScreen';
+import GroupCallScreen from '../screens/GroupCallScreen';
+import LiveHubScreen from '../screens/LiveHubScreen';
+import LiveStreamScreen from '../screens/LiveStreamScreen';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
-import { getCallParticipantName, subscribeToIncomingCalls } from '../services/calls';
+import { getCallParticipantName, getCallSessionById, subscribeToIncomingCalls, updateCallStatus } from '../services/calls';
+import { clearNativeCallMapping, getNativeCallMapping, initializeNativeCallSystem, reportIncomingCallIfNeeded, reportNativeCallEnded } from '../services/nativeCallSystem';
+import { completeGoogleOAuthCallback } from '../services/googleAuth';
 
 // Lets code outside the component tree (the push-notification tap
 // handler in App.js) trigger navigation — the standard React
@@ -100,12 +106,13 @@ function MainTabNavigator() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarIcon: ({ color, size }) => {
-          const icons = { Chats: 'chatbubbles', Updates: 'aperture', Channels: 'megaphone', Profile: 'person-circle' };
+          const icons = { Chats: 'chatbubbles', Calls: 'call', Updates: 'aperture', Channels: 'megaphone', Profile: 'person-circle' };
           return <Ionicons name={icons[route.name]} size={size} color={color} />;
         },
       })}
     >
       <MainTabs.Screen name="Chats" component={ChatListScreen} />
+      <MainTabs.Screen name="Calls" component={CallHistoryScreen} />
       <MainTabs.Screen name="Updates" component={StatusUpdatesScreen} options={{ tabBarLabel: 'Updates' }} />
       <MainTabs.Screen name="Channels" component={ChannelsScreen} />
       <MainTabs.Screen name="Profile" component={ProfileScreen} />
@@ -121,6 +128,20 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
   // In a configured production build, register private app routes only after a
   // Supabase session exists. Demo mode intentionally keeps its local preview.
   const canAccessApp = !SUPABASE_ENABLED || isAuthenticated;
+  useEffect(() => {
+    if (Platform.OS === 'web' || !SUPABASE_ENABLED || !supabase) return undefined;
+    let active = true;
+    const handleUrl = (url) => {
+      if (!url || !url.startsWith('zannychat://auth/callback')) return;
+      completeGoogleOAuthCallback(supabase, url).catch(() => {
+        // A malformed or expired callback must not crash the app or log OAuth codes.
+      });
+    };
+    Linking.getInitialURL().then((url) => { if (active) handleUrl(url); }).catch(() => {});
+    const subscription = Linking.addEventListener('url', ({ url }) => handleUrl(url));
+    return () => { active = false; subscription?.remove?.(); };
+  }, []);
+
   const incomingUnsubscribeRef = useRef(null);
   const incomingIdsRef = useRef(new Set());
   const pendingIncomingRef = useRef(null);
@@ -148,11 +169,12 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
       incomingUnsubscribeRef.current = null;
       if (userId) incomingUnsubscribeRef.current = subscribeToIncomingCalls(userId, async (incoming) => {
         if (!active || incomingIdsRef.current.has(incoming.id)) return;
+        const callerName = await getCallParticipantName(incoming.caller_id);
+        const nativeCallId = await reportIncomingCallIfNeeded(incoming, callerName);
+        if (!active || incomingIdsRef.current.has(incoming.id)) return;
         incomingIdsRef.current.add(incoming.id);
         if (incomingIdsRef.current.size > 50) incomingIdsRef.current.delete(incomingIdsRef.current.values().next().value);
-        const callerName = await getCallParticipantName(incoming.caller_id);
-        if (!active) return;
-        const params = { call: incoming, participantName: callerName };
+        const params = { call: incoming, participantName: callerName, ...(nativeCallId ? { nativeCallId } : {}) };
         if (navigationRef.isReady()) navigationRef.navigate('IncomingCall', params);
         else pendingIncomingRef.current = params;
       });
@@ -166,6 +188,88 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
       authListener?.subscription?.unsubscribe();
       incomingIdsRef.current.clear();
       pendingIncomingRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS === 'web' || !SUPABASE_ENABLED || !supabase) return undefined;
+    let active = true;
+    const handleIncomingSession = async (event) => {
+      const session = event?.session;
+      const callId = session?.incomingCallEvent?.serverCallId;
+      if (!callId || !active || incomingIdsRef.current.has(callId)) return;
+      try {
+        const call = await getCallSessionById(callId);
+        if (!active || !call || call.status !== 'ringing' || new Date(call.expires_at).getTime() <= Date.now()) {
+          if (call?.status === 'ringing') await updateCallStatus(callId, 'missed').catch(() => {});
+          if (session?.id) await reportNativeCallEnded(session.id, 'unanswered');
+          return;
+        }
+        incomingIdsRef.current.add(callId);
+        const participantName = await getCallParticipantName(call.caller_id);
+        if (!active) return;
+        const params = { call, participantName, nativeCallId: session.id };
+        if (navigationRef.isReady()) navigationRef.navigate('IncomingCall', params);
+        else pendingIncomingRef.current = params;
+      } catch (error) {
+        console.warn('[calls] could not restore native incoming call:', error?.message || error);
+      }
+    };
+    const unsubscribe = initializeNativeCallSystem({
+      onSessionAdded: handleIncomingSession,
+      onAnswered: async ({ id, requestId, session }) => {
+        const callId = session?.incomingCallEvent?.serverCallId;
+        if (!active || !callId) return;
+        try {
+          const call = await getCallSessionById(callId);
+          if (!call || call.status !== 'ringing' || new Date(call.expires_at).getTime() <= Date.now()) {
+            if (call?.status === 'ringing') await updateCallStatus(callId, 'missed').catch(() => {});
+            await reportNativeCallEnded(id, 'unanswered');
+            return;
+          }
+          const accepted = await updateCallStatus(callId, 'accepted');
+          const participantName = await getCallParticipantName(call.caller_id);
+          if (active && navigationRef.isReady()) {
+            navigationRef.navigate('Call', {
+              call: accepted, callType: call.call_type, isCaller: false,
+              participantName, nativeCallId: id, nativeRequestId: requestId,
+            });
+          }
+        } catch (error) {
+          console.warn('[calls] native answer could not be completed:', error?.message || error);
+        }
+      },
+      onEnded: async ({ id, session, reason }) => {
+        const nativeMapping = session?.incomingCallEvent?.serverCallId ? null : await getNativeCallMapping(id);
+        const callId = session?.incomingCallEvent?.serverCallId || nativeMapping?.serverCallId || null;
+        if (!callId) return;
+        let mappingCanBeCleared = false;
+        try {
+          const call = await getCallSessionById(callId);
+          if (!call || !['ringing', 'accepted'].includes(call.status)) {
+            mappingCanBeCleared = true;
+          } else {
+            const status = call.status === 'ringing'
+              ? (reason === 'unanswered' ? 'missed' : (session?.origin === 'incoming' ? 'declined' : 'cancelled'))
+              : 'ended';
+            await updateCallStatus(callId, status);
+            mappingCanBeCleared = true;
+          }
+        } catch (error) {
+          // Keep the encrypted mapping so the killed-app receiver or a later
+          // lifecycle event can retry reconciliation after transient failures.
+          console.warn('[calls] native call end could not be synchronized:', error?.message || error);
+        } finally {
+          if (mappingCanBeCleared) await clearNativeCallMapping(id);
+        }
+      },
+      onMuted: ({ id, isMuted }) => {
+        DeviceEventEmitter.emit('zannychat:native-call-muted', { id, isMuted });
+      },
+    });
+    return () => {
+      active = false;
+      unsubscribe?.();
     };
   }, []);
 
@@ -198,6 +302,9 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
           <RootStack.Screen name="IncomingCall" component={IncomingCallScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
           <RootStack.Screen name="OutgoingCall" component={OutgoingCallScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
           <RootStack.Screen name="Call" component={CallScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
+          <RootStack.Screen name="GroupCall" component={GroupCallScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
+          <RootStack.Screen name="LiveHub" component={LiveHubScreen} options={{ animation: 'fade' }} />
+          <RootStack.Screen name="LiveStream" component={LiveStreamScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
           <RootStack.Screen name="PeerProfile" component={PeerProfileScreen} />
           <RootStack.Screen name="NewChat" component={NewChatScreen} options={{ presentation: 'modal' }} />
           <RootStack.Screen name="QRContact" component={QRContactScreen} options={{ presentation: 'modal' }} />

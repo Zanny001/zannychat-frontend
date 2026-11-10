@@ -1,0 +1,44 @@
+name: Advanced calling client checks
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [feat/advanced-calling-live-1.2.241]
+  pull_request:
+    branches: [feat/advanced-calling-live-1.2.241]
+
+jobs:
+  client-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx expo config --type prebuild --json > /tmp/zannychat-expo-config.json
+      - run: npx expo prebuild --platform android --no-install
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      # Compile native Kotlin sources and verify local Expo module autolinking.
+      # This is a compile-only check; it does not assemble or publish an APK.
+      - run: cd android && ./gradlew :app:compileDebugKotlin
+      - run: npx expo prebuild --platform ios --no-install
+      - name: Verify iOS native CallKit end-event patch
+        run: |
+          grep -q "reportZannyChatNativeEnd" node_modules/expo-callkit-telecom/ios/Managers/CallManager.swift
+          grep -q "zannychatSendNativeEndEvent" node_modules/expo-callkit-telecom/ios/Managers/CallManager.swift
+          grep -q "reportZannyChatNativeEnd(for: action.callUUID" node_modules/expo-callkit-telecom/ios/Managers/CallManager+CXProviderDelegate.swift
+          grep -q "ZannyChatNativeCallMappingModule" modules/zannychat-native-call-mapping/expo-module.config.json
+      - run: npx expo export --platform web --output-dir /tmp/zannychat-web-export
+      - run: npm run test:unit
+      - run: npm run test:call-recovery
+      - run: npm run test:native-call-receiver
+      - run: npm run audit:release
+      - run: npm run audit:integrity
