@@ -29,9 +29,10 @@ test('outgoing native end events resolve the backend call id from encrypted mapp
   assert.ok(navigator.includes('getCallSessionById(callId)'));
 });
 
-test('outgoing ringback tone plays for native Telecom and JS fallback sessions', () => {
+test('outgoing ringback uses native dialtone for Telecom and bundled audio for JS fallback', () => {
   const outgoing = fs.readFileSync(new URL('../screens/OutgoingCallScreen.js', import.meta.url), 'utf8');
-  assert.ok(outgoing.includes("startCallTone('outgoing')"));
-  assert.ok(!outgoing.includes("if (!initialCall.nativeCallId) startCallTone('outgoing')"));
-  assert.ok(outgoing.includes('stopCallTone();'));
+  const appConfig = JSON.parse(fs.readFileSync(new URL('../../app.json', import.meta.url), 'utf8'));
+  const callPlugin = appConfig.expo.plugins.find((plugin) => Array.isArray(plugin) && plugin[0] === 'expo-callkit-telecom');
+  assert.ok(outgoing.includes("if (!initialCall.nativeCallId) startCallTone('outgoing')"));
+  assert.equal(callPlugin?.[1]?.defaultDialtone, 'call_dialtone.wav');
 });
