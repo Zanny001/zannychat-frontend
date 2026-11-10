@@ -5,7 +5,7 @@ import { AudioSession, LiveKitRoom, VideoTrack, isTrackReference, useTracks } fr
 import { Track } from 'livekit-client';
 import { backendFetch } from '../services/backendClient';
 
-function LiveMedia({ creatorMode, moderatorMode, title, comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, busy }) {
+function LiveMedia({ creatorMode, publisherMode, moderatorMode, canRequestGuest, guestRequests, showGuestRequests, title, comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, onRequestGuest, onToggleGuestRequests, onReviewGuestRequest, busy }) {
   const tracks = useTracks([Track.Source.Camera]);
   const videos = tracks.filter(isTrackReference);
   return (
@@ -15,6 +15,7 @@ function LiveMedia({ creatorMode, moderatorMode, title, comments, reports, showR
           <View style={{ backgroundColor: '#D83A59', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 12 }}><Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '900' }}>● LIVE</Text></View>
           <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '800', flex: 1, marginHorizontal: 12 }}>{title}</Text>
           {creatorMode && <TouchableOpacity onPress={onToggleParticipants} accessibilityRole="button" accessibilityLabel="Manage LIVE moderators" style={{ backgroundColor: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: 12, marginRight: 8 }}><Ionicons name="people-outline" size={19} color="#FFFFFF" /></TouchableOpacity>}
+          {creatorMode && <TouchableOpacity onPress={onToggleGuestRequests} accessibilityRole="button" accessibilityLabel="Review guest requests" style={{ backgroundColor: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: 12, marginRight: 8 }}><Ionicons name="person-add-outline" size={19} color="#FFFFFF" /></TouchableOpacity>}
           {moderatorMode && <TouchableOpacity onPress={onToggleReports} accessibilityRole="button" accessibilityLabel="Open LIVE safety reports" style={{ backgroundColor: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: 12, marginRight: 8 }}><Ionicons name="shield-checkmark-outline" size={19} color="#FFFFFF" /></TouchableOpacity>}
           <TouchableOpacity onPress={onEnd} accessibilityRole="button" accessibilityLabel={creatorMode ? 'End LIVE stream' : 'Leave LIVE stream'} style={{ backgroundColor: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: 12 }}><Ionicons name="close" size={20} color="#FFFFFF" /></TouchableOpacity>
         </View>
@@ -47,6 +48,18 @@ function LiveMedia({ creatorMode, moderatorMode, title, comments, reports, showR
             )} ListEmptyComponent={<Text style={{ color: '#AAA7BD', fontSize: 12 }}>No viewers are currently connected.</Text>} />
           </View>
         )}
+        {showGuestRequests && creatorMode && (
+          <View style={{ maxHeight: 190, marginHorizontal: 14, marginBottom: 8, padding: 10, borderRadius: 14, backgroundColor: '#242235' }}>
+            <Text style={{ color: '#FFFFFF', fontWeight: '900', marginBottom: 6 }}>Guest requests ({guestRequests.length})</Text>
+            <FlatList data={guestRequests} keyExtractor={(item) => item.user_id} renderItem={({ item }) => (
+              <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 7, borderTopWidth: 1, borderTopColor: '#39364B' }}>
+                <Text numberOfLines={1} style={{ color: '#FFFFFF', flex: 1, fontSize: 12 }}>{item.name}</Text>
+                <TouchableOpacity onPress={() => onReviewGuestRequest(item.user_id, 'accepted')}><Text style={{ color: '#80D8A8', fontWeight: '800', fontSize: 11, marginRight: 10 }}>Approve</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => onReviewGuestRequest(item.user_id, 'declined')}><Text style={{ color: '#F0B4C0', fontWeight: '800', fontSize: 11 }}>Decline</Text></TouchableOpacity>
+              </View>
+            )} ListEmptyComponent={<Text style={{ color: '#AAA7BD', fontSize: 12 }}>No pending guest requests.</Text>} />
+          </View>
+        )}
         {showReports && moderatorMode && (
           <View style={{ maxHeight: 190, marginHorizontal: 14, marginBottom: 8, padding: 10, borderRadius: 14, backgroundColor: '#242235' }}>
             <Text style={{ color: '#FFFFFF', fontWeight: '900', marginBottom: 6 }}>LIVE safety reports ({reports.length})</Text>
@@ -67,6 +80,7 @@ function LiveMedia({ creatorMode, moderatorMode, title, comments, reports, showR
           <TextInput value={draft} onChangeText={(v) => setDraft(v.slice(0, 500))} maxLength={500} placeholder="Say something kind…" placeholderTextColor="#AAA7BD" style={{ flex: 1, backgroundColor: '#262436', color: '#FFFFFF', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 11 }} />
           <TouchableOpacity disabled={busy || !draft.trim()} onPress={onComment} accessibilityRole="button" accessibilityLabel="Send LIVE comment" style={{ backgroundColor: '#6557D9', padding: 12, borderRadius: 14 }}><Ionicons name="send" size={19} color="#FFFFFF" /></TouchableOpacity>
           <TouchableOpacity disabled={busy} onPress={onReact} accessibilityRole="button" accessibilityLabel="Send heart reaction" style={{ backgroundColor: '#3A293D', padding: 12, borderRadius: 14 }}><Ionicons name="heart" size={20} color="#FF6B89" /></TouchableOpacity>
+          {!creatorMode && canRequestGuest && <TouchableOpacity disabled={busy} onPress={onRequestGuest} accessibilityRole="button" accessibilityLabel="Request to join LIVE on stage" style={{ backgroundColor: '#342D58', padding: 12, borderRadius: 14 }}><Ionicons name="person-add-outline" size={19} color="#FFFFFF" /></TouchableOpacity>}
           {!creatorMode && <TouchableOpacity disabled={busy} onPress={onReport} accessibilityRole="button" accessibilityLabel="Report LIVE stream" style={{ backgroundColor: '#262436', padding: 12, borderRadius: 14 }}><Ionicons name="flag-outline" size={19} color="#FFFFFF" /></TouchableOpacity>}
         </View>
       </View>
@@ -77,13 +91,13 @@ function LiveMedia({ creatorMode, moderatorMode, title, comments, reports, showR
 export default function LiveStreamScreen({ route, navigation }) {
   const connection = route.params?.connection;
   const creatorMode = Boolean(route.params?.creatorMode || connection?.role === 'creator');
-  const moderatorMode = Boolean(creatorMode || connection?.canModerate);
+  const moderatorMode = Boolean(creatorMode || connection?.canModerate);\n  const publisherMode = Boolean(creatorMode || connection?.role === 'guest');\n  const canRequestGuest = Boolean(!publisherMode && stream?.allow_guests);
   const stream = connection?.stream;
   const [comments, setComments] = useState([]);
   const [reports, setReports] = useState([]);
   const [showReports, setShowReports] = useState(false);
   const [participants, setParticipants] = useState([]);
-  const [showParticipants, setShowParticipants] = useState(false);
+  const [showParticipants, setShowParticipants] = useState(false);\n  const [guestRequests, setGuestRequests] = useState([]);\n  const [showGuestRequests, setShowGuestRequests] = useState(false);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -185,6 +199,30 @@ export default function LiveStreamScreen({ route, navigation }) {
     } catch (e) { Alert.alert('Participants unavailable', e?.message || 'Please try again.'); }
   };
 
+  const loadGuestRequests = async () => {
+    try {
+      const result = await backendFetch(`/live/${stream.id}/guest-requests`);
+      setGuestRequests(Array.isArray(result?.requests) ? result.requests : []);
+      setShowGuestRequests(true);
+    } catch (e) { Alert.alert('Guest requests unavailable', e?.message || 'Please try again.'); }
+  };
+
+  const requestGuest = async () => {
+    try {
+      await backendFetch(`/live/${stream.id}/guest-requests`, { method: 'POST' });
+      Alert.alert('Request sent', 'The creator will decide whether to bring you on stage.');
+    } catch (e) { Alert.alert('Could not request guest access', e?.message || 'Please try again.'); }
+  };
+
+  const reviewGuestRequest = async (userId, status) => {
+    try {
+      await backendFetch(`/live/${stream.id}/guest-requests/${userId}`, {
+        method: 'PATCH', body: JSON.stringify({ status }),
+      });
+      setGuestRequests((current) => current.filter((item) => item.user_id !== userId));
+    } catch (e) { Alert.alert('Could not update guest request', e?.message || 'Please try again.'); }
+  };
+
   const setModerator = async (userId, makeModerator) => {
     try {
       await backendFetch(`/live/${stream.id}/moderators${makeModerator ? '' : `/${userId}`}`, {
@@ -202,8 +240,8 @@ export default function LiveStreamScreen({ route, navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#100F18' }}>
       <StatusBar barStyle="light-content" />
       {error ? <Text style={{ color: '#FFB6C3', paddingHorizontal: 12, paddingTop: 4 }}>{error}</Text> : null}
-      <LiveKitRoom serverUrl={connection.livekitUrl} token={connection.token} connect={true} audio={creatorMode} video={creatorMode} options={{ adaptiveStream: true, dynacast: true }}>
-        <LiveMedia creatorMode={creatorMode} moderatorMode={moderatorMode} title={stream.title} comments={comments} reports={reports} showReports={showReports} participants={participants} showParticipants={showParticipants} draft={draft} setDraft={setDraft} onComment={sendComment} onReact={react} onReport={report} onHide={hideComment} onEnd={leave} onToggleReports={() => { setShowParticipants(false); showReports ? setShowReports(false) : loadReports(); }} onReviewReport={reviewReport} onToggleParticipants={() => { setShowReports(false); showParticipants ? setShowParticipants(false) : loadParticipants(); }} onSetModerator={setModerator} busy={busy} />
+      <LiveKitRoom serverUrl={connection.livekitUrl} token={connection.token} connect={true} audio={publisherMode} video={publisherMode} options={{ adaptiveStream: true, dynacast: true }}>
+        <LiveMedia creatorMode={creatorMode} publisherMode={publisherMode} moderatorMode={moderatorMode} canRequestGuest={canRequestGuest} guestRequests={guestRequests} showGuestRequests={showGuestRequests} title={stream.title} comments={comments} reports={reports} showReports={showReports} participants={participants} showParticipants={showParticipants} draft={draft} setDraft={setDraft} onComment={sendComment} onReact={react} onReport={report} onHide={hideComment} onEnd={leave} onRequestGuest={requestGuest} onToggleGuestRequests={() => { setShowReports(false); setShowParticipants(false); showGuestRequests ? setShowGuestRequests(false) : loadGuestRequests(); }} onReviewGuestRequest={reviewGuestRequest} onToggleReports={() => { setShowParticipants(false); setShowGuestRequests(false); showReports ? setShowReports(false) : loadReports(); }} onReviewReport={reviewReport} onToggleParticipants={() => { setShowReports(false); setShowGuestRequests(false); showParticipants ? setShowParticipants(false) : loadParticipants(); }} onSetModerator={setModerator} busy={busy} />
       </LiveKitRoom>
       {busy && <View style={{ position: 'absolute', top: '50%', alignSelf: 'center' }}><ActivityIndicator color="#FFFFFF" /></View>}
     </SafeAreaView>
