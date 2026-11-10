@@ -22,14 +22,10 @@ public final class ZannyChatNativeCallMappingModule: Module {
             let mapping = try? JSONSerialization.jsonObject(with: data) as? [String: String],
             let serverCallId = mapping["serverCallId"]
       else { return false }
-      let query: [String: Any] = [
-        kSecClass as String: kSecClassGenericPassword,
-        kSecAttrService as String: Self.service,
-        kSecAttrAccount as String: Self.pendingKey,
-      ]
+      guard Self.store(data, key: nativeCallId) else { return false }
       UserDefaults.standard.set(nativeCallId, forKey: "zannychat.callkit.nativeForServer.\(serverCallId)")
-      let attributes: [String: Any] = [kSecAttrAccount as String: nativeCallId]
-      guard SecItemUpdate(query as CFDictionary, attributes as CFDictionary) == errSecSuccess else {
+      guard Self.remove(key: Self.pendingKey) else {
+        Self.remove(key: nativeCallId)
         UserDefaults.standard.removeObject(forKey: "zannychat.callkit.nativeForServer.\(serverCallId)")
         return false
       }
