@@ -47,6 +47,7 @@ import ScheduledMessagesScreen from '../screens/ScheduledMessagesScreen';
 import CallScreen from '../screens/CallScreen';
 import IncomingCallScreen from '../screens/IncomingCallScreen';
 import OutgoingCallScreen from '../screens/OutgoingCallScreen';
+import CallHistoryScreen from '../screens/CallHistoryScreen';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { getCallParticipantName, subscribeToIncomingCalls } from '../services/calls';
 import { completeGoogleOAuthCallback } from '../services/googleAuth';
@@ -101,12 +102,13 @@ function MainTabNavigator() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarIcon: ({ color, size }) => {
-          const icons = { Chats: 'chatbubbles', Updates: 'aperture', Channels: 'megaphone', Profile: 'person-circle' };
+          const icons = { Chats: 'chatbubbles', Calls: 'call', Updates: 'aperture', Channels: 'megaphone', Profile: 'person-circle' };
           return <Ionicons name={icons[route.name]} size={size} color={color} />;
         },
       })}
     >
       <MainTabs.Screen name="Chats" component={ChatListScreen} />
+      <MainTabs.Screen name="Calls" component={CallHistoryScreen} />
       <MainTabs.Screen name="Updates" component={StatusUpdatesScreen} options={{ tabBarLabel: 'Updates' }} />
       <MainTabs.Screen name="Channels" component={ChannelsScreen} />
       <MainTabs.Screen name="Profile" component={ProfileScreen} />
