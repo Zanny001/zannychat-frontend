@@ -24,6 +24,8 @@ test('Android killed-app receiver reconciles native end and reported-end events'
   assert.ok(!plugin.includes('CallEndedPushEnvelope'));
   assert.ok(plugin.includes('reportZannyChatNativeEnd(for: id, reason: zannychatReasonString(reason))'));
   assert.ok(plugin.includes('zannychatSendNativeEndEvent'));
+  assert.ok(plugin.includes('allowPending: session?.origin == .outgoingApp'));
+  assert.ok(plugin.includes('UserDefaults.standard.string(forKey: \\"zannychat.callkit.pendingServerId\\") == serverCallId'));
   assert.ok(plugin.includes('reportZannyChatNativeEnd(for: action.callUUID'));
   assert.ok(plugin.includes('zannychat.callkit.nativeForServer'));
   assert.ok(plugin.includes('zannychatFindMappedCallSession'));
