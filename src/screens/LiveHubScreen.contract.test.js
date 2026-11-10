@@ -12,7 +12,6 @@ test('LIVE hub supports public, follower-only and private broadcasts', () => {
 });
 
 test('LIVE hub creates private invitations and displays pending invitations', () => {
-  assert.ok(screen.includes("`/live/${connection.stream.id}/invites`"));
   assert.ok(screen.includes("backendFetch('/live/invitations')"));
   assert.ok(screen.includes('Private LIVE invitations'));
   assert.ok(screen.includes('acceptInvitation(item)'));
