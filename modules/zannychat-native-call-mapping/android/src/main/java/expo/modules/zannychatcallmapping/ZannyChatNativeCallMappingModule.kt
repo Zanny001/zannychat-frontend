@@ -18,12 +18,12 @@ class ZannyChatNativeCallMappingModule : Module() {
       require(serverCallId.matches(Regex("(?i)^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"))) { "Invalid server call id" }
       require(token.length in 40..256) { "Invalid native event token" }
       val value = JSONObject().put("serverCallId", serverCallId).put("token", token).toString()
-      preferences().edit().putString(nativeCallId, value).commit()
+      preferences().edit().putString(nativeCallId, NativeCallMappingCrypto.encrypt(value)).commit()
     }
 
     AsyncFunction("getCallMapping") { nativeCallId: String ->
       val raw = preferences().getString(nativeCallId, null) ?: return@AsyncFunction null
-      val value = JSONObject(raw)
+      val value = JSONObject(NativeCallMappingCrypto.decrypt(raw))
       mapOf("serverCallId" to value.optString("serverCallId"), "token" to value.optString("token"))
     }
 
