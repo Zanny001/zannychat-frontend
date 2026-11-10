@@ -77,18 +77,9 @@ export default function LiveHubScreen({ navigation }) {
       const connection = await backendFetch('/live', {
         method: 'POST',
         body: JSON.stringify({
-          title: title.trim(), description: description.trim(), visibility, allowGuests,
+          title: title.trim(), description: description.trim(), visibility, allowGuests, inviteeIds: invitees,
         }),
       });
-      if (visibility === 'private') {
-        try {
-          await backendFetch(`/live/${connection.stream.id}/invites`, {
-            method: 'POST', body: JSON.stringify({ userIds: invitees }),
-          });
-        } catch (inviteError) {
-          Alert.alert('LIVE started, invitations need attention', inviteError?.message || 'You can retry inviting viewers later.');
-        }
-      }
       setTitle('');
       setDescription('');
       setSelectedInvitees([]);
