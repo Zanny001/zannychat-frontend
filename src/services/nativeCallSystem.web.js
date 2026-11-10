@@ -1,0 +1,17 @@
+export const isNativeCallUiAvailable = false;
+export const startNativeOutgoingCall = async () => null;
+export const reportIncomingCallIfNeeded = async () => null;
+export const initializeNativeCallSystem = () => () => {};
+export const registerNativeCallMapping = async () => {};
+export const getNativeCallMapping = async () => null;
+export const clearNativeCallMapping = async () => {};
+export const answerNativeCall = async () => {};
+export const endNativeCall = async () => {};
+export const reportNativeCallEnded = async () => {};
+export const reportNativeOutgoingConnected = async () => {};
+export const fulfillNativeIncomingConnected = async () => {};
+export const failNativeIncomingConnected = async () => {};
+export const setNativeMuted = async () => {};
+export const setRTCAudioSessionConfiguration = () => {};
+export const setAudioSessionPortOverride = () => {};
+export const getActiveNativeCallSession = async () => null;
