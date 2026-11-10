@@ -110,8 +110,9 @@ export default function GroupCallScreen({ route, navigation }) {
     return () => {
       active = false;
       AudioSession.stopAudioSession();
-      if (connection?.roomId && !endingRef.current) {
-        backendFetch(`/group-calls/${connection.roomId}/leave`, { method: 'POST' }).catch(() => {});
+      const current = connectionRef.current;
+      if (current?.roomId && !endingRef.current) {
+        backendFetch(`/group-calls/${current.roomId}/leave`, { method: 'POST' }).catch(() => {});
       }
     };
   }, [conversationId, roomId]);
