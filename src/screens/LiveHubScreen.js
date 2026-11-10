@@ -18,7 +18,9 @@ export default function LiveHubScreen({ navigation }) {
   const [description, setDescription] = useState('');
   const [visibility, setVisibility] = useState('public');
   const [allowGuests, setAllowGuests] = useState(false);
-  const [inviteeIds, setInviteeIds] = useState('');
+  const [inviteCandidates, setInviteCandidates] = useState([]);
+  const [selectedInvitees, setSelectedInvitees] = useState([]);
+  const [loadingCandidates, setLoadingCandidates] = useState(false);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -46,9 +48,27 @@ export default function LiveHubScreen({ navigation }) {
 
   useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
 
+  const loadInviteCandidates = async () => {
+    setLoadingCandidates(true);
+    try {
+      const result = await backendFetch('/live/invite-candidates');
+      setInviteCandidates(Array.isArray(result?.candidates) ? result.candidates : []);
+    } catch (e) {
+      Alert.alert('Contacts unavailable', e?.message || 'Could not load people from your chats.');
+    } finally {
+      setLoadingCandidates(false);
+    }
+  };
+
+  const toggleInvitee = (userId) => {
+    setSelectedInvitees((current) => current.includes(userId)
+      ? current.filter((id) => id !== userId)
+      : [...current, userId]);
+  };
+
   const startLive = async () => {
     if (!title.trim()) return Alert.alert('Add a title', 'Give your LIVE stream a short title first.');
-    const invitees = [...new Set(inviteeIds.split(/[\s,;]+/).map((id) => id.trim()).filter(Boolean))];
+    const invitees = [...new Set(selectedInvitees)];
     if (visibility === 'private' && invitees.length === 0) {
       return Alert.alert('Add invitees', 'Private LIVE needs at least one invitee user ID.');
     }
@@ -71,7 +91,7 @@ export default function LiveHubScreen({ navigation }) {
       }
       setTitle('');
       setDescription('');
-      setInviteeIds('');
+      setSelectedInvitees([]);
       navigation.navigate('LiveStream', { connection, creatorMode: true });
     } catch (e) {
       Alert.alert('Could not start LIVE', e?.message || 'The media service may not be configured yet.');
@@ -135,7 +155,25 @@ export default function LiveHubScreen({ navigation }) {
                 ))}
               </View>
               {visibility === 'private' && (
-                <TextInput value={inviteeIds} onChangeText={setInviteeIds} multiline placeholder="Invitee user IDs (separate with commas or spaces)" placeholderTextColor="#9B98AB" style={{ color: '#171526', borderWidth: 1, borderColor: '#E5E2F0', borderRadius: 13, paddingHorizontal: 13, paddingVertical: 12, minHeight: 58 }} />
+                <View style={{ gap: 8 }}>
+                  <TouchableOpacity onPress={loadInviteCandidates} disabled={loadingCandidates} style={{ borderWidth: 1, borderColor: '#DCD7EF', borderRadius: 12, padding: 11, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    <Ionicons name="people-outline" size={17} color="#6C5CE7" />
+                    <Text style={{ color: '#6C5CE7', fontWeight: '800', fontSize: 12 }}>{loadingCandidates ? 'Loading chat contacts…' : 'Choose people from your chats'}</Text>
+                  </TouchableOpacity>
+                  <View style={{ maxHeight: 150, gap: 5 }}>
+                    {inviteCandidates.slice(0, 20).map((person) => {
+                      const selected = selectedInvitees.includes(person.id);
+                      return (
+                        <TouchableOpacity key={person.id} onPress={() => toggleInvitee(person.id)} style={{ flexDirection: 'row', alignItems: 'center', padding: 8, borderRadius: 10, backgroundColor: selected ? '#EEEAFE' : '#F7F6FB' }}>
+                          <Ionicons name={selected ? 'checkbox' : 'square-outline'} size={19} color="#6C5CE7" />
+                          <Text numberOfLines={1} style={{ color: '#373448', marginLeft: 9, fontWeight: '700', flex: 1 }}>{person.name}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                    {inviteCandidates.length === 0 && <Text style={{ color: '#777286', fontSize: 12 }}>Load people from your existing chats to invite them.</Text>}
+                  </View>
+                  <Text style={{ color: '#6C687C', fontSize: 11 }}>{selectedInvitees.length} invitee(s) selected</Text>
+                </View>
               )}
               <TouchableOpacity onPress={() => setAllowGuests((value) => !value)} style={{ flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 4 }}>
                 <Ionicons name={allowGuests ? 'checkbox' : 'square-outline'} size={21} color="#6C5CE7" />
