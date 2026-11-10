@@ -23,7 +23,7 @@ export default function IncomingCallScreen({ route, navigation }) {
       if (left <= 0 && !closingRef.current) {
         closingRef.current = true;
         clearInterval(timer);
-        updateCallStatus(call.id, 'declined').catch(() => {}).finally(() => { if (active) navigation.goBack(); });
+        updateCallStatus(call.id, 'missed').catch(() => {}).finally(() => { if (active) navigation.goBack(); });
       }
     }, 1000);
     return () => { active = false; clearInterval(timer); unsubscribe(); };
