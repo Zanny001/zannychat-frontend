@@ -30,5 +30,5 @@ test('iOS registers a separate standard APNs alert token for terminated call-end
   assert.ok(registrar.includes("'APNS_ALERT'"));
   assert.ok(registrar.includes("Platform.OS !== 'ios'"));
   assert.ok(calls.includes("'APNS_ALERT'"));
-  assert.ok(api.includes('setActiveApnsAlertToken(null)') === false); // Registrar clears the in-memory token on unmount.
+  assert.ok(registrar.includes('setActiveApnsAlertToken(null)'));
 });
