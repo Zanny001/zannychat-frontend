@@ -102,7 +102,8 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [showParticipants, setShowParticipants] = useState(false);
   const [guestRequests, setGuestRequests] = useState([]);
   const [showGuestRequests, setShowGuestRequests] = useState(false);
-  const [guestApproved, setGuestApproved] = useState(false);\n  const [guestRequestStatus, setGuestRequestStatus] = useState('none');
+  const [guestApproved, setGuestApproved] = useState(false);
+  const [guestRequestStatus, setGuestRequestStatus] = useState('none');
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
