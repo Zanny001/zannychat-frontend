@@ -150,8 +150,8 @@
           "defaultRingtoneIos": "call_ring.wav",
           "defaultRingtoneAndroid": "call_ring.wav",
           "defaultDialtone": "call_dialtone.wav",
-          "incomingCallTimeout": 45,
-          "outgoingCallTimeout": 60,
+          "incomingCallTimeout": 65,
+          "outgoingCallTimeout": 65,
           "fulfillAnswerCallTimeout": 30,
           "microphonePermission": "ZannyChat needs the microphone to make calls.",
           "notificationStringsAndroid": {
