@@ -14,7 +14,10 @@
         "NSCameraUsageDescription": "ZannyChat uses the camera so you can take and send photos in your chats.",
         "NSMicrophoneUsageDescription": "ZannyChat uses the microphone so you can record and send voice messages.",
         "NSPhotoLibraryUsageDescription": "ZannyChat accesses your photo library so you can send photos and set a profile picture.",
-        "NSPhotoLibraryAddUsageDescription": "ZannyChat can save photos from your chats to your photo library."
+        "NSPhotoLibraryAddUsageDescription": "ZannyChat can save photos from your chats to your photo library.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false
+        }
       },
       "bitcode": false
     },
