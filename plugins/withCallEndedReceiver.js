@@ -95,7 +95,7 @@ function withCallEndedReceiver(config) {
       );
       messaging = messaging.replace(
         '            CallManager.shared.reportCallEnded(session.id, push.reason)',
-        '            CallManager.shared.reportCallEnded(session.id, push.reason)\\n            applicationContext.getSharedPreferences("zannychat_native_call_mapping", Context.MODE_PRIVATE).edit().remove(session.id.toString()).apply()',
+        '            CallManager.shared.reportCallEnded(session.id, push.reason)\n            applicationContext.getSharedPreferences("zannychat_native_call_mapping", Context.MODE_PRIVATE).edit().remove(session.id.toString()).apply()',
       );
       fs.writeFileSync(messagingPath, messaging);
     }
