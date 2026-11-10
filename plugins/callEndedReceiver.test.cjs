@@ -31,7 +31,7 @@ test('native outgoing call credentials are stored in Android private preferences
   assert.ok(moduleSource.includes('NativeCallMappingCrypto.decrypt(raw)'));
   assert.ok(cryptoSource.includes('AndroidKeyStore'));
   assert.ok(cryptoSource.includes('AES/GCM/NoPadding'));
-  assert.ok(kotlin.includes('NativeCallMappingCrypto.decrypt(encrypted)'));
+  assert.ok(kotlin.includes('NativeCallMappingCrypto.decrypt(it)'));
   assert.ok(moduleSource.includes('AsyncFunction("setPendingCallMapping")'));
   assert.ok(moduleSource.includes('AsyncFunction("bindPendingCallMapping")'));
   assert.ok(moduleSource.includes('PENDING_CALL_MAPPING_KEY'));
