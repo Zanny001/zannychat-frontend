@@ -57,6 +57,8 @@ test('outgoing calls obtain the server credential before native session creation
   const pendingWrite = callsService.indexOf('setPendingNativeCallMapping(data.id, nativeEventToken)');
   const mappingBind = callsService.indexOf('bindPendingNativeCallMapping(nativeCallId)');
   assert.ok(pendingClear >= 0 && tokenRequest > pendingClear && pendingWrite > tokenRequest && nativeStart > pendingWrite && mappingBind > nativeStart);
+  assert.ok(callsService.includes('if (!pendingMappingPersisted)'));
+  assert.ok(callsService.includes('native outgoing UI skipped; signed reconciliation storage is unavailable'));
   const receiver = fs.readFileSync(path.join(__dirname, '../plugins/CallEndedReceiver.kt'), 'utf8');
   assert.ok(receiver.includes('session.optString("origin") == "outgoingApp"'));
   assert.ok(receiver.includes('prefs.getString("pending_outgoing_call", null)'));
