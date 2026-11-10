@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, Vibration, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Avatar from '../components/Avatar';
 import { isTerminalCallStatus } from '../utils/callPolicy';
 import { subscribeToCallSession, updateCallStatus } from '../services/calls';
+import { startCallTone, stopCallTone } from '../services/callAudio';
 
 export default function IncomingCallScreen({ route, navigation }) {
   const { call, participantName = 'ZannyChat contact', avatarColor = '#6C5CE7' } = route.params || {};
@@ -14,23 +15,28 @@ export default function IncomingCallScreen({ route, navigation }) {
   useEffect(() => {
     if (!call?.id) return undefined;
     let active = true;
+    startCallTone();
+    if (Platform.OS === 'android') Vibration.vibrate([0, 900, 600], true);
+    else Vibration.vibrate();
     const unsubscribe = subscribeToCallSession(call.id, (next) => {
-      if (active && isTerminalCallStatus(next.status) && !closingRef.current) { closingRef.current = true; navigation.goBack(); }
+      if (active && isTerminalCallStatus(next.status) && !closingRef.current) { stopCallTone(); Vibration.cancel(); closingRef.current = true; navigation.goBack(); }
     });
     const timer = setInterval(() => {
       const left = Math.max(0, Math.ceil((new Date(call.expires_at).getTime() - Date.now()) / 1000));
       setRemaining(left);
       if (left <= 0 && !closingRef.current) {
+        stopCallTone(); Vibration.cancel();
         closingRef.current = true;
         clearInterval(timer);
         updateCallStatus(call.id, 'missed').catch(() => {}).finally(() => { if (active) navigation.goBack(); });
       }
     }, 1000);
-    return () => { active = false; clearInterval(timer); unsubscribe(); };
+    return () => { active = false; clearInterval(timer); unsubscribe(); stopCallTone(); Vibration.cancel(); };
   }, [call?.id, call?.expires_at, navigation]);
 
   const decline = async () => {
     if (busy || closingRef.current) return;
+    stopCallTone(); Vibration.cancel();
     closingRef.current = true;
     setBusy(true);
     try { await updateCallStatus(call.id, 'declined'); } catch (_) {}
@@ -39,6 +45,7 @@ export default function IncomingCallScreen({ route, navigation }) {
 
   const answer = async () => {
     if (busy || closingRef.current) return;
+    stopCallTone(); Vibration.cancel();
     setBusy(true);
     try {
       const accepted = await updateCallStatus(call.id, 'accepted');
