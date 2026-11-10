@@ -60,10 +60,13 @@ function withCallEndedReceiver(config) {
           $0.incomingCallEvent?.serverCallId == serverCallId
         }
         let storedId = UserDefaults.standard.string(forKey: storageKey).flatMap(UUID.init(uuidString:))
-        if let callId = session?.id ?? storedId {
+        let pendingServerId = UserDefaults.standard.string(forKey: "zannychat.callkit.pendingServerId")
+        let pendingNativeId = pendingServerId == serverCallId
+          ? CXCallObserver().calls.first(where: { $0.isOutgoing && !$0.hasEnded })?.uuid
+          : nil
+        if let callId = session?.id ?? storedId ?? pendingNativeId {
           await CallManager.shared.reportCallEnded(for: callId, reason: reason)
         }
-        UserDefaults.standard.removeObject(forKey: storageKey)
         completion()
       }
       return
