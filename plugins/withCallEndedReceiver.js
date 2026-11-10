@@ -32,23 +32,47 @@ function withCallEndedReceiver(config) {
     let messaging = fs.readFileSync(messagingPath, 'utf8');
     if (!messaging.includes('zannychatFindMappedCallSession')) {
       const imports = [
-        'import expo.modules.zannychatcallmapping.NativeCallMappingCrypto',
         'import android.content.Context',
+        'import android.security.keystore.KeyGenParameterSpec',
+        'import android.security.keystore.KeyProperties',
         'import android.util.Base64',
         'import java.security.KeyStore',
         'import java.util.UUID',
         'import javax.crypto.Cipher',
+        'import javax.crypto.KeyGenerator',
         'import javax.crypto.SecretKey',
         'import javax.crypto.spec.GCMParameterSpec',
       ];
       for (const line of imports) {
         if (!messaging.includes(line)) messaging = messaging.replace('import android.os.Handler', line + '\nimport android.os.Handler');
       }
-      const method = String.raw`
+      const method = String.raw
+    private fun zannychatMappingKey(): SecretKey {
+        val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        (keyStore.getKey("zannychat.native-call-mapping.v1", null) as? SecretKey)?.let { return it }
+        val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
+        generator.init(
+            KeyGenParameterSpec.Builder(
+                "zannychat.native-call-mapping.v1",
+                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
+            )
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setRandomizedEncryptionRequired(true)
+                .build(),
+        )
+        return generator.generateKey()
+    }
+
+    private fun zannychatEncryptMapping(value: String): String {
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, zannychatMappingKey())
+        return Base64.encodeToString(cipher.iv + cipher.doFinal(value.toByteArray(Charsets.UTF_8)), Base64.NO_WRAP)
+    }
+
     private fun zannychatFindMappedCallSession(serverCallId: String): expo.modules.callkittelecom.models.CallSession? {
         val preferences = applicationContext.getSharedPreferences("zannychat_native_call_mapping", Context.MODE_PRIVATE)
-        val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-        val key = keyStore.getKey("zannychat.native-call-mapping.v1", null) as? SecretKey ?: return null
+        val key = zannychatMappingKey()
         fun decrypt(value: String): JSONObject? {
             return try {
                 val combined = Base64.decode(value, Base64.NO_WRAP)
@@ -86,7 +110,7 @@ function withCallEndedReceiver(config) {
         return null
     }
 
-`;
+
       const processMarker = '    private fun processCallEnded(push: CallEndedPush) {';
       if (!messaging.includes(processMarker)) throw new Error('withCallEndedReceiver: unsupported Android call-ended handler source');
       messaging = messaging.replace(processMarker, method + processMarker);
@@ -97,7 +121,7 @@ function withCallEndedReceiver(config) {
             if (incomingSession != null && !eventToken.isNullOrBlank()) {
                 val mapping = JSONObject().put("serverCallId", event.serverCallId).put("token", eventToken).put("origin", "incoming").toString()
                 applicationContext.getSharedPreferences("zannychat_native_call_mapping", Context.MODE_PRIVATE)
-                    .edit().putString(incomingSession.id.toString(), NativeCallMappingCrypto.encrypt(mapping)).apply()
+                    .edit().putString(incomingSession.id.toString(), zannychatEncryptMapping(mapping)).apply()
             }`;
       if (!messaging.includes('NativeCallMappingCrypto.encrypt(mapping)')) {
         if (!messaging.includes(incomingReport)) throw new Error('withCallEndedReceiver: unsupported Android incoming-call handler source');
