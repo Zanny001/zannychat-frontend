@@ -27,10 +27,10 @@ public final class ZannyChatNativeCallMappingModule: Module {
         kSecAttrService as String: Self.service,
         kSecAttrAccount as String: Self.pendingKey,
       ]
-      UserDefaults.standard.set(nativeCallId, forKey: "zannychat.callkit.nativeForServer.\\(serverCallId)")
+      UserDefaults.standard.set(nativeCallId, forKey: "zannychat.callkit.nativeForServer.\(serverCallId)")
       let attributes: [String: Any] = [kSecAttrAccount as String: nativeCallId]
       guard SecItemUpdate(query as CFDictionary, attributes as CFDictionary) == errSecSuccess else {
-        UserDefaults.standard.removeObject(forKey: "zannychat.callkit.nativeForServer.\\(serverCallId)")
+        UserDefaults.standard.removeObject(forKey: "zannychat.callkit.nativeForServer.\(serverCallId)")
         return false
       }
       UserDefaults.standard.removeObject(forKey: "zannychat.callkit.pendingServerId")
@@ -47,7 +47,7 @@ public final class ZannyChatNativeCallMappingModule: Module {
       try Self.validate(serverCallId: serverCallId, token: token)
       let stored = Self.store(Self.encode(serverCallId: serverCallId, token: token, origin: "outgoingApp"), key: nativeCallId)
       if stored {
-        UserDefaults.standard.set(nativeCallId, forKey: "zannychat.callkit.nativeForServer.\\(serverCallId)")
+        UserDefaults.standard.set(nativeCallId, forKey: "zannychat.callkit.nativeForServer.\(serverCallId)")
       }
       return stored
     }
@@ -63,7 +63,7 @@ public final class ZannyChatNativeCallMappingModule: Module {
       if let data = Self.read(key: nativeCallId),
          let mapping = try? JSONSerialization.jsonObject(with: data) as? [String: String],
          let serverCallId = mapping["serverCallId"] {
-        UserDefaults.standard.removeObject(forKey: "zannychat.callkit.nativeForServer.\\(serverCallId)")
+        UserDefaults.standard.removeObject(forKey: "zannychat.callkit.nativeForServer.\(serverCallId)")
       }
       Self.remove(key: nativeCallId)
     }
