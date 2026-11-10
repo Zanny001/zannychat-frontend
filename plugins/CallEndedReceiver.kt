@@ -13,10 +13,13 @@ private const val BACKEND_URL = "__ZANNYCHAT_BACKEND_URL__"
 class CallEndedReceiver : BroadcastReceiver() {
     companion object {
         private const val TAG = "ZannyChatCallEnded"
+        private val SUPPORTED_EVENTS = setOf("onCallEnded", "onCallReportedEnded")
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.getStringExtra("eventName") != "onCallEnded") return
+        val eventName = intent.getStringExtra("eventName") ?: return
+        if (eventName !in SUPPORTED_EVENTS) return
+
         val payload = intent.getStringExtra("payload")?.let {
             try { JSONObject(it) } catch (_: Exception) { null }
         } ?: return
@@ -25,9 +28,14 @@ class CallEndedReceiver : BroadcastReceiver() {
         val callId = incomingCall.optString("serverCallId", "")
         val metadata = incomingCall.optJSONObject("metadata")
         val eventToken = metadata?.optString("serverEventToken", "") ?: ""
-        val reason = payload.optString("reason", "")
+        // onCallReportedEnded carries the native terminal reason (notably
+        // "unanswered"). onCallEnded may omit it; the backend treats that
+        // event as a local decline rather than guessing it was missed.
+        val reason = payload.optString("reason", "").ifBlank {
+            payload.optString("endReason", "")
+        }
         if (callId.isBlank() || eventToken.isBlank()) {
-            Log.w(TAG, "Call ended without a server reconciliation token")
+            Log.w(TAG, "Native call event missing server reconciliation metadata")
             return
         }
 
@@ -49,9 +57,9 @@ class CallEndedReceiver : BroadcastReceiver() {
                     .put("reason", reason)
                     .toString()
                 connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
-                Log.i(TAG, "Native call-end reconciliation returned HTTP ${connection?.responseCode}")
+                Log.i(TAG, "Native call reconciliation returned HTTP ${connection?.responseCode}")
             } catch (error: Exception) {
-                Log.w(TAG, "Native call-end reconciliation failed: ${error.message}")
+                Log.w(TAG, "Native call reconciliation failed: ${error.message}")
             } finally {
                 connection?.disconnect()
                 pending.finish()
