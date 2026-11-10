@@ -1,6 +1,6 @@
 import { supabase, SUPABASE_ENABLED } from './supabaseClient';
 import { backendFetch } from './backendClient';
-import { startNativeOutgoingCall, registerNativeCallMapping } from './nativeCallSystem';
+import { startNativeOutgoingCall, setPendingNativeCallMapping, bindPendingNativeCallMapping } from './nativeCallSystem';
 
 function requireCalls() {
   if (!SUPABASE_ENABLED || !supabase) throw new Error('Calls require a configured, signed-in ZannyChat account.');
@@ -45,14 +45,17 @@ export async function startCall({ conversationId, calleeId, callType }) {
     } catch (tokenError) {
       console.warn('[calls] native end reconciliation credential unavailable:', tokenError?.message || tokenError);
     }
+    const pendingMappingPersisted = nativeEventToken
+      ? await setPendingNativeCallMapping(data.id, nativeEventToken)
+      : false;
     const displayName = await getCallParticipantName(calleeId);
     nativeCallId = await startNativeOutgoingCall(
       { id: calleeId, displayName },
       { hasVideo: callType === 'video' },
     );
-    if (nativeCallId && nativeEventToken) {
-      const persisted = await registerNativeCallMapping(nativeCallId, data.id, nativeEventToken);
-      if (!persisted) console.warn('[calls] native outgoing call mapping was not persisted');
+    if (nativeCallId && pendingMappingPersisted) {
+      const bound = await bindPendingNativeCallMapping(nativeCallId);
+      if (!bound) console.warn('[calls] native outgoing call mapping remains pending for killed-app recovery');
     }
   } catch (nativeError) {
     console.warn('[calls] native outgoing UI unavailable:', nativeError?.message || nativeError);
