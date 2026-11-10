@@ -143,11 +143,6 @@ function withCallEndedReceiver(config) {
       if (!delegate.includes(localEndMarker)) throw new Error('withCallEndedReceiver: unsupported iOS end-call action source');
       delegate = delegate.replace(localEndMarker, '    Task {\n      let endSession = await store.session(for: action.callUUID)\n      let endReason = endSession?.status == .ringing ? (endSession?.origin == .incoming ? "declined" : "cancelled") : nil\n      await reportZannyChatNativeEnd(for: action.callUUID, reason: endReason)\n      // Snapshot the session as ended so the embedded session reflects the terminal state.');
     }
-    const endActionMarker = '      if var session = await store.session(for: action.callUUID) {';
-    if (!delegate.includes('zannychat.callkit.server.\\(serverCallId)')) {
-      if (!delegate.includes(endActionMarker)) throw new Error('withCallEndedReceiver: unsupported iOS end-call delegate source');
-      delegate = delegate.replace(endActionMarker, endActionMarker + '\n        if let serverCallId = session.incomingCallEvent?.serverCallId {\n          UserDefaults.standard.removeObject(forKey: "zannychat.callkit.server.\\(serverCallId)")\n        }');
-    }
     fs.writeFileSync(delegatePath, delegate);
     return config;
   }]);
