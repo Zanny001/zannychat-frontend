@@ -149,6 +149,25 @@ async function saveStatusAudienceRecipients(statusId, selectedContactIds, ownerI
   }
 }
 
+async function createStatusRecord(text, audience, mediaKind, expiryHours) {
+  const { data, error } = await supabase.rpc('create_status_update', {
+    p_text: text || null, p_audience: audience, p_media_kind: mediaKind || null,
+    p_expiry_hours: normalizeStatusExpiryHours(expiryHours),
+  });
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row?.id) throw new Error('The status could not be created. Please try again.');
+  return row;
+}
+
+async function readPickedStatusBlob(asset) {
+  if (asset?.file && typeof asset.file.arrayBuffer === 'function') return asset.file;
+  if (!asset?.uri) throw new Error('Choose a media file first.');
+  const response = await fetch(asset.uri);
+  if (!response.ok) throw new Error('Could not read the selected media file.');
+  return response.blob();
+}
+
 export async function publishTextStatus(text, audience = 'contacts', selectedContactIds = [], expiryHours = 24) {
   const normalized = normalizeStatusText(text);
   if (!normalized) throw new Error('Write a status before publishing.');
@@ -157,37 +176,26 @@ export async function publishTextStatus(text, audience = 'contacts', selectedCon
   if (!SUPABASE_ENABLED || !supabase) throw new Error('Status updates require a configured account connection.');
   const { data: auth, error: authError } = await supabase.auth.getUser();
   if (authError || !auth?.user?.id) throw new Error('Sign in to publish a status.');
-  const lifetimeHours = normalizeStatusExpiryHours(expiryHours);
-  const createdAt = new Date().toISOString();
-  const { data, error } = await supabase.from('status_updates').insert({ user_id: auth.user.id, text: normalized, audience, created_at: createdAt, expires_at: statusExpiryFrom(createdAt, lifetimeHours) }).select('id,user_id,text,audience,media_kind,media_path,created_at,expires_at').single();
-  if (error) throw error;
-  await saveStatusAudienceRecipients(data.id, selectedIds, auth.user.id);
-  return { ...data, is_own: true };
+  const row = await createStatusRecord(normalized, audience, null, expiryHours);
+  await saveStatusAudienceRecipients(row.id, selectedIds, auth.user.id);
+  return { ...row, is_own: true };
 }
 
 export async function publishPhotoStatus(asset, caption = '', audience = 'contacts', selectedContactIds = [], expiryHours = 24) {
   if (!SUPABASE_ENABLED || !supabase) throw new Error('Status updates require a configured account connection.');
-  if (!asset?.uri) throw new Error('Choose a photo first.');
+  if (!asset?.uri && !asset?.file) throw new Error('Choose a photo first.');
   const selectedIds = normalizeAudience(audience, selectedContactIds);
   const { data: auth, error: authError } = await supabase.auth.getUser();
   if (authError || !auth?.user?.id) throw new Error('Sign in to publish a status.');
-  const response = await fetch(asset.uri);
-  const blob = await response.blob();
+  const blob = await readPickedStatusBlob(asset);
   if (!blob || blob.size < 1 || blob.size > 10 * 1024 * 1024) throw new Error('Photo must be smaller than 10 MB.');
   const mime = asset.mimeType || blob.type || 'image/jpeg';
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(mime)) throw new Error('Choose a JPG, PNG, or WebP photo.');
-  const lifetimeHours = normalizeStatusExpiryHours(expiryHours);
-  const createdAt = new Date().toISOString();
-  const expiresAt = statusExpiryFrom(createdAt, lifetimeHours);
-  const { data: row, error: insertError } = await supabase.from('status_updates').insert({
-    user_id: auth.user.id, text: String(caption || '').trim().slice(0, STATUS_TEXT_LIMIT), audience,
-    media_kind: 'image', media_path: 'pending', created_at: createdAt, expires_at: expiresAt,
-  }).select('id,user_id,text,audience,media_kind,media_path,created_at,expires_at').single();
-  if (insertError) throw insertError;
+  const captionText = String(caption || '').trim().slice(0, STATUS_TEXT_LIMIT);
+  const row = await createStatusRecord(captionText, audience, 'image', expiryHours);
   await saveStatusAudienceRecipients(row.id, selectedIds, auth.user.id);
   const ext = mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
   const path = `${auth.user.id}/${row.id}/photo.${ext}`;
-  // Replace the placeholder only after row creation; policy validates exact path.
   const { error: updateError } = await supabase.from('status_updates').update({ media_path: path }).eq('id', row.id).eq('user_id', auth.user.id);
   if (updateError) { await supabase.from('status_updates').delete().eq('id', row.id); throw updateError; }
   const bytes = await blob.arrayBuffer();
@@ -195,29 +203,21 @@ export async function publishPhotoStatus(asset, caption = '', audience = 'contac
   if (uploadError) { await supabase.from('status_updates').delete().eq('id', row.id); throw uploadError; }
   const { data: signed, error: signError } = await supabase.storage.from('status-media').createSignedUrl(path, 300);
   if (signError) { await supabase.storage.from('status-media').remove([path]); await supabase.from('status_updates').delete().eq('id', row.id); throw signError; }
-  return { ...row, is_own: true, text: String(caption || '').trim().slice(0, STATUS_TEXT_LIMIT), media_path: path, media_url: signed.signedUrl };
+  return { ...row, is_own: true, text: captionText || null, media_path: path, media_url: signed.signedUrl };
 }
 
 export async function publishVideoStatus(asset, caption = '', audience = 'contacts', selectedContactIds = [], expiryHours = 24) {
   if (!SUPABASE_ENABLED || !supabase) throw new Error('Status updates require a configured account connection.');
-  if (!asset?.uri) throw new Error('Choose a video first.');
+  if (!asset?.uri && !asset?.file) throw new Error('Choose a video first.');
   const selectedIds = normalizeAudience(audience, selectedContactIds);
   const { data: auth, error: authError } = await supabase.auth.getUser();
   if (authError || !auth?.user?.id) throw new Error('Sign in to publish a status.');
-  const response = await fetch(asset.uri);
-  const blob = await response.blob();
+  const blob = await readPickedStatusBlob(asset);
   if (!blob || blob.size < 1 || blob.size > 50 * 1024 * 1024) throw new Error('Video must be smaller than 50 MB.');
   const mime = asset.mimeType || blob.type || 'video/mp4';
-  if (mime !== 'video/mp4') throw new Error('Choose an MP4 video.');
-  const lifetimeHours = normalizeStatusExpiryHours(expiryHours);
-  const createdAt = new Date().toISOString();
-  const expiresAt = statusExpiryFrom(createdAt, lifetimeHours);
+  if (mime !== 'video/mp4') throw new Error('Choose an MP4 video. Other video formats are not supported yet.');
   const captionText = String(caption || '').trim().slice(0, STATUS_TEXT_LIMIT);
-  const { data: row, error: insertError } = await supabase.from('status_updates').insert({
-    user_id: auth.user.id, text: captionText || null, audience,
-    media_kind: 'video', media_path: 'pending', created_at: createdAt, expires_at: expiresAt,
-  }).select('id,user_id,text,audience,media_kind,media_path,created_at,expires_at').single();
-  if (insertError) throw insertError;
+  const row = await createStatusRecord(captionText, audience, 'video', expiryHours);
   await saveStatusAudienceRecipients(row.id, selectedIds, auth.user.id);
   const path = `${auth.user.id}/${row.id}/video.mp4`;
   const { error: updateError } = await supabase.from('status_updates').update({ media_path: path }).eq('id', row.id).eq('user_id', auth.user.id);
