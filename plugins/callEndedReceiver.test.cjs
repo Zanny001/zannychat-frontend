@@ -31,3 +31,11 @@ test('native outgoing call credentials are stored in Android private preferences
   assert.ok(nativeService.includes("requireOptionalNativeModule('ZannyChatNativeCallMapping')"));
   assert.ok(!nativeService.includes('@react-native-async-storage/async-storage'));
 });
+
+test('outgoing calls obtain the server credential before native session creation', () => {
+  const callsService = fs.readFileSync(path.join(__dirname, '../src/services/calls.js'), 'utf8');
+  const tokenRequest = callsService.indexOf('/native-event-token');
+  const nativeStart = callsService.indexOf('startNativeOutgoingCall(');
+  const mappingWrite = callsService.indexOf('registerNativeCallMapping(nativeCallId, data.id, nativeEventToken)');
+  assert.ok(tokenRequest >= 0 && nativeStart > tokenRequest && mappingWrite > nativeStart);
+});
