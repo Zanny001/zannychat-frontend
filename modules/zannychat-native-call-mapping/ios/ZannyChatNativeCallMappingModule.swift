@@ -27,9 +27,12 @@ public final class ZannyChatNativeCallMappingModule: Module {
         kSecAttrService as String: Self.service,
         kSecAttrAccount as String: Self.pendingKey,
       ]
-      let attributes: [String: Any] = [kSecAttrAccount as String: nativeCallId]
-      guard SecItemUpdate(query as CFDictionary, attributes as CFDictionary) == errSecSuccess else { return false }
       UserDefaults.standard.set(nativeCallId, forKey: "zannychat.callkit.nativeForServer.\\(serverCallId)")
+      let attributes: [String: Any] = [kSecAttrAccount as String: nativeCallId]
+      guard SecItemUpdate(query as CFDictionary, attributes as CFDictionary) == errSecSuccess else {
+        UserDefaults.standard.removeObject(forKey: "zannychat.callkit.nativeForServer.\\(serverCallId)")
+        return false
+      }
       UserDefaults.standard.removeObject(forKey: "zannychat.callkit.pendingServerId")
       return true
     }
