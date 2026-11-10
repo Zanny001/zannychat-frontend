@@ -7,23 +7,23 @@ const outgoing = fs.readFileSync(new URL('../screens/OutgoingCallScreen.js', imp
 const audio = fs.readFileSync(new URL('./callAudio.js', import.meta.url), 'utf8');
 
 test('incoming call screen starts and always stops its ringtone and vibration', () => {
-  assert.match(incoming, /startCallTone\\(\\)/);
-  assert.match(incoming, /stopCallTone\\(\\)/);
-  assert.match(incoming, /Vibration\\.cancel\\(\\)/);
-  assert.match(incoming, /updateCallStatus\\(call\\.id, 'accepted'\\)/);
-  assert.match(incoming, /updateCallStatus\\(call\\.id, 'declined'\\)/);
+  assert.ok(incoming.includes('startCallTone()'));
+  assert.ok(incoming.includes('stopCallTone()'));
+  assert.ok(incoming.includes('Vibration.cancel()'));
+  assert.ok(incoming.includes("updateCallStatus(call.id, 'accepted')"));
+  assert.ok(incoming.includes("updateCallStatus(call.id, 'declined')"));
 });
 
 test('outgoing call screen plays ringback until accepted, terminal, cancelled, or unmounted', () => {
-  assert.match(outgoing, /startCallTone\\(\\)/);
-  assert.match(outgoing, /stopCallTone\\(\\)/);
-  assert.match(outgoing, /next\\.status === 'accepted'/);
-  assert.match(outgoing, /isTerminalCallStatus\\(next\\.status\\)/);
+  assert.ok(outgoing.includes('startCallTone()'));
+  assert.ok(outgoing.includes('stopCallTone()'));
+  assert.ok(outgoing.includes("next.status === 'accepted'"));
+  assert.ok(outgoing.includes('isTerminalCallStatus(next.status)'));
 });
 
 test('ringtone player uses a bundled local source and a single looping player', () => {
-  assert.match(audio, /require\\('\\.\\.\\/\\.\\.\\/assets\\/sounds\\/call-ring\\.wav'\\)/);
-  assert.match(audio, /createAudioPlayer/);
-  assert.match(audio, /activePlayer\\.loop = true/);
-  assert.match(audio, /export function stopCallTone/);
+  assert.ok(audio.includes("require('../../assets/sounds/call-ring.wav')"));
+  assert.ok(audio.includes('createAudioPlayer'));
+  assert.ok(audio.includes('activePlayer.loop = true'));
+  assert.ok(audio.includes('export function stopCallTone'));
 });
