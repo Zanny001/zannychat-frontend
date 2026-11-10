@@ -7,9 +7,10 @@ import { subscribeToCallSession, updateCallStatus } from '../services/calls';
 import { startCallTone, stopCallTone } from '../services/callAudio';
 
 export default function IncomingCallScreen({ route, navigation }) {
-  const { call, participantName = 'ZannyChat contact', avatarColor = '#6C5CE7' } = route.params || {};
+  const { call, participantName = 'ZannyChat contact', avatarColor = '#6C5CE7', autoAnswer = false } = route.params || {};
   const [busy, setBusy] = useState(false);
   const closingRef = useRef(false);
+  const autoAnswerHandledRef = useRef(false);
   const [remaining, setRemaining] = useState(() => Math.max(0, Math.ceil((new Date(call?.expires_at || Date.now()).getTime() - Date.now()) / 1000)));
 
   useEffect(() => {
@@ -58,6 +59,12 @@ export default function IncomingCallScreen({ route, navigation }) {
       navigation.goBack();
     }
   };
+
+  useEffect(() => {
+    if (!autoAnswer || !call?.id || autoAnswerHandledRef.current) return;
+    autoAnswerHandledRef.current = true;
+    answer();
+  }, [autoAnswer, call?.id]);
 
   const isVideo = call?.call_type === 'video';
   return (

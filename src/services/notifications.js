@@ -3,7 +3,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { supabase, SUPABASE_ENABLED } from './supabaseClient';
-import { getCallParticipantName } from './calls';
+import { updateCallStatus, getCallParticipantName } from './calls';
 import { getNotificationPrefs, loadNotificationPrefs } from './notificationPrefs';
 import { shouldQuietForegroundNotification } from '../utils/quietHours';
 
@@ -40,6 +40,14 @@ Notifications.setNotificationHandler({
 // build — it does not work in Expo Go on Android (SDK 53+) or in
 // Snack's Web/iframe preview at all. See the frontend README.
 export async function registerForPushNotifications() {
+  try {
+    await Notifications.setNotificationCategoryAsync('incoming-call', [
+      { identifier: 'ANSWER_CALL', buttonTitle: 'Answer', options: { opensAppToForeground: true } },
+      { identifier: 'DECLINE_CALL', buttonTitle: 'Decline', options: { opensAppToForeground: true, isDestructive: true } },
+    ]);
+  } catch (error) {
+    console.warn('[notifications] call actions unavailable:', error?.message || error);
+  }
   if (!SUPABASE_ENABLED) return null;
 
   if (!Device.isDevice) {
@@ -58,7 +66,7 @@ export async function registerForPushNotifications() {
     return null;
   }
 
-  const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+  const projectId = Constants.expoConfig?.extra?.eas?.projectId || Constants.easConfig?.projectId;
   if (!projectId) {
     console.warn('[push] skipped — no EAS project ID found. Run `eas init` (see README) first.');
     return null;
@@ -134,7 +142,8 @@ export function subscribeToNotificationTaps(navigationRef) {
     const data = response.notification?.request?.content?.data || {};
     const callId = typeof data.callId === 'string' ? data.callId : null;
     const conversationId = typeof data.conversationId === 'string' ? data.conversationId : null;
-    const key = callId ? `call:${callId}` : conversationId ? `chat:${conversationId}` : null;
+    const actionIdentifier = response.actionIdentifier;
+    const key = callId ? `call:${callId}:${actionIdentifier}` : conversationId ? `chat:${conversationId}` : null;
     if (!key || handled.has(key)) return;
     if (!navigationRef.isReady()) { pending = response; return; }
     handled.add(key);
@@ -145,8 +154,14 @@ export function subscribeToNotificationTaps(navigationRef) {
         .select('id,conversation_id,caller_id,callee_id,call_type,status,expires_at')
         .eq('id', callId).maybeSingle();
       if (!active || error || !call || call.status !== 'ringing' || new Date(call.expires_at).getTime() <= Date.now()) return;
+      if (actionIdentifier === 'DECLINE_CALL') {
+        await updateCallStatus(callId, 'declined');
+        return;
+      }
       const participantName = await getCallParticipantName(call.caller_id);
-      if (active && navigationRef.isReady()) navigationRef.navigate('IncomingCall', { call, participantName });
+      if (active && navigationRef.isReady()) {
+        navigationRef.navigate('IncomingCall', { call, participantName, autoAnswer: actionIdentifier === 'ANSWER_CALL' });
+      }
       return;
     }
     if (conversationId) navigationRef.navigate('Chat', { conversation: { id: conversationId, participant: {} } });
