@@ -53,6 +53,8 @@ test('native outgoing call credentials are stored in Android private preferences
   assert.ok(iosModule.includes('SecItemAdd'));
   assert.ok(iosModule.includes('SecItemCopyMatching'));
   assert.ok(iosModule.includes('AsyncFunction("bindPendingCallMapping")'));
+  assert.ok(iosModule.includes('Self.store(data, key: nativeCallId)'));
+  assert.ok(iosModule.includes('Self.remove(key: Self.pendingKey)'));
   assert.ok(moduleSource.includes('getSharedPreferences("zannychat_native_call_mapping"'));
   assert.ok(moduleSource.includes('NativeCallMappingCrypto.encrypt(value)'));
   assert.ok(moduleSource.includes('NativeCallMappingCrypto.decrypt(raw)'));
