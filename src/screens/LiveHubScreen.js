@@ -7,10 +7,15 @@ import { useTheme } from '../theme/ThemeContext';
 import GlassCard from '../components/GlassCard';
 
 const VISIBILITIES = [
-  { value: 'public', label: 'Public', detail: 'Anyone can discover your LIVE' },
-  { value: 'followers', label: 'Followers', detail: 'Only people following you' },
-  { value: 'private', label: 'Private', detail: 'Invite people from your chats' },
+  { value: 'public', label: 'Public' },
+  { value: 'followers', label: 'Followers' },
+  { value: 'private', label: 'Private' },
 ];
+const VISIBILITY_DETAILS = {
+  public: 'Anyone can discover your LIVE',
+  followers: 'Only people following you',
+  private: 'Invite people from your chats',
+};
 const STREAM_FILTERS = [
   { value: 'all', label: 'All LIVE' },
   { value: 'following', label: 'Following' },
@@ -125,7 +130,7 @@ export default function LiveHubScreen({ navigation }) {
     const isFollowing = followingIds.includes(creatorId);
     setBusy(true);
     try {
-      await backendFetch('/live/creators/' + creatorId + '/follow', { method: isFollowing ? 'DELETE' : 'POST' });
+      await backendFetch(`/live/creators/${creatorId}/follow`, { method: isFollowing ? 'DELETE' : 'POST' });
       setFollowingIds((current) => isFollowing ? current.filter((id) => id !== creatorId) : [...current, creatorId]);
       if (isFollowing) {
         setFollowingCreators((current) => current.filter((item) => item.creator_id !== creatorId));
@@ -217,7 +222,7 @@ export default function LiveHubScreen({ navigation }) {
                     );
                   })}
                 </View>
-                <Text style={[typography.caption, { color: colors.textSecondary }]}>{VISIBILITIES.find((item) => item.value === visibility)?.detail}</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>{VISIBILITY_DETAILS[visibility]}</Text>
               </View>
 
               {visibility === 'private' && (
