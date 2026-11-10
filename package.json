@@ -1,6 +1,6 @@
 {
   "name": "zannychat",
-  "version": "1.2.241",
+  "version": "1.2.242",
   "private": true,
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
@@ -59,7 +59,8 @@
     "react-native-svg": "15.15.4",
     "react-native-url-polyfill": "4.0.0",
     "react-native-web": "^0.21.2",
-    "react-native-webrtc": "124.0.7",
-    "react-native-worklets": "0.10.1"
+    "react-native-worklets": "0.10.1",
+    "@livekit/react-native-webrtc": "150.1.1",
+    "expo-callkit-telecom": "1.0.1"
   }
 }
