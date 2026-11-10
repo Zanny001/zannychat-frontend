@@ -66,11 +66,21 @@ function withCallEndedReceiver(config) {
             val mapping = decrypt(value) ?: continue
             if (mapping.optString("serverCallId") != serverCallId) continue
             if (nativeId == "pending_outgoing_call") {
-                return expo.modules.callkittelecom.store.CallStore.allSessions()
+                val session = expo.modules.callkittelecom.store.CallStore.allSessions()
                     .firstOrNull { it.origin.value == "outgoingApp" }
+                if (session == null) {
+                    expo.modules.callkittelecom.managers.CallNotificationManager.cancel(applicationContext)
+                    preferences.edit().remove(nativeId).apply()
+                }
+                return session
             }
             val uuid = try { UUID.fromString(nativeId) } catch (_: Exception) { null } ?: continue
-            return expo.modules.callkittelecom.store.CallStore.session(uuid)
+            val session = expo.modules.callkittelecom.store.CallStore.session(uuid)
+            if (session == null) {
+                expo.modules.callkittelecom.managers.CallNotificationManager.cancel(applicationContext)
+                preferences.edit().remove(nativeId).apply()
+            }
+            return session
         }
         return null
     }
@@ -82,6 +92,10 @@ function withCallEndedReceiver(config) {
       messaging = messaging.replace(
         '            val session = CallStore.sessionForServerCallId(push.serverCallId)',
         '            val session = CallStore.sessionForServerCallId(push.serverCallId) ?: zannychatFindOutgoingCallSession(push.serverCallId)',
+      );
+      messaging = messaging.replace(
+        '            CallManager.shared.reportCallEnded(session.id, push.reason)',
+        '            CallManager.shared.reportCallEnded(session.id, push.reason)\\n            applicationContext.getSharedPreferences("zannychat_native_call_mapping", Context.MODE_PRIVATE).edit().remove(session.id.toString()).apply()',
       );
       fs.writeFileSync(messagingPath, messaging);
     }
