@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, SafeAreaView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
@@ -70,7 +70,7 @@ export default function LiveHubScreen({ navigation }) {
     if (!title.trim()) return Alert.alert('Add a title', 'Give your LIVE stream a short title first.');
     const invitees = [...new Set(selectedInvitees)];
     if (visibility === 'private' && invitees.length === 0) {
-      return Alert.alert('Add invitees', 'Private LIVE needs at least one invitee user ID.');
+      return Alert.alert('Add invitees', 'Choose at least one person from your existing chats.');
     }
     setBusy(true);
     try {
@@ -160,8 +160,8 @@ export default function LiveHubScreen({ navigation }) {
                     <Ionicons name="people-outline" size={17} color="#6C5CE7" />
                     <Text style={{ color: '#6C5CE7', fontWeight: '800', fontSize: 12 }}>{loadingCandidates ? 'Loading chat contacts…' : 'Choose people from your chats'}</Text>
                   </TouchableOpacity>
-                  <View style={{ maxHeight: 150, gap: 5 }}>
-                    {inviteCandidates.slice(0, 20).map((person) => {
+                  <ScrollView nestedScrollEnabled style={{ maxHeight: 150 }} contentContainerStyle={{ gap: 5 }}>
+                    {inviteCandidates.map((person) => {
                       const selected = selectedInvitees.includes(person.id);
                       return (
                         <TouchableOpacity key={person.id} onPress={() => toggleInvitee(person.id)} style={{ flexDirection: 'row', alignItems: 'center', padding: 8, borderRadius: 10, backgroundColor: selected ? '#EEEAFE' : '#F7F6FB' }}>
@@ -171,7 +171,7 @@ export default function LiveHubScreen({ navigation }) {
                       );
                     })}
                     {inviteCandidates.length === 0 && <Text style={{ color: '#777286', fontSize: 12 }}>Load people from your existing chats to invite them.</Text>}
-                  </View>
+                  </ScrollView>
                   <Text style={{ color: '#6C687C', fontSize: 11 }}>{selectedInvitees.length} invitee(s) selected</Text>
                 </View>
               )}
