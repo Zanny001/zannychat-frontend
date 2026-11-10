@@ -24,6 +24,8 @@ test('outgoing call screen plays ringback until accepted, terminal, cancelled, o
 
 test('ringtone player uses a bundled local source and a single looping player', () => {
   assert.ok(audio.includes("require('../../assets/sounds/call_ring.wav')"));
+  assert.ok(audio.includes("require('../../assets/sounds/call_dialtone.wav')"));
+  assert.ok(outgoing.includes("startCallTone('outgoing')"));
   assert.ok(audio.includes('createAudioPlayer'));
   assert.ok(audio.includes('activePlayer.loop = true'));
   assert.ok(audio.includes('export function stopCallTone'));
