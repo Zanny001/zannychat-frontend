@@ -1,6 +1,6 @@
 {
   "platforms": [
-    "ios",
+    "apple",
     "android"
   ],
   "android": {
@@ -8,9 +8,9 @@
       "expo.modules.zannychatcallmapping.ZannyChatNativeCallMappingModule"
     ]
   },
-  "ios": {
+  "apple": {
     "modules": [
-      "expo.modules.zannychatcallmapping.ZannyChatNativeCallMappingModule"
+      "ZannyChatNativeCallMappingModule"
     ]
   }
 }
