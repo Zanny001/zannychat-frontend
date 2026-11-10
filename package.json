@@ -15,7 +15,8 @@
     "audit:readiness": "python3 scripts/release_readiness.py",
     "audit:integrity": "python3 scripts/refresh_registry_integrity.py",
     "test:integrity": "python3 -m unittest discover -s tests -p \"test_*.py\"",
-    "test:call-recovery": "node --test src/screens/callNetworkRecovery.contract.test.cjs"
+    "test:call-recovery": "node --test src/screens/callNetworkRecovery.contract.test.cjs",
+    "test:native-call-receiver": "node --test plugins/callEndedReceiver.test.cjs"
   },
   "dependencies": {
     "@config-plugins/react-native-webrtc": "15.0.2",
