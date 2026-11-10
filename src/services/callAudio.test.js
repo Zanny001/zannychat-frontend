@@ -17,6 +17,8 @@ test('incoming call screen starts and always stops its ringtone and vibration', 
 
 test('outgoing call screen plays ringback until accepted, terminal, cancelled, or unmounted', () => {
   assert.ok(outgoing.includes("startCallTone('outgoing')"));
+  assert.equal(outgoing.includes("if (!initialCall.nativeCallId) startCallTone('outgoing')"), false);
+  assert.ok(outgoing.includes("if (next.status === 'accepted')"));
   assert.ok(outgoing.includes('stopCallTone()'));
   assert.ok(outgoing.includes("next.status === 'accepted'"));
   assert.ok(outgoing.includes('isTerminalCallStatus(next.status)'));
