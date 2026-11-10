@@ -59,3 +59,12 @@ test('outgoing calls obtain the server credential before native session creation
   assert.ok(receiver.includes('prefs.getString("pending_outgoing_call", null)'));
   assert.ok(receiver.includes('.remove("pending_outgoing_call")'));
 });
+
+
+test('incoming native calls from push fallback carry a signed reconciliation credential', () => {
+  const nativeService = fs.readFileSync(path.join(__dirname, '../src/services/nativeCallSystem.native.js'), 'utf8');
+  assert.ok(nativeService.includes("import { backendFetch } from './backendClient'"));
+  assert.ok(nativeService.includes('/native-event-token'));
+  assert.ok(nativeService.includes('serverEventToken'));
+  assert.ok(nativeService.includes('metadata: { conversationId: call.conversation_id'));
+});
