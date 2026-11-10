@@ -79,7 +79,7 @@ export default function LiveHubScreen({ navigation }) {
       const connection = await backendFetch('/live', {
         method: 'POST',
         body: JSON.stringify({
-          title: title.trim(), description: description.trim(), visibility, allowGuests, inviteeIds: invitees,
+          title: title.trim(), description: description.trim(), visibility, allowGuests, inviteeIds: visibility === 'private' ? invitees : [],
         }),
       });
       setTitle('');
