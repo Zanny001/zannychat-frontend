@@ -20,7 +20,7 @@ export default function OutgoingCallScreen({ route, navigation }) {
   useEffect(() => {
     if (!initialCall?.id || initialCall.status !== 'ringing' || new Date(initialCall.expires_at).getTime() <= Date.now()) return undefined;
     activeRef.current = true;
-    if (!initialCall.nativeCallId) startCallTone();
+    if (!initialCall.nativeCallId) startCallTone('outgoing');
     let unsubscribe = () => {};
     let timeout;
     const finish = (next) => {
