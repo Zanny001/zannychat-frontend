@@ -38,6 +38,8 @@ test('LIVE approved guests receive publishing permissions and can rejoin after c
   assert.ok(screen.includes('video={publisherMode}'));
   assert.ok(screen.includes("`/live/${stream.id}/guest-status`"));
   assert.ok(screen.includes("nextConnection?.role !== 'guest'"));
+  assert.ok(screen.includes("guestRequestStatus === 'requested'"));
+  assert.ok(screen.includes("setGuestRequestStatus('requested')"));
   assert.ok(screen.includes("navigation.setParams({ connection: nextConnection, creatorMode: false })"));
 });
 
