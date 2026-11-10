@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 concurrency:
-  group: premium-status-live-\${{ github.ref }}
+  group: premium-status-live-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
