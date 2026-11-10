@@ -38,3 +38,10 @@ test('outgoing ringback uses native dialtone for Telecom and bundled audio for J
   assert.equal(callPlugin?.[1]?.incomingCallTimeout, 65);
   assert.equal(callPlugin?.[1]?.outgoingCallTimeout, 65);
 });
+
+test('outgoing native mapping is retained when server reconciliation fails', () => {
+  const onEnded = navigator.slice(navigator.indexOf('onEnded: async'), navigator.indexOf('onMuted:'));
+  assert.ok(onEnded.includes('let mappingCanBeCleared = false'));
+  assert.ok(onEnded.includes('if (mappingCanBeCleared) await clearNativeCallMapping(id)'));
+  assert.ok(onEnded.includes('Keep the encrypted mapping'));
+});
