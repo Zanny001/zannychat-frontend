@@ -80,7 +80,7 @@ export async function registerForPushNotifications() {
     await Notifications.setNotificationChannelAsync('calls', {
       name: 'Incoming calls',
       importance: Notifications.AndroidImportance.MAX,
-      sound: 'call-ring.wav',
+      sound: 'call_ring.wav',
       vibrationPattern: [0, 250, 250, 250],
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
     });
