@@ -20,6 +20,7 @@ import GlassCard from '../components/GlassCard';
 import { debugLog } from '../utils/diagnostics';
 import { filterMemberDirectory, memberFavoritesStorageKey, toggleMemberFavorite } from '../utils/memberFavorites';
 import { startPresence, subscribePresence } from '../services/presence';
+import { startCall } from '../services/calls';
 import {
   fetchContacts,
   createConversation,
@@ -38,11 +39,20 @@ export default function NewChatScreen({ navigation, route }) {
   const [sendingId, setSendingId] = useState(null);
   const [memberSearch, setMemberSearch] = useState('');
   const [onlineOnly, setOnlineOnly] = useState(false);
-  const [directoryFilter, setDirectoryFilter] = useState('all');
+  const initialDirectoryFilter = ['all', 'online', 'favorites'].includes(route?.params?.directoryFilter) ? route.params.directoryFilter : 'all';
+  const [directoryFilter, setDirectoryFilter] = useState(initialDirectoryFilter);
+  useEffect(() => {
+    const requestedFilter = route?.params?.directoryFilter;
+    if (['all', 'online', 'favorites'].includes(requestedFilter)) {
+      setDirectoryFilter(requestedFilter);
+      setOnlineOnly(false);
+    }
+  }, [route?.params?.directoryFilter]);
   const [favoriteIds, setFavoriteIds] = useState([]);
   const [favoriteStorageKey, setFavoriteStorageKey] = useState('zannychat:member-favorites:v1:guest');
   const [onlineIds, setOnlineIds] = useState(new Set());
 
+  const requestedCallType = route?.params?.callType;
   const shareToConversationId = route?.params?.shareToConversationId;
   const isShareMode = Boolean(shareToConversationId);
   const presenceAwareContacts = contacts.map((contact) => ({ ...contact, online: onlineIds.has(contact.id) }));
@@ -137,7 +147,21 @@ export default function NewChatScreen({ navigation, route }) {
 
       debugLog('[NewChat] Conversation created');
 
-      navigation.navigate('Chat', { conversation });
+      if (requestedCallType === 'audio' || requestedCallType === 'video') {
+        const call = await startCall({
+          conversationId: conversation.id,
+          calleeId: contact.id,
+          callType: requestedCallType,
+        });
+        navigation.navigate('OutgoingCall', {
+          call,
+          callType: requestedCallType,
+          participantName: contact.name || 'ZannyChat contact',
+          avatarColor: contact.avatarColor,
+        });
+      } else {
+        navigation.navigate('Chat', { conversation });
+      }
     } catch (err) {
       console.error('[NewChat] Failed to open chat:', err);
 
@@ -197,7 +221,7 @@ export default function NewChatScreen({ navigation, route }) {
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       <Header
-        title={isShareMode ? 'Share a contact' : 'New chat'}
+        title={isShareMode ? 'Share a contact' : requestedCallType === 'audio' ? 'Choose someone to call' : requestedCallType === 'video' ? 'Choose someone for video call' : 'New chat'}
         onBack={() => navigation.goBack()}
       />
 
