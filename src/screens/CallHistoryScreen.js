@@ -18,7 +18,7 @@ function formatDuration(seconds) {
   return minutes ? `${minutes}m ${remainder}s` : `${remainder}s`;
 }
 
-export default function CallHistoryScreen() {
+export default function CallHistoryScreen({ navigation }) {
   const { colors, spacing, typography, radii } = useTheme();
   const [calls, setCalls] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,6 +37,30 @@ export default function CallHistoryScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Calls" subtitle="Your audio and video call history" />
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl }}>
+        <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg }}>
+          {[
+            { title: 'Audio', subtitle: 'Voice call', icon: 'call-outline', action: () => navigation.navigate('NewChat', { callType: 'audio', directoryFilter: 'all' }) },
+            { title: 'Video', subtitle: 'Video call', icon: 'videocam-outline', action: () => navigation.navigate('NewChat', { callType: 'video', directoryFilter: 'all' }) },
+            { title: 'Favourites', subtitle: 'Saved people', icon: 'star-outline', action: () => navigation.navigate('NewChat', { directoryFilter: 'favorites', callType: null }) },
+          ].map((item) => (
+            <TouchableOpacity
+              key={item.title}
+              onPress={item.action}
+              activeOpacity={0.82}
+              accessibilityRole="button"
+              accessibilityLabel={item.title === 'Favourites' ? 'Open favourite contacts' : `Start ${item.title.toLowerCase()} call`}
+              style={{ flex: 1, minHeight: 104, padding: spacing.sm, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, justifyContent: 'space-between' }}
+            >
+              <View style={{ width: 34, height: 34, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
+                <Ionicons name={item.icon} size={19} color={colors.accent || colors.primary} />
+              </View>
+              <View style={{ gap: 2 }}>
+                <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.title}</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]} numberOfLines={2}>{item.subtitle}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
         {error ? <View style={{ padding: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, gap: spacing.sm }}>
           <Text accessibilityRole="alert" style={[typography.body, { color: colors.textSecondary }]}>{error}</Text>
           <TouchableOpacity onPress={() => load(true)} accessibilityRole="button"><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity>
