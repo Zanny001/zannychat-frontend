@@ -12,6 +12,8 @@ test('web clients subscribe to incoming calls and recover invitations created be
   assert.ok(app.includes(".eq('callee_id', userId)"));
   assert.ok(app.includes(".eq('status', 'ringing')"));
   assert.ok(app.includes("Platform.OS === 'web' ? null : await reportIncomingCallIfNeeded"));
+  assert.ok(app.includes('pendingIncomingRef.current = null'));
+  assert.ok(app.includes('navigationRef.navigate(\'IncomingCall\', pending)'));
 });
 
 test('browser incoming calls can show a notification and navigate to accept or decline actions', () => {
