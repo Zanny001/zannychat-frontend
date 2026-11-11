@@ -159,6 +159,15 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
   }, [isAuthenticated]);
 
   useEffect(() => {
+    // An invitation may arrive while the auth route is being replaced by Main.
+    // Flush it after the authenticated navigator tree has committed.
+    if (!isAuthenticated || !pendingIncomingRef.current || !navigationRef.isReady()) return;
+    const pending = pendingIncomingRef.current;
+    pendingIncomingRef.current = null;
+    navigationRef.navigate('IncomingCall', pending);
+  }, [isAuthenticated]);
+
+  useEffect(() => {
     if (!SUPABASE_ENABLED || !supabase) return undefined;
     let active = true;
     let attachedUserId = null;
