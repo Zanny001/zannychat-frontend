@@ -20,12 +20,12 @@ export default function IncomingCallScreen({ route, navigation }) {
     if (!nativeCallId) {
       startCallTone();
       if (Platform.OS === 'android') Vibration.vibrate([0, 900, 600], true);
-      else Vibration.vibrate();
+      else if (Platform.OS === 'ios') Vibration.vibrate();
     }
     const unsubscribe = subscribeToCallSession(call.id, (next) => {
       if (active && isTerminalCallStatus(next.status) && !closingRef.current) {
         stopCallTone();
-        Vibration.cancel();
+        if (Platform.OS !== 'web') Vibration.cancel();
         closingRef.current = true;
         if (nativeCallId) endNativeCall(nativeCallId).catch(() => {});
         navigation.goBack();
@@ -35,7 +35,7 @@ export default function IncomingCallScreen({ route, navigation }) {
       const left = Math.max(0, Math.ceil((new Date(call.expires_at).getTime() - Date.now()) / 1000));
       setRemaining(left);
       if (left <= 0 && !closingRef.current) {
-        stopCallTone(); Vibration.cancel();
+        stopCallTone(); if (Platform.OS !== 'web') Vibration.cancel();
         closingRef.current = true;
         clearInterval(timer);
         updateCallStatus(call.id, 'missed').catch(() => {}).finally(() => {
@@ -44,13 +44,13 @@ export default function IncomingCallScreen({ route, navigation }) {
         });
       }
     }, 1000);
-    return () => { active = false; clearInterval(timer); unsubscribe(); if (!nativeCallId) stopCallTone(); Vibration.cancel(); };
+    return () => { active = false; clearInterval(timer); unsubscribe(); if (!nativeCallId) stopCallTone(); if (Platform.OS !== 'web') Vibration.cancel(); };
   }, [call?.id, call?.expires_at, navigation, nativeCallId]);
 
   const decline = async () => {
     if (busy || closingRef.current) return;
     if (!nativeCallId) stopCallTone();
-    Vibration.cancel();
+    if (Platform.OS !== 'web') Vibration.cancel();
     closingRef.current = true;
     setBusy(true);
     try { await updateCallStatus(call.id, 'declined'); } catch (_) {}
@@ -61,7 +61,7 @@ export default function IncomingCallScreen({ route, navigation }) {
   const answer = async () => {
     if (busy || closingRef.current) return;
     if (!nativeCallId) stopCallTone();
-    Vibration.cancel();
+    if (Platform.OS !== 'web') Vibration.cancel();
     setBusy(true);
     if (nativeCallId) {
       answerNativeCall(nativeCallId).catch((error) => {
