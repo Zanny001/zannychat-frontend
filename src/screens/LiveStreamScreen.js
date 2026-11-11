@@ -29,7 +29,7 @@ function LiveMedia({ creatorMode, moderatorMode, canManageGuests, canRequestGues
         <View style={{ maxHeight: 230, paddingHorizontal: 14 }}>
           <FlatList data={comments} keyExtractor={(item) => item.id} renderItem={({ item }) => (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 }}>
-              <Text style={{ color: '#B6AFFF', fontSize: 11, fontWeight: '900' }}>{String(item.user_id).slice(0, 7)}</Text>
+              <Text style={{ color: '#B6AFFF', fontSize: 11, fontWeight: '900' }}>{item.user_name || 'ZannyChat user'}</Text>
               <Text style={{ color: '#FFFFFF', flex: 1, fontSize: 13 }}>{item.body}</Text>
               {moderatorMode && <TouchableOpacity onPress={() => onHide(item.id)} accessibilityRole="button" accessibilityLabel="Hide LIVE comment"><Ionicons name="eye-off-outline" color="#D6D2E5" size={17} /></TouchableOpacity>}
             </View>
