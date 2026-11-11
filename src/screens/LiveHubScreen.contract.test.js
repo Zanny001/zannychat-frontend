@@ -32,6 +32,13 @@ test('LIVE hub follows creators and loads follower-only broadcasts', () => {
 });
 
 
+test('LIVE hub validates the server media connection and displays web startup errors', () => {
+  assert.ok(screen.includes('connection?.stream?.id'));
+  assert.ok(screen.includes('connection?.livekitUrl'));
+  assert.ok(screen.includes('connection?.token'));
+  assert.ok(screen.includes("setError(e?.message || 'Could not start LIVE."));
+});
+
 test('LIVE hub uses the shared premium theme and supports focused discovery filters', () => {
   assert.ok(screen.includes("import { useTheme } from '../theme/ThemeContext'"));
   assert.ok(screen.includes("import GlassCard from '../components/GlassCard'"));
