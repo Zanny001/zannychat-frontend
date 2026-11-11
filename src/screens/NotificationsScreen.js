@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Switch, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, Switch, TextInput, Alert, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import Header from '../components/Header';
@@ -23,6 +23,10 @@ export default function NotificationsScreen({ navigation }) {
   const [prefs, setPrefs] = useState(getNotificationPrefs());
   const [quietStartDraft, setQuietStartDraft] = useState(getNotificationPrefs().quietHoursStart || '22:00');
   const [quietEndDraft, setQuietEndDraft] = useState(getNotificationPrefs().quietHoursEnd || '08:00');
+  const [browserPermission, setBrowserPermission] = useState(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || typeof window.Notification !== 'function') return 'unsupported';
+    return window.Notification.permission;
+  });
 
   useEffect(() => {
     loadNotificationPrefs().then((loaded) => {
@@ -64,6 +68,16 @@ export default function NotificationsScreen({ navigation }) {
     }
   }
 
+  async function enableBrowserCallAlerts() {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || typeof window.Notification !== 'function') return;
+    try {
+      const permission = await window.Notification.requestPermission();
+      setBrowserPermission(permission);
+    } catch (_) {
+      setBrowserPermission(window.Notification.permission || 'denied');
+    }
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Notifications" onBack={() => navigation.goBack()} />
@@ -72,11 +86,39 @@ export default function NotificationsScreen({ navigation }) {
           <PrefRow
             icon="notifications-outline"
             label="Push notifications"
-            detail={SUPABASE_ENABLED ? 'New messages reach this device' : 'Requires a connected backend (demo mode)'}
-            value={prefs.pushEnabled && SUPABASE_ENABLED}
-            disabled={!SUPABASE_ENABLED}
+            detail={Platform.OS === 'web' ? 'Native device push is not available in the browser. Enable Browser call alerts below.' : SUPABASE_ENABLED ? 'New messages and incoming calls reach this device' : 'Requires a connected backend (demo mode)'}
+            value={Platform.OS !== 'web' && prefs.pushEnabled && SUPABASE_ENABLED}
+            disabled={!SUPABASE_ENABLED || Platform.OS === 'web'}
             onValueChange={handlePushToggle}
           />
+          {Platform.OS === 'web' ? (
+            <View style={[styles.row, { marginTop: spacing.md }]}>
+              <Ionicons name="notifications-outline" size={20} color={colors.accent} style={{ marginRight: spacing.sm }} />
+              <View style={{ flex: 1 }}>
+                <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Browser call alerts</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>
+                  {browserPermission === 'granted'
+                    ? 'Allowed. Incoming calls can show a browser alert while ZannyChat is open or running in a background tab.'
+                    : browserPermission === 'denied'
+                      ? 'Blocked by your browser. Allow notifications for this site in browser settings.'
+                      : browserPermission === 'unsupported'
+                        ? 'This browser does not support notification alerts.'
+                        : 'Allow browser notifications so incoming calls can alert you outside the active tab.'}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={enableBrowserCallAlerts}
+                disabled={browserPermission === 'granted' || browserPermission === 'denied' || browserPermission === 'unsupported'}
+                accessibilityRole="button"
+                accessibilityLabel="Enable browser call alerts"
+                style={{ paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, opacity: browserPermission === 'granted' || browserPermission === 'denied' || browserPermission === 'unsupported' ? 0.55 : 1 }}
+              >
+                <Text style={[typography.bodyStrong, { color: colors.primary }]}>
+                  {browserPermission === 'granted' ? 'Enabled' : browserPermission === 'denied' ? 'Blocked' : browserPermission === 'unsupported' ? 'Unavailable' : 'Enable'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
           <PrefRow
             icon="albums-outline"
             label="Banners while using the app"
