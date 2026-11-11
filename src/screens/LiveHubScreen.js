@@ -89,12 +89,17 @@ export default function LiveHubScreen({ navigation }) {
   };
 
   const startLive = async () => {
-    if (!title.trim()) return Alert.alert('Add a title', 'Give your LIVE stream a short title first.');
+    if (!title.trim()) {
+      setError('Add a title before starting your LIVE stream.');
+      return;
+    }
     const invitees = [...new Set(selectedInvitees)];
     if (visibility === 'private' && invitees.length === 0) {
-      return Alert.alert('Add invitees', 'Choose at least one person from your existing chats.');
+      setError('Choose at least one person from your existing chats for a private LIVE stream.');
+      return;
     }
     setBusy(true);
+    setError('');
     try {
       const connection = await backendFetch('/live', {
         method: 'POST',
@@ -103,12 +108,15 @@ export default function LiveHubScreen({ navigation }) {
           inviteeIds: visibility === 'private' ? invitees : [],
         }),
       });
+      if (!connection?.stream?.id || !connection?.livekitUrl || !connection?.token) {
+        throw new Error('The LIVE service did not return a secure media connection. Check the backend LiveKit configuration.');
+      }
       setTitle('');
       setDescription('');
       setSelectedInvitees([]);
       navigation.navigate('LiveStream', { connection, creatorMode: true });
     } catch (e) {
-      Alert.alert('Could not start LIVE', e?.message || 'The media service may not be configured yet.');
+      setError(e?.message || 'Could not start LIVE. Check the server connection and browser permissions, then try again.');
     } finally {
       setBusy(false);
     }
