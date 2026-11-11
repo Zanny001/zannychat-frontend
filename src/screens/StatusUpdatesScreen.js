@@ -272,14 +272,14 @@ export default function StatusUpdatesScreen({ navigation }) {
   const choosePhoto = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, quality: 0.85 });
-      if (!result.canceled && result.assets?.[0]) { setPhoto(result.assets[0]); setVideo(null); setPublishError(''); setPublishSuccess(''); }
+      if (!result.canceled && result.assets?.[0]) { releaseCapturedPhotoUrl(); setPhoto(result.assets[0]); setVideo(null); setPublishError(''); setPublishSuccess(''); }
     } catch (pickerError) { setPublishError(pickerError?.message || 'The photo picker could not be opened.'); }
   };
 
   const chooseVideo = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'], allowsEditing: false, videoMaxDuration: 30 });
-      if (!result.canceled && result.assets?.[0]) { setVideo(result.assets[0]); setPhoto(null); setPublishError(''); setPublishSuccess(''); }
+      if (!result.canceled && result.assets?.[0]) { releaseCapturedPhotoUrl(); setVideo(result.assets[0]); setPhoto(null); setPublishError(''); setPublishSuccess(''); }
     } catch (pickerError) { setPublishError(pickerError?.message || 'The video picker could not be opened.'); }
   };
   const closeBrowserCamera = () => {
