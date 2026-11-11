@@ -247,7 +247,41 @@ export default function StatusUpdatesScreen({ navigation }) {
   };
   const chooseCamera = async () => {
     if (Platform.OS === 'web') {
-      setPublishError('Camera capture is available in the ZannyChat mobile app. On web, use Add photo or Add video.');
+      let stream;
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error('Camera access requires a secure HTTPS browser with media-device support.');
+        }
+        // The user gesture on the Camera button triggers the browser permission prompt.
+        stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: 'user' } });
+        const videoElement = document.createElement('video');
+        videoElement.muted = true;
+        videoElement.playsInline = true;
+        videoElement.srcObject = stream;
+        await videoElement.play();
+        if (videoElement.readyState < 2) {
+          await new Promise((resolve) => { videoElement.onloadeddata = resolve; });
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = videoElement.videoWidth || 1280;
+        canvas.height = videoElement.videoHeight || 720;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Your browser could not prepare the camera photo.');
+        context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.88));
+        if (!blob) throw new Error('The browser could not capture a photo.');
+        const file = new File([blob], `zannychat-camera-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        setPhoto({ uri: URL.createObjectURL(file), file, mimeType: 'image/jpeg', fileName: file.name });
+        setVideo(null);
+        setPublishError('');
+        setPublishSuccess('');
+      } catch (cameraError) {
+        setPublishError(cameraError?.name === 'NotAllowedError'
+          ? 'Camera permission was denied. Allow camera access in your browser site settings and try again.'
+          : cameraError?.message || 'The browser camera could not be opened.');
+      } finally {
+        stream?.getTracks?.().forEach((track) => track.stop());
+      }
       return;
     }
     try {

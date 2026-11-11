@@ -13,10 +13,12 @@ test('Stories screen presents contact story rings and a privacy-safe contact dis
   assert.ok(screen.includes('Fresh moments shared by your contacts'));
 });
 
-test('Stories camera action is permission-aware and has a clear web fallback', () => {
+test('Stories camera action requests native or browser camera permission', () => {
   assert.ok(screen.includes('ImagePicker.requestCameraPermissionsAsync()'));
   assert.ok(screen.includes('ImagePicker.launchCameraAsync'));
-  assert.ok(screen.includes('Camera capture is available in the ZannyChat mobile app.'));
+  assert.ok(screen.includes('navigator.mediaDevices?.getUserMedia'));
+  assert.ok(screen.includes('canvas.toBlob'));
+  assert.equal(screen.includes('Camera capture is available in the ZannyChat mobile app.'), false);
 });
 
 test('Status publishing keeps the server-timed RPC and existing media publishing paths', () => {

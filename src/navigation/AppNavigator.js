@@ -159,7 +159,7 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (Platform.OS === 'web' || !SUPABASE_ENABLED || !supabase) return undefined;
+    if (!SUPABASE_ENABLED || !supabase) return undefined;
     let active = true;
     let attachedUserId = null;
     const attach = (userId) => {
@@ -170,11 +170,18 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
       if (userId) incomingUnsubscribeRef.current = subscribeToIncomingCalls(userId, async (incoming) => {
         if (!active || incomingIdsRef.current.has(incoming.id)) return;
         const callerName = await getCallParticipantName(incoming.caller_id);
-        const nativeCallId = await reportIncomingCallIfNeeded(incoming, callerName);
+        const nativeCallId = Platform.OS === 'web' ? null : await reportIncomingCallIfNeeded(incoming, callerName);
         if (!active || incomingIdsRef.current.has(incoming.id)) return;
         incomingIdsRef.current.add(incoming.id);
         if (incomingIdsRef.current.size > 50) incomingIdsRef.current.delete(incomingIdsRef.current.values().next().value);
         const params = { call: incoming, participantName: callerName, ...(nativeCallId ? { nativeCallId } : {}) };
+        if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof Notification !== 'undefined'
+          && Notification.permission === 'granted' && document.visibilityState !== 'visible') {
+          const notice = new Notification(incoming.call_type === 'video' ? 'Incoming video call' : 'Incoming audio call', {
+            body: `${callerName} is calling you`, tag: `zannychat-call-${incoming.id}`,
+          });
+          notice.onclick = () => { window.focus(); if (navigationRef.isReady()) navigationRef.navigate('IncomingCall', params); notice.close(); };
+        }
         if (navigationRef.isReady()) navigationRef.navigate('IncomingCall', params);
         else pendingIncomingRef.current = params;
       });
