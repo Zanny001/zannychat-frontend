@@ -159,27 +159,78 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (Platform.OS === 'web' || !SUPABASE_ENABLED || !supabase) return undefined;
+    if (!SUPABASE_ENABLED || !supabase) return undefined;
     let active = true;
     let attachedUserId = null;
+
+    const deliverIncoming = async (incoming) => {
+      if (!active || !incoming?.id || incomingIdsRef.current.has(incoming.id)) return;
+      // Claim the event before awaiting profile/native work so Realtime and
+      // the pending-call backfill cannot open duplicate incoming-call screens.
+      incomingIdsRef.current.add(incoming.id);
+      try {
+        const callerName = await getCallParticipantName(incoming.caller_id);
+        const nativeCallId = Platform.OS === 'web' ? null : await reportIncomingCallIfNeeded(incoming, callerName);
+        if (!active) return;
+        if (incomingIdsRef.current.size > 50) {
+          incomingIdsRef.current.delete(incomingIdsRef.current.values().next().value);
+        }
+        const params = { call: incoming, participantName: callerName, ...(nativeCallId ? { nativeCallId } : {}) };
+
+        // Browser notifications are an optional foreground enhancement. The
+        // in-app IncomingCall screen remains the source of accept/decline actions.
+        if (Platform.OS === 'web' && typeof window !== 'undefined' &&
+            typeof window.Notification === 'function' && window.Notification.permission === 'granted') {
+          try {
+            const notification = new window.Notification(
+              incoming.call_type === 'video' ? 'Incoming video call' : 'Incoming audio call',
+              { body: `${callerName} is calling you`, tag: `zannychat-call-${incoming.id}`, requireInteraction: true }
+            );
+            notification.onclick = () => {
+              try { window.focus(); } catch (_) {}
+              notification.close();
+            };
+          } catch (_) {}
+        }
+
+        if (navigationRef.isReady()) navigationRef.navigate('IncomingCall', params);
+        else pendingIncomingRef.current = params;
+      } catch (error) {
+        incomingIdsRef.current.delete(incoming.id);
+        console.warn('[calls] incoming invitation could not be displayed:', error?.message || error);
+      }
+    };
+
     const attach = (userId) => {
       if (userId === attachedUserId) return;
       attachedUserId = userId;
       incomingUnsubscribeRef.current?.();
       incomingUnsubscribeRef.current = null;
-      if (userId) incomingUnsubscribeRef.current = subscribeToIncomingCalls(userId, async (incoming) => {
-        if (!active || incomingIdsRef.current.has(incoming.id)) return;
-        const callerName = await getCallParticipantName(incoming.caller_id);
-        const nativeCallId = await reportIncomingCallIfNeeded(incoming, callerName);
-        if (!active || incomingIdsRef.current.has(incoming.id)) return;
-        incomingIdsRef.current.add(incoming.id);
-        if (incomingIdsRef.current.size > 50) incomingIdsRef.current.delete(incomingIdsRef.current.values().next().value);
-        const params = { call: incoming, participantName: callerName, ...(nativeCallId ? { nativeCallId } : {}) };
-        if (navigationRef.isReady()) navigationRef.navigate('IncomingCall', params);
-        else pendingIncomingRef.current = params;
+      incomingIdsRef.current.clear();
+      pendingIncomingRef.current = null;
+      if (!userId) return;
+
+      // Subscribe first, then backfill active invitations so a browser tab
+      // opened just after the caller starts ringing still receives the call.
+      incomingUnsubscribeRef.current = subscribeToIncomingCalls(userId, deliverIncoming);
+      void (async () => {
+        const { data, error } = await supabase.from('call_sessions')
+          .select('id,conversation_id,caller_id,callee_id,call_type,status,created_at,expires_at')
+          .eq('callee_id', userId)
+          .eq('status', 'ringing')
+          .gt('expires_at', new Date().toISOString())
+          .order('created_at', { ascending: false })
+          .limit(5);
+        if (error) throw error;
+        for (const incoming of data || []) await deliverIncoming(incoming);
+      })().catch((error) => {
+        if (active) console.warn('[calls] pending invitation backfill failed:', error?.message || error);
       });
     };
-    supabase.auth.getSession().then(({ data }) => { if (active) attach(data?.session?.user?.id || null); }).catch(() => {});
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (active) attach(data?.session?.user?.id || null);
+    }).catch(() => {});
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => attach(session?.user?.id || null));
     return () => {
       active = false;
