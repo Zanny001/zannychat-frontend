@@ -61,6 +61,7 @@ async function saveStatusMedia(uri, kind) {
 export default function StatusUpdatesScreen({ navigation }) {
   const { colors, spacing, radii, typography } = useTheme();
   const [text, setText] = useState('');
+  const statusTextInputRef = useRef(null);
   const [audience, setAudience] = useState('contacts');
   const [expiryHours, setExpiryHours] = useState(24);
   const [statusDraftReady, setStatusDraftReady] = useState(false);
@@ -104,6 +105,9 @@ export default function StatusUpdatesScreen({ navigation }) {
   const mediaRetryLockRef = useRef(false);
   const statusRefreshRequestRef = useRef(0);
   const groupedStatuses = groupStatusUpdates(statuses);
+  const ownStatusGroup = groupedStatuses.find((group) => group.latest?.is_own);
+  const friendStatusGroups = groupedStatuses.filter((group) => !group.latest?.is_own);
+  const discoverStatuses = statuses.filter((item) => !item.is_own && ['image', 'video'].includes(item.media_kind)).slice(0, 8);
 
   useEffect(() => {
     // The server query excludes expired rows, but an already-open screen can outlive
@@ -241,6 +245,29 @@ export default function StatusUpdatesScreen({ navigation }) {
       if (!result.canceled && result.assets?.[0]) { setVideo(result.assets[0]); setPhoto(null); setPublishError(''); setPublishSuccess(''); }
     } catch (pickerError) { setPublishError(pickerError?.message || 'The video picker could not be opened.'); }
   };
+  const chooseCamera = async () => {
+    if (Platform.OS === 'web') {
+      setPublishError('Camera capture is available in the ZannyChat mobile app. On web, use Add photo or Add video.');
+      return;
+    }
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        setPublishError('Allow camera access to capture a status photo.');
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], allowsEditing: true, quality: 0.85 });
+      if (!result.canceled && result.assets?.[0]) {
+        setPhoto(result.assets[0]);
+        setVideo(null);
+        setPublishError('');
+        setPublishSuccess('');
+      }
+    } catch (pickerError) {
+      setPublishError(pickerError?.message || 'The camera could not be opened. Please try again.');
+    }
+  };
+
 
   const publish = async () => {
     const normalized = normalizeStatusText(text);
@@ -483,14 +510,59 @@ export default function StatusUpdatesScreen({ navigation }) {
   ]);
 
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-    <Header title="Status updates" subtitle="Stories · choose a 6–48 hour lifetime" onBack={() => navigation.goBack()} />
+    <Header title="Stories" subtitle="Share a moment with your people" onBack={() => navigation.goBack()} />
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl }}>
+      <View style={{ marginBottom: spacing.md }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+          <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Friends</Text>
+          <Text style={[typography.caption, { color: colors.textSecondary }]}>{friendStatusGroups.length} active</Text>
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.md, paddingVertical: spacing.xs }}>
+          <TouchableOpacity onPress={() => ownStatusGroup ? openStatus(ownStatusGroup.latest) : statusTextInputRef.current?.focus?.()} accessibilityRole="button" accessibilityLabel="Open or create your status" style={{ width: 72, alignItems: 'center', gap: 6 }}>
+            <View style={{ width: 66, height: 66, borderRadius: 33, borderWidth: 2, borderColor: colors.primary, padding: 3, alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: '100%', height: '100%', borderRadius: 30, backgroundColor: colors.surfaceElevated || colors.surface, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                {ownStatusGroup?.latest?.media_url && ownStatusGroup.latest.media_kind === 'image'
+                  ? <Image source={{ uri: ownStatusGroup.latest.media_url }} style={{ width: '100%', height: '100%' }} />
+                  : <Ionicons name="person-outline" size={25} color={colors.textSecondary} />}
+              </View>
+              <View style={{ position: 'absolute', right: -1, bottom: -1, width: 23, height: 23, borderRadius: 12, backgroundColor: colors.primary, borderWidth: 2, borderColor: colors.background, alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="add" size={16} color={colors.background} />
+              </View>
+            </View>
+            <Text numberOfLines={1} style={[typography.caption, { color: colors.textPrimary, fontWeight: '700' }]}>My status</Text>
+          </TouchableOpacity>
+          {friendStatusGroups.map((group) => {
+            const item = group.latest;
+            const name = statusUserNames[item.user_id] || 'Contact';
+            const unread = unreadStatusCount(group.statuses, seenStatusIds, false) > 0;
+            return (
+              <TouchableOpacity key={group.ownerId} onPress={() => openStatus(firstUnseenStatus(group.statuses, seenStatusIds, item))} accessibilityRole="button" accessibilityLabel={'View ' + name + ' story'} style={{ width: 72, alignItems: 'center', gap: 6 }}>
+                <View style={{ width: 66, height: 66, borderRadius: 33, borderWidth: 2.5, borderColor: unread ? colors.primary : colors.border, padding: 3 }}>
+                  <View style={{ width: '100%', height: '100%', borderRadius: 30, backgroundColor: colors.surfaceElevated || colors.surface, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    {item.media_kind === 'image' && item.media_url
+                      ? <Image source={{ uri: item.media_url }} style={{ width: '100%', height: '100%' }} />
+                      : item.media_kind === 'video'
+                        ? <Ionicons name="play" size={24} color={colors.primary} />
+                        : <Text style={[typography.bodyStrong, { color: colors.primary }]}>{name.trim().charAt(0).toUpperCase() || '•'}</Text>}
+                  </View>
+                </View>
+                <Text numberOfLines={1} style={[typography.caption, { color: colors.textPrimary, fontWeight: unread ? '800' : '500' }]}>{name.split(' ')[0]}</Text>
+              </TouchableOpacity>
+            );
+          })}
+          {!friendStatusGroups.length ? <View style={{ justifyContent: 'center', paddingHorizontal: spacing.sm }}><Text style={[typography.caption, { color: colors.textSecondary }]}>Your contacts’ stories will appear here.</Text></View> : null}
+        </ScrollView>
+      </View>
       <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
-        <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Share a text status</Text>
+        <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Create a story</Text>
         <Text style={[typography.caption, { color: colors.textSecondary }]}>{statusDraftSaved ? 'Draft saved on this device' : 'Text drafts save automatically on this device'} · selected media is not saved in drafts</Text>
-        <TextInput value={text} onChangeText={(v) => setText(v.slice(0, STATUS_TEXT_LIMIT))} placeholder="What would you like to share?" placeholderTextColor={colors.textSecondary} multiline maxLength={STATUS_TEXT_LIMIT} accessibilityLabel="Status text" style={[typography.body, { color: colors.textPrimary, minHeight: 92, textAlignVertical: 'top', borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.md }]} />
+        <TextInput ref={statusTextInputRef} value={text} onChangeText={(v) => setText(v.slice(0, STATUS_TEXT_LIMIT))} placeholder="What would you like to share?" placeholderTextColor={colors.textSecondary} multiline maxLength={STATUS_TEXT_LIMIT} accessibilityLabel="Status text" style={[typography.body, { color: colors.textPrimary, minHeight: 92, textAlignVertical: 'top', borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.md }]} />
         <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'right' }]}>{text.length}/{STATUS_TEXT_LIMIT}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' }}>
+          <TouchableOpacity onPress={chooseCamera} accessibilityRole="button" accessibilityLabel="Take a status photo" style={{ flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.sm, minHeight: 42 }}>
+            <Ionicons name="camera-outline" size={18} color={colors.primary} />
+            <Text style={[typography.small, { color: colors.textPrimary }]}>Camera</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={choosePhoto} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.sm, minHeight: 42 }}><Ionicons name="image-outline" size={18} color={colors.primary} /><Text style={[typography.small, { color: colors.textPrimary }]}>{photo ? 'Change photo' : 'Add photo'}</Text></TouchableOpacity>
           {photo || video ? <TouchableOpacity onPress={() => { setPhoto(null); setVideo(null); }} accessibilityRole="button"><Text style={[typography.small, { color: colors.textSecondary }]}>Remove media</Text></TouchableOpacity> : null}
           <TouchableOpacity onPress={chooseVideo} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.sm, minHeight: 42 }}><Ionicons name="videocam-outline" size={18} color={colors.primary} /><Text style={[typography.small, { color: colors.textPrimary }]}>{video ? 'Change video' : 'Add video'}</Text></TouchableOpacity>
@@ -514,6 +586,30 @@ export default function StatusUpdatesScreen({ navigation }) {
           <Text style={[typography.bodyStrong, { color: colors.background }]}>{saving ? 'Publishing…' : 'Publish status'}</Text>
         </TouchableOpacity>
       </GlassCard>
+      {discoverStatuses.length > 0 ? (
+        <View style={{ marginBottom: spacing.lg }}>
+          <View style={{ marginBottom: spacing.sm }}>
+            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Discover</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>Fresh moments shared by your contacts</Text>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
+            {discoverStatuses.map((item) => {
+              const name = statusUserNames[item.user_id] || 'Contact';
+              return (
+                <TouchableOpacity key={item.id} onPress={() => openStatus(item)} accessibilityRole="button" accessibilityLabel={'Open story from ' + name} style={{ width: 148, height: 196, borderRadius: radii.lg, overflow: 'hidden', backgroundColor: colors.surfaceElevated || colors.surface, borderWidth: 1, borderColor: colors.border }}>
+                  {item.media_kind === 'image' && item.media_url
+                    ? <Image source={{ uri: item.media_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                    : <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#171526' }}><Ionicons name="play-circle" size={42} color="#FFFFFF" /><Text style={{ color: '#FFFFFF', marginTop: 6 }}>Video story</Text></View>}
+                  <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: spacing.sm, backgroundColor: '#00000088' }}>
+                    <Text numberOfLines={1} style={[typography.small, { color: '#FFFFFF', fontWeight: '800' }]}>{name}</Text>
+                    <Text style={[typography.caption, { color: '#FFFFFF' }]}>{ageLabel(item.created_at)}</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      ) : null}
       {mutedUsers.length ? <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Muted status accounts ({mutedUsers.length})</Text>{mutedUsers.map((entry) => <View key={entry.muted_user_id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}><Text style={[typography.caption, { color: colors.textSecondary, flex: 1 }]}>{statusUserNames[entry.muted_user_id] || `${String(entry.muted_user_id).slice(0, 8)}…`}</Text><TouchableOpacity onPress={() => unmuteOwner(entry.muted_user_id)} accessibilityRole="button"><Text style={[typography.small, { color: colors.primary }]}>Unmute</Text></TouchableOpacity></View>)}</GlassCard> : null}<GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Story privacy</Text><Text style={[typography.caption, { color: colors.textSecondary }]}>Exclude specific conversation contacts from all your contact-visible statuses. This does not block messages.</Text><TouchableOpacity onPress={loadPrivacyContacts} disabled={privacyBusy} accessibilityRole="button" style={{ minHeight: 42, justifyContent: 'center' }}><Text style={[typography.small, { color: colors.primary }]}>{privacyBusy ? 'Loading contacts…' : 'Manage excluded contacts'}</Text></TouchableOpacity>{excludedUsers.map((entry) => <View key={entry.excluded_user_id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}><Text style={[typography.caption, { color: colors.textSecondary, flex: 1 }]}>{statusUserNames[entry.excluded_user_id] || `${String(entry.excluded_user_id).slice(0, 8)}…`}</Text><TouchableOpacity onPress={async () => { const contact = privacyContacts.find((item) => item.id === entry.excluded_user_id) || { id: entry.excluded_user_id }; await toggleExcluded(contact); }} accessibilityRole="button"><Text style={[typography.small, { color: colors.primary }]}>Allow</Text></TouchableOpacity></View>)}</GlassCard><View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm, marginBottom: spacing.sm }}><Text style={[typography.bodyStrong, { color: colors.textPrimary, flex: 1 }]}>Recent statuses</Text>{unreadStatusCount(statuses.filter((item) => !item?.is_own), seenStatusIds) > 0 ? <TouchableOpacity onPress={markAllContactStatusesSeen} accessibilityRole="button" accessibilityLabel="Mark all contact statuses as viewed" style={{ minHeight: 40, justifyContent: 'center', paddingHorizontal: spacing.sm }}><Text style={[typography.small, { color: colors.primary }]}>Mark all viewed</Text></TouchableOpacity> : null}</View>
       <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>Contact visibility is restricted by database policy to people who share a conversation with you; selected audiences are enforced by server-side recipient policies. Photo statuses are private and visible only to you or eligible conversation contacts. A view is recorded when you open a status; repeat views by the same account count once.</Text>
       {loading ? <View style={{ padding: spacing.xl, alignItems: 'center' }}><ActivityIndicator color={colors.primary} /></View> : error ? <View style={{ padding: spacing.md }}><Text style={[typography.body, { color: colors.textSecondary }]}>{error}</Text><TouchableOpacity onPress={refresh} style={{ paddingVertical: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></View> : groupedStatuses.map((group) => { const item = group.latest; const openGroupStatus = () => openStatus(item.is_own ? item : firstUnseenStatus(group.statuses, seenStatusIds, item)); return <GlassCard key={group.ownerId} style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}><View style={{ flexDirection: 'row', alignItems: 'center' }}><View style={{ flex: 1 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}><Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.is_own ? 'My status' : (statusUserNames[item.user_id] || `Contact ${String(item.user_id || '').slice(0, 8)}`)}</Text>{!item.is_own && unreadStatusCount(group.statuses, seenStatusIds, false) > 0 ? <View accessibilityLabel={`${unreadStatusCount(group.statuses, seenStatusIds, false)} new status updates`} style={{ backgroundColor: colors.primary, borderRadius: 10, minWidth: 20, height: 20, paddingHorizontal: 5, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colors.background, fontSize: 11, fontWeight: '700' }}>{unreadStatusCount(group.statuses, seenStatusIds, false)}</Text></View> : null}</View><Text style={[typography.caption, { color: colors.textSecondary }]}>{ageLabel(item.created_at)} · {group.statuses.length} update{group.statuses.length === 1 ? '' : 's'} · {item.audience === 'only_me' ? 'Only me' : item.audience === 'selected_contacts' ? 'Selected contacts' : 'My contacts'} · {unreadStatusCount(group.statuses, seenStatusIds, item.is_own) ? `${unreadStatusCount(group.statuses, seenStatusIds, item.is_own)} new` : 'Viewed'}</Text></View>{item.is_own ? <TouchableOpacity onPress={() => remove(item)} accessibilityRole="button" accessibilityLabel="Delete status" hitSlop={10}><Ionicons name="trash-outline" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}{!item.is_own ? <TouchableOpacity onPress={() => muteOwner(item)} accessibilityRole="button" accessibilityLabel="Mute this account’s statuses" hitSlop={10}><Ionicons name="volume-mute-outline" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}</View>{item.media_kind === 'video' && item.media_url ? <TouchableOpacity onPress={openGroupStatus} accessibilityRole="button" style={{ minHeight: 70, borderRadius: radii.md, backgroundColor: '#111111', alignItems: 'center', justifyContent: 'center' }}><Ionicons name="play-circle" size={42} color="#FFFFFF" /><Text style={{ color: '#FFFFFF' }}>Video status</Text></TouchableOpacity> : null}{item.media_kind === 'image' && item.media_url ? <Image source={{ uri: item.media_url }} accessibilityLabel="Status photo" style={{ width: '100%', height: 220, borderRadius: radii.md }} resizeMode="cover" /> : null}{item.text ? <Text style={[typography.body, { color: colors.textPrimary }]}>{item.text}</Text> : null}{item.media_kind === 'image' && !item.media_url ? <Text style={[typography.caption, { color: colors.textSecondary }]}>Photo unavailable or access expired. Refresh to try again.</Text> : null}{item.is_own ? <Text style={[typography.caption, { color: colors.textSecondary }]}><Ionicons name="eye-outline" size={13} color={colors.textSecondary} /> {item.view_count || 0} {item.view_count === 1 ? 'view' : 'views'}</Text> : null}<TouchableOpacity onPress={openGroupStatus} accessibilityRole="button" style={{ minHeight: 38, justifyContent: 'center' }}><Text style={[typography.small, { color: colors.primary }]}>{item.is_own ? 'View status' : 'Open status'}</Text></TouchableOpacity><Text style={[typography.caption, { color: colors.textSecondary }]}>Latest update expires {new Date(item.expires_at).toLocaleString()}</Text></GlassCard>; })}
