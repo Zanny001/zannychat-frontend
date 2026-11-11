@@ -116,7 +116,11 @@ export default function LiveHubScreen({ navigation }) {
       setSelectedInvitees([]);
       navigation.navigate('LiveStream', { connection, creatorMode: true });
     } catch (e) {
-      setError(e?.message || 'Could not start LIVE. Check the server connection and browser permissions, then try again.');
+      const rawMessage = e?.message || 'Could not start LIVE. Check the server connection and browser permissions, then try again.';
+      const message = /not enabled|not configured|livekit/i.test(rawMessage)
+        ? `${rawMessage} Required backend settings: LIVEKIT_URL, LIVEKIT_API_KEY and LIVEKIT_API_SECRET.`
+        : rawMessage;
+      setError(message);
     } finally {
       setBusy(false);
     }
