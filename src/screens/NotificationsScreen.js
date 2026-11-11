@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Switch, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, Switch, TextInput, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import Header from '../components/Header';
@@ -23,6 +23,7 @@ export default function NotificationsScreen({ navigation }) {
   const [prefs, setPrefs] = useState(getNotificationPrefs());
   const [quietStartDraft, setQuietStartDraft] = useState(getNotificationPrefs().quietHoursStart || '22:00');
   const [quietEndDraft, setQuietEndDraft] = useState(getNotificationPrefs().quietHoursEnd || '08:00');
+  const [browserCallPermission, setBrowserCallPermission] = useState(() => Platform.OS === 'web' && typeof Notification !== 'undefined' ? Notification.permission : 'unsupported');
 
   useEffect(() => {
     loadNotificationPrefs().then((loaded) => {
@@ -64,6 +65,24 @@ export default function NotificationsScreen({ navigation }) {
     }
   }
 
+  async function handleBrowserCallAlerts(value) {
+    if (Platform.OS !== 'web' || typeof Notification === 'undefined') return;
+    if (!value) {
+      Alert.alert('Browser permission', 'To turn browser call alerts off, change ZannyChat notification permission in your browser site settings.');
+      setBrowserCallPermission(Notification.permission);
+      return;
+    }
+    try {
+      const permission = await Notification.requestPermission();
+      setBrowserCallPermission(permission);
+      if (permission !== 'granted') {
+        Alert.alert('Notifications not enabled', 'Allow notifications for ZannyChat in your browser site settings to receive call alerts when this tab is in the background.');
+      }
+    } catch (_) {
+      setBrowserCallPermission(Notification.permission);
+    }
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Notifications" onBack={() => navigation.goBack()} />
@@ -77,6 +96,20 @@ export default function NotificationsScreen({ navigation }) {
             disabled={!SUPABASE_ENABLED}
             onValueChange={handlePushToggle}
           />
+          {Platform.OS === 'web' ? (
+            <PrefRow
+              icon="call-outline"
+              label="Browser incoming call alerts"
+              detail={browserCallPermission === 'granted'
+                ? 'Allowed — incoming calls can alert while this tab is in the background'
+                : browserCallPermission === 'denied'
+                  ? 'Blocked — enable notifications in your browser site settings'
+                  : 'Allow browser notifications for incoming calls'}
+              value={browserCallPermission === 'granted'}
+              disabled={browserCallPermission === 'unsupported'}
+              onValueChange={handleBrowserCallAlerts}
+            />
+          ) : null}
           <PrefRow
             icon="albums-outline"
             label="Banners while using the app"
