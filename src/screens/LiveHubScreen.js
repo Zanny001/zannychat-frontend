@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Platform, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
@@ -96,6 +96,19 @@ export default function LiveHubScreen({ navigation }) {
     }
     setBusy(true);
     try {
+      // Acquire browser media permission directly from the Go LIVE click.
+      // This avoids waiting for the authenticated API round-trip before the
+      // browser is asked to grant camera and microphone access.
+      if (Platform.OS === 'web') {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error('LIVE requires a secure HTTPS browser with camera and microphone support.');
+        }
+        const permissionStream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+        });
+        permissionStream.getTracks().forEach((track) => track.stop());
+      }
       const connection = await backendFetch('/live', {
         method: 'POST',
         body: JSON.stringify({
