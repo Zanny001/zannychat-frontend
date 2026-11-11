@@ -68,6 +68,11 @@ export default function StatusUpdatesScreen({ navigation }) {
   const [statusDraftSaved, setStatusDraftSaved] = useState(false);
   const [photo, setPhoto] = useState(null);
   const [video, setVideo] = useState(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const cameraPreviewRef = useRef(null);
+  const cameraStreamRef = useRef(null);
+  const cameraVideoElementRef = useRef(null);
+  const capturedPhotoUrlRef = useRef(null);
   const [statuses, setStatuses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -104,6 +109,38 @@ export default function StatusUpdatesScreen({ navigation }) {
   const seenStatusIdsRef = useRef([]);
   const mediaRetryLockRef = useRef(false);
   const statusRefreshRequestRef = useRef(0);
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !cameraOpen) return undefined;
+    const container = cameraPreviewRef.current;
+    const stream = cameraStreamRef.current;
+    if (!container || typeof container.appendChild !== 'function' || !stream || typeof document === 'undefined') return undefined;
+    const videoElement = document.createElement('video');
+    videoElement.autoplay = true;
+    videoElement.muted = true;
+    videoElement.playsInline = true;
+    videoElement.srcObject = stream;
+    Object.assign(videoElement.style, {
+      display: 'block', width: '100%', height: '100%',
+      minHeight: '260px', objectFit: 'cover', background: '#000000',
+    });
+    container.appendChild(videoElement);
+    cameraVideoElementRef.current = videoElement;
+    Promise.resolve(videoElement.play()).catch(() => {});
+    return () => {
+      videoElement.pause();
+      videoElement.srcObject = null;
+      videoElement.remove();
+      if (cameraVideoElementRef.current === videoElement) cameraVideoElementRef.current = null;
+    };
+  }, [cameraOpen]);
+
+  useEffect(() => () => {
+    cameraStreamRef.current?.getTracks?.().forEach((track) => track.stop());
+    cameraStreamRef.current = null;
+    if (capturedPhotoUrlRef.current && typeof URL !== 'undefined') URL.revokeObjectURL(capturedPhotoUrlRef.current);
+    capturedPhotoUrlRef.current = null;
+  }, []);
+
   const groupedStatuses = groupStatusUpdates(statuses);
   const ownStatusGroup = groupedStatuses.find((group) => group.latest?.is_own);
   const friendStatusGroups = groupedStatuses.filter((group) => !group.latest?.is_own);
@@ -245,10 +282,68 @@ export default function StatusUpdatesScreen({ navigation }) {
       if (!result.canceled && result.assets?.[0]) { setVideo(result.assets[0]); setPhoto(null); setPublishError(''); setPublishSuccess(''); }
     } catch (pickerError) { setPublishError(pickerError?.message || 'The video picker could not be opened.'); }
   };
+  const closeBrowserCamera = () => {
+    cameraStreamRef.current?.getTracks?.().forEach((track) => track.stop());
+    cameraStreamRef.current = null;
+    setCameraOpen(false);
+  };
+
+  const releaseCapturedPhotoUrl = () => {
+    if (capturedPhotoUrlRef.current && typeof URL !== 'undefined') URL.revokeObjectURL(capturedPhotoUrlRef.current);
+    capturedPhotoUrlRef.current = null;
+  };
+
+  const captureBrowserPhoto = async () => {
+    try {
+      const videoElement = cameraVideoElementRef.current;
+      if (!videoElement?.videoWidth || !videoElement?.videoHeight || typeof document === 'undefined') {
+        throw new Error('The camera is still starting. Please wait a moment and try again.');
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = videoElement.videoWidth;
+      canvas.height = videoElement.videoHeight;
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Could not capture an image from the browser camera.');
+      context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob((value) => value ? resolve(value) : reject(new Error('Could not prepare the captured photo.')), 'image/jpeg', 0.88);
+      });
+      releaseCapturedPhotoUrl();
+      const uri = URL.createObjectURL(blob);
+      capturedPhotoUrlRef.current = uri;
+      setPhoto({ uri, file: blob, mimeType: 'image/jpeg' });
+      setVideo(null);
+      setPublishError('');
+      setPublishSuccess('');
+      closeBrowserCamera();
+    } catch (captureError) {
+      setPublishError(captureError?.message || 'Could not capture a photo. Please try again.');
+    }
+  };
+
   const chooseCamera = async () => {
     if (Platform.OS === 'web') {
-      setPublishError('Camera capture is available in the ZannyChat mobile app. On web, use Add photo or Add video.');
-      return;
+      try {
+        if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+          throw new Error('This browser does not support camera access. Open ZannyChat over HTTPS in a recent browser.');
+        }
+        // Called directly from the Camera button so the browser can show its
+        // native camera permission prompt.
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: { facingMode: { ideal: 'environment' } },
+        });
+        cameraStreamRef.current = stream;
+        setCameraOpen(true);
+        setPublishError('');
+        return;
+      } catch (cameraError) {
+        const denied = ['NotAllowedError', 'PermissionDeniedError'].includes(cameraError?.name);
+        setPublishError(denied
+          ? 'Camera access was blocked. Allow camera access for zannychat-app.netlify.app in your browser site settings, then try again.'
+          : cameraError?.message || 'The browser camera could not be opened. Please try again.');
+        return;
+      }
     }
     try {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
@@ -258,6 +353,7 @@ export default function StatusUpdatesScreen({ navigation }) {
       }
       const result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], allowsEditing: true, quality: 0.85 });
       if (!result.canceled && result.assets?.[0]) {
+        releaseCapturedPhotoUrl();
         setPhoto(result.assets[0]);
         setVideo(null);
         setPublishError('');
@@ -284,7 +380,7 @@ export default function StatusUpdatesScreen({ navigation }) {
         : video
           ? await publishVideoStatus(video, normalized, audience, audienceRecipientIds, expiryHours)
           : await publishTextStatus(normalized, audience, audienceRecipientIds, expiryHours);
-      setStatuses((old) => [item, ...old]); setText(''); setPhoto(null); setVideo(null);
+      setStatuses((old) => [item, ...old]); setText(''); releaseCapturedPhotoUrl(); setPhoto(null); setVideo(null);
       await clearStatusDraft(AsyncStorage); setStatusDraftSaved(false);
       setPublishSuccess(`Status published successfully. It expires in ${expiryHours} hours.`);
     } catch (e) {
@@ -564,7 +660,7 @@ export default function StatusUpdatesScreen({ navigation }) {
             <Text style={[typography.small, { color: colors.textPrimary }]}>Camera</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={choosePhoto} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.sm, minHeight: 42 }}><Ionicons name="image-outline" size={18} color={colors.primary} /><Text style={[typography.small, { color: colors.textPrimary }]}>{photo ? 'Change photo' : 'Add photo'}</Text></TouchableOpacity>
-          {photo || video ? <TouchableOpacity onPress={() => { setPhoto(null); setVideo(null); }} accessibilityRole="button"><Text style={[typography.small, { color: colors.textSecondary }]}>Remove media</Text></TouchableOpacity> : null}
+          {photo || video ? <TouchableOpacity onPress={() => { releaseCapturedPhotoUrl(); setPhoto(null); setVideo(null); }} accessibilityRole="button"><Text style={[typography.small, { color: colors.textSecondary }]}>Remove media</Text></TouchableOpacity> : null}
           <TouchableOpacity onPress={chooseVideo} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.sm, minHeight: 42 }}><Ionicons name="videocam-outline" size={18} color={colors.primary} /><Text style={[typography.small, { color: colors.textPrimary }]}>{video ? 'Change video' : 'Add video'}</Text></TouchableOpacity>
         </View>
         {photo ? <Image source={{ uri: photo.uri }} accessibilityLabel="Selected status photo preview" style={{ width: '100%', height: 190, borderRadius: radii.md }} resizeMode="cover" /> : null}
@@ -615,6 +711,23 @@ export default function StatusUpdatesScreen({ navigation }) {
       {loading ? <View style={{ padding: spacing.xl, alignItems: 'center' }}><ActivityIndicator color={colors.primary} /></View> : error ? <View style={{ padding: spacing.md }}><Text style={[typography.body, { color: colors.textSecondary }]}>{error}</Text><TouchableOpacity onPress={refresh} style={{ paddingVertical: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></View> : groupedStatuses.map((group) => { const item = group.latest; const openGroupStatus = () => openStatus(item.is_own ? item : firstUnseenStatus(group.statuses, seenStatusIds, item)); return <GlassCard key={group.ownerId} style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}><View style={{ flexDirection: 'row', alignItems: 'center' }}><View style={{ flex: 1 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}><Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.is_own ? 'My status' : (statusUserNames[item.user_id] || `Contact ${String(item.user_id || '').slice(0, 8)}`)}</Text>{!item.is_own && unreadStatusCount(group.statuses, seenStatusIds, false) > 0 ? <View accessibilityLabel={`${unreadStatusCount(group.statuses, seenStatusIds, false)} new status updates`} style={{ backgroundColor: colors.primary, borderRadius: 10, minWidth: 20, height: 20, paddingHorizontal: 5, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colors.background, fontSize: 11, fontWeight: '700' }}>{unreadStatusCount(group.statuses, seenStatusIds, false)}</Text></View> : null}</View><Text style={[typography.caption, { color: colors.textSecondary }]}>{ageLabel(item.created_at)} · {group.statuses.length} update{group.statuses.length === 1 ? '' : 's'} · {item.audience === 'only_me' ? 'Only me' : item.audience === 'selected_contacts' ? 'Selected contacts' : 'My contacts'} · {unreadStatusCount(group.statuses, seenStatusIds, item.is_own) ? `${unreadStatusCount(group.statuses, seenStatusIds, item.is_own)} new` : 'Viewed'}</Text></View>{item.is_own ? <TouchableOpacity onPress={() => remove(item)} accessibilityRole="button" accessibilityLabel="Delete status" hitSlop={10}><Ionicons name="trash-outline" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}{!item.is_own ? <TouchableOpacity onPress={() => muteOwner(item)} accessibilityRole="button" accessibilityLabel="Mute this account’s statuses" hitSlop={10}><Ionicons name="volume-mute-outline" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}</View>{item.media_kind === 'video' && item.media_url ? <TouchableOpacity onPress={openGroupStatus} accessibilityRole="button" style={{ minHeight: 70, borderRadius: radii.md, backgroundColor: '#111111', alignItems: 'center', justifyContent: 'center' }}><Ionicons name="play-circle" size={42} color="#FFFFFF" /><Text style={{ color: '#FFFFFF' }}>Video status</Text></TouchableOpacity> : null}{item.media_kind === 'image' && item.media_url ? <Image source={{ uri: item.media_url }} accessibilityLabel="Status photo" style={{ width: '100%', height: 220, borderRadius: radii.md }} resizeMode="cover" /> : null}{item.text ? <Text style={[typography.body, { color: colors.textPrimary }]}>{item.text}</Text> : null}{item.media_kind === 'image' && !item.media_url ? <Text style={[typography.caption, { color: colors.textSecondary }]}>Photo unavailable or access expired. Refresh to try again.</Text> : null}{item.is_own ? <Text style={[typography.caption, { color: colors.textSecondary }]}><Ionicons name="eye-outline" size={13} color={colors.textSecondary} /> {item.view_count || 0} {item.view_count === 1 ? 'view' : 'views'}</Text> : null}<TouchableOpacity onPress={openGroupStatus} accessibilityRole="button" style={{ minHeight: 38, justifyContent: 'center' }}><Text style={[typography.small, { color: colors.primary }]}>{item.is_own ? 'View status' : 'Open status'}</Text></TouchableOpacity><Text style={[typography.caption, { color: colors.textSecondary }]}>Latest update expires {new Date(item.expires_at).toLocaleString()}</Text></GlassCard>; })}
       {!loading && !error && statuses.length === 0 ? <View style={{ paddingVertical: spacing.xl, alignItems: 'center' }}><Ionicons name="aperture-outline" size={34} color={colors.textSecondary} /><Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.sm, textAlign: 'center' }]}>No active statuses yet. Publish a short update above.</Text></View> : null}
     </ScrollView>
+    <Modal visible={cameraOpen} animationType="slide" onRequestClose={closeBrowserCamera}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#101018', padding: spacing.md }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md }}>
+          <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '800' }}>Take a status photo</Text>
+          <TouchableOpacity onPress={closeBrowserCamera} accessibilityRole="button" accessibilityLabel="Close camera" style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="close" size={26} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+        <View ref={cameraPreviewRef} collapsable={false} style={{ flex: 1, minHeight: 260, borderRadius: 16, overflow: 'hidden', backgroundColor: '#000000' }} />
+        <Text style={{ color: '#D5D2E2', textAlign: 'center', marginVertical: spacing.md }}>
+          Camera access is handled by your browser. Your photo is not uploaded until you publish the status.
+        </Text>
+        <TouchableOpacity onPress={captureBrowserPhoto} accessibilityRole="button" accessibilityLabel="Capture status photo" style={{ minHeight: 52, borderRadius: radii.md, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: colors.background, fontWeight: '800' }}>Capture photo</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    </Modal>
     <Modal visible={privacyModalOpen} transparent animationType="slide" onRequestClose={() => setPrivacyModalOpen(false)}>
       <View style={{ flex: 1, backgroundColor: '#000000AA', justifyContent: 'flex-end' }}><View style={{ maxHeight: '75%', backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: spacing.md }}><View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.textPrimary, flex: 1 }]}>{privacyMode === 'select' ? 'Choose status audience' : 'Exclude contacts from statuses'}</Text><TouchableOpacity onPress={() => setPrivacyModalOpen(false)} accessibilityRole="button"><Ionicons name="close" size={24} color={colors.textPrimary} /></TouchableOpacity></View><Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.sm }]}>{privacyMode === 'select' ? 'Only selected contacts or group members can view this status. Contacts excluded by Story privacy cannot be selected; exclusions take precedence.' : 'Excluded people cannot read your contact-visible status media or text. Changes apply to existing active statuses too.'}</Text><TextInput value={privacySearch} onChangeText={setPrivacySearch} placeholder="Search contacts by name or ID" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search status privacy contacts" returnKeyType="search" autoCapitalize="none" style={[typography.body, { color: colors.textPrimary, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginBottom: spacing.sm }]} /><Text accessibilityLiveRegion="polite" style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.sm }]}>{filterStatusContacts(privacyContacts, privacySearch).length} matching contact(s) · {privacyMode === 'select' ? `${removeExcludedStatusAudienceIds(selectedAudienceIds, excludedUsers).length} eligible selected · ${excludedUsers.length} excluded` : `${excludedUsers.length} excluded in total`}</Text>{privacyLoadError ? <View accessibilityRole="alert" style={{ borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.md, marginBottom: spacing.sm, gap: spacing.sm }}><Text style={[typography.body, { color: colors.textPrimary }]}>{privacyLoadError}</Text><TouchableOpacity onPress={privacyMode === 'select' ? loadSelectedAudienceContacts : loadPrivacyContacts} disabled={privacyBusy} accessibilityRole="button" accessibilityLabel="Retry loading status privacy contacts" style={{ minHeight: 42, justifyContent: 'center' }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>{privacyBusy ? 'Retrying…' : 'Try again'}</Text></TouchableOpacity></View> : null}{privacyMode === 'exclude' ? <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm }}><TouchableOpacity disabled={privacyBusy || !!privacyLoadError || filterStatusContacts(privacyContacts, privacySearch).length === 0} onPress={() => applyBulkExclusions(true)} accessibilityRole="button" accessibilityLabel="Exclude all matching contacts" style={{ flex: 1, minHeight: 40, justifyContent: 'center', alignItems: 'center', borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, opacity: privacyBusy ? 0.5 : 1 }}><Text style={[typography.small, { color: colors.primary }]}>{privacyBusy ? 'Updating…' : 'Exclude matching'}</Text></TouchableOpacity><TouchableOpacity disabled={privacyBusy || !!privacyLoadError || !filterStatusContacts(privacyContacts, privacySearch).some((contact) => excludedUsers.some((row) => row.excluded_user_id === contact.id))} onPress={() => applyBulkExclusions(false)} accessibilityRole="button" accessibilityLabel="Allow all matching contacts" style={{ flex: 1, minHeight: 40, justifyContent: 'center', alignItems: 'center', borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, opacity: privacyBusy ? 0.5 : 1 }}><Text style={[typography.small, { color: colors.primary }]}>Allow matching</Text></TouchableOpacity></View> : <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm }}><TouchableOpacity disabled={privacyBusy || !!privacyLoadError || filterEligibleStatusAudienceContacts(filterStatusContacts(privacyContacts, privacySearch), excludedUsers).length === 0} onPress={() => setSelectedAudienceIds((old) => updateSelectedAudienceIds(old, filterEligibleStatusAudienceContacts(filterStatusContacts(privacyContacts, privacySearch), excludedUsers).map((contact) => contact.id), true))} accessibilityRole="button" accessibilityLabel="Select all matching status contacts" style={{ flex: 1, minHeight: 40, justifyContent: 'center', alignItems: 'center', borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, opacity: privacyBusy ? 0.5 : 1 }}><Text style={[typography.small, { color: colors.primary }]}>Select matching</Text></TouchableOpacity><TouchableOpacity disabled={privacyBusy || !!privacyLoadError || !filterStatusContacts(privacyContacts, privacySearch).some((contact) => selectedAudienceIds.includes(contact.id))} onPress={() => setSelectedAudienceIds((old) => updateSelectedAudienceIds(old, filterStatusContacts(privacyContacts, privacySearch).map((contact) => contact.id), false))} accessibilityRole="button" accessibilityLabel="Clear matching status contacts" style={{ flex: 1, minHeight: 40, justifyContent: 'center', alignItems: 'center', borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, opacity: privacyBusy ? 0.5 : 1 }}><Text style={[typography.small, { color: colors.primary }]}>Clear matching</Text></TouchableOpacity></View>}<ScrollView keyboardShouldPersistTaps="handled">{filterStatusContacts(privacyContacts, privacySearch).map((contact) => { const isExcluded = excludedUsers.some((row) => row.excluded_user_id === contact.id); const checked = privacyMode === 'select' ? selectedAudienceIds.includes(contact.id) : isExcluded; const disabled = privacyBusy || !!privacyLoadError || (privacyMode === 'select' && isExcluded); return <TouchableOpacity key={contact.id} disabled={disabled} onPress={() => privacyMode === 'select' ? toggleSelectedAudience(contact) : toggleExcluded(contact)} accessibilityRole="checkbox" accessibilityState={{ checked, disabled }} style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border, opacity: disabled ? 0.55 : 1 }}><Text style={[typography.body, { color: colors.textPrimary, flex: 1 }]}>{contact.name}{privacyMode === 'select' && isExcluded ? ' · excluded by Story privacy' : ''}</Text><Ionicons name={checked ? 'checkbox' : 'square-outline'} size={22} color={checked ? colors.primary : colors.textSecondary} /></TouchableOpacity>; })}{privacyLoadError ? null : privacyContacts.length === 0 ? <Text style={[typography.body, { color: colors.textSecondary }]}>No conversation contacts found.</Text> : filterStatusContacts(privacyContacts, privacySearch).length === 0 ? <Text style={[typography.body, { color: colors.textSecondary, paddingVertical: spacing.md }]}>No contacts match “{privacySearch.trim()}”.</Text> : null}</ScrollView>{privacyMode === 'select' ? <TouchableOpacity onPress={() => setPrivacyModalOpen(false)} accessibilityRole="button" style={{ minHeight: 46, marginTop: spacing.sm, borderRadius: radii.md, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}><Text style={[typography.bodyStrong, { color: colors.background }]}>Done selecting</Text></TouchableOpacity> : null}</View></View>
     </Modal>
