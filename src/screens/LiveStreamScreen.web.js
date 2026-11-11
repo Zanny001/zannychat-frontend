@@ -88,7 +88,16 @@ export default function LiveStreamScreen({ route, navigation }) {
           setStatus('Connected · waiting for the creator');
         }
       } catch (err) {
-        if (active) { setStatus('Connection failed'); setError(err?.message || 'Could not connect to the LiveKit room.'); }
+        if (active) {
+          const permissionDenied = ['NotAllowedError', 'PermissionDeniedError', 'NotFoundError'].includes(err?.name) ||
+            /permission|camera|microphone|device not found/i.test(err?.message || '');
+          setCamera(false);
+          setMic(false);
+          setStatus(permissionDenied ? 'Camera or microphone permission required' : 'Connection failed');
+          setError(permissionDenied
+            ? 'Allow camera and microphone access for zannychat-app.netlify.app in your browser site settings, then use Turn camera on and Unmute mic to retry.'
+            : err?.message || 'Could not connect to the LiveKit room. Check your internet connection and LiveKit server settings.');
+        }
       }
     })();
 
