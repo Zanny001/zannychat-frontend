@@ -1,15 +1,253 @@
-import React from 'react';
-import { SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Room, RoomEvent, Track } from 'livekit-client';
+import { backendFetch } from '../services/backendClient';
 
-export default function LiveStreamScreen({ navigation }) {
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#100F18', alignItems: 'center', justifyContent: 'center', padding: 28 }}>
-      <View style={{ width: 78, height: 78, borderRadius: 26, backgroundColor: '#D83A59', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
-        <Text style={{ color: '#FFFFFF', fontSize: 30 }}>●</Text>
+const C = { bg: '#100F18', panel: '#242235', panel2: '#302D45', text: '#FFFFFF', muted: '#AAA7BD', primary: '#8B7CFF', live: '#D83A59', danger: '#F0B4C0' };
+
+function Action({ label, onPress, disabled = false, danger = false }) {
+  return <TouchableOpacity disabled={disabled} onPress={onPress} accessibilityRole="button" style={{ minHeight: 40, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 12, backgroundColor: danger ? '#512B3A' : C.panel2, justifyContent: 'center', alignItems: 'center', opacity: disabled ? 0.5 : 1 }}>
+    <Text style={{ color: danger ? C.danger : C.text, fontWeight: '800' }}>{label}</Text>
+  </TouchableOpacity>;
+}
+
+export default function LiveStreamScreen({ route, navigation }) {
+  const connection = route.params?.connection;
+  const stream = connection?.stream;
+  const creatorMode = Boolean(route.params?.creatorMode || connection?.role === 'creator');
+  const publisherMode = Boolean(creatorMode || (connection?.role === 'guest' && connection?.canPublish));
+  const moderatorMode = Boolean(creatorMode || connection?.canModerate);
+  const roomRef = useRef(null);
+  const localRef = useRef(null);
+  const remoteRef = useRef(null);
+  const endedRef = useRef(false);
+  const [status, setStatus] = useState('Connecting…');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [camera, setCamera] = useState(publisherMode);
+  const [mic, setMic] = useState(publisherMode);
+  const [audioBlocked, setAudioBlocked] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [draft, setDraft] = useState('');
+  const [guestStatus, setGuestStatus] = useState('none');
+  const [guestApproved, setGuestApproved] = useState(false);
+  const [reports, setReports] = useState([]);
+  const [panel, setPanel] = useState('');
+
+  useEffect(() => {
+    if (!stream?.id || !connection?.livekitUrl || !connection?.token) {
+      setError('This LIVE room is missing its secure connection details.');
+      setStatus('Unable to connect');
+      return undefined;
+    }
+    let active = true;
+    const room = new Room({ adaptiveStream: true, dynacast: true });
+    roomRef.current = room;
+
+    const attach = (track, target) => {
+      if (!active || !target) return;
+      const element = track.attach();
+      element.autoplay = true;
+      element.playsInline = true;
+      if (track.kind === Track.Kind.Video) {
+        element.style.width = '100%';
+        element.style.height = '100%';
+        element.style.objectFit = 'contain';
+      }
+      target.appendChild(element);
+    };
+    const onSubscribed = (track) => {
+      if (track.kind === Track.Kind.Video || track.kind === Track.Kind.Audio) attach(track, remoteRef.current);
+    };
+    const onUnsubscribed = (track) => track.detach();
+    const onLocalPublished = (publication) => {
+      if (publication.source === Track.Source.Camera && publication.videoTrack && localRef.current) {
+        localRef.current.replaceChildren();
+        attach(publication.videoTrack, localRef.current);
+      }
+    };
+
+    room.on(RoomEvent.TrackSubscribed, onSubscribed);
+    room.on(RoomEvent.TrackUnsubscribed, onUnsubscribed);
+    room.on(RoomEvent.LocalTrackPublished, onLocalPublished);
+    room.on(RoomEvent.AudioPlaybackStatusChanged, () => active && setAudioBlocked(!room.canPlaybackAudio));
+    room.on(RoomEvent.Disconnected, () => active && setStatus('Disconnected'));
+    (async () => {
+      try {
+        await room.connect(connection.livekitUrl, connection.token);
+        if (!active) return;
+        if (publisherMode) {
+          setStatus('Starting camera and microphone…');
+          await room.localParticipant.enableCameraAndMicrophone();
+          if (!active) return;
+          setCamera(true); setMic(true);
+          const video = room.localParticipant.getTrackPublication(Track.Source.Camera)?.videoTrack;
+          if (video && localRef.current) attach(video, localRef.current);
+          setStatus('You are LIVE');
+        } else {
+          setStatus('Connected · waiting for the creator');
+        }
+      } catch (err) {
+        if (active) { setStatus('Connection failed'); setError(err?.message || 'Could not connect to the LiveKit room.'); }
+      }
+    })();
+
+    return () => {
+      active = false;
+      room.removeAllListeners();
+      room.disconnect();
+      if (!endedRef.current) backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' }).catch(() => {});
+      if (localRef.current) localRef.current.replaceChildren();
+      if (remoteRef.current) remoteRef.current.replaceChildren();
+      roomRef.current = null;
+    };
+  }, [stream?.id, connection?.livekitUrl, connection?.token, creatorMode, publisherMode]);
+
+  const refreshComments = useCallback(async () => {
+    if (!stream?.id) return;
+    try {
+      const result = await backendFetch(`/live/${stream.id}/comments`);
+      setComments(Array.isArray(result?.comments) ? result.comments : []);
+    } catch (err) { setError((current) => current || err?.message || 'Comments unavailable.'); }
+  }, [stream?.id]);
+
+  useEffect(() => {
+    if (!stream?.id) return undefined;
+    refreshComments();
+    const timer = setInterval(refreshComments, 4000);
+    return () => clearInterval(timer);
+  }, [stream?.id, refreshComments]);
+
+  useEffect(() => {
+    if (!stream?.id || creatorMode || publisherMode || !stream.allow_guests) return undefined;
+    let active = true;
+    const check = async () => {
+      try {
+        const result = await backendFetch(`/live/${stream.id}/guest-status`);
+        if (active) { setGuestStatus(result?.status || 'none'); setGuestApproved(result?.status === 'accepted'); }
+      } catch (_) {}
+    };
+    check();
+    const timer = setInterval(check, 15000);
+    return () => { active = false; clearInterval(timer); };
+  }, [stream?.id, creatorMode, publisherMode, stream?.allow_guests]);
+
+  const leave = async () => {
+    if (!stream?.id || endedRef.current) return;
+    endedRef.current = true; setBusy(true);
+    try { await backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' }); }
+    catch (err) { setError(err?.message || 'Could not close the LIVE session.'); }
+    roomRef.current?.disconnect(); setBusy(false); navigation.goBack();
+  };
+  const toggleCamera = async () => {
+    try { const next = !camera; await roomRef.current?.localParticipant.setCameraEnabled(next); setCamera(next); }
+    catch (err) { setError(err?.message || 'Camera permission is unavailable.'); }
+  };
+  const toggleMic = async () => {
+    try { const next = !mic; await roomRef.current?.localParticipant.setMicrophoneEnabled(next); setMic(next); }
+    catch (err) { setError(err?.message || 'Microphone permission is unavailable.'); }
+  };
+  const sendComment = async () => {
+    if (!draft.trim() || busy) return;
+    setBusy(true);
+    try {
+      const result = await backendFetch(`/live/${stream.id}/comment`, { method: 'POST', body: JSON.stringify({ body: draft.trim() }) });
+      if (result?.comment) setComments((items) => [...items, result.comment].slice(-50));
+      setDraft('');
+    } catch (err) { setError(err?.message || 'Comment not sent.'); }
+    finally { setBusy(false); }
+  };
+  const react = async () => {
+    try { await backendFetch(`/live/${stream.id}/react`, { method: 'POST', body: JSON.stringify({ reaction: 'heart' }) }); }
+    catch (err) { setError(err?.message || 'Reaction not sent.'); }
+  };
+  const report = async () => {
+    const reason = typeof window !== 'undefined' ? window.prompt('Report reason: harassment, hate, spam, or other') : null;
+    if (!reason) return;
+    const value = reason.trim().toLowerCase();
+    if (!['harassment','hate','nudity','violence','spam','copyright','other'].includes(value)) { setError('Invalid report reason.'); return; }
+    try { await backendFetch(`/live/${stream.id}/report`, { method: 'POST', body: JSON.stringify({ reason: value }) }); setStatus('Report submitted'); }
+    catch (err) { setError(err?.message || 'Report not sent.'); }
+  };
+  const requestGuest = async () => {
+    try { await backendFetch(`/live/${stream.id}/guest-requests`, { method: 'POST' }); setGuestStatus('requested'); }
+    catch (err) { setError(err?.message || 'Could not request guest access.'); }
+  };
+  const joinGuest = async () => {
+    try {
+      const next = await backendFetch(`/live/${stream.id}/join`, { method: 'POST' });
+      if (next?.role !== 'guest' || !next?.canPublish) throw new Error('Guest access has not been approved.');
+      navigation.setParams({ connection: next, creatorMode: false });
+    } catch (err) { setError(err?.message || 'Could not join as guest.'); }
+  };
+  const hideComment = async (id) => {
+    try { await backendFetch(`/live/${stream.id}/comments/${id}/hide`, { method: 'POST' }); setComments((items) => items.filter((item) => item.id !== id)); }
+    catch (err) { setError(err?.message || 'Could not hide comment.'); }
+  };
+  const loadReports = async () => {
+    try {
+      if (panel === 'reports') { setPanel(''); return; }
+      const result = await backendFetch(`/live/${stream.id}/reports`);
+      setReports(Array.isArray(result?.reports) ? result.reports : []); setPanel('reports');
+    } catch (err) { setError(err?.message || 'Could not load reports.'); }
+  };
+  const reviewReport = async (id, statusValue) => {
+    try {
+      const result = await backendFetch(`/live/${stream.id}/reports/${id}`, { method: 'PATCH', body: JSON.stringify({ status: statusValue }) });
+      setReports((items) => items.map((item) => item.id === id ? { ...item, ...result.report } : item));
+    } catch (err) { setError(err?.message || 'Could not update report.'); }
+  };
+
+  if (!stream || !connection) return <SafeAreaView style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' }}><Text style={{ color: C.text }}>This LIVE room is unavailable.</Text><Action label="Go back" onPress={() => navigation.goBack()} /></SafeAreaView>;
+
+  return <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', padding: 12, gap: 10 }}>
+      <Text style={{ color: C.live, fontWeight: '900' }}>● LIVE</Text>
+      <Text numberOfLines={1} style={{ color: C.text, flex: 1, fontWeight: '800' }}>{stream.title}</Text>
+      <Text style={{ color: C.muted, fontSize: 11 }}>{status}</Text>
+    </View>
+    {!!error && <Text accessibilityRole="alert" style={{ color: C.danger, paddingHorizontal: 14, paddingBottom: 8 }}>{error}</Text>}
+    <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+      <View style={{ minHeight: 260, marginHorizontal: 12, borderRadius: 18, overflow: 'hidden', backgroundColor: '#050509' }}>
+        {publisherMode && <View ref={localRef} collapsable={false} style={{ width: '100%', minHeight: 260 }} />}
+        <View ref={remoteRef} collapsable={false} style={{ width: '100%', minHeight: 260 }} />
+        {!publisherMode && <Text style={{ color: C.muted, textAlign: 'center', padding: 12 }}>If the creator is not on screen yet, their video will appear here.</Text>}
       </View>
-      <Text style={{ color: '#FFFFFF', fontSize: 22, fontWeight: '800', textAlign: 'center' }}>LIVE needs the native media engine</Text>
-      <Text style={{ color: '#AAA7BD', textAlign: 'center', lineHeight: 22, marginTop: 10 }}>The web preview can show LIVE discovery, but publishing and watching video require a native build and a configured LiveKit server.</Text>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 24, backgroundColor: '#6557D9', paddingHorizontal: 22, paddingVertical: 12, borderRadius: 14 }}><Text style={{ color: '#FFFFFF', fontWeight: '800' }}>Go back</Text></TouchableOpacity>
-    </SafeAreaView>
-  );
+      {audioBlocked && <View style={{ padding: 12 }}><Action label="Enable LIVE audio" onPress={() => roomRef.current?.startAudio().then(() => setAudioBlocked(false)).catch((err) => setError(err?.message || 'Audio playback is blocked.'))} /></View>}
+      {publisherMode && <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, padding: 12 }}>
+        <Action label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={toggleCamera} />
+        <Action label={mic ? 'Mute mic' : 'Unmute mic'} onPress={toggleMic} />
+      </View>}
+      {moderatorMode && <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}><Action label={panel === 'reports' ? 'Close safety reports' : 'Safety reports'} onPress={loadReports} /></View>}
+      {panel === 'reports' && <View style={{ margin: 12, padding: 12, borderRadius: 14, backgroundColor: C.panel }}>
+        <Text style={{ color: C.text, fontWeight: '900', marginBottom: 8 }}>LIVE safety reports</Text>
+        {reports.map((item) => <View key={item.id} style={{ paddingVertical: 7 }}>
+          <Text style={{ color: C.text }}>{item.reason} · {item.status}</Text>
+          {item.status === 'open' && <Action label="Review" onPress={() => reviewReport(item.id, 'reviewing')} />}
+          {['open','reviewing'].includes(item.status) && <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
+            <Action label="Resolve" onPress={() => reviewReport(item.id, 'resolved')} /><Action label="Dismiss" onPress={() => reviewReport(item.id, 'dismissed')} />
+          </View>}
+        </View>)}
+      </View>}
+      {!publisherMode && stream.allow_guests && <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}>
+        {guestApproved ? <Action label="Join the stage" onPress={joinGuest} /> : <Action label={guestStatus === 'requested' ? 'Guest request pending' : 'Request to join on stage'} disabled={guestStatus === 'requested'} onPress={requestGuest} />}
+      </View>}
+      <View style={{ paddingHorizontal: 14, paddingTop: 6 }}>
+        <Text style={{ color: C.text, fontWeight: '900', marginBottom: 8 }}>LIVE chat</Text>
+        {comments.map((item) => <View key={item.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 5, gap: 8 }}>
+          <Text style={{ color: C.primary, fontWeight: '800' }}>{item.user_name || 'ZannyChat user'}</Text>
+          <Text style={{ color: C.text, flex: 1 }}>{item.body}</Text>
+          {moderatorMode && <TouchableOpacity onPress={() => hideComment(item.id)}><Text style={{ color: C.danger }}>Hide</Text></TouchableOpacity>}
+        </View>)}
+        {!comments.length && <Text style={{ color: C.muted, paddingVertical: 8 }}>Be the first to say hello.</Text>}
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 }}>
+        <TextInput value={draft} onChangeText={(v) => setDraft(v.slice(0, 500))} maxLength={500} placeholder="Say something kind…" placeholderTextColor={C.muted} style={{ flex: 1, color: C.text, backgroundColor: C.panel, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 }} />
+        <Action label="Send" disabled={busy || !draft.trim()} onPress={sendComment} /><Action label="♥" onPress={react} />
+        {!creatorMode && <Action label="Report" onPress={report} />}
+      </View>
+    </ScrollView>
+    <View style={{ alignItems: 'center', padding: 12, borderTopWidth: 1, borderTopColor: '#39364B' }}><Action label={creatorMode ? 'End LIVE' : 'Leave LIVE'} danger disabled={busy} onPress={leave} /></View>
+    {busy && <View style={{ position: 'absolute', top: '50%', alignSelf: 'center' }}><ActivityIndicator color={C.text} /></View>}
+  </SafeAreaView>;
 }
