@@ -47,3 +47,15 @@ test('browser Go LIVE requests camera and microphone permission before creating 
   assert.ok(screen.includes('audio: true'));
   assert.ok(screen.includes('permissionStream.getTracks().forEach((track) => track.stop())'));
 });
+
+
+test('web Go LIVE exposes startup failures in the page instead of relying on native alerts', () => {
+  assert.ok(screen.includes("setError(`Could not start LIVE: ${message}`)"));
+  assert.ok(screen.includes("Platform.OS !== 'web'"));
+  assert.ok(screen.includes("setStartStage('Creating your LIVE room…')"));
+});
+
+test('Go LIVE validates the server connection before opening the broadcast studio', () => {
+  assert.ok(screen.includes("!connection?.stream?.id || !connection?.livekitUrl || !connection?.token"));
+  assert.ok(screen.includes("navigation.navigate('LiveStream', { connection, creatorMode: true })"));
+});
