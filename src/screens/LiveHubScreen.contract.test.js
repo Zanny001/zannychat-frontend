@@ -36,7 +36,8 @@ test('LIVE hub validates the server media connection and displays web startup er
   assert.ok(screen.includes('connection?.stream?.id'));
   assert.ok(screen.includes('connection?.livekitUrl'));
   assert.ok(screen.includes('connection?.token'));
-  assert.ok(screen.includes("setError(e?.message || 'Could not start LIVE."));
+  assert.ok(screen.includes('LIVEKIT_URL, LIVEKIT_API_KEY and LIVEKIT_API_SECRET'));
+  assert.ok(screen.includes('setError(message)'));
 });
 
 test('LIVE hub uses the shared premium theme and supports focused discovery filters', () => {
