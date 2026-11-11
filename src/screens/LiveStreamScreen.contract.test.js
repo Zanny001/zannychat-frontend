@@ -49,3 +49,9 @@ test('LIVE viewers can request guest access and creators can approve or decline 
   assert.ok(screen.includes("onReviewGuestRequest(item.user_id, 'accepted')"));
   assert.ok(screen.includes("onReviewGuestRequest(item.user_id, 'declined')"));
 });
+
+
+test('LIVE chat displays profile names rather than truncated account identifiers', () => {
+  assert.ok(screen.includes("item.user_name || 'ZannyChat user'"));
+  assert.equal(screen.includes('String(item.user_id).slice(0, 7)'), false);
+});
