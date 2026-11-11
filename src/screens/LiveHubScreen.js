@@ -38,6 +38,7 @@ export default function LiveHubScreen({ navigation }) {
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [startStage, setStartStage] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
 
   const visibleStreams = streams.filter((item) => {
@@ -95,6 +96,8 @@ export default function LiveHubScreen({ navigation }) {
       return Alert.alert('Add invitees', 'Choose at least one person from your existing chats.');
     }
     setBusy(true);
+    setError('');
+    setStartStage(Platform.OS === 'web' ? 'Requesting camera and microphone access…' : 'Preparing your LIVE room…');
     try {
       // Acquire browser media permission directly from the Go LIVE click.
       // This avoids waiting for the authenticated API round-trip before the
@@ -109,6 +112,7 @@ export default function LiveHubScreen({ navigation }) {
         });
         permissionStream.getTracks().forEach((track) => track.stop());
       }
+      setStartStage('Creating your LIVE room…');
       const connection = await backendFetch('/live', {
         method: 'POST',
         body: JSON.stringify({
@@ -116,14 +120,21 @@ export default function LiveHubScreen({ navigation }) {
           inviteeIds: visibility === 'private' ? invitees : [],
         }),
       });
+      if (!connection?.stream?.id || !connection?.livekitUrl || !connection?.token) {
+        throw new Error(connection?.message || 'The server did not return a complete LIVE room connection. Please try again.');
+      }
+      setStartStage('Opening your LIVE studio…');
+      navigation.navigate('LiveStream', { connection, creatorMode: true });
       setTitle('');
       setDescription('');
       setSelectedInvitees([]);
-      navigation.navigate('LiveStream', { connection, creatorMode: true });
     } catch (e) {
-      Alert.alert('Could not start LIVE', e?.message || 'The media service may not be configured yet.');
+      const message = e?.message || 'The media service may not be configured yet.';
+      setError(`Could not start LIVE: ${message}`);
+      if (Platform.OS !== 'web') Alert.alert('Could not start LIVE', message);
     } finally {
       setBusy(false);
+      setStartStage('');
     }
   };
 
@@ -272,6 +283,7 @@ export default function LiveHubScreen({ navigation }) {
                 {busy ? <ActivityIndicator color={colors.background} /> : <Ionicons name="radio" size={20} color={colors.background} />}
                 <Text style={[typography.bodyStrong, { color: colors.background }]}>{busy ? 'Connecting…' : 'Go LIVE'}</Text>
               </TouchableOpacity>
+              {!!startStage && <Text accessibilityRole="status" style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>{startStage}</Text>}
             </GlassCard>
 
             {invitations.length > 0 && (
