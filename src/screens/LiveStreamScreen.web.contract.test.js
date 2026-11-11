@@ -22,7 +22,7 @@ test('web LIVE publishers acquire and publish camera and microphone while viewer
 test('web LIVE supports browser media controls, playback recovery and chat', () => {
   assert.ok(web.includes('setCameraEnabled(next)'));
   assert.ok(web.includes('setMicrophoneEnabled(next)'));
-  assert.ok(web.includes('room.startAudio()'));
+  assert.ok(web.includes('roomRef.current?.startAudio()'));
   assert.ok(web.includes('`/live/${stream.id}/comments`'));
   assert.ok(web.includes('`/live/${stream.id}/comment`'));
   assert.ok(web.includes('`/live/${stream.id}/react`'));
