@@ -91,7 +91,7 @@ export const MOODS = {
   },
 };
 
-export const DEFAULT_MOOD_KEY = 'ember';
+export const DEFAULT_MOOD_KEY = 'royalNeon';
 
 // Fixed across every mood on purpose — "online" should mean the same
 // thing regardless of which mood is active.
@@ -102,6 +102,43 @@ const ONLINE = '#4ADE80';
 // (signal/thread) means most screens never have to know the theme
 // changed, while ChatBubble and the mood picker can reach for the
 // literal "two voices" meaning.
+
+function parseHex(hex) {
+  const clean = String(hex || '').replace('#', '');
+  const expanded = clean.length === 3 ? clean.split('').map((part) => part + part).join('') : clean;
+  if (!/^[0-9a-fA-F]{6}$/.test(expanded)) return [0, 0, 0];
+  return [0, 2, 4].map((offset) => parseInt(expanded.slice(offset, offset + 2), 16));
+}
+
+function relativeLuminance(hex) {
+  const channels = parseHex(hex).map((value) => {
+    const channel = value / 255;
+    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function contrastRatio(first, second) {
+  const values = [relativeLuminance(first), relativeLuminance(second)].sort((a, b) => b - a);
+  return (values[0] + 0.05) / (values[1] + 0.05);
+}
+
+function accessibleAccent(hex, background, minimum = 4.5) {
+  const original = parseHex(hex);
+  for (let step = 0; step <= 100; step += 2) {
+    const factor = 1 - step / 100;
+    const candidate = '#' + original.map((value) => Math.round(value * factor).toString(16).padStart(2, '0')).join('').toUpperCase();
+    if (contrastRatio(candidate, background) >= minimum) return candidate;
+  }
+  return '#171925';
+}
+
+function tint(hex, amount = 0.84) {
+  const foreground = parseHex(hex);
+  const white = [255, 255, 255];
+  return '#' + foreground.map((value, index) => Math.round(value * (1 - amount) + white[index] * amount).toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
 export function resolveMoodColors(mood, mode = 'dark', highContrast = false) {
   const light = mode === 'light';
   const base = light ? {
@@ -135,19 +172,18 @@ export function resolveMoodColors(mood, mode = 'dark', highContrast = false) {
   const thread = mood.thread;
   return {
     ...base,
-    primary: light ? '#B93825' : signal,
-    primaryDark: light ? '#8F2C1D' : signal,
+    primary: light ? accessibleAccent(signal, '#FFFFFF', 4.5) : signal,
+    primaryDark: light ? accessibleAccent(signal, '#FFFFFF', 5) : signal,
     onPrimary: light ? '#FFFFFF' : mood.ink,
-    accent: light ? '#087C69' : thread,
+    accent: light ? accessibleAccent(thread, '#FFFFFF', 3) : thread,
     signal,
     thread,
     gold: mood.gold,
-    bubbleMine: light ? '#FFE4DC' : signal,
-    // Bright signal surfaces need dark foregrounds; white text failed WCAG
-    // AA contrast in every dark mood (2.25:1–2.83:1). Keep the vivid brand
-    // color and use the mood's ink for readable message content instead.
-    bubbleMineText: light ? '#512018' : mood.ink,
-    bubbleMineMeta: light ? '#744238' : mood.inkRaised,
+    bubbleMine: light ? tint(signal, 0.84) : signal,
+    // Bright signal surfaces need dark foregrounds; use the mood's ink in
+    // dark mode and a high-contrast neutral on tinted light-mode bubbles.
+    bubbleMineText: light ? '#171925' : mood.ink,
+    bubbleMineMeta: light ? '#414658' : mood.inkRaised,
     bubbleTheirs: light ? '#E9EDF5' : mood.inkRaisedAlt,
     danger: light ? '#B4233A' : mood.danger,
     online: ONLINE,
