@@ -61,6 +61,20 @@ This review used the current GitHub default branches and the linked production S
 - Before completing the privacy cutover, add a minimum-supported-client/version strategy, migrate every active profile to private paths, update all clients to resolve signed URLs, stop dual-writing public objects, clear legacy public URLs, then make the legacy bucket private only after compatibility telemetry confirms the old clients are retired. Test `everyone`, `contacts`, `nobody`, bidirectional blocks, own-profile access, and old-client behavior with two authenticated accounts plus an unauthenticated request.
 - The private-avatars bucket currently has duplicate owner upload/update/delete and SELECT policies under two policy-name sets. Review and consolidate only after the staged cutover; avoid changing live access semantics during this product UI phase.
 
+
+### Public content and creator-feed gap
+
+- The current channel directory exposes public communities and channel posts, but `channel_posts` is text-only. LIVE is a separate broadcast experience.
+- The current status table is intentionally ephemeral and contact-oriented: its audience constraint permits `contacts`, `only_me` and `selected_contacts`; it does not permit a public `everyone` audience. The separate profile preference's `status_audience` values include `everyone`, so this mismatch should be reconciled before exposing any public status feed.
+- There is no persistent public creator-media feed comparable to a short-video discovery surface. Do not repurpose contact-only Stories or weaken `can_view_status` to fake one. A proper feed needs its own posts, creator follows, visibility rules, media storage/signing, comments, reactions, view accounting, reporting, moderation, pagination and abuse controls.
+- Phase 2 should build that feed as a separate, opt-in creator product surface. Start with chronological public/following feeds and robust moderation; add ranking only after enough real engagement data exists. Never seed fake engagement or use private contacts as public recommendations.
+
+### Storage guardrails
+
+- The `chat-media` and legacy public `avatars` buckets currently have no server-side file-size limit or MIME allowlist. The new private-avatar bucket is capped at 10 MiB and status media at 50 MiB.
+- Chat upload helpers do not enforce a shared byte-size ceiling before uploading. Establish explicit product limits and align frontend validation with Supabase bucket-level limits; the server-side bucket limit is authoritative because client checks can be bypassed.
+- Choose accepted attachment MIME types from actual product requirements (images, voice notes, video, documents) before restricting the bucket. Do not accidentally block legitimate older clients or file types during rollout.
+
 ## Release and reliability gates
 
 - Real APNs/FCM delivery, native CallKit/Telecom lifecycle behavior and cold-start call dismissal still require physical-device validation.
