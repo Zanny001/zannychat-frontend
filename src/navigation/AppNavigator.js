@@ -62,6 +62,17 @@ import { completeGoogleOAuthCallback } from '../services/googleAuth';
 export const navigationRef = createNavigationContainerRef();
 
 const RootStack = createNativeStackNavigator();
+
+const styles = StyleSheet.create({
+  tabIconShell: {
+    width: 38,
+    height: 34,
+    borderRadius: 13,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
 const MainTabs = createBottomTabNavigator();
 
 // The bottom tab bar's background — real blur of whatever's scrolling
@@ -94,20 +105,44 @@ function MainTabNavigator() {
         tabBarItemStyle: { paddingTop: 5, paddingBottom: 5 },
         tabBarStyle: {
           backgroundColor: 'transparent',
-          borderTopColor: hexToRgba(colors.textPrimary, 0.08),
+          borderTopColor: hexToRgba(colors.textPrimary, 0.12),
           position: 'absolute',
-          height: 68,
-          paddingTop: 5,
-          paddingBottom: Platform.OS === 'ios' ? 18 : 8,
+          height: 76,
+          marginHorizontal: 10,
+          marginBottom: Platform.OS === 'ios' ? 0 : 7,
+          paddingTop: 7,
+          paddingBottom: Platform.OS === 'ios' ? 18 : 9,
           borderTopWidth: 1,
-          elevation: 0,
+          borderWidth: 1,
+          borderColor: hexToRgba(colors.textPrimary, 0.1),
+          borderRadius: 26,
+          overflow: 'hidden',
+          elevation: 12,
+          shadowColor: colors.primary,
+          shadowOpacity: 0.18,
+          shadowRadius: 22,
+          shadowOffset: { width: 0, height: -4 },
         },
         tabBarBackground: () => <GlassTabBackground />,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
-        tabBarIcon: ({ color, size }) => {
+        tabBarIcon: ({ color, size, focused }) => {
           const icons = { Chats: 'chatbubbles', Calls: 'call', Updates: 'aperture', Channels: 'compass', Profile: 'person-circle' };
-          return <Ionicons name={icons[route.name]} size={size} color={color} />;
+          return (
+            <View style={[
+              styles.tabIconShell,
+              {
+                backgroundColor: focused ? hexToRgba(colors.primary, 0.17) : 'transparent',
+                borderColor: focused ? hexToRgba(colors.primary, 0.38) : 'transparent',
+                shadowColor: colors.primary,
+                shadowOpacity: focused ? 0.32 : 0,
+                shadowRadius: focused ? 11 : 0,
+                elevation: focused ? 4 : 0,
+              },
+            ]}>
+              <Ionicons name={icons[route.name]} size={focused ? 23 : size} color={color} />
+            </View>
+          );
         },
       })}
     >
