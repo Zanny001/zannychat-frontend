@@ -6,9 +6,9 @@ concurrency:
 
 on:
   push:
-    branches: [feat/advanced-calling-live-1.2.241]
+    branches: [main, feat/advanced-calling-live-1.2.241]
   pull_request:
-    branches: [feat/advanced-calling-live-1.2.241]
+    branches: [main, feat/advanced-calling-live-1.2.241]
 
 jobs:
   client-quality:
@@ -37,8 +37,10 @@ jobs:
           grep -q "reportZannyChatNativeEnd(for: action.callUUID" node_modules/expo-callkit-telecom/ios/Managers/CallManager+CXProviderDelegate.swift
           grep -q "ZannyChatNativeCallMappingModule" modules/zannychat-native-call-mapping/expo-module.config.json
       - run: npx expo export --platform web --output-dir /tmp/zannychat-web-export
+      - run: npx expo export --platform android --output-dir /tmp/zannychat-android-export
       - run: npm run test:unit
       - run: npm run test:call-recovery
       - run: npm run test:native-call-receiver
       - run: npm run audit:release
+      - run: npm run audit:contract
       - run: npm run audit:integrity
