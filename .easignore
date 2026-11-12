@@ -1,0 +1,35 @@
+.git/
+node_modules/
+.expo/
+dist/
+web-build/
+.netlify/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+*.bak
+*.before-*
+*.pre-*
+*.oauth-backup-*
+*.oauth-diag-*
+*.bak-*
+*.zip
+__pycache__/
+
+# Include Firebase Android client configuration for local EAS builds.
+!google-services.json
+
+# Never upload private credentials or signing material.
+*service-account*.json
+*firebase-admin*.json
+*private-key*.json
+credentials*.json
+*.pem
+*.p12
+*.p8
+*.key
+
+# Exclude EAS local simulator credentials.
+.env.eas-simulator
