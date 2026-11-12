@@ -298,7 +298,7 @@ export default function ChatListScreen({ navigation }) {
             accessibilityLabel="Start a new chat"
             accessibilityRole="button"
           >
-            <Ionicons name="add" size={22} color="#fff" />
+            <Ionicons name="add" size={22} color={colors.onPrimary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -374,7 +374,7 @@ export default function ChatListScreen({ navigation }) {
                   },
                 ]}
               >
-                <Text style={[typography.caption, { color: active ? '#FFFFFF' : colors.textSecondary }]}>{filter.label}</Text>
+                <Text style={[typography.caption, { color: active ? colors.onPrimary : colors.textSecondary }]}>{filter.label}</Text>
               </View>
             </TouchableOpacity>
           );
@@ -448,7 +448,7 @@ export default function ChatListScreen({ navigation }) {
                 <Text accessibilityRole="header" style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: spacing.xs, textAlign: 'center' }]}>Your chats couldn't load</Text>
                 <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.md }]}>{loadError}</Text>
                 <TouchableOpacity onPress={() => load().catch(() => {})} accessibilityRole="button" accessibilityLabel="Retry loading chats" style={{ minHeight: 44, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radii.pill, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={[typography.bodyStrong, { color: '#fff' }]}>Try again</Text>
+                  <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Try again</Text>
                 </TouchableOpacity>
               </>
             ) : query.trim() ? (
@@ -471,8 +471,8 @@ export default function ChatListScreen({ navigation }) {
                 <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.md }]}>{activeFilter === 'all' ? 'Start a private conversation or create a group. Your chats will appear here.' : 'Try another filter, or start a conversation to build your chat list.'}</Text>
                 {activeFilter === 'all' ? (
                   <TouchableOpacity onPress={() => navigation.navigate('NewChat')} accessibilityRole="button" accessibilityLabel="Start your first chat" style={{ minHeight: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.lg, borderRadius: radii.pill, backgroundColor: colors.primary }}>
-                    <Ionicons name="add" size={19} color="#fff" />
-                    <Text style={[typography.bodyStrong, { color: '#fff', marginLeft: spacing.xs }]}>Start a chat</Text>
+                    <Ionicons name="add" size={19} color={colors.onPrimary} />
+                    <Text style={[typography.bodyStrong, { color: colors.onPrimary, marginLeft: spacing.xs }]}>Start a chat</Text>
                   </TouchableOpacity>
                 ) : null}
               </>
