@@ -1693,6 +1693,13 @@ export async function fetchChannelPosts(channelId, cursor = null) {
   return backendFetch(`/channels/${encodeURIComponent(channelId)}/posts${query}`);
 }
 
+export async function fetchCommunityFeed(cursor = null) {
+  const query = cursor?.created_at && cursor?.id
+    ? `?beforeCreatedAt=${encodeURIComponent(cursor.created_at)}&beforeId=${encodeURIComponent(cursor.id)}`
+    : '';
+  return backendFetch(`/channels/discover/feed${query}`);
+}
+
 export async function publishChannelPost(channelId, body, clientRequestId = null) {
   const payload = { body };
   if (typeof clientRequestId === 'string' && clientRequestId) payload.clientRequestId = clientRequestId;

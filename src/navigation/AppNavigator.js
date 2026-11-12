@@ -88,7 +88,7 @@ function MainTabNavigator() {
     <MainTabs.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarAccessibilityLabel: `${route.name} tab`,
+        tabBarAccessibilityLabel: route.name === 'Channels' ? 'Explore tab' : `${route.name} tab`,
         tabBarShowLabel: true,
         tabBarLabelStyle: { fontSize: 10, fontWeight: '700', letterSpacing: 0.2, marginTop: 1 },
         tabBarItemStyle: { paddingTop: 5, paddingBottom: 5 },
@@ -106,7 +106,7 @@ function MainTabNavigator() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarIcon: ({ color, size }) => {
-          const icons = { Chats: 'chatbubbles', Calls: 'call', Updates: 'aperture', Channels: 'megaphone', Profile: 'person-circle' };
+          const icons = { Chats: 'chatbubbles', Calls: 'call', Updates: 'aperture', Channels: 'compass', Profile: 'person-circle' };
           return <Ionicons name={icons[route.name]} size={size} color={color} />;
         },
       })}
@@ -114,7 +114,7 @@ function MainTabNavigator() {
       <MainTabs.Screen name="Chats" component={ChatListScreen} />
       <MainTabs.Screen name="Calls" component={CallHistoryScreen} />
       <MainTabs.Screen name="Updates" component={StatusUpdatesScreen} options={{ tabBarLabel: 'Updates' }} />
-      <MainTabs.Screen name="Channels" component={ChannelsScreen} />
+      <MainTabs.Screen name="Channels" component={ChannelsScreen} options={{ tabBarLabel: 'Explore' }} />
       <MainTabs.Screen name="Profile" component={ProfileScreen} />
     </MainTabs.Navigator>
   );
