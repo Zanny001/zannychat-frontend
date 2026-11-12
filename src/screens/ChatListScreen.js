@@ -18,7 +18,8 @@ import { filterConversations as filterChatList } from '../utils/filterConversati
 import { filterByChatFolder } from '../utils/chatFolders';
 import { loadChatFolders } from '../services/chatFolders';
 import { listActiveStatuses, resolveStatusUserNames } from '../services/statusUpdates';
-import { readSeenStatusIds, unreadStatusCount } from '../utils/statusSeen';
+import { readSeenStatusIds } from '../utils/statusSeen';
+import { buildStoryTrayGroups } from '../utils/storyTray';
 
 // All / Unread / Favorites / Groups / Archived — the same category set
 // WhatsApp itself uses, confirmed against real screenshots rather than
@@ -33,25 +34,6 @@ const FILTERS = [
 ];
 
 const PAGE_SIZE = 50;
-
-function buildStoryTrayGroups(statuses, names, seenIds) {
-  const grouped = new Map();
-  for (const status of Array.isArray(statuses) ? statuses : []) {
-    if (!status?.user_id || !status?.id) continue;
-    if (!grouped.has(status.user_id)) grouped.set(status.user_id, []);
-    grouped.get(status.user_id).push(status);
-  }
-  return [...grouped.entries()].map(([userId, items]) => {
-    const isOwn = Boolean(items[0]?.is_own);
-    return {
-      userId,
-      isOwn,
-      name: isOwn ? 'Your story' : names?.[userId] || 'ZannyChat user',
-      count: items.length,
-      unseenCount: unreadStatusCount(items, seenIds, isOwn),
-    };
-  }).sort((a, b) => Number(b.isOwn) - Number(a.isOwn));
-}
 
 export default function ChatListScreen({ navigation }) {
   const { colors, mood, spacing, typography, radii } = useTheme();
