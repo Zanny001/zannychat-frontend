@@ -215,7 +215,7 @@ export default function InputBar({
 
           <TouchableOpacity
             onPress={onStopRecording}
-            style={[styles.sendBtn, { backgroundColor: colors.primary }]}
+            style={[styles.sendBtn, { backgroundColor: colors.primary, shadowColor: colors.primary, shadowOpacity: 0.36, shadowRadius: 12, elevation: 5 }]}
             accessibilityLabel="Send voice message"
             accessibilityRole="button"
           >
@@ -262,14 +262,14 @@ export default function InputBar({
 
           <TouchableOpacity
             onPress={text.trim() ? handleSend : onStartRecording}
-            style={[styles.sendBtn, { backgroundColor: text.trim() ? colors.primary : hexToRgba(colors.surfaceAlt, 0.8) }]}
+            style={[styles.sendBtn, { backgroundColor: text.trim() ? colors.primary : hexToRgba(colors.surfaceAlt, 0.8), shadowColor: text.trim() ? colors.primary : colors.accent, shadowOpacity: text.trim() ? 0.36 : 0.12, shadowRadius: text.trim() ? 12 : 6, elevation: text.trim() ? 5 : 2 }]}
             accessibilityLabel={text.trim() ? (editing ? 'Confirm edit' : 'Send message') : 'Record a voice message'}
             accessibilityRole="button"
           >
             <Ionicons
               name={text.trim() ? (editing ? 'checkmark' : 'send') : 'mic'}
               size={18}
-              color={text.trim() ? '#FFFFFF' : colors.textPrimary}
+              color={text.trim() ? colors.onPrimary : colors.textPrimary}
             />
           </TouchableOpacity>
         </View>
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   draftStatus: { flexDirection: 'row', alignItems: 'center', paddingTop: 5, paddingBottom: 1 },
   row: { flexDirection: 'row', alignItems: 'flex-end' },
   inputWrap: { flex: 1, paddingHorizontal: 14, marginHorizontal: 6, maxHeight: 120, borderWidth: 1 },
-  sendBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  sendBtn: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' },
   replyBar: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
   recordingIndicator: {
     flex: 1,
