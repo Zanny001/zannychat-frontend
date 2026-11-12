@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import GlassCard from '../components/GlassCard';
 import { useTheme } from '../theme/ThemeContext';
+import { backendFetch } from '../services/backendClient';
 import { acceptChannelInvite, appointChannelModerator, createChannel, createChannelInvite, deleteChannel, deleteChannelPost, deleteChannelPostComment, fetchChannelInvites, fetchChannelModerators, fetchChannelPostComments, fetchChannelPosts, getCurrentUser, listChannels, publishChannelPost, publishChannelPostComment, removeChannelModerator, revokeChannelInvite, reportChannelPost, reportChannelPostComment, fetchChannelPostReports, updateChannelPostReport, setChannelPostPinned, setChannelPostReaction, setChannelPostCommentReaction, subscribeToChannel, unsubscribeFromChannel, updateChannel, updateChannelPost, updateChannelPostComment } from '../services/api';
 import { normalizeChannelPost, validateChannel } from '../utils/channelValidation';
 import { mergeChannelPostPages } from '../utils/channelPagination';
@@ -26,6 +27,9 @@ function dateLabel(value) {
 export default function ChannelsScreen({ navigation }) {
   const { colors, spacing, radii, typography } = useTheme();
   const [channels, setChannels] = useState([]);
+  const [liveStreams, setLiveStreams] = useState([]);
+  const [liveLoading, setLiveLoading] = useState(false);
+  const [liveError, setLiveError] = useState('');
   const [channelSearch, setChannelSearch] = useState('');
   const [directoryFilter, setDirectoryFilter] = useState('all');
   const [recentChannelIds, setRecentChannelIds] = useState([]);
@@ -117,7 +121,40 @@ export default function ChannelsScreen({ navigation }) {
     } catch (err) { if (isCurrent()) setError(err?.message || 'Could not load channels. Check your connection and try again.'); }
     finally { if (isCurrent()) setLoading(false); }
   }, [selected?.id, clearSelectedChannel]);
-  useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
+  const refreshLive = useCallback(async () => {
+    setLiveLoading(true);
+    try {
+      const result = await backendFetch('/live');
+      setLiveStreams(Array.isArray(result?.streams) ? result.streams.slice(0, 4) : []);
+      setLiveError('');
+    } catch (err) {
+      setLiveStreams([]);
+      setLiveError(err?.message || 'LIVE discovery is temporarily unavailable.');
+    } finally {
+      setLiveLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(useCallback(() => {
+    refresh();
+    refreshLive();
+  }, [refresh, refreshLive]));
+
+  const joinLive = async (stream) => {
+    if (!stream?.id || busy) return;
+    setBusy(true);
+    try {
+      const connection = await backendFetch('/live/' + encodeURIComponent(stream.id) + '/join', { method: 'POST' });
+      if (!connection?.stream?.id || !connection?.livekitUrl || !connection?.token) {
+        throw new Error(connection?.message || 'The LIVE room connection is incomplete. Please try again.');
+      }
+      navigation.navigate('LiveStream', { connection, creatorMode: connection.role === 'creator' });
+    } catch (err) {
+      Alert.alert('Could not join LIVE', err?.message || 'This stream may have ended or requires an invitation.');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const openChannel = async (channel) => {
     if (userId && typeof channel?.id === 'string') {
@@ -519,6 +556,45 @@ export default function ChannelsScreen({ navigation }) {
           <TouchableOpacity onPress={() => navigation.navigate('LiveHub')} accessibilityRole="button" accessibilityLabel="Open creator LIVE" style={[buttonStyle(false), { minHeight: 38 }]}><Text style={buttonText}>Open</Text></TouchableOpacity>
         </View>
       </GlassCard>
+      {!selected ? (
+        <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={[typography.bodyStrong, { color: colors.textPrimary, flex: 1 }]}>Live now</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('LiveHub')} accessibilityRole="button" accessibilityLabel="See all LIVE streams" style={{ minHeight: 40, justifyContent: 'center', paddingHorizontal: spacing.xs }}>
+              <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>See all</Text>
+            </TouchableOpacity>
+          </View>
+          {liveLoading ? <ActivityIndicator color={colors.primary} /> : liveError ? (
+            <View style={{ gap: spacing.xs }}>
+              <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textSecondary }]}>{liveError}</Text>
+              <TouchableOpacity onPress={refreshLive} accessibilityRole="button" accessibilityLabel="Retry LIVE discovery" style={{ alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center' }}>
+                <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>Try again</Text>
+              </TouchableOpacity>
+            </View>
+          ) : liveStreams.length ? liveStreams.map((stream) => (
+            <TouchableOpacity
+              key={stream.id}
+              disabled={busy}
+              onPress={() => joinLive(stream)}
+              accessibilityRole="button"
+              accessibilityLabel={`Join LIVE: ${stream.title || 'Live broadcast'}`}
+              style={{ minHeight: 68, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing.sm }}
+            >
+              <View style={{ width: 42, height: 42, borderRadius: radii.md, backgroundColor: '#E34D68' + '18', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="videocam" size={21} color="#E34D68" />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{stream.title || 'Live broadcast'}</Text>
+                {!!stream.description ? <Text numberOfLines={1} style={[typography.caption, { color: colors.textSecondary }]}>{stream.description}</Text> : null}
+                <Text style={[typography.small, { color: colors.success || colors.primary, marginTop: 2 }]}>● LIVE · Public</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )) : (
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>No public broadcasts right now. Check back soon or start your own LIVE.</Text>
+          )}
+        </GlassCard>
+      ) : null}
       {error ? <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.xs }}><Text style={[typography.body, { color: colors.danger || '#D84C4C' }]}>{error}</Text><TouchableOpacity onPress={refresh}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
       {selected ? <>
         <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
