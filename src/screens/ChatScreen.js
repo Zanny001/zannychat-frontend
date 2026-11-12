@@ -1262,26 +1262,26 @@ export default function ChatScreen({ route, navigation }) {
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             {!display.isGroup && display.participant?.id ? (
               <>
-                <TouchableOpacity style={{ marginRight: spacing.sm }} onPress={() => handleStartCall('audio')} accessibilityLabel="Start audio call" accessibilityRole="button">
+                <TouchableOpacity style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]} onPress={() => handleStartCall('audio')} accessibilityLabel="Start audio call" accessibilityRole="button">
                   <Ionicons name="call-outline" size={20} color={colors.textPrimary} />
                 </TouchableOpacity>
-                <TouchableOpacity style={{ marginRight: spacing.sm }} onPress={() => handleStartCall('video')} accessibilityLabel="Start video call" accessibilityRole="button">
+                <TouchableOpacity style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]} onPress={() => handleStartCall('video')} accessibilityLabel="Start video call" accessibilityRole="button">
                   <Ionicons name="videocam-outline" size={21} color={colors.textPrimary} />
                 </TouchableOpacity>
               </>
             ) : null}
             {display.isGroup ? (
               <>
-                <TouchableOpacity style={{ marginRight: spacing.sm }} onPress={() => handleStartGroupCall('audio')} accessibilityLabel="Start group audio call" accessibilityRole="button">
+                <TouchableOpacity style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]} onPress={() => handleStartGroupCall('audio')} accessibilityLabel="Start group audio call" accessibilityRole="button">
                   <Ionicons name="call-outline" size={20} color={colors.textPrimary} />
                 </TouchableOpacity>
-                <TouchableOpacity style={{ marginRight: spacing.sm }} onPress={() => handleStartGroupCall('video')} accessibilityLabel="Start group video call" accessibilityRole="button">
+                <TouchableOpacity style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]} onPress={() => handleStartGroupCall('video')} accessibilityLabel="Start group video call" accessibilityRole="button">
                   <Ionicons name="videocam-outline" size={21} color={colors.textPrimary} />
                 </TouchableOpacity>
               </>
             ) : null}
             <TouchableOpacity
-              style={{ marginRight: spacing.sm }}
+              style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]}
               onPress={toggleSearch}
               accessibilityLabel={searchOpen ? 'Close message search' : 'Search messages in this conversation'}
               accessibilityRole="button"
@@ -1289,7 +1289,7 @@ export default function ChatScreen({ route, navigation }) {
               <Ionicons name={searchOpen ? 'close' : 'search-outline'} size={20} color={colors.textPrimary} />
             </TouchableOpacity>
             <TouchableOpacity
-              style={{ marginRight: spacing.sm }}
+              style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]}
               onPress={handleSummarize}
               disabled={summarizing}
               accessibilityLabel="Summarize this conversation"
@@ -1306,7 +1306,7 @@ export default function ChatScreen({ route, navigation }) {
                 button with no handler reads as broken, not unfinished. */}
             {display.isGroup ? (
               <TouchableOpacity
-                style={{ marginRight: spacing.sm }}
+                style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]}
                 onPress={() => navigation.navigate('GroupManagement', { conversation: display })}
                 accessibilityLabel="Manage group members"
                 accessibilityRole="button"
@@ -1315,7 +1315,7 @@ export default function ChatScreen({ route, navigation }) {
               </TouchableOpacity>
             ) : null}
             <TouchableOpacity
-              style={{ marginRight: spacing.sm }}
+              style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]}
               onPress={() => setActiveSheet('overflow')}
               accessibilityLabel="Conversation options"
               accessibilityRole="button"
@@ -1759,6 +1759,7 @@ Choose whether to remove this message only from your chat or retract it
 }
 
 const styles = StyleSheet.create({
+  headerAction: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center', shadowOpacity: 0.14, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
   searchPanel: { borderBottomWidth: StyleSheet.hairlineWidth },
   searchField: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, paddingHorizontal: 10 },
   searchControls: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
