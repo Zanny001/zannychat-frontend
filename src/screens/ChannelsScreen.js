@@ -1,12 +1,14 @@
 import React, { useCallback, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ActivityIndicator, Alert, Share, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Share, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import GlassCard from '../components/GlassCard';
 import { useTheme } from '../theme/ThemeContext';
-import { acceptChannelInvite, appointChannelModerator, createChannel, createChannelInvite, deleteChannel, deleteChannelPost, deleteChannelPostComment, fetchChannelInvites, fetchChannelModerators, fetchChannelPostComments, fetchChannelPosts, getCurrentUser, listChannels, publishChannelPost, publishChannelPostComment, removeChannelModerator, revokeChannelInvite, reportChannelPost, reportChannelPostComment, fetchChannelPostReports, updateChannelPostReport, setChannelPostPinned, setChannelPostReaction, setChannelPostCommentReaction, subscribeToChannel, unsubscribeFromChannel, updateChannel, updateChannelPost, updateChannelPostComment } from '../services/api';
+import { hexToRgba } from '../utils/color';
+import { backendFetch } from '../services/backendClient';
+import { acceptChannelInvite, appointChannelModerator, createChannel, createChannelInvite, deleteChannel, deleteChannelPost, deleteChannelPostComment, fetchChannelInvites, fetchChannelModerators, fetchChannelPostComments, fetchChannelPosts, fetchCommunityFeed, getCurrentUser, listChannels, publishChannelPost, publishChannelPostComment, removeChannelModerator, revokeChannelInvite, reportChannelPost, reportChannelPostComment, fetchChannelPostReports, updateChannelPostReport, setChannelPostPinned, setChannelPostReaction, setChannelPostCommentReaction, subscribeToChannel, unsubscribeFromChannel, updateChannel, updateChannelPost, updateChannelPostComment } from '../services/api';
 import { normalizeChannelPost, validateChannel } from '../utils/channelValidation';
 import { mergeChannelPostPages } from '../utils/channelPagination';
 import { mergeChannelCommentPages } from '../utils/channelCommentPagination';
@@ -26,6 +28,14 @@ function dateLabel(value) {
 export default function ChannelsScreen({ navigation }) {
   const { colors, spacing, radii, typography } = useTheme();
   const [channels, setChannels] = useState([]);
+  const [liveStreams, setLiveStreams] = useState([]);
+  const [liveLoading, setLiveLoading] = useState(false);
+  const [liveError, setLiveError] = useState('');
+  const [communityPosts, setCommunityPosts] = useState([]);
+  const [communityCursor, setCommunityCursor] = useState(null);
+  const [communityHasMore, setCommunityHasMore] = useState(false);
+  const [communityLoading, setCommunityLoading] = useState(false);
+  const [communityError, setCommunityError] = useState('');
   const [channelSearch, setChannelSearch] = useState('');
   const [directoryFilter, setDirectoryFilter] = useState('all');
   const [recentChannelIds, setRecentChannelIds] = useState([]);
@@ -117,7 +127,91 @@ export default function ChannelsScreen({ navigation }) {
     } catch (err) { if (isCurrent()) setError(err?.message || 'Could not load channels. Check your connection and try again.'); }
     finally { if (isCurrent()) setLoading(false); }
   }, [selected?.id, clearSelectedChannel]);
-  useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
+  const refreshLive = useCallback(async () => {
+    setLiveLoading(true);
+    try {
+      const result = await backendFetch('/live');
+      setLiveStreams(Array.isArray(result?.streams) ? result.streams.slice(0, 4) : []);
+      setLiveError('');
+    } catch (err) {
+      setLiveStreams([]);
+      setLiveError(err?.message || 'LIVE discovery is temporarily unavailable.');
+    } finally {
+      setLiveLoading(false);
+    }
+  }, []);
+
+  const refreshCommunityFeed = useCallback(async () => {
+    setCommunityLoading(true);
+    setCommunityError('');
+    try {
+      const result = await fetchCommunityFeed();
+      setCommunityPosts(Array.isArray(result?.posts) ? result.posts : []);
+      setCommunityCursor(result?.nextCursor || null);
+      setCommunityHasMore(Boolean(result?.hasMore));
+    } catch (err) {
+      setCommunityError(err?.message || 'Community posts are temporarily unavailable.');
+    } finally {
+      setCommunityLoading(false);
+    }
+  }, []);
+
+  const loadMoreCommunityFeed = useCallback(async () => {
+    if (!communityHasMore || !communityCursor || communityLoading) return;
+    setCommunityLoading(true);
+    setCommunityError('');
+    try {
+      const result = await fetchCommunityFeed(communityCursor);
+      const olderPosts = Array.isArray(result?.posts) ? result.posts : [];
+      setCommunityPosts((current) => {
+        const seen = new Set(current.map((post) => post.id));
+        return [...current, ...olderPosts.filter((post) => !seen.has(post.id))];
+      });
+      setCommunityCursor(result?.nextCursor || null);
+      setCommunityHasMore(Boolean(result?.hasMore));
+    } catch (err) {
+      setCommunityError(err?.message || 'Could not load more community posts.');
+    } finally {
+      setCommunityLoading(false);
+    }
+  }, [communityCursor, communityHasMore, communityLoading]);
+
+  useFocusEffect(useCallback(() => {
+    refresh();
+    if (!selected) {
+      refreshLive();
+      refreshCommunityFeed();
+    }
+  }, [refresh, refreshLive, refreshCommunityFeed, selected?.id]));
+
+  const reactToCommunityPost = async (post, emoji) => {
+    if (busy || communityLoading) return;
+    setBusy(true);
+    try {
+      await setChannelPostReaction(post.channelId, post.id, post.myReaction === emoji ? null : emoji);
+      await refreshCommunityFeed();
+    } catch (err) {
+      Alert.alert('Could not save reaction', err?.message || 'Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const joinLive = async (stream) => {
+    if (!stream?.id || busy) return;
+    setBusy(true);
+    try {
+      const connection = await backendFetch('/live/' + encodeURIComponent(stream.id) + '/join', { method: 'POST' });
+      if (!connection?.stream?.id || !connection?.livekitUrl || !connection?.token) {
+        throw new Error(connection?.message || 'The LIVE room connection is incomplete. Please try again.');
+      }
+      navigation.navigate('LiveStream', { connection, creatorMode: connection.role === 'creator' });
+    } catch (err) {
+      Alert.alert('Could not join LIVE', err?.message || 'This stream may have ended or requires an invitation.');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const openChannel = async (channel) => {
     if (userId && typeof channel?.id === 'string') {
@@ -507,7 +601,7 @@ export default function ChannelsScreen({ navigation }) {
   const buttonText = [typography.bodyStrong, { color: colors.onPrimary || colors.background }];
 
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-    <Header title="Channels" subtitle="Discover public updates and private channels" onBack={() => selected ? clearSelectedChannel() : navigation.goBack()} />
+    <Header title={selected ? "Channel" : "Explore"} subtitle={selected ? selected.title : "LIVE, public channels and communities"} onBack={() => selected ? clearSelectedChannel() : navigation.goBack()} />
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, gap: spacing.md }}>
       <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
@@ -519,6 +613,129 @@ export default function ChannelsScreen({ navigation }) {
           <TouchableOpacity onPress={() => navigation.navigate('LiveHub')} accessibilityRole="button" accessibilityLabel="Open creator LIVE" style={[buttonStyle(false), { minHeight: 38 }]}><Text style={buttonText}>Open</Text></TouchableOpacity>
         </View>
       </GlassCard>
+      {!selected ? (
+        <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={[typography.bodyStrong, { color: colors.textPrimary, flex: 1 }]}>Live now</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('LiveHub')} accessibilityRole="button" accessibilityLabel="See all LIVE streams" style={{ minHeight: 40, justifyContent: 'center', paddingHorizontal: spacing.xs }}>
+              <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>See all</Text>
+            </TouchableOpacity>
+          </View>
+          {liveLoading ? <ActivityIndicator color={colors.primary} /> : liveError ? (
+            <View style={{ gap: spacing.xs }}>
+              <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textSecondary }]}>{liveError}</Text>
+              <TouchableOpacity onPress={refreshLive} accessibilityRole="button" accessibilityLabel="Retry LIVE discovery" style={{ alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center' }}>
+                <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>Try again</Text>
+              </TouchableOpacity>
+            </View>
+          ) : liveStreams.length ? liveStreams.map((stream) => (
+            <TouchableOpacity
+              key={stream.id}
+              disabled={busy}
+              onPress={() => joinLive(stream)}
+              accessibilityRole="button"
+              accessibilityLabel={`Join LIVE: ${stream.title || 'Live broadcast'}`}
+              style={{ minHeight: 68, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing.sm }}
+            >
+              <View style={{ width: 42, height: 42, borderRadius: radii.md, backgroundColor: '#E34D68' + '18', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="videocam" size={21} color="#E34D68" />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{stream.title || 'Live broadcast'}</Text>
+                {!!stream.description ? <Text numberOfLines={1} style={[typography.caption, { color: colors.textSecondary }]}>{stream.description}</Text> : null}
+                <Text style={[typography.small, { color: colors.success || colors.primary, marginTop: 2 }]}>● LIVE · Public</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )) : (
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>No public broadcasts right now. Check back soon or start your own LIVE.</Text>
+          )}
+        </GlassCard>
+      ) : null}
+      {!selected ? (
+        <View style={{ gap: spacing.sm }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={[typography.bodyStrong, { color: colors.textPrimary, flex: 1 }]}>From your communities</Text>
+            <Text style={[typography.small, { color: colors.textSecondary }]}>Public posts</Text>
+          </View>
+          {communityError ? (
+            <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
+              <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textSecondary }]}>{communityError}</Text>
+              <Pressable onPress={refreshCommunityFeed} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center' }}>
+                <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>Try again</Text>
+              </Pressable>
+            </GlassCard>
+          ) : null}
+          {communityLoading && !communityPosts.length ? <ActivityIndicator color={colors.primary} /> : null}
+          {communityPosts.map((post) => (
+            <GlassCard key={post.id} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{post.channelTitle || 'Community'}</Text>
+                  <Text style={[typography.small, { color: colors.textSecondary }]}>{dateLabel(post.created_at)} · {post.viewCount || 0} views</Text>
+                </View>
+                {post.is_pinned ? <Ionicons name="pin" size={16} color={colors.primary} accessibilityLabel="Pinned post" /> : null}
+              </View>
+              <Text style={[typography.body, { color: colors.textPrimary }]}>{post.body}</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
+                {['👍', '❤️', '😂', '😮', '👏'].map((emoji) => {
+                  const count = post.reactionCounts?.[emoji] || 0;
+                  const active = post.myReaction === emoji;
+                  return (
+                    <Pressable
+                      key={emoji}
+                      disabled={busy || communityLoading}
+                      onPress={() => reactToCommunityPost(post, emoji)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: active, disabled: busy || communityLoading }}
+                      accessibilityLabel={`${emoji} reaction${count ? `, ${count}` : ''}`}
+                      style={({ pressed }) => ({
+                        minHeight: 40,
+                        borderRadius: radii.lg,
+                        borderWidth: 1,
+                        borderColor: active ? colors.primary : colors.border,
+                        backgroundColor: pressed || active ? hexToRgba(colors.primary, 0.12) : 'transparent',
+                        paddingHorizontal: spacing.sm,
+                        justifyContent: 'center',
+                        opacity: busy ? 0.55 : 1,
+                      })}
+                    >
+                      <Text style={[typography.caption, { color: colors.textPrimary }]}>{emoji}{count ? ` ${count}` : ''}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={[typography.small, { color: colors.textSecondary, flex: 1 }]}>{post.commentCount || 0} comments</Text>
+                <Pressable
+                  disabled={busy}
+                  onPress={() => openChannel({ id: post.channelId, title: post.channelTitle, is_private: false })}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${post.channelTitle || 'community'} discussion`}
+                  style={{ minHeight: 40, justifyContent: 'center', paddingHorizontal: spacing.xs }}
+                >
+                  <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>Open community</Text>
+                </Pressable>
+              </View>
+            </GlassCard>
+          ))}
+          {communityLoading && communityPosts.length ? <ActivityIndicator color={colors.primary} /> : null}
+          {!communityLoading && !communityError && !communityPosts.length ? (
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>No public posts yet. Explore a community or create a channel to get the conversation started.</Text>
+          ) : null}
+          {communityHasMore ? (
+            <Pressable
+              disabled={communityLoading}
+              onPress={loadMoreCommunityFeed}
+              accessibilityRole="button"
+              accessibilityLabel="Load more community posts"
+              style={{ minHeight: 44, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: communityLoading ? 0.5 : 1 }}
+            >
+              <Text style={[typography.bodyStrong, { color: colors.primary }]}>{communityLoading ? 'Loading…' : 'Load more community posts'}</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
       {error ? <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.xs }}><Text style={[typography.body, { color: colors.danger || '#D84C4C' }]}>{error}</Text><TouchableOpacity onPress={refresh}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
       {selected ? <>
         <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
