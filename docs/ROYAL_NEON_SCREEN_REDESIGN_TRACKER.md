@@ -24,15 +24,15 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 
 - [~] Main — navigation container and floating glass navigation
 - [~] Chats — Moments tray, camera shortcut, glass search and theme-driven filters
-- [ ] Chat — message timeline, bubbles, media and composer polish
-- [ ] NewChat
-- [ ] ForwardMessage
-- [ ] SavedMessages
-- [ ] Drafts
-- [ ] PinnedMessages
-- [ ] ChatFolders
-- [ ] SharedMedia
-- [ ] ChatAppearance
+- [~] Chat — message timeline, bubbles, media and composer polish
+- [~] NewChat
+- [~] ForwardMessage
+- [~] SavedMessages
+- [~] Drafts
+- [~] PinnedMessages
+- [~] ChatFolders
+- [~] SharedMedia
+- [~] ChatAppearance
 
 ### Calls and live experiences
 
