@@ -52,6 +52,15 @@ This review used the current GitHub default branches and the linked production S
 - The advisor reports 66 unused indexes. Do not drop them based on this snapshot alone: many are recent feature indexes and may not yet have representative production traffic. Review query plans and workload history before any index removal.
 - Continue measuring slow queries, pagination, media loading, Realtime subscriptions and Android memory/launch performance.
 
+
+### Legacy profile/avatar compatibility risk
+
+- `public.profiles` has an authenticated SELECT policy with `USING (true)`. The row includes `name`, `status`, `online`, `username` and the legacy `avatar_url`; RLS is row-level, not column-level.
+- The `avatars` Storage bucket is still public. New avatar uploads are dual-written to both `private-avatars` and the legacy public bucket, and the profile retains the public URL for older clients. The migration explicitly preserves this compatibility path.
+- The new `private-avatars` bucket is private and has a visibility-checking SELECT policy, but the legacy public URL can bypass those newer photo-visibility checks if it is known. This is a documented staged-cutover limitation, not something to "fix" by simply hiding the bucket: older installed clients may depend on those URLs.
+- Before completing the privacy cutover, add a minimum-supported-client/version strategy, migrate every active profile to private paths, update all clients to resolve signed URLs, stop dual-writing public objects, clear legacy public URLs, then make the legacy bucket private only after compatibility telemetry confirms the old clients are retired. Test `everyone`, `contacts`, `nobody`, bidirectional blocks, own-profile access, and old-client behavior with two authenticated accounts plus an unauthenticated request.
+- The private-avatars bucket currently has duplicate owner upload/update/delete and SELECT policies under two policy-name sets. Review and consolidate only after the staged cutover; avoid changing live access semantics during this product UI phase.
+
 ## Release and reliability gates
 
 - Real APNs/FCM delivery, native CallKit/Telecom lifecycle behavior and cold-start call dismissal still require physical-device validation.
