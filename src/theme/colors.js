@@ -123,6 +123,12 @@ function contrastRatio(first, second) {
   return (values[0] + 0.05) / (values[1] + 0.05);
 }
 
+function accessibleForeground(background) {
+  const blackContrast = contrastRatio('#080B18', background);
+  const whiteContrast = contrastRatio('#FFFFFF', background);
+  return blackContrast >= whiteContrast ? '#080B18' : '#FFFFFF';
+}
+
 function accessibleAccent(hex, background, minimum = 4.5) {
   const original = parseHex(hex);
   for (let step = 0; step <= 100; step += 2) {
@@ -174,16 +180,17 @@ export function resolveMoodColors(mood, mode = 'dark', highContrast = false) {
     ...base,
     primary: light ? accessibleAccent(signal, '#FFFFFF', 4.5) : signal,
     primaryDark: light ? accessibleAccent(signal, '#FFFFFF', 5) : signal,
-    onPrimary: light ? '#FFFFFF' : mood.ink,
+    onPrimary: light ? '#FFFFFF' : accessibleForeground(signal),
     accent: light ? accessibleAccent(thread, '#FFFFFF', 3) : thread,
+    onAccent: light ? '#FFFFFF' : accessibleForeground(thread),
     signal,
     thread,
     gold: mood.gold,
     bubbleMine: light ? tint(signal, 0.84) : signal,
     // Bright signal surfaces need dark foregrounds; use the mood's ink in
     // dark mode and a high-contrast neutral on tinted light-mode bubbles.
-    bubbleMineText: light ? '#171925' : mood.ink,
-    bubbleMineMeta: light ? '#414658' : mood.inkRaised,
+    bubbleMineText: light ? '#171925' : accessibleForeground(signal),
+    bubbleMineMeta: light ? '#414658' : accessibleForeground(signal),
     bubbleTheirs: light ? '#E9EDF5' : mood.inkRaisedAlt,
     danger: light ? '#B4233A' : mood.danger,
     online: ONLINE,
