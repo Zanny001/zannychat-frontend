@@ -143,7 +143,7 @@ function GroupRoomContent({ callType, onEnd }) {
 
 export default function GroupCallScreen({ route, navigation }) {
   const { conversationId, conversationName = 'Group', callType = 'audio', roomId = null } = route.params || {};
-  const { colors } = useTheme();
+  const { colors, resolvedMode } = useTheme();
   const [connection, setConnection] = useState(null);
   const [errorText, setErrorText] = useState('');
   const [busy, setBusy] = useState(true);
@@ -205,7 +205,7 @@ export default function GroupCallScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={colors.isLight ? 'dark-content' : 'light-content'} />
+      <StatusBar barStyle={resolvedMode === 'light' ? 'dark-content' : 'light-content'} />
       <View style={styles.header}>
         <Text style={[styles.brand, { color: colors.primary }]}>ZannyChat</Text>
         <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={1}>{conversationName}</Text>
