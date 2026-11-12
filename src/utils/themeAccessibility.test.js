@@ -8,6 +8,7 @@ test('light theme uses light surfaces and dark readable text', () => {
   assert.equal(colors.surface, '#FFFFFF');
   assert.equal(colors.textPrimary, '#171925');
   assert.equal(colors.primary, '#B93825');
+  assert.equal(colors.onPrimary, '#FFFFFF');
 });
 
 test('dark theme retains the selected mood palette', () => {
@@ -15,6 +16,7 @@ test('dark theme retains the selected mood palette', () => {
   assert.equal(colors.background, MOODS.tide.ink);
   assert.equal(colors.textPrimary, MOODS.tide.paper);
   assert.equal(colors.primary, MOODS.tide.signal);
+  assert.equal(colors.onPrimary, MOODS.tide.ink);
 });
 
 test('high contrast strengthens secondary text and boundaries in both modes', () => {
@@ -35,8 +37,8 @@ test('outgoing message text has strong contrast against the light bubble surface
   assert.equal(colors.bubbleMineMeta, '#744238');
 });
 
-test('outgoing message text remains white on dark signal bubbles', () => {
+test('outgoing message text uses a readable dark foreground on dark signal bubbles', () => {
   const colors = resolveMoodColors(MOODS.ember, 'dark');
-  assert.equal(colors.bubbleMineText, '#FFFFFF');
-  assert.equal(colors.bubbleMineMeta, 'rgba(255,255,255,0.82)');
+  assert.equal(colors.bubbleMineText, MOODS.ember.ink);
+  assert.equal(colors.bubbleMineMeta, MOODS.ember.inkRaised);
 });

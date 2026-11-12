@@ -46,7 +46,7 @@ const authStorage = Platform.OS === 'web' ? webStorage : AsyncStorage;
 // contact a shared or production project. Snack/preview users should set
 // these public client values explicitly when they want a real backend.
 export const SUPABASE_URL = (process.env.EXPO_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '');
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
 
 export const SUPABASE_ENABLED = Boolean(SUPABASE_URL && supabaseAnonKey);
 

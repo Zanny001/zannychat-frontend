@@ -112,13 +112,17 @@ export function resolveMoodColors(mood, mode = 'dark', highContrast = false) {
     ...base,
     primary: light ? '#B93825' : signal,
     primaryDark: light ? '#8F2C1D' : signal,
+    onPrimary: light ? '#FFFFFF' : mood.ink,
     accent: light ? '#087C69' : thread,
     signal,
     thread,
     gold: mood.gold,
     bubbleMine: light ? '#FFE4DC' : signal,
-    bubbleMineText: light ? '#512018' : '#FFFFFF',
-    bubbleMineMeta: light ? '#744238' : 'rgba(255,255,255,0.82)',
+    // Bright signal surfaces need dark foregrounds; white text failed WCAG
+    // AA contrast in every dark mood (2.25:1–2.83:1). Keep the vivid brand
+    // color and use the mood's ink for readable message content instead.
+    bubbleMineText: light ? '#512018' : mood.ink,
+    bubbleMineMeta: light ? '#744238' : mood.inkRaised,
     bubbleTheirs: light ? '#E9EDF5' : mood.inkRaisedAlt,
     danger: light ? '#B4233A' : mood.danger,
     online: ONLINE,

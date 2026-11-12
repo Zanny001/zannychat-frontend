@@ -8,10 +8,20 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://zannychat-backend-1.onrender.com",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://vithpppgyjmazxvogvno.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_l7pVchKAgwv1ydWpkSBfRA_q0CXM195"
       }
     },
     "production": {
-      "autoIncrement": false
+      "autoIncrement": false,
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://zannychat-backend-1.onrender.com",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://vithpppgyjmazxvogvno.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_l7pVchKAgwv1ydWpkSBfRA_q0CXM195"
+      }
     }
   }
 }

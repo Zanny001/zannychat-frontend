@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
@@ -28,15 +28,19 @@ export default function Header({ title, onBack, right, subtitle, brand = false, 
       <View style={[styles.container, { minHeight: layout.headerHeight, paddingHorizontal: spacing.md, paddingVertical: spacing.xs }]}>
         <View style={styles.left}>
           {onBack && (
-            <TouchableOpacity
+            <Pressable
               onPress={onBack}
               hitSlop={10}
-              style={[styles.backButton, { marginRight: spacing.sm }]}
+              style={({ pressed }) => [
+                styles.backButton,
+                { marginRight: spacing.sm },
+                pressed && { backgroundColor: hexToRgba(colors.primary, 0.12) },
+              ]}
               accessibilityLabel="Go back"
               accessibilityRole="button"
             >
               <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
-            </TouchableOpacity>
+            </Pressable>
           )}
           {brand ? (
             <View style={styles.brandRow}>
@@ -44,14 +48,20 @@ export default function Header({ title, onBack, right, subtitle, brand = false, 
               <Text style={[typography.title, { color: colors.textPrimary, marginLeft: 8 }]}>{title}</Text>
             </View>
           ) : (
-            <TouchableOpacity disabled={!onTitlePress} onPress={onTitlePress} activeOpacity={0.75} accessibilityRole={onTitlePress ? 'button' : undefined} accessibilityLabel={onTitlePress ? `View ${title} profile` : undefined}>
+            <Pressable
+              disabled={!onTitlePress}
+              onPress={onTitlePress}
+              style={({ pressed }) => pressed && onTitlePress ? styles.titlePressed : undefined}
+              accessibilityRole={onTitlePress ? 'button' : undefined}
+              accessibilityLabel={onTitlePress ? `View ${title} profile` : undefined}
+            >
               <Text style={[typography.heading, { color: colors.textPrimary }]} numberOfLines={1}>
                 {title}
               </Text>
               {subtitle ? (
                 <Text style={[typography.caption, { color: colors.textSecondary }]}>{subtitle}</Text>
               ) : null}
-            </TouchableOpacity>
+            </Pressable>
           )}
         </View>
         <View style={styles.right}>{right}</View>
@@ -69,7 +79,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   left: { flexDirection: 'row', alignItems: 'center', flexShrink: 1 },
-  backButton: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  backButton: { minWidth: 44, minHeight: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  titlePressed: { opacity: 0.72 },
   brandRow: { flexDirection: 'row', alignItems: 'center' },
   right: { flexDirection: 'row', alignItems: 'center' },
 });

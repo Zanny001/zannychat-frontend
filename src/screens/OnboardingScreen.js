@@ -20,7 +20,7 @@ export default function OnboardingScreen({ navigation }) {
       </View>
 
       <View style={{ paddingHorizontal: spacing.lg }}>
-        <Feature icon="lock-closed" text="Private — only you and them can open it" />
+        <Feature icon="lock-closed" text="Private by default — chat access is limited to approved participants" />
         <Feature icon="people" text="Group chats, voice notes & real attachments" />
         <Feature icon="sparkles" text="Smart replies, translation & summaries" />
         <Feature icon="color-palette" text="A theme that's actually got range" />
@@ -33,7 +33,7 @@ export default function OnboardingScreen({ navigation }) {
           accessibilityRole="button"
           accessibilityLabel="Get started and sign in"
         >
-          <Text style={styles.primaryBtnText}>Get started</Text>
+          <Text style={[styles.primaryBtnText, { color: colors.onPrimary }]}>Get started</Text>
         </TouchableOpacity>
         <TouchableOpacity style={{ marginTop: spacing.md, alignItems: 'center' }} onPress={() => navigation.navigate('Signup')} accessibilityRole="button" accessibilityLabel="Create a new account">
           <Text style={[typography.caption, { color: colors.textSecondary }]}>

@@ -1,19 +1,16 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Modal, StyleSheet, Platform, Pressable } from 'react-native';
+import { View, Text, Pressable, Modal, StyleSheet, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 
-// A branded bottom sheet that replaces every place the app used to
-// open a bare native Alert.alert action list (the attach menu, the
-// reaction picker, the chat overflow menu) — the one spot where the
-// OS's default UI broke the glass design language, called out in the
-// Oct 2026 audit as the only visible break in the system.
+// A branded bottom sheet for attachment, reaction and conversation actions.
+// All actions use Pressable so keyboard, screen-reader and pressed states
+// behave consistently with the rest of the shared interaction system.
 //
-// options: [{ key, label, icon?, destructive?, onPress }]
-// reactions (optional): a row of quick-reaction emojis rendered at the
-// top of the sheet — [ { emoji, active?, onPress } ]
+// options: [{ key, label, icon?, destructive?, disabled?, onPress }]
+// reactions (optional): [ { emoji, active?, onPress } ]
 export default function ActionSheet({ visible, title, options = [], reactions, onClose }) {
   const { colors, spacing, radii, typography } = useTheme();
 
@@ -22,8 +19,7 @@ export default function ActionSheet({ visible, title, options = [], reactions, o
       <Pressable
         style={styles.backdrop}
         onPress={onClose}
-        accessibilityLabel="Dismiss"
-        accessibilityRole="button"
+        accessible={false}
       >
         <Pressable
           style={[
@@ -35,7 +31,9 @@ export default function ActionSheet({ visible, title, options = [], reactions, o
               borderTopRightRadius: radii.lg,
             },
           ]}
-          onPress={(e) => e.stopPropagation()}
+          onPress={(event) => event.stopPropagation()}
+          accessible={false}
+          accessibilityViewIsModal
         >
           <BlurView
             intensity={40}
@@ -58,39 +56,45 @@ export default function ActionSheet({ visible, title, options = [], reactions, o
 
           {reactions ? (
             <View style={[styles.reactionRow, { marginBottom: spacing.sm, paddingHorizontal: spacing.md }]}>
-              {reactions.map((r) => (
-                <TouchableOpacity
-                  key={r.emoji}
-                  onPress={r.onPress}
-                  accessibilityLabel={`React with ${r.emoji}`}
+              {reactions.map((reaction) => (
+                <Pressable
+                  key={reaction.emoji}
+                  onPress={reaction.onPress}
+                  accessibilityLabel={`React with ${reaction.emoji}`}
                   accessibilityRole="button"
-                  style={[
+                  accessibilityState={{ selected: Boolean(reaction.active) }}
+                  style={({ pressed }) => [
                     styles.reactionChip,
                     {
-                      backgroundColor: r.active ? hexToRgba(colors.primary, 0.22) : hexToRgba(colors.surfaceAlt, 0.6),
-                      borderColor: r.active ? colors.primary : 'transparent',
+                      backgroundColor: reaction.active ? hexToRgba(colors.primary, 0.22) : hexToRgba(colors.surfaceAlt, 0.6),
+                      borderColor: reaction.active ? colors.primary : 'transparent',
                     },
+                    pressed && { backgroundColor: hexToRgba(colors.primary, 0.28) },
                   ]}
                 >
-                  <Text style={{ fontSize: 22 }}>{r.emoji}</Text>
-                </TouchableOpacity>
+                  <Text style={{ fontSize: 22 }}>{reaction.emoji}</Text>
+                </Pressable>
               ))}
             </View>
           ) : null}
 
           {options.map((option, index) => (
-            <TouchableOpacity
+            <Pressable
               key={option.key || index}
+              disabled={Boolean(option.disabled)}
               onPress={option.onPress}
               accessibilityLabel={option.label}
               accessibilityRole="button"
-              style={[
+              accessibilityState={{ disabled: Boolean(option.disabled) }}
+              style={({ pressed }) => [
                 styles.optionRow,
                 {
                   paddingHorizontal: spacing.md,
                   borderTopWidth: index === 0 ? 0 : StyleSheet.hairlineWidth,
                   borderTopColor: hexToRgba(colors.textPrimary, 0.08),
                 },
+                pressed && { backgroundColor: hexToRgba(colors.primary, 0.08) },
+                option.disabled && { opacity: 0.45 },
               ]}
             >
               {option.icon ? (
@@ -109,19 +113,24 @@ export default function ActionSheet({ visible, title, options = [], reactions, o
               >
                 {option.label}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           ))}
 
-          <TouchableOpacity
+          <Pressable
             onPress={onClose}
             accessibilityLabel="Cancel"
             accessibilityRole="button"
-            style={[styles.optionRow, styles.cancelRow, { paddingHorizontal: spacing.md }]}
+            style={({ pressed }) => [
+              styles.optionRow,
+              styles.cancelRow,
+              { paddingHorizontal: spacing.md },
+              pressed && { backgroundColor: hexToRgba(colors.primary, 0.08) },
+            ]}
           >
             <Text style={[typography.bodyStrong, { color: colors.textSecondary, flex: 1, textAlign: 'center' }]}>
               Cancel
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </Pressable>
       </Pressable>
     </Modal>
@@ -157,6 +166,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  optionRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
+  optionRow: { minHeight: 48, flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
   cancelRow: { marginTop: 6 },
 });
