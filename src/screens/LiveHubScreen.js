@@ -217,7 +217,7 @@ export default function LiveHubScreen({ navigation }) {
               </View>
             </View>
 
-            <GlassCard style={{ marginHorizontal: spacing.md, marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.md }}>
+            <GlassCard glow style={{ marginHorizontal: spacing.md, marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.md }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                 <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#E34D68' + '20', alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="videocam" size={22} color="#E34D68" />
@@ -382,7 +382,7 @@ export default function LiveHubScreen({ navigation }) {
           </GlassCard>
         )}
         ListEmptyComponent={!loading && !error ? (
-          <GlassCard style={{ marginHorizontal: spacing.md, marginTop: spacing.sm }} contentStyle={{ padding: spacing.lg, alignItems: 'center', gap: spacing.sm }}>
+          <GlassCard glow style={{ marginHorizontal: spacing.md, marginTop: spacing.sm }} contentStyle={{ padding: spacing.lg, alignItems: 'center', gap: spacing.sm }}>
             <View style={{ width: 58, height: 58, borderRadius: 20, backgroundColor: colors.primary + '18', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="videocam-outline" size={28} color={colors.primary} />
             </View>
