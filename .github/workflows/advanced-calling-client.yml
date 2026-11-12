@@ -20,6 +20,28 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Create non-production Firebase config for compile-only CI
+        run: |
+          if [ ! -f google-services.json ]; then
+            cat > google-services.json <<'JSON'
+          {
+            "project_info": {
+              "project_number": "123456789012",
+              "project_id": "zannychat-ci-placeholder",
+              "storage_bucket": "zannychat-ci-placeholder.appspot.com"
+            },
+            "client": [{
+              "client_info": {
+                "mobilesdk_app_id": "1:123456789012:android:0000000000000000",
+                "android_client_info": { "package_name": "com.zannychat.app" }
+              },
+              "api_key": [{ "current_key": "CI_ONLY_NOT_A_REAL_FIREBASE_KEY" }],
+              "services": {}
+            }],
+            "configuration_version": "1"
+          }
+          JSON
+          fi
       - run: npx expo config --type prebuild --json > /tmp/zannychat-expo-config.json
       - run: npx expo prebuild --platform android --no-install
       - uses: actions/setup-java@v4
