@@ -181,7 +181,7 @@ export function resolveMoodColors(mood, mode = 'dark', highContrast = false) {
     primary: light ? accessibleAccent(signal, '#FFFFFF', 4.5) : signal,
     primaryDark: light ? accessibleAccent(signal, '#FFFFFF', 5) : signal,
     onPrimary: light ? '#FFFFFF' : accessibleForeground(signal),
-    accent: light ? accessibleAccent(thread, '#FFFFFF', 3) : thread,
+    accent: light ? accessibleAccent(thread, '#FFFFFF', 4.5) : thread,
     onAccent: light ? '#FFFFFF' : accessibleForeground(thread),
     signal,
     thread,
