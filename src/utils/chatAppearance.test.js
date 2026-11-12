@@ -6,6 +6,7 @@ test('normalizes unsupported and absent chat canvas preferences', () => {
   assert.equal(normalizeChatCanvas(undefined), DEFAULT_CHAT_CANVAS);
   assert.equal(normalizeChatCanvas('neon'), DEFAULT_CHAT_CANVAS);
   assert.equal(normalizeChatCanvas('ocean'), 'ocean');
+  assert.equal(normalizeChatCanvas('royal'), 'royal');
 });
 
 test('resolves mood-matched canvas from the active theme', () => {
@@ -17,5 +18,12 @@ test('every canvas has a unique key and valid dark color or theme fallback', () 
   assert.equal(new Set(CHAT_CANVASES.map((item) => item.key)).size, CHAT_CANVASES.length);
   for (const canvas of CHAT_CANVASES) {
     assert.ok(canvas.color === null || /^#[0-9A-Fa-f]{6}$/.test(canvas.color));
+  }
+});
+
+test('premium Royal Neon canvases are available for individual conversations', () => {
+  for (const key of ['royal', 'aurora', 'rose', 'champagne']) {
+    assert.ok(CHAT_CANVASES.some((canvas) => canvas.key === key));
+    assert.match(resolveChatCanvas(key, '#080B18'), /^#[0-9A-F]{6}$/);
   }
 });
