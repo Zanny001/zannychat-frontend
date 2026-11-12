@@ -46,11 +46,13 @@ export default function PinnedMessagesScreen({ route, navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Pinned messages" subtitle={conversation?.name || conversation?.participant?.name || 'This conversation'} onBack={() => navigation.goBack()} />
       <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, paddingHorizontal: spacing.md, backgroundColor: colors.surface, minHeight: 48 }}>
-          <Ionicons name="search-outline" size={19} color={colors.textSecondary} />
-          <TextInput value={query} onChangeText={setQuery} placeholder="Search pinned messages" placeholderTextColor={colors.textSecondary} style={[typography.body, { flex: 1, color: colors.textPrimary, marginLeft: spacing.sm, paddingVertical: 10 }]} accessibilityLabel="Search pinned messages" returnKeyType="search" />
-          {query ? <TouchableOpacity onPress={() => setQuery('')} accessibilityRole="button" accessibilityLabel="Clear search"><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
-        </View>
+        <GlassCard noPadding glow intensity={24} tintAlpha={0.42}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, minHeight: 48 }}>
+            <Ionicons name="search-outline" size={19} color={colors.textSecondary} />
+            <TextInput value={query} onChangeText={setQuery} placeholder="Search pinned messages" placeholderTextColor={colors.textSecondary} style={[typography.body, { flex: 1, color: colors.textPrimary, marginLeft: spacing.sm, paddingVertical: 10 }]} accessibilityLabel="Search pinned messages" returnKeyType="search" />
+            {query ? <TouchableOpacity onPress={() => setQuery('')} accessibilityRole="button" accessibilityLabel="Clear search"><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
+          </View>
+        </GlassCard>
         <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Pins are stored on this device and do not sync to other devices. They are bookmarks, not shared conversation pins.</Text>
       </View>
       {loading ? <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Loading pinned messages…</Text></View> : error ? (
