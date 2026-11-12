@@ -8,6 +8,7 @@ test('action sheet uses Pressable for reactions, options and cancel actions', ()
   assert.ok(sheet.includes('Pressable'));
   assert.equal(sheet.includes('TouchableOpacity'), false);
   assert.ok(sheet.includes('accessibilityViewIsModal'));
+  assert.ok(sheet.includes('accessible={false}'));
   assert.ok(sheet.includes('accessibilityRole="button"'));
 });
 
