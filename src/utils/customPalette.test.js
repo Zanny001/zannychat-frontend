@@ -70,6 +70,7 @@ test('custom palette accents flow into light and dark semantic colours', () => {
   assert.equal(light.signal, '#795CFF');
   assert.notEqual(light.primary, '#B93825');
   assert.ok(contrastRatio(light.primary, '#FFFFFF') >= 4.5);
+  assert.ok(contrastRatio(light.accent, '#FFFFFF') >= 4.5);
 });
 
 test('custom dark accents receive light foregrounds for readable controls and bubbles', () => {
