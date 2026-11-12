@@ -418,7 +418,7 @@ export default function ChatBubble({
             {isMine && seenByCount > 0 && !message.deletedAt ? (
               <Text
                 accessibilityLabel={`Seen by ${seenByCount} ${seenByCount === 1 ? 'member' : 'members'}`}
-                style={[typography.small, { color: 'rgba(255,255,255,0.78)', marginLeft: 4 }]}
+                style={[typography.small, { color: colors.bubbleMineMeta, marginLeft: 4 }]}
               >
                 Seen by {seenByCount}
               </Text>
