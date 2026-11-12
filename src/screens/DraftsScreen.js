@@ -71,7 +71,7 @@ export default function DraftsScreen({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Drafts" subtitle="Unsent messages on this device" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl }}>
-        <GlassCard style={{ marginBottom: spacing.md }}>
+        <GlassCard glow style={{ marginBottom: spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <View style={{ width: 44, height: 44, borderRadius: 15, backgroundColor: `${colors.primary}20`, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="document-text-outline" size={22} color={colors.primary} />
