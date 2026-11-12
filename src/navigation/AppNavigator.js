@@ -66,6 +66,7 @@ const RootStack = createNativeStackNavigator();
 
 const styles = StyleSheet.create({
   tabBackground: { borderRadius: 26, overflow: 'hidden' },
+  cameraTabIcon: { width: 50, height: 50, borderRadius: 25, marginTop: -18, borderWidth: 2, borderColor: 'rgba(255,255,255,0.48)' },
   tabIconShell: {
     width: 38,
     height: 34,
@@ -94,7 +95,7 @@ function GlassTabBackground() {
   );
 }
 
-function TabIcon({ name, color, size, focused, accent, reducedMotion }) {
+function TabIcon({ name, color, size, focused, accent, cameraAccent, cameraForeground, isCamera, reducedMotion }) {
   const scale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -112,22 +113,24 @@ function TabIcon({ name, color, size, focused, accent, reducedMotion }) {
     return () => animation.stop();
   }, [focused, reducedMotion, scale]);
 
+  const activeAccent = isCamera ? cameraAccent : accent;
   return (
     <Animated.View
       style={[
         styles.tabIconShell,
+        isCamera && styles.cameraTabIcon,
         {
           transform: [{ scale }],
-          backgroundColor: focused ? hexToRgba(accent, 0.17) : 'transparent',
-          borderColor: focused ? hexToRgba(accent, 0.38) : 'transparent',
-          shadowColor: accent,
-          shadowOpacity: focused ? 0.32 : 0,
-          shadowRadius: focused ? 11 : 0,
-          elevation: focused ? 4 : 0,
+          backgroundColor: isCamera ? cameraAccent : focused ? hexToRgba(activeAccent, 0.17) : 'transparent',
+          borderColor: isCamera ? hexToRgba(cameraAccent, 0.72) : focused ? hexToRgba(activeAccent, 0.38) : 'transparent',
+          shadowColor: activeAccent,
+          shadowOpacity: isCamera ? 0.42 : focused ? 0.32 : 0,
+          shadowRadius: isCamera ? 17 : focused ? 11 : 0,
+          elevation: isCamera ? 8 : focused ? 4 : 0,
         },
       ]}
     >
-      <Ionicons name={name} size={focused ? 23 : size} color={color} />
+      <Ionicons name={name} size={isCamera ? 25 : focused ? 23 : size} color={isCamera ? cameraForeground : color} />
     </Animated.View>
   );
 }
@@ -167,8 +170,8 @@ function MainTabNavigator() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarIcon: ({ color, size, focused }) => {
-          const icons = { Chats: 'chatbubbles', Calls: 'call', Updates: 'aperture', Channels: 'compass', Profile: 'person-circle' };
-          return <TabIcon name={icons[route.name]} color={color} size={size} focused={focused} accent={colors.primary} reducedMotion={reducedMotion} />;
+          const icons = { Chats: 'chatbubbles', Calls: 'call', Updates: 'camera', Channels: 'compass', Profile: 'person-circle' };
+          return <TabIcon name={icons[route.name]} color={color} size={size} focused={focused} accent={colors.primary} cameraAccent={colors.accent} cameraForeground={colors.onAccent} isCamera={route.name === 'Updates'} reducedMotion={reducedMotion} />;
         },
       })}
     >
