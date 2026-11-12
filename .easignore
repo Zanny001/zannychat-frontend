@@ -31,5 +31,15 @@ credentials*.json
 *.p8
 *.key
 
-# Exclude EAS local simulator credentials.
+# Exclude native build artifacts and local simulator credentials.
+**/local.properties
+**/.gradle/
+android/app/build/
+ios/Pods/
+ios/build/
 .env.eas-simulator
+
+# Exclude Android/iOS signing material.
+*.jks
+*.keystore
+*.mobileprovision
