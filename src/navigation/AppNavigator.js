@@ -81,12 +81,12 @@ const MainTabs = createBottomTabNavigator();
 // The bottom tab bar's background — real blur of whatever's scrolling
 // underneath, tinted toward the mood's background color.
 function GlassTabBackground() {
-  const { colors } = useTheme();
+  const { colors, resolvedMode } = useTheme();
   return (
     <View style={[StyleSheet.absoluteFill, styles.tabBackground]}>
       <BlurView
         intensity={32}
-        tint="dark"
+        tint={resolvedMode}
         style={StyleSheet.absoluteFill}
         experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
       />
