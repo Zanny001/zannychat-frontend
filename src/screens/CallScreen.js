@@ -316,7 +316,7 @@ export default function CallScreen({ route, navigation }) {
       {callType === 'video' && localStream && !cameraOff ? <RTCView streamURL={localStream.toURL()} mirror objectFit="cover" style={styles.localVideo} /> : null}
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => endCall(isCaller && call?.status === 'ringing' ? 'cancelled' : 'ended')} accessibilityRole="button" accessibilityLabel="Close call"><Ionicons name="chevron-down" size={26} color={foreground} /></TouchableOpacity>
-        <View style={[styles.encryption, { backgroundColor: immersiveVideo ? 'rgba(255,255,255,0.08)' : colors.surface, borderColor: colors.border, borderWidth: immersiveVideo ? 0 : 1 }]}><Ionicons name="lock-closed" size={12} color={colors.accent} /><Text style={[styles.encryptionText, { color: secondaryForeground }]}>Encrypted media transport</Text></View>
+        <View style={[styles.encryption, { backgroundColor: immersiveVideo ? 'rgba(255,255,255,0.08)' : hexToRgba(colors.surface, 0.78), borderColor: colors.border, borderWidth: immersiveVideo ? 0 : 1 }]}><Ionicons name="lock-closed" size={12} color={colors.accent} /><Text style={[styles.encryptionText, { color: secondaryForeground }]}>Encrypted media transport</Text></View>
         <View style={{ width: 26 }} />
       </View>
       <View style={styles.identity}>
