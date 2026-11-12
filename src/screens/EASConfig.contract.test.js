@@ -8,6 +8,7 @@ const supabaseClient = fs.readFileSync(new URL('../services/supabaseClient.js', 
 const backendClient = fs.readFileSync(new URL('../services/backendClient.js', import.meta.url), 'utf8');
 const gitignore = fs.readFileSync(new URL('../../.gitignore', import.meta.url), 'utf8');
 const easignore = fs.readFileSync(new URL('../../.easignore', import.meta.url), 'utf8');
+const envExample = fs.readFileSync(new URL('../../.env.example', import.meta.url), 'utf8');
 
 for (const profileName of ['preview', 'production']) {
   test(`${profileName} EAS profile connects to the canonical production services`, () => {
@@ -21,6 +22,7 @@ for (const profileName of ['preview', 'production']) {
 test('runtime clients accept the EAS publishable key and preserve legacy local env compatibility', () => {
   assert.ok(supabaseClient.includes('EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY'));
   assert.ok(backendClient.includes('process.env.EXPO_PUBLIC_BACKEND_URL'));
+  assert.ok(envExample.includes('EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY='));
 });
 
 test('Firebase client config is ignored by Git but included by the EAS upload allowlist', () => {
