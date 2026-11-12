@@ -36,7 +36,7 @@ export default function ChatAppearanceScreen({ navigation }) {
         <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.md }]}>Make every chat feel like yours.</Text>
         <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.lg }]}>Choose a refined background for conversation screens. Your selected mood still controls message colors and the rest of the app.</Text>
 
-        <GlassCard style={{ marginBottom: spacing.lg }}>
+        <GlassCard glow style={{ marginBottom: spacing.lg }}>
           <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: spacing.sm }]}>LIVE PREVIEW</Text>
           <View style={[styles.preview, { backgroundColor: resolveChatCanvas(selected, colors.background), borderColor: colors.border, borderRadius: radii.lg }]}>
             <View style={[styles.previewPill, { backgroundColor: colors.surface, alignSelf: 'flex-start' }]}><Text style={[typography.small, { color: colors.textPrimary }]}>Hey! How's your day going?</Text></View>
