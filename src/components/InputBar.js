@@ -219,7 +219,7 @@ export default function InputBar({
             accessibilityLabel="Send voice message"
             accessibilityRole="button"
           >
-            <Ionicons name="send" size={18} color="#FFFFFF" />
+            <Ionicons name="send" size={18} color={colors.onPrimary} />
           </TouchableOpacity>
         </View>
       ) : (
