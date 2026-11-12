@@ -65,6 +65,7 @@ export const navigationRef = createNavigationContainerRef();
 const RootStack = createNativeStackNavigator();
 
 const styles = StyleSheet.create({
+  tabBackground: { borderRadius: 26, overflow: 'hidden' },
   tabIconShell: {
     width: 38,
     height: 34,
@@ -81,7 +82,7 @@ const MainTabs = createBottomTabNavigator();
 function GlassTabBackground() {
   const { colors } = useTheme();
   return (
-    <View style={StyleSheet.absoluteFill}>
+    <View style={[StyleSheet.absoluteFill, styles.tabBackground]}>
       <BlurView
         intensity={32}
         tint="dark"
@@ -156,7 +157,6 @@ function MainTabNavigator() {
           borderWidth: 1,
           borderColor: hexToRgba(colors.textPrimary, 0.1),
           borderRadius: 26,
-          overflow: 'hidden',
           elevation: 12,
           shadowColor: colors.primary,
           shadowOpacity: 0.18,
