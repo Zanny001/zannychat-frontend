@@ -41,7 +41,7 @@ export default function InputBar({
   onCancelRecording,
   draftKey,
 }) {
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, radii, typography, resolvedMode } = useTheme();
   const [text, setText] = useState('');
   const [draftReady, setDraftReady] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
@@ -134,7 +134,7 @@ export default function InputBar({
       ) : null}
       <BlurView
         intensity={28}
-        tint="dark"
+        tint={resolvedMode}
         style={StyleSheet.absoluteFill}
         experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
       />
