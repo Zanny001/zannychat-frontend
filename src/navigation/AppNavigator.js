@@ -93,9 +93,8 @@ function GlassTabBackground() {
   );
 }
 
-function TabIcon({ name, color, size, focused, accent }) {
+function TabIcon({ name, color, size, focused, accent, reducedMotion }) {
   const scale = useRef(new Animated.Value(1)).current;
-  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     if (reducedMotion) {
@@ -134,6 +133,7 @@ function TabIcon({ name, color, size, focused, accent }) {
 
 function MainTabNavigator() {
   const { colors } = useTheme();
+  const reducedMotion = useReducedMotion();
 
   return (
     <MainTabs.Navigator
@@ -168,7 +168,7 @@ function MainTabNavigator() {
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarIcon: ({ color, size, focused }) => {
           const icons = { Chats: 'chatbubbles', Calls: 'call', Updates: 'aperture', Channels: 'compass', Profile: 'person-circle' };
-          return <TabIcon name={icons[route.name]} color={color} size={size} focused={focused} accent={colors.primary} />;
+          return <TabIcon name={icons[route.name]} color={color} size={size} focused={focused} accent={colors.primary} reducedMotion={reducedMotion} />;
         },
       })}
     >
