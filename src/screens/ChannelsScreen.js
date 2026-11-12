@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import GlassCard from '../components/GlassCard';
 import { useTheme } from '../theme/ThemeContext';
+import { hexToRgba } from '../utils/color';
 import { backendFetch } from '../services/backendClient';
 import { acceptChannelInvite, appointChannelModerator, createChannel, createChannelInvite, deleteChannel, deleteChannelPost, deleteChannelPostComment, fetchChannelInvites, fetchChannelModerators, fetchChannelPostComments, fetchChannelPosts, fetchCommunityFeed, getCurrentUser, listChannels, publishChannelPost, publishChannelPostComment, removeChannelModerator, revokeChannelInvite, reportChannelPost, reportChannelPostComment, fetchChannelPostReports, updateChannelPostReport, setChannelPostPinned, setChannelPostReaction, setChannelPostCommentReaction, subscribeToChannel, unsubscribeFromChannel, updateChannel, updateChannelPost, updateChannelPostComment } from '../services/api';
 import { normalizeChannelPost, validateChannel } from '../utils/channelValidation';
