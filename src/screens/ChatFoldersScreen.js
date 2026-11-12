@@ -76,7 +76,7 @@ export default function ChatFoldersScreen({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Chat folders" subtitle="Build your own chat filters" onBack={() => navigation.goBack()} />
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32 }}>
-        <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md }}>
+        <GlassCard glow style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md }}>
           <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.xs }]}>Create a folder</Text>
           <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>A chat appears when it matches any selected category. Folders are saved on this device and are not synced across devices yet.</Text>
           <TextInput value={name} onChangeText={setName} maxLength={32} placeholder="e.g. Work, Close friends" placeholderTextColor={colors.textSecondary} accessibilityLabel="Folder name" style={[typography.body, { color: colors.textPrimary, borderColor: colors.border, borderWidth: 1, borderRadius: radii.md, paddingHorizontal: spacing.md, paddingVertical: 12, marginBottom: spacing.md }]} />
