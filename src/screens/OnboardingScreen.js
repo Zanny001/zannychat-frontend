@@ -33,7 +33,7 @@ export default function OnboardingScreen({ navigation }) {
           accessibilityRole="button"
           accessibilityLabel="Get started and sign in"
         >
-          <Text style={styles.primaryBtnText}>Get started</Text>
+          <Text style={[styles.primaryBtnText, { color: colors.onPrimary }]}>Get started</Text>
         </TouchableOpacity>
         <TouchableOpacity style={{ marginTop: spacing.md, alignItems: 'center' }} onPress={() => navigation.navigate('Signup')} accessibilityRole="button" accessibilityLabel="Create a new account">
           <Text style={[typography.caption, { color: colors.textSecondary }]}>
