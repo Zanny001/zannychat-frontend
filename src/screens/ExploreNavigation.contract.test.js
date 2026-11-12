@@ -18,3 +18,11 @@ test('Explore makes LIVE and public communities visible from one destination', (
   assert.ok(channels.includes('Discover channels'));
   assert.ok(channels.includes("navigation.navigate('LiveHub')"));
 });
+
+test('Explore previews public LIVE broadcasts and joins through the authorized backend route', () => {
+  assert.ok(channels.includes("backendFetch('/live')"));
+  assert.ok(channels.includes("backendFetch('/live/' + encodeURIComponent(stream.id) + '/join'"));
+  assert.ok(channels.includes('liveStreams.map'));
+  assert.ok(channels.includes('No public broadcasts right now'));
+  assert.ok(channels.includes("navigation.navigate('LiveStream'"));
+});
