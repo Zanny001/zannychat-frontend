@@ -13,17 +13,18 @@ import Knot from './Knot';
 // their own title instead — repeating the app logo next to a
 // contact's name would just be noise.
 export default function Header({ title, onBack, right, subtitle, brand = false, onTitlePress }) {
-  const { colors, mood, spacing, typography, layout } = useTheme();
+  const { colors, mood, spacing, typography, layout, resolvedMode } = useTheme();
 
   return (
     <View style={[styles.wrap, { borderBottomColor: hexToRgba(colors.textPrimary, 0.08) }]}>
       <BlurView
         intensity={28}
-        tint="dark"
+        tint={resolvedMode}
         style={StyleSheet.absoluteFill}
         experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
       />
       <View style={[StyleSheet.absoluteFill, { backgroundColor: hexToRgba(colors.background, 0.62) }]} />
+      <View pointerEvents="none" style={[styles.specular, { backgroundColor: hexToRgba('#FFFFFF', 0.12) }]} />
 
       <View style={[styles.container, { minHeight: layout.headerHeight, paddingHorizontal: spacing.md, paddingVertical: spacing.xs }]}>
         <View style={styles.left}>
@@ -72,6 +73,7 @@ export default function Header({ title, onBack, right, subtitle, brand = false, 
 
 const styles = StyleSheet.create({
   wrap: { borderBottomWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
+  specular: { position: 'absolute', top: 0, left: 22, right: 22, height: 1 },
   container: {
     minHeight: 60,
     flexDirection: 'row',
