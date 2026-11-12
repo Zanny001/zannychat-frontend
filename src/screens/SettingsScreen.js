@@ -219,7 +219,7 @@ export default function SettingsScreen({ navigation }) {
           </View>
         </GlassCard>
 
-        <GlassCard style={{ marginBottom: spacing.md }}>
+        <GlassCard glow style={{ marginBottom: spacing.md }}>
           <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.xs }]}>Create your own colours</Text>
           <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>Choose your signature glow, conversation accent and highlight. Your choices are saved on this device.</Text>
           <View style={styles.customColorRow}>
