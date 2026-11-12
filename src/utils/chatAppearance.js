@@ -5,6 +5,10 @@ export const CHAT_CANVASES = [
   { key: 'ocean', label: 'Midnight ocean', description: 'A calm blue-black conversation space', color: '#101B27' },
   { key: 'forest', label: 'Pine glass', description: 'A subtle, deep green tint', color: '#101D1A' },
   { key: 'ember', label: 'Warm ember', description: 'A warm charcoal with a muted red undertone', color: '#211617' },
+  { key: 'royal', label: 'Royal neon', description: 'A deep violet canvas for luminous accents', color: '#100D24' },
+  { key: 'aurora', label: 'Aurora night', description: 'A cool blue-violet atmosphere', color: '#10182A' },
+  { key: 'rose', label: 'Rose noir', description: 'A soft, luxurious plum-black canvas', color: '#211321' },
+  { key: 'champagne', label: 'Champagne dusk', description: 'A warm, understated midnight canvas', color: '#211D17' },
 ];
 
 export const DEFAULT_CHAT_CANVAS = 'theme';
