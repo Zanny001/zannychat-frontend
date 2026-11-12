@@ -19,8 +19,7 @@ export default function ActionSheet({ visible, title, options = [], reactions, o
       <Pressable
         style={styles.backdrop}
         onPress={onClose}
-        accessibilityLabel="Dismiss"
-        accessibilityRole="button"
+        accessible={false}
       >
         <Pressable
           style={[
@@ -33,8 +32,8 @@ export default function ActionSheet({ visible, title, options = [], reactions, o
             },
           ]}
           onPress={(event) => event.stopPropagation()}
+          accessible={false}
           accessibilityViewIsModal
-          accessibilityLabel={title || 'Actions'}
         >
           <BlurView
             intensity={40}
