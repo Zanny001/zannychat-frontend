@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, RefreshControl, ScrollView, ActivityIndicator, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useTheme } from '../theme/ThemeContext';
 import ChatListItem from '../components/ChatListItem';
+import Avatar from '../components/Avatar';
 import GlassCard from '../components/GlassCard';
 import Knot from '../components/Knot';
 import ActionSheet from '../components/ActionSheet';
@@ -15,6 +17,8 @@ import { hexToRgba } from '../utils/color';
 import { filterConversations as filterChatList } from '../utils/filterConversations';
 import { filterByChatFolder } from '../utils/chatFolders';
 import { loadChatFolders } from '../services/chatFolders';
+import { listActiveStatuses, resolveStatusUserNames } from '../services/statusUpdates';
+import { readSeenStatusIds, unreadStatusCount } from '../utils/statusSeen';
 
 // All / Unread / Favorites / Groups / Archived — the same category set
 // WhatsApp itself uses, confirmed against real screenshots rather than
@@ -30,6 +34,25 @@ const FILTERS = [
 
 const PAGE_SIZE = 50;
 
+function buildStoryTrayGroups(statuses, names, seenIds) {
+  const grouped = new Map();
+  for (const status of Array.isArray(statuses) ? statuses : []) {
+    if (!status?.user_id || !status?.id) continue;
+    if (!grouped.has(status.user_id)) grouped.set(status.user_id, []);
+    grouped.get(status.user_id).push(status);
+  }
+  return [...grouped.entries()].map(([userId, items]) => {
+    const isOwn = Boolean(items[0]?.is_own);
+    return {
+      userId,
+      isOwn,
+      name: isOwn ? 'Your story' : names?.[userId] || 'ZannyChat user',
+      count: items.length,
+      unseenCount: unreadStatusCount(items, seenIds, isOwn),
+    };
+  }).sort((a, b) => Number(b.isOwn) - Number(a.isOwn));
+}
+
 export default function ChatListScreen({ navigation }) {
   const { colors, mood, spacing, typography, radii } = useTheme();
   const tabBarHeight = useBottomTabBarHeight();
@@ -42,6 +65,7 @@ export default function ChatListScreen({ navigation }) {
   const [query, setQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [customFolders, setCustomFolders] = useState([]);
+  const [storyGroups, setStoryGroups] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [sheetFor, setSheetFor] = useState(null); // conversation whose long-press sheet is open
   const [onlineIds, setOnlineIds] = useState(new Set());
@@ -79,7 +103,25 @@ export default function ChatListScreen({ navigation }) {
     load().catch(() => {});
     let alive = true;
     (async () => {
-      try { const user = await getCurrentUser(); const folders = await loadChatFolders(user?.id || 'guest'); if (alive) setCustomFolders(folders); } catch (_) {}
+      try {
+        const user = await getCurrentUser();
+        const folders = await loadChatFolders(user?.id || 'guest');
+        if (alive) setCustomFolders(folders);
+      } catch (_) {}
+      if (!SUPABASE_ENABLED) {
+        if (alive) setStoryGroups([]);
+        return;
+      }
+      try {
+        const [statuses, seenIds] = await Promise.all([
+          listActiveStatuses(),
+          readSeenStatusIds(AsyncStorage),
+        ]);
+        const names = await resolveStatusUserNames(statuses.map((status) => status.user_id));
+        if (alive) setStoryGroups(buildStoryTrayGroups(statuses, names, seenIds));
+      } catch (_) {
+        if (alive) setStoryGroups([]);
+      }
     })();
     return () => { alive = false; };
   }, [load]));
@@ -259,6 +301,36 @@ export default function ChatListScreen({ navigation }) {
             <Ionicons name="add" size={22} color="#fff" />
           </TouchableOpacity>
         </View>
+      </View>
+
+      <View style={{ marginBottom: spacing.sm }}>
+        <View style={styles.storyHeading}>
+          <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Moments</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Updates')} accessibilityRole="button" accessibilityLabel="See all moments">
+            <Text style={[typography.small, { color: colors.primary }]}>See all</Text>
+          </TouchableOpacity>
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storyTray}>
+          <TouchableOpacity onPress={() => navigation.navigate('Updates')} accessibilityRole="button" accessibilityLabel="Add or view your story" style={styles.storyItem}>
+            <View style={[styles.storyRing, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Avatar name="Your story" color={colors.primary} size={52} />
+              <View style={[styles.storyAdd, { backgroundColor: colors.primary, borderColor: colors.background }]}>
+                <Ionicons name="add" size={14} color={colors.onPrimary} />
+              </View>
+            </View>
+            <Text numberOfLines={1} style={[typography.small, { color: colors.textSecondary, marginTop: 6 }]}>Your story</Text>
+          </TouchableOpacity>
+          {storyGroups.filter((group) => !group.isOwn).map((group) => (
+            <TouchableOpacity key={group.userId} onPress={() => navigation.navigate('Updates')} accessibilityRole="button" accessibilityLabel={`Open moments from ${group.name}`} style={styles.storyItem}>
+              <View style={[styles.storyRing, { borderColor: group.unseenCount > 0 ? colors.primary : colors.border, backgroundColor: group.unseenCount > 0 ? hexToRgba(colors.primary, 0.16) : colors.surface }]}>
+                <View style={[styles.storyInnerRing, { borderColor: colors.background }]}>
+                  <Avatar name={group.name} color={colors.accent} size={52} />
+                </View>
+              </View>
+              <Text numberOfLines={1} style={[typography.small, { color: colors.textSecondary, marginTop: 6 }]}>{group.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       <View style={{ paddingHorizontal: spacing.md, marginBottom: spacing.sm }}>
@@ -575,6 +647,12 @@ export default function ChatListScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  storyHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 9 },
+  storyTray: { paddingHorizontal: 16, gap: 14 },
+  storyItem: { width: 64, alignItems: 'center' },
+  storyRing: { width: 64, height: 64, borderRadius: 32, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  storyInnerRing: { borderWidth: 2, borderRadius: 30, padding: 2 },
+  storyAdd: { position: 'absolute', right: -1, bottom: -1, width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   draftsBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   cameraBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 15, shadowOpacity: 0.34, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 5 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
