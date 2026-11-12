@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { DeviceEventEmitter, StyleSheet, View, Platform, Linking } from 'react-native';
+import { Animated, DeviceEventEmitter, StyleSheet, View, Platform, Linking } from 'react-native';
 import { NavigationContainer, DarkTheme, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -7,6 +7,7 @@ import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
+import { useReducedMotion } from '../utils/motion';
 
 import OnboardingScreen from '../screens/OnboardingScreen';
 import LoginScreen from '../screens/LoginScreen';
@@ -92,6 +93,45 @@ function GlassTabBackground() {
   );
 }
 
+function TabIcon({ name, color, size, focused, accent }) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const reducedMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (reducedMotion) {
+      scale.setValue(1);
+      return undefined;
+    }
+    const animation = Animated.spring(scale, {
+      toValue: focused ? 1.08 : 1,
+      useNativeDriver: true,
+      tension: 170,
+      friction: 13,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [focused, reducedMotion, scale]);
+
+  return (
+    <Animated.View
+      style={[
+        styles.tabIconShell,
+        {
+          transform: [{ scale }],
+          backgroundColor: focused ? hexToRgba(accent, 0.17) : 'transparent',
+          borderColor: focused ? hexToRgba(accent, 0.38) : 'transparent',
+          shadowColor: accent,
+          shadowOpacity: focused ? 0.32 : 0,
+          shadowRadius: focused ? 11 : 0,
+          elevation: focused ? 4 : 0,
+        },
+      ]}
+    >
+      <Ionicons name={name} size={focused ? 23 : size} color={color} />
+    </Animated.View>
+  );
+}
+
 function MainTabNavigator() {
   const { colors } = useTheme();
 
@@ -128,21 +168,7 @@ function MainTabNavigator() {
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarIcon: ({ color, size, focused }) => {
           const icons = { Chats: 'chatbubbles', Calls: 'call', Updates: 'aperture', Channels: 'compass', Profile: 'person-circle' };
-          return (
-            <View style={[
-              styles.tabIconShell,
-              {
-                backgroundColor: focused ? hexToRgba(colors.primary, 0.17) : 'transparent',
-                borderColor: focused ? hexToRgba(colors.primary, 0.38) : 'transparent',
-                shadowColor: colors.primary,
-                shadowOpacity: focused ? 0.32 : 0,
-                shadowRadius: focused ? 11 : 0,
-                elevation: focused ? 4 : 0,
-              },
-            ]}>
-              <Ionicons name={icons[route.name]} size={focused ? 23 : size} color={color} />
-            </View>
-          );
+          return <TabIcon name={icons[route.name]} color={color} size={size} focused={focused} accent={colors.primary} />;
         },
       })}
     >
