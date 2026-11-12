@@ -43,11 +43,13 @@ export default function SavedMessagesScreen({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Saved messages" subtitle="Your private, on-device collection" onBack={() => navigation.goBack()} />
       <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, paddingHorizontal: spacing.md, backgroundColor: colors.surface, minHeight: 48 }}>
-          <Ionicons name="search-outline" size={19} color={colors.textSecondary} />
-          <TextInput value={query} onChangeText={setQuery} placeholder="Search saved messages" placeholderTextColor={colors.textSecondary} style={[typography.body, { flex: 1, color: colors.textPrimary, marginLeft: spacing.sm, paddingVertical: 10 }]} accessibilityLabel="Search saved messages" returnKeyType="search" />
-          {query ? <TouchableOpacity onPress={() => setQuery('')} accessibilityRole="button" accessibilityLabel="Clear search"><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
-        </View>
+        <GlassCard noPadding glow intensity={24} tintAlpha={0.42}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, minHeight: 48 }}>
+            <Ionicons name="search-outline" size={19} color={colors.textSecondary} />
+            <TextInput value={query} onChangeText={setQuery} placeholder="Search saved messages" placeholderTextColor={colors.textSecondary} style={[typography.body, { flex: 1, color: colors.textPrimary, marginLeft: spacing.sm, paddingVertical: 10 }]} accessibilityLabel="Search saved messages" returnKeyType="search" />
+            {query ? <TouchableOpacity onPress={() => setQuery('')} accessibilityRole="button" accessibilityLabel="Clear search"><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
+          </View>
+        </GlassCard>
         <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Bookmarks stay on this device and do not sync. Private attachment links are never stored here.</Text>
       </View>
       {loading ? <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Loading saved messages…</Text></View> : error ? (
