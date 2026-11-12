@@ -87,8 +87,8 @@ export default function ChatFoldersScreen({ navigation }) {
           {EXCLUSIONS.map((item) => <Choice key={item.key} item={item} selected={excluded.includes(item.key)} onPress={() => toggle(excluded, setExcluded, item.key)} />)}
           {error ? <Text style={[typography.caption, { color: colors.danger, marginTop: spacing.sm }]}>{error}</Text> : null}
           <TouchableOpacity onPress={create} disabled={saving || !rules.length} accessibilityRole="button" style={{ backgroundColor: colors.primary, opacity: saving || !rules.length ? 0.55 : 1, borderRadius: radii.pill, paddingVertical: 13, alignItems: 'center', marginTop: spacing.md, flexDirection: 'row', justifyContent: 'center' }}>
-            {saving ? <ActivityIndicator color="#fff" /> : <Ionicons name="add-circle-outline" size={18} color="#fff" />}
-            <Text style={[typography.bodyStrong, { color: '#fff', marginLeft: 8 }]}>{saving ? 'Saving…' : editingId ? 'Save changes' : 'Create folder'}</Text>
+            {saving ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name="add-circle-outline" size={18} color={colors.onPrimary} />}
+            <Text style={[typography.bodyStrong, { color: colors.onPrimary, marginLeft: 8 }]}>{saving ? 'Saving…' : editingId ? 'Save changes' : 'Create folder'}</Text>
           </TouchableOpacity>
           {editingId ? <TouchableOpacity onPress={cancelEdit} accessibilityRole="button" style={{ alignItems: 'center', paddingVertical: 10 }}><Text style={[typography.body, { color: colors.textSecondary }]}>Cancel editing</Text></TouchableOpacity> : null}
         </GlassCard>
