@@ -11,15 +11,16 @@ import { hexToRgba } from '../utils/color';
 // Long-press remains available for favorite, mute and archive actions.
 export default function ChatListItem({ conversation, onPress, onLongPressActions }) {
   const { colors, spacing, typography, radii } = useTheme();
+  const item = conversation || {};
+  const participant = item.participant || {};
   const {
-    participant = {},
     lastMessage = '',
     lastMessageAt = '',
     unreadCount = 0,
     isGroup,
     isFavorite,
     isMuted,
-  } = conversation || {};
+  } = item;
 
   const displayName = participant.name || (isGroup ? 'Group conversation' : 'Unknown chat');
   const preview = lastMessage || 'Start a conversation';
@@ -52,22 +53,10 @@ export default function ChatListItem({ conversation, onPress, onLongPressActions
         <View style={styles.topLine}>
           <View style={styles.nameRow}>
             {isFavorite ? (
-              <Ionicons
-                name="star"
-                size={13}
-                color={colors.gold}
-                style={{ marginRight: spacing.xxs }}
-                accessibilityLabel="Favorite chat"
-              />
+              <Ionicons name="star" size={13} color={colors.gold} style={{ marginRight: spacing.xxs }} />
             ) : null}
             {isMuted ? (
-              <Ionicons
-                name="volume-mute-outline"
-                size={14}
-                color={colors.textSecondary}
-                style={{ marginRight: spacing.xxs }}
-                accessibilityLabel="Muted chat"
-              />
+              <Ionicons name="volume-mute-outline" size={14} color={colors.textSecondary} style={{ marginRight: spacing.xxs }} />
             ) : null}
             <Text
               style={[typography.bodyStrong, { color: colors.textPrimary, flexShrink: 1 }]}
@@ -102,8 +91,7 @@ export default function ChatListItem({ conversation, onPress, onLongPressActions
                 styles.badge,
                 { backgroundColor: colors.primary, borderRadius: radii.pill, marginLeft: spacing.sm },
               ]}
-              accessible
-              accessibilityLabel={`${unreadCount} unread messages`}
+              accessible={false}
             >
               <Text style={styles.badgeText}>{unreadLabel}</Text>
             </View>
