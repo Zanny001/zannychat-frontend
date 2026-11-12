@@ -1301,9 +1301,6 @@ export default function ChatScreen({ route, navigation }) {
                 <Ionicons name="sparkles-outline" size={20} color={colors.textPrimary} />
               )}
             </TouchableOpacity>
-            {/* The dead call button the audit flagged is gone — voice
-                calls are a P3 undertaking (WebRTC + signaling), and a
-                button with no handler reads as broken, not unfinished. */}
             {display.isGroup ? (
               <TouchableOpacity
                 style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]}
