@@ -235,6 +235,14 @@ export default function ChatListScreen({ navigation }) {
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity
+            style={[styles.cameraBtn, { backgroundColor: colors.accent, borderColor: hexToRgba(colors.accent, 0.5) }]}
+            onPress={() => navigation.navigate('Updates')}
+            accessibilityLabel="Open camera and updates"
+            accessibilityRole="button"
+          >
+            <Ionicons name="camera" size={19} color={colors.background} />
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[styles.draftsBtn, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.pill }]}
             onPress={() => navigation.navigate('Drafts')}
             accessibilityLabel="Open unsent drafts"
@@ -254,7 +262,7 @@ export default function ChatListScreen({ navigation }) {
       </View>
 
       <View style={{ paddingHorizontal: spacing.md, marginBottom: spacing.sm }}>
-        <GlassCard noPadding intensity={24} tintAlpha={0.4}>
+        <GlassCard noPadding intensity={28} tintAlpha={0.42} glow>
           <View style={styles.searchBar}>
             <Ionicons name="search" size={16} color={colors.textSecondary} />
             <TextInput
@@ -568,6 +576,7 @@ export default function ChatListScreen({ navigation }) {
 const styles = StyleSheet.create({
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   draftsBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  cameraBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 15, shadowColor: '#39E7E0', shadowOpacity: 0.34, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 5 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   titleRow: { flexDirection: 'row', alignItems: 'center' },
   newChatBtn: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
