@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const eas = JSON.parse(fs.readFileSync(new URL('../../eas.json', import.meta.url), 'utf8'));
+const app = JSON.parse(fs.readFileSync(new URL('../../app.json', import.meta.url), 'utf8'));
 const supabaseClient = fs.readFileSync(new URL('../services/supabaseClient.js', import.meta.url), 'utf8');
 const backendClient = fs.readFileSync(new URL('../services/backendClient.js', import.meta.url), 'utf8');
 const gitignore = fs.readFileSync(new URL('../../.gitignore', import.meta.url), 'utf8');
@@ -26,6 +27,7 @@ test('Firebase client config is ignored by Git but included by the EAS upload al
   assert.ok(gitignore.includes('google-services.json'));
   assert.ok(gitignore.includes('/android/'));
   assert.ok(easignore.includes('!google-services.json'));
+  assert.equal(app.expo.android.googleServicesFile, './google-services.json');
   assert.ok(easignore.includes('.env'));
   assert.ok(easignore.includes('*service-account*.json'));
   assert.ok(easignore.includes('*.pem'));
