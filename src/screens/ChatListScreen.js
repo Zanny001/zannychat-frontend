@@ -282,7 +282,7 @@ export default function ChatListScreen({ navigation }) {
             accessibilityLabel="Open camera and updates"
             accessibilityRole="button"
           >
-            <Ionicons name="camera" size={19} color={colors.onPrimary} />
+            <Ionicons name="camera" size={19} color={colors.onAccent} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.draftsBtn, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.pill }]}
