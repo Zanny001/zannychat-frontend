@@ -187,9 +187,9 @@ export default function SettingsScreen({ navigation }) {
         </TouchableOpacity>
 
         <GlassCard style={{ marginBottom: spacing.md }}>
-          <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.sm }]}>Mood</Text>
+          <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.sm }]}>Colour presets</Text>
           <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>
-            Each mood is two colors — one for you, one for them. Pick one and it applies everywhere.
+            Choose a signature colour story for the whole app, then fine-tune your own Signal, Thread and Highlight colours above.
           </Text>
 
           <View style={styles.swatchRow}>
