@@ -23,4 +23,5 @@ test('profile actions use accessible Pressable controls', () => {
   assert.ok(profile.includes('Pressable'));
   assert.equal(profile.includes('TouchableOpacity'), false);
   assert.ok(profile.includes('accessibilityHint={`Opens ${label.toLowerCase()}`}'));
+  assert.ok(profile.includes('minHeight: 44'));
 });
