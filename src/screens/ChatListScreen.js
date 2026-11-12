@@ -303,7 +303,7 @@ export default function ChatListScreen({ navigation }) {
             <Text numberOfLines={1} style={[typography.small, { color: colors.textSecondary, marginTop: 6 }]}>Your story</Text>
           </TouchableOpacity>
           {storyGroups.filter((group) => !group.isOwn).map((group) => (
-            <TouchableOpacity key={group.userId} onPress={() => navigation.navigate('Updates')} accessibilityRole="button" accessibilityLabel={`Open moments from ${group.name}`} style={styles.storyItem}>
+            <TouchableOpacity key={group.userId} onPress={() => navigation.navigate('Updates', { userId: group.userId })} accessibilityRole="button" accessibilityLabel={`Open moments from ${group.name}`} style={styles.storyItem}>
               <View style={[styles.storyRing, { borderColor: group.unseenCount > 0 ? colors.primary : colors.border, backgroundColor: group.unseenCount > 0 ? hexToRgba(colors.primary, 0.16) : colors.surface }]}>
                 <View style={[styles.storyInnerRing, { borderColor: colors.background }]}>
                   <Avatar name={group.name} color={colors.accent} size={52} />
