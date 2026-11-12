@@ -58,7 +58,7 @@ async function saveStatusMedia(uri, kind) {
   } catch (error) { Alert.alert('Could not save media', error?.message || 'Please try again.'); }
 }
 
-export default function StatusUpdatesScreen({ navigation }) {
+export default function StatusUpdatesScreen({ navigation, route }) {
   const { colors, spacing, radii, typography } = useTheme();
   const [text, setText] = useState('');
   const statusTextInputRef = useRef(null);
@@ -102,6 +102,7 @@ export default function StatusUpdatesScreen({ navigation }) {
   const [selectedAudienceIds, setSelectedAudienceIds] = useState([]);
   const [seenStatusIds, setSeenStatusIds] = useState([]);
   const seenStatusIdsRef = useRef([]);
+  const requestedStoryOpenRef = useRef(null);
   const mediaRetryLockRef = useRef(false);
   const statusRefreshRequestRef = useRef(0);
   const groupedStatuses = groupStatusUpdates(statuses);
@@ -359,6 +360,26 @@ export default function StatusUpdatesScreen({ navigation }) {
       catch (e) { console.warn('Status replies could not be loaded'); }
     }
   }, []);
+
+  useEffect(() => {
+    const requestedUserId = route?.params?.userId;
+    if (!requestedUserId) {
+      requestedStoryOpenRef.current = null;
+      return;
+    }
+    if (loading || requestedStoryOpenRef.current === requestedUserId) return;
+    const group = groupedStatuses.find((item) => String(item.ownerId) === String(requestedUserId));
+    if (!group) {
+      navigation.setParams({ userId: undefined });
+      return;
+    }
+    requestedStoryOpenRef.current = requestedUserId;
+    const target = group.latest?.is_own
+      ? group.latest
+      : firstUnseenStatus(group.statuses, seenStatusIds, group.latest);
+    if (target) openStatus(target);
+    navigation.setParams({ userId: undefined });
+  }, [route?.params?.userId, loading, groupedStatuses, seenStatusIds, openStatus, navigation]);
 
   const handleStatusVideoError = useCallback(() => setMediaLoadError(true), []);
 
