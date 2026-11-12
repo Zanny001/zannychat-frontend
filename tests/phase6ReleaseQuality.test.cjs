@@ -33,6 +33,8 @@ test('saving media uses the write-only MediaLibrary permission API', () => {
 test('native release CI protects main and compiles Android native code', () => {
   assert.match(workflow, /push:[\s\S]*branches:\s*\[main, feat\/advanced-calling-live-1\.2\.241\]/);
   assert.match(workflow, /pull_request:[\s\S]*branches:\s*\[main, feat\/advanced-calling-live-1\.2\.241\]/);
+  assert.match(workflow, /repository: Zanny001\\/zannychat-backend/);
+  assert.match(workflow, /path: zannychat-back-github/);
   assert.match(workflow, /Create non-production Firebase config for compile-only CI/);
   assert.match(workflow, /CI_ONLY_NOT_A_REAL_FIREBASE_KEY/);
   assert.match(workflow, /:app:compileDebugKotlin/);
