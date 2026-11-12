@@ -185,7 +185,7 @@ export default function ChannelsScreen({ navigation }) {
   }, [refresh, refreshLive, refreshCommunityFeed, selected?.id]));
 
   const reactToCommunityPost = async (post, emoji) => {
-    if (busy) return;
+    if (busy || communityLoading) return;
     setBusy(true);
     try {
       await setChannelPostReaction(post.channelId, post.id, post.myReaction === emoji ? null : emoji);
@@ -684,10 +684,10 @@ export default function ChannelsScreen({ navigation }) {
                   return (
                     <Pressable
                       key={emoji}
-                      disabled={busy}
+                      disabled={busy || communityLoading}
                       onPress={() => reactToCommunityPost(post, emoji)}
                       accessibilityRole="button"
-                      accessibilityState={{ selected: active, disabled: busy }}
+                      accessibilityState={{ selected: active, disabled: busy || communityLoading }}
                       accessibilityLabel={`${emoji} reaction${count ? `, ${count}` : ''}`}
                       style={({ pressed }) => ({
                         minHeight: 40,
@@ -708,6 +708,7 @@ export default function ChannelsScreen({ navigation }) {
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Text style={[typography.small, { color: colors.textSecondary, flex: 1 }]}>{post.commentCount || 0} comments</Text>
                 <Pressable
+                  disabled={busy}
                   onPress={() => openChannel({ id: post.channelId, title: post.channelTitle, is_private: false })}
                   accessibilityRole="button"
                   accessibilityLabel={`Open ${post.channelTitle || 'community'} discussion`}
