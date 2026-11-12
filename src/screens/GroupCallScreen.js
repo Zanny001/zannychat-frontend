@@ -6,6 +6,7 @@ import { RoomEvent, Track } from 'livekit-client';
 import { backendFetch } from '../services/backendClient';
 import { supabase } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
+import { hexToRgba } from '../utils/color';
 
 function GroupRoomContent({ callType, onEnd }) {
   const room = useRoomContext();
@@ -50,7 +51,7 @@ function GroupRoomContent({ callType, onEnd }) {
   const tracks = cameraTracks.filter(isTrackReference);
   const controlStyle = (pressed, active = false, destructive = false) => [
     styles.control,
-    { backgroundColor: destructive ? colors.danger : active ? colors.primary : colors.surfaceAlt },
+    { backgroundColor: destructive ? colors.danger : active ? colors.primary : colors.surfaceAlt, borderWidth: 1, borderColor: colors.border, shadowColor: destructive ? colors.danger : active ? colors.primary : colors.textPrimary, shadowOpacity: destructive || active ? 0.28 : 0.1, shadowRadius: active ? 13 : 7, shadowOffset: { width: 0, height: 5 }, elevation: active || destructive ? 5 : 2 },
     pressed && { opacity: 0.76, transform: [{ scale: 0.97 }] },
   ];
 
@@ -85,7 +86,7 @@ function GroupRoomContent({ callType, onEnd }) {
         />
       ) : (
         <View style={styles.audioStage}>
-          <View style={[styles.audioOrb, { backgroundColor: colors.primary }]}>
+          <View style={[styles.audioOrb, { backgroundColor: colors.primary, shadowColor: colors.primary, borderColor: hexToRgba(colors.onPrimary, 0.28 }]}>
             <Ionicons name="people" size={46} color={colors.onPrimary || '#FFFFFF'} />
           </View>
           <Text style={[styles.audioTitle, { color: colors.textPrimary }]}>Group audio call</Text>
@@ -112,8 +113,8 @@ function GroupRoomContent({ callType, onEnd }) {
           accessibilityState={{ selected: muted }}
           style={({ pressed }) => controlStyle(pressed, muted)}
         >
-          <Ionicons name={muted ? 'mic-off' : 'mic'} size={23} color={colors.textPrimary} />
-          <Text style={[styles.controlLabel, { color: colors.textPrimary }]}>{muted ? 'Unmute' : 'Mute'}</Text>
+          <Ionicons name={muted ? 'mic-off' : 'mic'} size={23} color={muted ? colors.onPrimary : colors.textPrimary} />
+          <Text style={[styles.controlLabel, { color: muted ? colors.onPrimary : colors.textPrimary }]}>{muted ? 'Unmute' : 'Mute'}</Text>
         </Pressable>
         {callType === 'video' && (
           <Pressable
@@ -123,8 +124,8 @@ function GroupRoomContent({ callType, onEnd }) {
             accessibilityState={{ selected: cameraOff }}
             style={({ pressed }) => controlStyle(pressed, cameraOff)}
           >
-            <Ionicons name={cameraOff ? 'videocam-off' : 'videocam'} size={23} color={colors.textPrimary} />
-            <Text style={[styles.controlLabel, { color: colors.textPrimary }]}>{cameraOff ? 'Camera on' : 'Camera off'}</Text>
+            <Ionicons name={cameraOff ? 'videocam-off' : 'videocam'} size={23} color={cameraOff ? colors.onPrimary : colors.textPrimary} />
+            <Text style={[styles.controlLabel, { color: cameraOff ? colors.onPrimary : colors.textPrimary }]}>{cameraOff ? 'Camera on' : 'Camera off'}</Text>
           </Pressable>
         )}
         <Pressable
@@ -133,8 +134,8 @@ function GroupRoomContent({ callType, onEnd }) {
           accessibilityLabel="Leave group call"
           style={({ pressed }) => controlStyle(pressed, false, true)}
         >
-          <Ionicons name="call" size={23} color="#FFFFFF" style={{ transform: [{ rotate: '135deg' }] }} />
-          <Text style={[styles.controlLabel, { color: '#FFFFFF' }]}>Leave</Text>
+          <Ionicons name="call" size={23} color={colors.onDanger} style={{ transform: [{ rotate: '135deg' }] }} />
+          <Text style={[styles.controlLabel, { color: colors.onDanger }]}>Leave</Text>
         </Pressable>
       </View>
     </View>
@@ -224,7 +225,7 @@ export default function GroupCallScreen({ route, navigation }) {
           <Text style={[styles.error, { color: colors.textPrimary }]}>{errorText}</Text>
           <Text style={[styles.empty, { color: colors.textSecondary }]}>Group media requires a configured LiveKit SFU and server credentials.</Text>
           <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [styles.back, { backgroundColor: colors.primary }, pressed && { opacity: 0.8 }]} accessibilityRole="button">
-            <Text style={styles.backText}>Go back</Text>
+            <Text style={[styles.backText, { color: colors.onPrimary }]}>Go back</Text>
           </Pressable>
         </View>
       ) : connection ? (
@@ -254,7 +255,7 @@ const styles = StyleSheet.create({
   videoEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   empty: { textAlign: 'center', padding: 16, lineHeight: 21 },
   audioStage: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
-  audioOrb: { width: 108, height: 108, borderRadius: 54, alignItems: 'center', justifyContent: 'center' },
+  audioOrb: { width: 108, height: 108, borderRadius: 54, borderWidth: 1, alignItems: 'center', justifyContent: 'center', shadowOpacity: 0.34, shadowRadius: 24, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
   audioTitle: { fontSize: 21, fontWeight: '800', marginTop: 20, textAlign: 'center' },
   audioHint: { marginTop: 8, textAlign: 'center', lineHeight: 20, maxWidth: 300 },
   participantList: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 22 },
