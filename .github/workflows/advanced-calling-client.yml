@@ -41,6 +41,7 @@ jobs:
       - run: npm run test:unit
       - run: npm run test:call-recovery
       - run: npm run test:native-call-receiver
+      - run: npm run test:phase6-release-quality
       - run: npm run audit:release
       - run: npm run audit:contract
       - run: npm run audit:integrity
