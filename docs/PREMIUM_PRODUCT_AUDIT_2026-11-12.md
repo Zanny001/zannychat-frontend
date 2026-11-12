@@ -53,6 +53,14 @@ This review used the current GitHub default branches and the linked production S
 - Continue measuring slow queries, pagination, media loading, Realtime subscriptions and Android memory/launch performance.
 
 
+
+### Messaging encryption and privacy claims
+
+- The current implementation provides authenticated participant access controls, RLS and transport/storage protections, but this audit did not find a verified end-to-end encryption protocol for message content.
+- RLS and encryption at rest are not end-to-end encryption: privileged backend/service-role processes can access plaintext. Do not market chats as E2E encrypted or imply that the service cannot access message content.
+- The onboarding sentence “Private — only you and them can open it” overstates the current security boundary. Replace it with accurate participant-access wording until an audited E2E protocol ships.
+- A real E2E milestone requires an audited protocol/library, identity and device key lifecycle, forward secrecy, group key management, multi-device linking/revocation, encrypted media, encrypted backups, key-change warnings and interoperability/regression tests. Do not implement custom cryptography.
+
 ### Legacy profile/avatar compatibility risk
 
 - `public.profiles` has an authenticated SELECT policy with `USING (true)`. The row includes `name`, `status`, `online`, `username` and the legacy `avatar_url`; RLS is row-level, not column-level.
