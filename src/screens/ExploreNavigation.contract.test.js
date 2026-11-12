@@ -40,7 +40,7 @@ test('Explore loads a paginated feed of public community posts', () => {
 
 test('community feed preserves reactions and opens the source community', () => {
   assert.ok(channels.includes('setChannelPostReaction(post.channelId, post.id'));
-  assert.ok(channels.includes('accessibilityState={{ selected: active, disabled: busy }}'));
+  assert.ok(channels.includes('accessibilityState={{ selected: active, disabled: busy || communityLoading }}'));
   assert.ok(channels.includes('Open community'));
   assert.ok(channels.includes('openChannel({ id: post.channelId'));
 });
