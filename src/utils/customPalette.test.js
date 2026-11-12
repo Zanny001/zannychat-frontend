@@ -71,3 +71,13 @@ test('custom palette accents flow into light and dark semantic colours', () => {
   assert.notEqual(light.primary, '#B93825');
   assert.ok(contrastRatio(light.primary, '#FFFFFF') >= 4.5);
 });
+
+test('custom dark accents receive light foregrounds for readable controls and bubbles', () => {
+  const mood = createCustomMood({ signal: '#172033', thread: '#202A40' });
+  const colors = resolveMoodColors(mood, 'dark');
+  assert.equal(colors.onPrimary, '#FFFFFF');
+  assert.equal(colors.onAccent, '#FFFFFF');
+  assert.equal(colors.bubbleMineText, '#FFFFFF');
+  assert.equal(colors.bubbleMineMeta, '#FFFFFF');
+  assert.ok(contrastRatio(colors.onPrimary, colors.primary) >= 4.5);
+});
