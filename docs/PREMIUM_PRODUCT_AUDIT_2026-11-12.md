@@ -91,6 +91,12 @@ This review used the current GitHub default branches and the linked production S
 - The internal EAS APK build and device installation must be verified before treating Android native configuration as release-ready.
 - No production deployment is authorized by this audit document.
 
+
+### EAS source-of-build constraint
+
+- The Android Firebase client config is intentionally Git-ignored and supplied locally. The EAS profiles now carry only public backend/Supabase client configuration; the service-role/Admin/APNs private credentials remain outside the app bundle.
+- Until Firebase config is provisioned through an approved secure build input, start EAS Android builds from the canonical local frontend workspace where `google-services.json` exists and `.easignore` is present. A GitHub-source build cannot include an untracked local file.
+
 ## Implementation order
 
 1. Improve the inbox row density, readability and accessibility without changing message, presence or favorite behavior.
