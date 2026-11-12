@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useTheme } from '../theme/ThemeContext';
+import { hexToRgba } from '../utils/color';
 import Avatar from './Avatar';
 import { extractFirstUrl } from '../utils/links';
 import { fetchLinkPreview } from '../services/api';
@@ -58,11 +59,11 @@ function VoiceBubbleContent({ message, isMine, captionColor }) {
         <Ionicons name={status.playing ? 'pause' : 'play'} size={16} color={captionColor} />
       </View>
       <View style={{ flex: 1, marginLeft: spacing.sm }}>
-        <View style={[styles.waveTrack, { backgroundColor: isMine ? 'rgba(255,255,255,0.3)' : colors.border }]}>
+        <View style={[styles.waveTrack, { backgroundColor: isMine ? hexToRgba(colors.bubbleMineMeta, 0.32) : colors.border }]}>
           <View
             style={[
               styles.waveFill,
-              { width: `${progress * 100}%`, backgroundColor: isMine ? '#FFFFFF' : colors.primary },
+              { width: `${progress * 100}%`, backgroundColor: isMine ? colors.bubbleMineMeta : colors.primary },
             ]}
           />
         </View>
@@ -364,6 +365,11 @@ export default function ChatBubble({
               borderTopLeftRadius: isMine ? radii.lg : radii.sm,
               borderBottomLeftRadius: radii.lg,
               borderBottomRightRadius: radii.lg,
+              shadowColor: isMine ? colors.primary : colors.thread,
+              shadowOpacity: isMine ? 0.18 : 0,
+              shadowRadius: isMine ? 9 : 0,
+              shadowOffset: { width: 0, height: 3 },
+              elevation: isMine ? 2 : 0,
               ...(searchHighlight ? { borderWidth: activeSearchHighlight ? 2 : 1, borderColor: colors.gold } : null),
             },
           ]}
@@ -396,7 +402,7 @@ export default function ChatBubble({
               <Ionicons
                 name={status === 'pending' ? 'time-outline' : status === 'sent' ? 'checkmark' : 'checkmark-done'}
                 size={14}
-                color={status === 'read' ? colors.thread : 'rgba(255,255,255,0.75)'}
+                color={status === 'read' ? colors.thread : colors.bubbleMineMeta}
                 style={{ marginLeft: 4 }}
                 accessibilityLabel={status === 'read' ? 'Read' : status === 'delivered' ? 'Delivered' : status === 'pending' ? 'Sending' : 'Sent'}
               />
@@ -404,7 +410,7 @@ export default function ChatBubble({
             {isMine && deliveredToCount > 0 && !message.deletedAt ? (
               <Text
                 accessibilityLabel={`Delivered to ${deliveredToCount} ${deliveredToCount === 1 ? 'member' : 'members'}`}
-                style={[typography.small, { color: 'rgba(255,255,255,0.78)', marginLeft: 4 }]}
+                style={[typography.small, { color: colors.bubbleMineMeta, marginLeft: 4 }]}
               >
                 Delivered to {deliveredToCount}
               </Text>
