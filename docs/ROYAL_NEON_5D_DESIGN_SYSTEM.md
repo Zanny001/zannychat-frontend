@@ -10,7 +10,7 @@ Royal Neon is the first-run visual direction for ZannyChat: deep obsidian surfac
 - Custom colours: users can set Signal, Thread and Highlight hex values in Settings.
 - Custom values are validated and stored locally with AsyncStorage. Invalid values are rejected without replacing the current palette.
 - Semantic surface, text, border, status and danger tokens remain owned by the theme system.
-- Light-mode primary accents are darkened until they meet a 4.5:1 contrast ratio against white. Accent colours are darkened to at least 3:1.
+- Light-mode primary accents are darkened until they meet a 4.5:1 contrast ratio against white. Accent colours are darkened to at least 4.5:1 for readable text; foregrounds are selected for contrast on both bright and dark custom accents.
 - User appearance preference remains independent: System, Light and Dark are all supported.
 
 ## Depth and motion
