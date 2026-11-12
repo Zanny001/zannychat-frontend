@@ -18,6 +18,8 @@ Royal Neon is the first-run visual direction for ZannyChat: deep obsidian surfac
 - Glass cards use blurred/tinted surfaces, elevated shadows, a specular top edge and a subtle inner highlight.
 - Main navigation uses a floating glass tab bar with a restrained accent halo around the selected destination.
 - Selected tab icons use a spring scale transition.
+- The Chats screen shows a privacy-filtered Moments tray grouped by status owner, with unread rings and an always-available own-story shortcut.
+- Conversation headers, message bubbles and the composer use restrained dynamic glow and contrast-aware foreground tokens.
 - The shared reduced-motion preference disables the tab spring animation.
 
 ## Performance and accessibility guardrails
