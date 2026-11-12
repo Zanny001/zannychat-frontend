@@ -64,6 +64,31 @@ export const MOODS = {
     line: '#3A2C24',
     danger: '#FF6157',
   },
+  royalNeon: {
+    key: 'royalNeon', label: 'Royal Neon', ink: '#080B18', inkRaised: '#11172A',
+    inkRaisedAlt: '#1A2340', signal: '#795CFF', thread: '#39E7E0', gold: '#FFD58A',
+    paper: '#F4F2FF', inkSoft: '#A9A5D0', line: '#302B59', danger: '#FF6685',
+  },
+  ocean: {
+    key: 'ocean', label: 'Ocean', ink: '#061722', inkRaised: '#0D2432',
+    inkRaisedAlt: '#153447', signal: '#258BFF', thread: '#43E2D2', gold: '#FFD27D',
+    paper: '#ECF8FF', inkSoft: '#91B6C7', line: '#24465A', danger: '#FF7188',
+  },
+  emerald: {
+    key: 'emerald', label: 'Emerald', ink: '#071A16', inkRaised: '#102923',
+    inkRaisedAlt: '#183A30', signal: '#35C98A', thread: '#70D9E8', gold: '#E9CF79',
+    paper: '#F0FFF8', inkSoft: '#9BC5B3', line: '#285144', danger: '#FF7188',
+  },
+  roseGold: {
+    key: 'roseGold', label: 'Rose Gold', ink: '#1B101A', inkRaised: '#2A1A29',
+    inkRaisedAlt: '#3B2638', signal: '#F07FAE', thread: '#D8A6FF', gold: '#FFD59A',
+    paper: '#FFF2F7', inkSoft: '#C7A5B8', line: '#55364D', danger: '#FF6685',
+  },
+  sunset: {
+    key: 'sunset', label: 'Sunset', ink: '#1B101B', inkRaised: '#2A1A2C',
+    inkRaisedAlt: '#3B2440', signal: '#FF7A59', thread: '#A77BFF', gold: '#FFD27D',
+    paper: '#FFF3EC', inkSoft: '#C5A7B8', line: '#55364D', danger: '#FF6685',
+  },
 };
 
 export const DEFAULT_MOOD_KEY = 'ember';
