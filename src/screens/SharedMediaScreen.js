@@ -160,7 +160,9 @@ export default function SharedMediaScreen({ route, navigation }) {
             );
           })}
         </View>
-        <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder={`Search ${TABS.find((item) => item.key === tab)?.label.toLowerCase() || 'shared items'}…`} placeholderTextColor={colors.textSecondary} accessibilityLabel={`Search shared ${tab}`} returnKeyType="search" clearButtonMode="while-editing" style={[typography.body, { color: colors.textPrimary, marginTop: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md }]} />
+        <GlassCard noPadding glow intensity={22} tintAlpha={0.42} style={{ marginTop: spacing.sm }}>
+          <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder={`Search ${TABS.find((item) => item.key === tab)?.label.toLowerCase() || 'shared items'}…`} placeholderTextColor={colors.textSecondary} accessibilityLabel={`Search shared ${tab}`} returnKeyType="search" clearButtonMode="while-editing" style={[typography.body, { color: colors.textPrimary, minHeight: 48, paddingHorizontal: spacing.md, paddingVertical: spacing.sm }]} />
+        </GlassCard>
         <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Recent shared items · private attachments use expiring access links.</Text>
       </View>
 
