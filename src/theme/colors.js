@@ -66,7 +66,7 @@ export const MOODS = {
   },
   royalNeon: {
     key: 'royalNeon', label: 'Royal Neon', ink: '#080B18', inkRaised: '#11172A',
-    inkRaisedAlt: '#1A2340', signal: '#795CFF', thread: '#39E7E0', gold: '#FFD58A',
+    inkRaisedAlt: '#1A2340', signal: '#7C60FF', thread: '#39E7E0', gold: '#FFD58A',
     paper: '#F4F2FF', inkSoft: '#A9A5D0', line: '#302B59', danger: '#FF6685',
   },
   ocean: {
@@ -180,7 +180,7 @@ export function resolveMoodColors(mood, mode = 'dark', highContrast = false) {
     ...base,
     primary: light ? accessibleAccent(signal, '#FFFFFF', 4.5) : signal,
     primaryDark: light ? accessibleAccent(signal, '#FFFFFF', 5) : signal,
-    onPrimary: light ? '#FFFFFF' : accessibleForeground(signal),
+    onPrimary: light ? '#FFFFFF' : contrastRatio(mood.ink, signal) >= 4.5 ? mood.ink : accessibleForeground(signal),
     accent: light ? accessibleAccent(thread, '#FFFFFF', 4.5) : thread,
     onAccent: light ? '#FFFFFF' : accessibleForeground(thread),
     signal,
@@ -189,8 +189,8 @@ export function resolveMoodColors(mood, mode = 'dark', highContrast = false) {
     bubbleMine: light ? tint(signal, 0.84) : signal,
     // Bright signal surfaces need dark foregrounds; use the mood's ink in
     // dark mode and a high-contrast neutral on tinted light-mode bubbles.
-    bubbleMineText: light ? '#171925' : accessibleForeground(signal),
-    bubbleMineMeta: light ? '#414658' : accessibleForeground(signal),
+    bubbleMineText: light ? '#171925' : contrastRatio(mood.ink, signal) >= 4.5 ? mood.ink : accessibleForeground(signal),
+    bubbleMineMeta: light ? '#414658' : contrastRatio(mood.inkRaised, signal) >= 4.5 ? mood.inkRaised : accessibleForeground(signal),
     bubbleTheirs: light ? '#E9EDF5' : mood.inkRaisedAlt,
     danger: light ? '#B4233A' : mood.danger,
     online: ONLINE,
