@@ -32,6 +32,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npx expo export --platform web --output-dir /tmp/zannychat-web-preview --dev --no-minify --max-workers 2
+      - run: npx expo export --platform android --output-dir /tmp/zannychat-android-preview --dev --no-minify --max-workers 2
       - run: npm run test:unit
       - run: npm run test:call-recovery
       - run: npm run test:native-call-receiver
