@@ -193,6 +193,7 @@ export function resolveMoodColors(mood, mode = 'dark', highContrast = false) {
     bubbleMineMeta: light ? '#414658' : contrastRatio(mood.inkRaised, signal) >= 4.5 ? mood.inkRaised : accessibleForeground(signal),
     bubbleTheirs: light ? '#E9EDF5' : mood.inkRaisedAlt,
     danger: light ? '#B4233A' : mood.danger,
+    onDanger: accessibleForeground(light ? '#B4233A' : mood.danger),
     online: ONLINE,
     success: light ? '#16794B' : ONLINE,
     warning: light ? '#8A5A00' : mood.gold,
