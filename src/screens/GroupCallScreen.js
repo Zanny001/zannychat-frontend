@@ -1,16 +1,34 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, SafeAreaView, StatusBar, StyleSheet, Text, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { AudioSession, LiveKitRoom, VideoTrack, isTrackReference, useRoomContext, useTracks } from '@livekit/react-native';
-import { Track } from 'livekit-client';
+import { AudioSession, LiveKitRoom, VideoTrack, isTrackReference, useRoomContext, useTracks, useParticipants } from '@livekit/react-native';
+import { RoomEvent, Track } from 'livekit-client';
 import { backendFetch } from '../services/backendClient';
 import { supabase } from '../services/supabaseClient';
+import { useTheme } from '../theme/ThemeContext';
 
 function GroupRoomContent({ callType, onEnd }) {
   const room = useRoomContext();
+  const { colors } = useTheme();
   const cameraTracks = useTracks([Track.Source.Camera]);
+  const participants = useParticipants();
   const [muted, setMuted] = useState(false);
   const [cameraOff, setCameraOff] = useState(callType !== 'video');
+  const [connectionState, setConnectionState] = useState('Connected');
+
+  useEffect(() => {
+    const onReconnecting = () => setConnectionState('Reconnecting…');
+    const onReconnected = () => setConnectionState('Connected');
+    const onDisconnected = () => setConnectionState('Disconnected');
+    room.on(RoomEvent.Reconnecting, onReconnecting);
+    room.on(RoomEvent.Reconnected, onReconnected);
+    room.on(RoomEvent.Disconnected, onDisconnected);
+    return () => {
+      room.off(RoomEvent.Reconnecting, onReconnecting);
+      room.off(RoomEvent.Reconnected, onReconnected);
+      room.off(RoomEvent.Disconnected, onDisconnected);
+    };
+  }, [room]);
 
   const toggleMute = async () => {
     try {
@@ -29,44 +47,95 @@ function GroupRoomContent({ callType, onEnd }) {
     }
   };
 
+  const tracks = cameraTracks.filter(isTrackReference);
+  const controlStyle = (pressed, active = false, destructive = false) => [
+    styles.control,
+    { backgroundColor: destructive ? colors.danger : active ? colors.primary : colors.surfaceAlt },
+    pressed && { opacity: 0.76, transform: [{ scale: 0.97 }] },
+  ];
+
   return (
-    <View style={styles.room}>
+    <View style={[styles.room, { backgroundColor: colors.background }]}>
+      <View style={styles.connectionRow} accessibilityLiveRegion="polite">
+        <View style={[styles.connectionDot, { backgroundColor: connectionState === 'Connected' ? colors.online : colors.warning || colors.gold }]} />
+        <Text style={[styles.connectionText, { color: colors.textSecondary }]}>{connectionState}</Text>
+        <Text style={[styles.connectionText, { color: colors.textSecondary }]}>· {participants.length} connected</Text>
+      </View>
+
       {callType === 'video' ? (
         <FlatList
-          data={cameraTracks.filter(isTrackReference)}
+          data={tracks}
           keyExtractor={(track) => track.participant.identity}
           numColumns={2}
           contentContainerStyle={styles.tiles}
           renderItem={({ item }) => (
-            <View style={styles.tile}>
+            <View style={[styles.tile, { backgroundColor: colors.surfaceAlt }]}>
               <VideoTrack trackRef={item} style={styles.video} />
-              <Text style={styles.tileName}>{item.participant.name || item.participant.identity}</Text>
+              <View style={styles.tileCaption}>
+                <Text style={styles.tileName} numberOfLines={1}>{item.participant.name || item.participant.identity}</Text>
+              </View>
             </View>
           )}
-          ListEmptyComponent={<Text style={styles.empty}>Waiting for participants to turn on video…</Text>}
+          ListEmptyComponent={
+            <View style={styles.videoEmpty}>
+              <Ionicons name="videocam-off-outline" size={30} color={colors.textSecondary} />
+              <Text style={[styles.empty, { color: colors.textSecondary }]}>Waiting for participants to turn on video…</Text>
+            </View>
+          }
         />
       ) : (
         <View style={styles.audioStage}>
-          <View style={styles.audioOrb}><Ionicons name="people" size={48} color="#FFFFFF" /></View>
-          <Text style={styles.audioTitle}>Group audio call</Text>
-          <Text style={styles.audioHint}>You're connected to the secure call room.</Text>
+          <View style={[styles.audioOrb, { backgroundColor: colors.primary }]}>
+            <Ionicons name="people" size={46} color={colors.onPrimary || '#FFFFFF'} />
+          </View>
+          <Text style={[styles.audioTitle, { color: colors.textPrimary }]}>Group audio call</Text>
+          <Text style={[styles.audioHint, { color: colors.textSecondary }]}>Everyone in the room can hear you when your microphone is on.</Text>
+          <View style={styles.participantList}>
+            {participants.map((participant) => (
+              <View key={participant.identity} style={[styles.participantChip, { backgroundColor: colors.surfaceAlt, borderColor: colors.border || colors.surfaceAlt }]}>
+                <Ionicons name="person-circle-outline" size={18} color={colors.primary} />
+                <Text style={[styles.participantName, { color: colors.textPrimary }]} numberOfLines={1}>
+                  {participant.name || participant.identity}
+                  {participant.isLocal ? ' (you)' : ''}
+                </Text>
+              </View>
+            ))}
+          </View>
         </View>
       )}
+
       <View style={styles.controls}>
-        <TouchableOpacity onPress={toggleMute} style={[styles.control, muted && styles.controlActive]} accessibilityRole="button" accessibilityLabel={muted ? 'Unmute microphone' : 'Mute microphone'}>
-          <Ionicons name={muted ? 'mic-off' : 'mic'} size={23} color="#FFFFFF" />
-          <Text style={styles.controlLabel}>{muted ? 'Unmute' : 'Mute'}</Text>
-        </TouchableOpacity>
+        <Pressable
+          onPress={toggleMute}
+          accessibilityRole="button"
+          accessibilityLabel={muted ? 'Unmute microphone' : 'Mute microphone'}
+          accessibilityState={{ selected: muted }}
+          style={({ pressed }) => controlStyle(pressed, muted)}
+        >
+          <Ionicons name={muted ? 'mic-off' : 'mic'} size={23} color={colors.textPrimary} />
+          <Text style={[styles.controlLabel, { color: colors.textPrimary }]}>{muted ? 'Unmute' : 'Mute'}</Text>
+        </Pressable>
         {callType === 'video' && (
-          <TouchableOpacity onPress={toggleCamera} style={[styles.control, cameraOff && styles.controlActive]} accessibilityRole="button" accessibilityLabel={cameraOff ? 'Turn camera on' : 'Turn camera off'}>
-            <Ionicons name={cameraOff ? 'videocam-off' : 'videocam'} size={23} color="#FFFFFF" />
-            <Text style={styles.controlLabel}>{cameraOff ? 'Camera on' : 'Camera off'}</Text>
-          </TouchableOpacity>
+          <Pressable
+            onPress={toggleCamera}
+            accessibilityRole="button"
+            accessibilityLabel={cameraOff ? 'Turn camera on' : 'Turn camera off'}
+            accessibilityState={{ selected: cameraOff }}
+            style={({ pressed }) => controlStyle(pressed, cameraOff)}
+          >
+            <Ionicons name={cameraOff ? 'videocam-off' : 'videocam'} size={23} color={colors.textPrimary} />
+            <Text style={[styles.controlLabel, { color: colors.textPrimary }]}>{cameraOff ? 'Camera on' : 'Camera off'}</Text>
+          </Pressable>
         )}
-        <TouchableOpacity onPress={onEnd} style={[styles.control, styles.hangup]} accessibilityRole="button" accessibilityLabel="Leave group call">
+        <Pressable
+          onPress={onEnd}
+          accessibilityRole="button"
+          accessibilityLabel="Leave group call"
+          style={({ pressed }) => controlStyle(pressed, false, true)}
+        >
           <Ionicons name="call" size={23} color="#FFFFFF" style={{ transform: [{ rotate: '135deg' }] }} />
-          <Text style={styles.controlLabel}>Leave</Text>
-        </TouchableOpacity>
+          <Text style={[styles.controlLabel, { color: '#FFFFFF' }]}>Leave</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -74,6 +143,7 @@ function GroupRoomContent({ callType, onEnd }) {
 
 export default function GroupCallScreen({ route, navigation }) {
   const { conversationId, conversationName = 'Group', callType = 'audio', roomId = null } = route.params || {};
+  const { colors } = useTheme();
   const [connection, setConnection] = useState(null);
   const [errorText, setErrorText] = useState('');
   const [busy, setBusy] = useState(true);
@@ -100,9 +170,6 @@ export default function GroupCallScreen({ route, navigation }) {
           connectionRef.current = connected;
           setConnection(connected);
         } else if (result?.room?.id) {
-          // The screen may have been dismissed while the create/join request
-          // was in flight. Release the participant slot instead of orphaning
-          // a connected participant in the SFU room.
           await backendFetch(`/group-calls/${result.room.id}/leave`, { method: 'POST' }).catch(() => {});
         }
       } catch (error) {
@@ -137,21 +204,28 @@ export default function GroupCallScreen({ route, navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={colors.isLight ? 'dark-content' : 'light-content'} />
       <View style={styles.header}>
-        <Text style={styles.brand}>ZannyChat</Text>
-        <Text style={styles.title}>{conversationName}</Text>
-        <Text style={styles.subtitle}>{connection?.callType === 'video' || callType === 'video' ? 'Group video call' : 'Group audio call'}</Text>
+        <Text style={[styles.brand, { color: colors.primary }]}>ZannyChat</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={1}>{conversationName}</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+          {connection?.callType === 'video' || callType === 'video' ? 'Group video call' : 'Group audio call'}
+        </Text>
       </View>
       {busy ? (
-        <View style={styles.center}><ActivityIndicator size="large" color="#B6AFFF" /><Text style={styles.empty}>Preparing secure group call…</Text></View>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.empty, { color: colors.textSecondary }]}>Preparing your group call…</Text>
+        </View>
       ) : errorText ? (
         <View style={styles.center}>
-          <Ionicons name="alert-circle-outline" size={40} color="#F3A8A8" />
-          <Text style={styles.error}>{errorText}</Text>
-          <Text style={styles.empty}>Group media requires a configured LiveKit SFU and server credentials.</Text>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back}><Text style={styles.backText}>Go back</Text></TouchableOpacity>
+          <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
+          <Text style={[styles.error, { color: colors.textPrimary }]}>{errorText}</Text>
+          <Text style={[styles.empty, { color: colors.textSecondary }]}>Group media requires a configured LiveKit SFU and server credentials.</Text>
+          <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [styles.back, { backgroundColor: colors.primary }, pressed && { opacity: 0.8 }]} accessibilityRole="button">
+            <Text style={styles.backText}>Go back</Text>
+          </Pressable>
         </View>
       ) : connection ? (
         <LiveKitRoom serverUrl={connection.livekitUrl} token={connection.token} connect={true} audio={true} video={connection.callType === 'video'} options={{ adaptiveStream: true, dynacast: true }}>
@@ -163,28 +237,34 @@ export default function GroupCallScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#11101A' },
-  header: { alignItems: 'center', paddingTop: 16, paddingBottom: 12 },
-  brand: { color: '#B6AFFF', fontSize: 12, fontWeight: '800', letterSpacing: 1.4, textTransform: 'uppercase' },
-  title: { color: '#FFFFFF', fontSize: 22, fontWeight: '800', marginTop: 8 },
-  subtitle: { color: '#AAA7BD', fontSize: 13, marginTop: 4 },
+  safe: { flex: 1 },
+  header: { alignItems: 'center', paddingTop: 14, paddingBottom: 10, paddingHorizontal: 20 },
+  brand: { fontSize: 12, fontWeight: '800', letterSpacing: 1.4, textTransform: 'uppercase' },
+  title: { fontSize: 22, fontWeight: '800', marginTop: 8, maxWidth: '100%' },
+  subtitle: { fontSize: 13, marginTop: 4 },
   room: { flex: 1, justifyContent: 'space-between' },
-  tiles: { padding: 8, gap: 8 },
-  tile: { flex: 1, minHeight: 190, margin: 4, borderRadius: 18, overflow: 'hidden', backgroundColor: '#242235' },
+  connectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, gap: 6 },
+  connectionDot: { width: 7, height: 7, borderRadius: 4 },
+  connectionText: { fontSize: 12, fontWeight: '600' },
+  tiles: { padding: 8, gap: 8, flexGrow: 1 },
+  tile: { flex: 1, minHeight: 190, margin: 4, borderRadius: 18, overflow: 'hidden' },
   video: { flex: 1, minHeight: 190 },
-  tileName: { color: '#FFFFFF', backgroundColor: 'rgba(0,0,0,0.55)', padding: 8, fontSize: 12, fontWeight: '700' },
-  empty: { color: '#AAA7BD', textAlign: 'center', padding: 18, lineHeight: 21 },
-  audioStage: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  audioOrb: { width: 112, height: 112, borderRadius: 56, backgroundColor: '#6557D9', alignItems: 'center', justifyContent: 'center' },
-  audioTitle: { color: '#FFFFFF', fontSize: 21, fontWeight: '800', marginTop: 22 },
-  audioHint: { color: '#AAA7BD', marginTop: 8 },
-  controls: { flexDirection: 'row', justifyContent: 'center', gap: 18, padding: 20, paddingBottom: 28 },
-  control: { width: 72, height: 72, borderRadius: 26, backgroundColor: '#343146', alignItems: 'center', justifyContent: 'center', gap: 4 },
-  controlActive: { backgroundColor: '#6557D9' },
-  hangup: { backgroundColor: '#D74358' },
-  controlLabel: { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
+  tileCaption: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 8, backgroundColor: 'rgba(0,0,0,0.55)' },
+  tileName: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
+  videoEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  empty: { textAlign: 'center', padding: 16, lineHeight: 21 },
+  audioStage: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
+  audioOrb: { width: 108, height: 108, borderRadius: 54, alignItems: 'center', justifyContent: 'center' },
+  audioTitle: { fontSize: 21, fontWeight: '800', marginTop: 20, textAlign: 'center' },
+  audioHint: { marginTop: 8, textAlign: 'center', lineHeight: 20, maxWidth: 300 },
+  participantList: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 22 },
+  participantChip: { maxWidth: '100%', flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: StyleSheet.hairlineWidth, borderRadius: 18, paddingVertical: 7, paddingHorizontal: 10 },
+  participantName: { fontSize: 12, fontWeight: '600', maxWidth: 180 },
+  controls: { flexDirection: 'row', justifyContent: 'center', gap: 14, padding: 18, paddingBottom: 26 },
+  control: { minWidth: 76, minHeight: 72, borderRadius: 24, alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 10 },
+  controlLabel: { fontSize: 11, fontWeight: '700' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28 },
-  error: { color: '#FFFFFF', fontSize: 17, fontWeight: '700', textAlign: 'center', marginTop: 16 },
-  back: { marginTop: 22, backgroundColor: '#6557D9', paddingVertical: 12, paddingHorizontal: 22, borderRadius: 14 },
+  error: { fontSize: 17, fontWeight: '700', textAlign: 'center', marginTop: 16 },
+  back: { marginTop: 22, paddingVertical: 12, paddingHorizontal: 22, borderRadius: 14 },
   backText: { color: '#FFFFFF', fontWeight: '800' },
 });
