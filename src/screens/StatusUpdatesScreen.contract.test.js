@@ -33,3 +33,9 @@ test('Expo metadata points at the current production backend hostname', () => {
   assert.ok(appConfig.includes('https://zannychat-backend-1.onrender.com'));
   assert.equal(appConfig.includes('https://zannychat-backend.onrender.com'), false);
 });
+
+test('Status view receipts use conflict-ignore upsert so repeated opens stay idempotent without duplicate-key errors', () => {
+  assert.ok(service.includes(".from('status_views').upsert("));
+  assert.ok(service.includes("{ onConflict: 'status_id,viewer_id', ignoreDuplicates: true }"));
+  assert.equal(service.includes(".from('status_views').insert("), false);
+});

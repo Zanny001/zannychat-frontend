@@ -130,9 +130,11 @@ export async function recordStatusView(statusId) {
   if (!statusId) throw new Error('Choose a valid status.');
   const { data: auth, error: authError } = await supabase.auth.getUser();
   if (authError || !auth?.user?.id) throw new Error('Sign in to view status updates.');
-  const { error } = await supabase.from('status_views').insert({ status_id: statusId, viewer_id: auth.user.id });
-  // Unique constraint means repeat opens count only once.
-  if (error && error.code !== '23505') throw error;
+  const { error } = await supabase.from('status_views').upsert(
+    { status_id: statusId, viewer_id: auth.user.id },
+    { onConflict: 'status_id,viewer_id', ignoreDuplicates: true },
+  );
+  if (error) throw error;
 }
 
 function normalizeAudience(audience, selectedContactIds = []) {
