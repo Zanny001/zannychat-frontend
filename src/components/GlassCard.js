@@ -23,7 +23,7 @@ export default function GlassCard({
   noPadding = false,
   glow = false,
 }) {
-  const { colors, radii, spacing, elevation } = useTheme();
+  const { colors, radii, spacing, elevation, resolvedMode } = useTheme();
   const radius = borderRadius ?? radii.md;
   const shadow = elevation.card;
 
@@ -45,13 +45,13 @@ export default function GlassCard({
       <View style={[styles.wrap, { borderRadius: radius, borderColor: hexToRgba(colors.textPrimary, 0.1) }, style]}>
         <BlurView
           intensity={intensity}
-          tint="dark"
+          tint={resolvedMode}
           style={StyleSheet.absoluteFill}
           experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
         />
         <View style={[StyleSheet.absoluteFill, { backgroundColor: hexToRgba(colors.surface, tintAlpha) }]} />
         <View style={[!noPadding && { padding: spacing.md }, contentStyle]}>{children}</View>
-        <View pointerEvents="none" style={[styles.specularTop, { backgroundColor: hexToRgba(colors.textPrimary, glow ? 0.24 : 0.13), borderTopLeftRadius: radius, borderTopRightRadius: radius }]} />
+        <View pointerEvents="none" style={[styles.specularTop, { backgroundColor: hexToRgba('#FFFFFF', glow ? 0.24 : 0.13), borderTopLeftRadius: radius, borderTopRightRadius: radius }]} />
         <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.innerEdge, { borderRadius: radius, borderColor: hexToRgba(colors.textPrimary, glow ? 0.16 : 0.08) }]} />
       </View>
     </View>
