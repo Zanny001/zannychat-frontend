@@ -40,7 +40,7 @@ export default function ChatAppearanceScreen({ navigation }) {
           <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: spacing.sm }]}>LIVE PREVIEW</Text>
           <View style={[styles.preview, { backgroundColor: resolveChatCanvas(selected, colors.background), borderColor: colors.border, borderRadius: radii.lg }]}>
             <View style={[styles.previewPill, { backgroundColor: colors.surface, alignSelf: 'flex-start' }]}><Text style={[typography.small, { color: colors.textPrimary }]}>Hey! How's your day going?</Text></View>
-            <View style={[styles.previewPill, { backgroundColor: colors.primary, alignSelf: 'flex-end', marginTop: 10 }]}><Text style={[typography.small, { color: '#FFFFFF' }]}>Much better now ✨</Text></View>
+            <View style={[styles.previewPill, { backgroundColor: colors.primary, alignSelf: 'flex-end', marginTop: 10 }]}><Text style={[typography.small, { color: colors.onPrimary }]}>Much better now ✨</Text></View>
             <View style={[styles.previewMeta, { borderTopColor: `${colors.textPrimary}16` }]}><Ionicons name="lock-closed-outline" size={12} color={colors.textSecondary} /><Text style={[typography.small, { color: colors.textSecondary, marginLeft: 5 }]}>Appearance only · no message content changed</Text></View>
           </View>
         </GlassCard>
