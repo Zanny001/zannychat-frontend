@@ -28,6 +28,7 @@ Royal Neon is the first-run visual direction for ZannyChat: deep obsidian surfac
 - Avoid continuous background animation and expensive per-frame gradients.
 - Respect the operating-system reduced-motion preference.
 - Keep touch targets, screen-reader labels, existing route names and tab semantics intact.
+- Android 10/11 use the tint-and-elevation glass fallback without live backdrop blur; newer Android and iOS retain blur.
 - Verify the experience on Android 10 / lower-powered devices before release.
 - This design-system work does not claim literal extra dimensions; “5D-inspired” describes layered depth, responsive motion and optional sensory feedback.
 

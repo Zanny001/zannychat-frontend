@@ -26,6 +26,8 @@ export default function GlassCard({
   const { colors, radii, spacing, elevation, resolvedMode } = useTheme();
   const radius = borderRadius ?? radii.md;
   const shadow = elevation.card;
+  // Keep the premium tint/elevation on every device, but avoid costly live blur on Android 10/11.
+  const supportsBackdropBlur = Platform.OS !== 'android' || Number(Platform.Version) >= 31;
 
   return (
     <View
@@ -43,12 +45,14 @@ export default function GlassCard({
       ]}
     >
       <View style={[styles.wrap, { borderRadius: radius, borderColor: hexToRgba(colors.textPrimary, 0.1) }, style]}>
-        <BlurView
-          intensity={intensity}
-          tint={resolvedMode}
-          style={StyleSheet.absoluteFill}
-          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
-        />
+        {supportsBackdropBlur ? (
+          <BlurView
+            intensity={intensity}
+            tint={resolvedMode}
+            style={StyleSheet.absoluteFill}
+            experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+          />
+        ) : null}
         <View style={[StyleSheet.absoluteFill, { backgroundColor: hexToRgba(colors.surface, tintAlpha) }]} />
         <View style={[!noPadding && { padding: spacing.md }, contentStyle]}>{children}</View>
         <View pointerEvents="none" style={[styles.specularTop, { backgroundColor: hexToRgba('#FFFFFF', glow ? 0.24 : 0.13), borderTopLeftRadius: radius, borderTopRightRadius: radius }]} />

@@ -113,3 +113,5 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 - Status updates, notifications, storage, export, sessions and help were inspected and already consume the shared theme provider; further interaction/accessibility validation remains open.
 
 - Profile photo viewer close control retains a fixed white foreground on its intentionally black full-screen media stage; dynamic palette foregrounds remain applied to surrounding profile UI.
+
+- GlassCard now skips live backdrop blur on Android API 30 and below while retaining the tinted surface, specular edge and elevation; Android 12+ and iOS keep the blur treatment. Physical Android 10 performance validation remains open.
