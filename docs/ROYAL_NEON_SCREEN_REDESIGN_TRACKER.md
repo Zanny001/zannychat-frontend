@@ -49,9 +49,9 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 
 - [ ] Updates
 - [ ] StatusUpdates
-- [ ] Channels
-- [ ] Polls
-- [ ] Events
+- [~] Channels
+- [~] Polls
+- [~] Events
 
 ### Profiles, groups and discovery
 
