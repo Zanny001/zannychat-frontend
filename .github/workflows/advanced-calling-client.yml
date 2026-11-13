@@ -53,8 +53,8 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      # Compile native Kotlin sources and verify local Expo module autolinking.
-      # This is a compile-only check; it does not assemble or publish an APK.
+      # Compile native Kotlin sources, verify Expo module autolinking, and build a CI-only debug APK.
+      # The APK uses placeholder Firebase config for visual QA; it is not a production release.
       - run: cd android && ./gradlew :app:compileDebugKotlin
       - name: Assemble Android debug APK for physical-device QA
         run: cd android && ./gradlew :app:assembleDebug
