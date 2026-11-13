@@ -344,7 +344,7 @@ export default function LiveHubScreen({ navigation }) {
               {STREAM_FILTERS.map((filter) => {
                 const selected = activeFilter === filter.value;
                 return (
-                  <TouchableOpacity key={filter.value} onPress={() => setActiveFilter(filter.value)} accessibilityRole="radio" accessibilityState={{ checked: selected }} style={{ minHeight: 36, paddingHorizontal: spacing.md, borderRadius: 18, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                  <TouchableOpacity key={filter.value} onPress={() => setActiveFilter(filter.value)} accessibilityRole="radio" accessibilityState={{ checked: selected }} style={{ minHeight: 44, paddingHorizontal: spacing.md, borderRadius: 18, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                     <Text style={[typography.small, { color: selected ? colors.background : colors.textSecondary, fontWeight: '800' }]}>{filter.label}</Text>
                   </TouchableOpacity>
                 );
