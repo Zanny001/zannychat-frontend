@@ -207,13 +207,13 @@ test('channels, status publishing and chat recovery actions expose accessible la
     'Save channel details',
     'Create channel invitation',
     'Delete channel',
-    'Review channel reports',
     'Publish channel post',
     'Send channel comment',
     'Create channel',
     'Join channel with invitation code',
   ]) assert.ok(channels.includes('accessibilityLabel="' + label + '"'), 'Missing channel action label: ' + label);
   assert.ok(channels.includes('accessibilityLabel={member.moderator ?'), 'Channel moderator action needs a dynamic accessible label');
+  assert.ok(channels.includes("accessibilityLabel={showReports ? 'Hide channel reports' : 'Review channel reports'}"), 'Channel report toggle needs a dynamic accessible label');
   assert.ok(channels.includes("accessibilityLabel={selected.subscribed ? 'Unsubscribe from channel'"), 'Channel subscription toggle needs a dynamic accessible label');
 
   const statuses = readFileSync(new URL('StatusUpdatesScreen.js', import.meta.url), 'utf8');
