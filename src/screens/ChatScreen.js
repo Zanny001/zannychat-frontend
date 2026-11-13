@@ -1106,9 +1106,11 @@ export default function ChatScreen({ route, navigation }) {
   ];
 
   const overflowOptions = [
-    ...(compactHeader ? [
+    ...(ultraCompactHeader ? [
       { key: 'audio-call', label: display.isGroup ? 'Start group audio call' : 'Start audio call', icon: 'call-outline', onPress: () => { setActiveSheet(null); display.isGroup ? handleStartGroupCall('audio') : handleStartCall('audio'); } },
       { key: 'video-call', label: display.isGroup ? 'Start group video call' : 'Start video call', icon: 'videocam-outline', onPress: () => { setActiveSheet(null); display.isGroup ? handleStartGroupCall('video') : handleStartCall('video'); } },
+    ] : []),
+    ...(compactHeader ? [
       { key: 'search-messages', label: searchOpen ? 'Close message search' : 'Search messages', icon: 'search-outline', onPress: () => { setActiveSheet(null); toggleSearch(); } },
       { key: 'summarize-chat', label: 'Summarize conversation', icon: 'sparkles-outline', onPress: () => { setActiveSheet(null); handleSummarize(); } },
       ...(display.isGroup ? [{ key: 'manage-group', label: 'Manage group members', icon: 'people-outline', onPress: () => { setActiveSheet(null); navigation.navigate('GroupManagement', { conversation: display }); } }] : []),
