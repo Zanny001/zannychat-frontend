@@ -124,7 +124,7 @@ export default function PrivacySecurityScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Privacy & security" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg }}>
         <GlassCard style={{ marginBottom: spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs }}>
             <Ionicons name="shield-checkmark-outline" size={20} color={colors.accent} />
