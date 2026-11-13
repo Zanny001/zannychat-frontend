@@ -128,3 +128,5 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 - Earlier targeted fixes added explicit labels/disabled states to web LIVE actions, a larger accessible web group-call fallback action, and explicit Create Group selection/loading/error/empty states.
 - The source audit is not a visual/device sign-off. Each of the 45 navigation experiences remains [~] until its visual layout, state transitions, accessibility and regression behavior are validated on supported platforms.
 - Latest source commits are awaiting fresh CI after the touch-target matcher correction. Do not treat earlier workflow results as validation of these new commits.
+
+- Follow-up accessibility pass: profile editing controls announce the active choice and upload busy/disabled state; Help support, call-history retry, drafts retry and Events publish/retry actions now have explicit accessible names and relevant disabled/busy state. Regression assertions cover these contracts.
