@@ -624,7 +624,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
         </View>
         {photo ? <Image source={{ uri: photo.uri }} accessibilityLabel="Selected status photo preview" style={{ width: '100%', height: 190, borderRadius: radii.md }} resizeMode="cover" /> : null}
         {video ? <View style={{ padding: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border }}><Ionicons name="videocam" size={24} color={colors.primary} /><Text style={[typography.small, { color: colors.textPrimary, marginTop: 5 }]}>{video.fileName || 'Video selected'} · maximum 30 seconds / 50 MB</Text></View> : null}
-        {publishError ? <Text accessibilityRole="alert" style={[typography.caption, { color: '#D64545' }]}>{publishError}</Text> : null}
+        {publishError ? <Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger }]}>{publishError}</Text> : null}
         {publishSuccess ? <Text accessibilityRole="status" style={[typography.caption, { color: colors.primary }]}>{publishSuccess}</Text> : null}
         <Text style={[typography.small, { color: colors.textSecondary }]}>Story lifetime</Text>
         <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', gap: spacing.xs }}>

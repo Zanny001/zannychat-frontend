@@ -263,7 +263,7 @@ export default function NewChatScreen({ navigation, route }) {
               marginHorizontal: spacing.md,
               marginBottom: spacing.sm,
               backgroundColor: colors.surface,
-              borderColor: '#ff7777',
+              borderColor: colors.danger, 
             },
           ]}
         >
@@ -279,7 +279,7 @@ export default function NewChatScreen({ navigation, route }) {
               marginHorizontal: spacing.md,
               marginBottom: spacing.sm,
               backgroundColor: colors.surface,
-              borderColor: '#ff7777',
+              borderColor: colors.danger, 
             },
           ]}
         >
@@ -385,7 +385,7 @@ export default function NewChatScreen({ navigation, route }) {
                     {item.name}
                   </Text>
 
-                  {!isShareMode && <TouchableOpacity onPress={() => toggleFavorite(item.id)} accessibilityRole="button" accessibilityLabel={favoriteIds.includes(item.id) ? `Remove ${item.name} from favorites` : `Add ${item.name} to favorites`} accessibilityState={{ selected: favoriteIds.includes(item.id) }} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name={favoriteIds.includes(item.id) ? 'star' : 'star-outline'} size={20} color={favoriteIds.includes(item.id) ? '#F4B740' : colors.textSecondary} /></TouchableOpacity>}
+                  {!isShareMode && <TouchableOpacity onPress={() => toggleFavorite(item.id)} accessibilityRole="button" accessibilityLabel={favoriteIds.includes(item.id) ? `Remove ${item.name} from favorites` : `Add ${item.name} to favorites`} accessibilityState={{ selected: favoriteIds.includes(item.id) }} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name={favoriteIds.includes(item.id) ? 'star' : 'star-outline'} size={20} color={favoriteIds.includes(item.id) ? colors.gold : colors.textSecondary} /></TouchableOpacity>}
 
                   {(isOpening || isSending) && (
                     <ActivityIndicator
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   errorText: {
-    color: '#ff7777',
+    color: colors.danger, 
     fontSize: 14,
   },
 });
