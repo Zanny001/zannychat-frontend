@@ -86,7 +86,7 @@ function GroupRoomContent({ callType, onEnd }) {
         />
       ) : (
         <View style={styles.audioStage}>
-          <View style={[styles.audioOrb, { backgroundColor: colors.primary, shadowColor: colors.primary, borderColor: hexToRgba(colors.onPrimary, 0.28 }]}>
+          <View style={[styles.audioOrb, { backgroundColor: colors.primary, shadowColor: colors.primary, borderColor: hexToRgba(colors.onPrimary, 0.28) }]}>
             <Ionicons name="people" size={46} color={colors.onPrimary || '#FFFFFF'} />
           </View>
           <Text style={[styles.audioTitle, { color: colors.textPrimary }]}>Group audio call</Text>
