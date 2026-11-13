@@ -59,7 +59,7 @@ export default function ChatListItem({ conversation, onPress, onLongPressActions
               <Ionicons name="volume-mute-outline" size={14} color={colors.textSecondary} style={{ marginRight: spacing.xxs }} />
             ) : null}
             <Text
-              style={[typography.bodyStrong, { color: colors.textPrimary, flexShrink: 1 }]}
+              style={[typography.bodyStrong, { color: colors.textPrimary, flexShrink: 1, minWidth: 0 }]}
               numberOfLines={1}
             >
               {displayName}
@@ -79,7 +79,7 @@ export default function ChatListItem({ conversation, onPress, onLongPressActions
           <Text
             style={[
               unreadCount > 0 ? typography.bodyStrong : typography.caption,
-              { color: unreadCount > 0 ? colors.textPrimary : colors.textSecondary, flex: 1 },
+              { color: unreadCount > 0 ? colors.textPrimary : colors.textSecondary, flex: 1, minWidth: 0 },
             ]}
             numberOfLines={1}
           >
@@ -112,10 +112,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   details: { flex: 1, minWidth: 0 },
-  topLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0 },
-  timestamp: { marginLeft: 8, fontVariant: ['tabular-nums'] },
-  bottomLine: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  topLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, minWidth: 0 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0, overflow: 'hidden' },
+  timestamp: { marginLeft: 8, maxWidth: '38%', flexShrink: 0, fontVariant: ['tabular-nums'] },
+  bottomLine: { flexDirection: 'row', alignItems: 'center', marginTop: 4, minWidth: 0 },
   badge: {
     minWidth: 22,
     minHeight: 22,
