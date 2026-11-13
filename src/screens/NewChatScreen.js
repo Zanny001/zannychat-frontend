@@ -63,7 +63,7 @@ export default function NewChatScreen({ navigation, route }) {
   const directorySource = normalizedMemberSearch.length >= 2 ? discoveredContacts : contacts;
   const presenceAwareContacts = directorySource.map((contact) => ({ ...contact, online: onlineIds.has(contact.id) }));
   const activeFilter = onlineOnly ? 'online' : directoryFilter;
-  const visibleContacts = useMemo(() => filterMemberDirectory(presenceAwareContacts, memberSearch, activeFilter, favoriteIds), [directorySource, onlineIds, memberSearch, activeFilter, favoriteIds]);
+  const visibleContacts = useMemo(() => filterMemberDirectory(presenceAwareContacts, normalizedMemberSearch, activeFilter, favoriteIds), [directorySource, onlineIds, memberSearch, activeFilter, favoriteIds]);
 
   // The original directory intentionally contains only people who already
   // share a conversation. Search the privacy-aware public directory for new
