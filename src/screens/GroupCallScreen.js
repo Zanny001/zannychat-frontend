@@ -224,7 +224,7 @@ export default function GroupCallScreen({ route, navigation }) {
           <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
           <Text style={[styles.error, { color: colors.textPrimary }]}>{errorText}</Text>
           <Text style={[styles.empty, { color: colors.textSecondary }]}>Group media requires a configured LiveKit SFU and server credentials.</Text>
-          <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [styles.back, { backgroundColor: colors.primary }, pressed && { opacity: 0.8 }]} accessibilityRole="button">
+          <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [styles.back, { backgroundColor: colors.primary }, pressed && { opacity: 0.8 }]} accessibilityRole="button" accessibilityLabel="Go back">
             <Text style={[styles.backText, { color: colors.onPrimary }]}>Go back</Text>
           </Pressable>
         </View>
