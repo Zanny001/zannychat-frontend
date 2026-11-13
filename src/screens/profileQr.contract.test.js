@@ -34,3 +34,11 @@ test('QR scanner validates payload, resolves a profile, and starts a conversatio
   assert.match(qrScreen, /navigation\.replace\('Chat', \{ conversation \}\)/);
   assert.match(qrScreen, /handledRef\.current/);
 });
+
+
+test('QR deep links from the native camera route into the contact resolver', () => {
+  const navigator = fs.readFileSync(path.join(root, 'src/navigation/AppNavigator.js'), 'utf8');
+  assert.match(navigator, /QRContact:\s*'contact\/:userId'/);
+  assert.match(qrScreen, /route\?\.params\?\.userId/);
+  assert.match(qrScreen, /connectToUser\(userId\)/);
+});
