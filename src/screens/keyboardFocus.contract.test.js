@@ -30,6 +30,15 @@ test('all scrollable form screens preserve handled taps while the keyboard is op
   }
 });
 
+test('searchable lists preserve item taps while the keyboard is open', () => {
+  for (const file of ['ChatListScreen.js', 'NewChatScreen.js', 'ChatScreen.js', 'LiveStreamScreen.js']) {
+    const source = fs.readFileSync(path.join(root, 'src/screens', file), 'utf8');
+    const lists = [...source.matchAll(/<FlatList\\b[^>]*>/g)];
+    assert.ok(lists.length > 0, file + ' should contain its expected list');
+    for (const list of lists) assert.match(list[0], /keyboardShouldPersistTaps=["']handled["']/, file + ' list must preserve handled taps');
+  }
+});
+
 test('shared GlassInput forwards native focus and keyboard props without remounting its TextInput', () => {
   const source = fs.readFileSync(path.join(root, 'src/components/GlassInput.js'), 'utf8');
   assert.match(source, /<TextInput[\s\S]*?\{\.\.\.textInputProps\}/);
