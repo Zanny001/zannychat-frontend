@@ -101,7 +101,7 @@ export default function QRContactScreen({ navigation }) {
             accessibilityState={{ disabled: processing || loadingUser, busy: processing }}
             style={[styles.actionButton, { backgroundColor: colors.primary, borderRadius: radii.pill, opacity: processing || loadingUser ? 0.55 : 1 }]}
           >
-            <Text style={[typography.bodyStrong, { color: '#FFFFFF' }]}>{processing ? 'Connecting…' : scanning ? 'Stop scanning' : 'Open camera scanner'}</Text>
+            <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>{processing ? 'Connecting…' : scanning ? 'Stop scanning' : 'Open camera scanner'}</Text>
           </TouchableOpacity>
         </GlassCard>
       </ScrollView>
