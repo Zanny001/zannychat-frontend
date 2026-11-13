@@ -15,8 +15,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // use a tab-memory fallback for the current runtime when persistence is blocked.
 const memoryWebStorage = new Map();
 function readLocalStorage(key) {
-  try { return typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem(key) : null; }
-  catch (_) { return memoryWebStorage.has(key) ? memoryWebStorage.get(key) : null; }
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const value = window.localStorage.getItem(key);
+      if (value !== null) return value;
+    }
+  } catch (_) { /* Try session storage and then the in-memory fallback. */ }
+  try {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      const value = window.sessionStorage.getItem(key);
+      if (value !== null) return value;
+    }
+  } catch (_) { /* Fall through to tab-memory storage. */ }
+  return memoryWebStorage.has(key) ? memoryWebStorage.get(key) : null;
 }
 function writeLocalStorage(key, value) {
   try {
@@ -25,12 +36,21 @@ function writeLocalStorage(key, value) {
       memoryWebStorage.delete(key);
       return;
     }
+  } catch (_) { /* Try session storage before the memory-only fallback. */ }
+  try {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      window.sessionStorage.setItem(key, value);
+      memoryWebStorage.delete(key);
+      return;
+    }
   } catch (_) { /* Fall through to tab-memory storage. */ }
   memoryWebStorage.set(key, value);
 }
 function removeLocalStorage(key) {
   try { if (typeof window !== 'undefined' && window.localStorage) window.localStorage.removeItem(key); }
-  catch (_) { /* The fallback still needs to be cleared. */ }
+  catch (_) { /* Continue clearing fallback stores. */ }
+  try { if (typeof window !== 'undefined' && window.sessionStorage) window.sessionStorage.removeItem(key); }
+  catch (_) { /* Continue clearing fallback stores. */ }
   memoryWebStorage.delete(key);
 }
 const webStorage = {
