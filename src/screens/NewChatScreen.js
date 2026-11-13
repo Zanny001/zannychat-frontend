@@ -140,9 +140,10 @@ export default function NewChatScreen({ navigation, route }) {
     }
 
     let active = true;
+    setPeopleSearchResults([]);
+    setPeopleSearchLoading(true);
+    setPeopleSearchError('');
     const timer = setTimeout(async () => {
-      setPeopleSearchLoading(true);
-      setPeopleSearchError('');
       try {
         const results = await searchPeople(query, 20);
         if (active) setPeopleSearchResults(Array.isArray(results) ? results : []);
