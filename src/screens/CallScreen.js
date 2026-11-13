@@ -325,7 +325,7 @@ export default function CallScreen({ route, navigation }) {
         <Text style={[styles.phase, { color: secondaryForeground }]}>{phase === 'Connected' ? formatTime(seconds) : phase}</Text>
         {networkNotice ? <Text style={[styles.networkNotice, { color: immersiveVideo ? '#F2D28B' : colors.warning }]}>{networkNotice}</Text> : null}
         {errorText ? <Text style={[styles.error, { color: immersiveVideo ? '#FFB8C0' : colors.danger }]}>{errorText}</Text> : null}
-        {phase === 'Unavailable' ? <TouchableOpacity onPress={() => Alert.alert('Call unavailable', errorText || 'Please try again.')} style={[styles.retry, { backgroundColor: immersiveVideo ? 'rgba(255,255,255,0.12)' : colors.primary, borderRadius: 12 }]}><Text style={[styles.retryText, { color: immersiveVideo ? '#FFFFFF' : colors.onPrimary }]}>Call details</Text></TouchableOpacity> : null}
+        {phase === 'Unavailable' ? <TouchableOpacity onPress={() => Alert.alert('Call unavailable', errorText || 'Please try again.')} accessibilityRole="button" accessibilityLabel="Show call connection details" style={[styles.retry, { backgroundColor: immersiveVideo ? 'rgba(255,255,255,0.12)' : colors.primary, borderRadius: 12 }]}><Text style={[styles.retryText, { color: immersiveVideo ? '#FFFFFF' : colors.onPrimary }]}>Call details</Text></TouchableOpacity> : null}
         {phase !== 'Connected' && phase !== 'Unavailable' ? <ActivityIndicator style={{ marginTop: 18 }} color={foreground} /> : null}
       </View>
       <View style={styles.bottom}>
