@@ -241,7 +241,7 @@ export default function LiveHubScreen({ navigation }) {
                   {VISIBILITIES.map((item) => {
                     const selected = visibility === item.value;
                     return (
-                      <TouchableOpacity key={item.value} onPress={() => setVisibility(item.value)} accessibilityRole="radio" accessibilityState={{ checked: selected }} style={{ flex: 1, minHeight: 48, paddingVertical: spacing.xs, paddingHorizontal: 4, borderRadius: radii.md, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary + '18' : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                      <TouchableOpacity key={item.value} onPress={() => setVisibility(item.value)} accessibilityRole="radio" accessibilityLabel={item.label} accessibilityState={{ checked: selected }} style={{ flex: 1, minHeight: 48, paddingVertical: spacing.xs, paddingHorizontal: 4, borderRadius: radii.md, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary + '18' : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                         <Text style={[typography.small, { color: selected ? colors.primary : colors.textPrimary, fontWeight: '800' }]}>{item.label}</Text>
                       </TouchableOpacity>
                     );
@@ -252,7 +252,7 @@ export default function LiveHubScreen({ navigation }) {
 
               {visibility === 'private' && (
                 <View style={{ gap: spacing.sm }}>
-                  <TouchableOpacity onPress={loadInviteCandidates} disabled={loadingCandidates} accessibilityRole="button" style={{ borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.sm, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs }}>
+                  <TouchableOpacity onPress={loadInviteCandidates} disabled={loadingCandidates} accessibilityRole="button" accessibilityLabel="Load contacts to invite to private LIVE" accessibilityState={{ disabled: loadingCandidates, busy: loadingCandidates }} style={{ borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.sm, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs }}>
                     {loadingCandidates ? <ActivityIndicator color={colors.primary} /> : <Ionicons name="people-outline" size={18} color={colors.primary} />}
                     <Text style={[typography.small, { color: colors.primary, fontWeight: '800' }]}>{loadingCandidates ? 'Loading chat contacts…' : 'Choose people from your chats'}</Text>
                   </TouchableOpacity>
@@ -260,7 +260,7 @@ export default function LiveHubScreen({ navigation }) {
                     {inviteCandidates.map((person) => {
                       const selected = selectedInvitees.includes(person.id);
                       return (
-                        <TouchableOpacity key={person.id} onPress={() => toggleInvitee(person.id)} accessibilityRole="checkbox" accessibilityState={{ checked: selected }} style={{ flexDirection: 'row', alignItems: 'center', padding: spacing.sm, borderRadius: radii.md, backgroundColor: selected ? colors.primary + '18' : colors.surface }}>
+                        <TouchableOpacity key={person.id} onPress={() => toggleInvitee(person.id)} accessibilityRole="checkbox" accessibilityLabel={`Invite ${person.name} to this LIVE stream`} accessibilityState={{ checked: selected }} style={{ flexDirection: 'row', alignItems: 'center', padding: spacing.sm, borderRadius: radii.md, backgroundColor: selected ? colors.primary + '18' : colors.surface }}>
                           <Ionicons name={selected ? 'checkbox' : 'square-outline'} size={19} color={colors.primary} />
                           <Text numberOfLines={1} style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm, flex: 1 }]}>{person.name}</Text>
                         </TouchableOpacity>
@@ -272,7 +272,7 @@ export default function LiveHubScreen({ navigation }) {
                 </View>
               )}
 
-              <TouchableOpacity onPress={() => setAllowGuests((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: allowGuests }} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs }}>
+              <TouchableOpacity onPress={() => setAllowGuests((value) => !value)} accessibilityRole="checkbox" accessibilityLabel="Allow approved viewers to join the LIVE stage" accessibilityState={{ checked: allowGuests }} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs }}>
                 <Ionicons name={allowGuests ? 'checkbox' : 'square-outline'} size={21} color={colors.primary} />
                 <View style={{ flex: 1 }}>
                   <Text style={[typography.small, { color: colors.textPrimary, fontWeight: '700' }]}>Allow approved viewers on stage</Text>
@@ -280,7 +280,7 @@ export default function LiveHubScreen({ navigation }) {
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity disabled={busy} onPress={startLive} accessibilityRole="button" style={{ backgroundColor: busy ? colors.border : colors.primary, borderRadius: radii.md, minHeight: 52, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.sm }}>
+              <TouchableOpacity disabled={busy} onPress={startLive} accessibilityRole="button" accessibilityLabel="Go LIVE" accessibilityState={{ disabled: busy, busy }} style={{ backgroundColor: busy ? colors.border : colors.primary, borderRadius: radii.md, minHeight: 52, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.sm }}>
                 {busy ? <ActivityIndicator color={colors.background} /> : <Ionicons name="radio" size={20} color={colors.background} />}
                 <Text style={[typography.bodyStrong, { color: colors.background }]}>{busy ? 'Connecting…' : 'Go LIVE'}</Text>
               </TouchableOpacity>
@@ -305,7 +305,7 @@ export default function LiveHubScreen({ navigation }) {
                         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.stream.title}</Text>
                         <Text style={[typography.caption, { color: colors.textSecondary }]}>Private invitation</Text>
                       </View>
-                      <TouchableOpacity disabled={busy} onPress={() => acceptInvitation(item)} style={{ backgroundColor: colors.primary, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.md }}>
+                      <TouchableOpacity disabled={busy} onPress={() => acceptInvitation(item)} accessibilityRole="button" accessibilityLabel={`Accept invitation to ${item.stream.title}`} accessibilityState={{ disabled: busy, busy }} style={{ backgroundColor: colors.primary, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.md }}>
                         <Text style={[typography.small, { color: colors.background, fontWeight: '800' }]}>Join</Text>
                       </TouchableOpacity>
                     </View>
@@ -321,7 +321,7 @@ export default function LiveHubScreen({ navigation }) {
                   {followingCreators.map((creator) => (
                     <View key={creator.creator_id} style={{ minWidth: 150, padding: spacing.sm, borderRadius: radii.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
                       <Text numberOfLines={1} style={[typography.small, { color: colors.textPrimary, fontWeight: '800' }]}>{creator.name}</Text>
-                      <TouchableOpacity disabled={busy} onPress={() => toggleFollow(creator.creator_id)} style={{ marginTop: spacing.xs }}>
+                      <TouchableOpacity disabled={busy} onPress={() => toggleFollow(creator.creator_id)} accessibilityRole="button" accessibilityLabel={`Unfollow ${creator.name}`} accessibilityState={{ disabled: busy, busy }} style={{ marginTop: spacing.xs }}>
                         <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>Unfollow</Text>
                       </TouchableOpacity>
                     </View>
@@ -344,7 +344,7 @@ export default function LiveHubScreen({ navigation }) {
               {STREAM_FILTERS.map((filter) => {
                 const selected = activeFilter === filter.value;
                 return (
-                  <TouchableOpacity key={filter.value} onPress={() => setActiveFilter(filter.value)} accessibilityRole="radio" accessibilityState={{ checked: selected }} style={{ minHeight: 44, paddingHorizontal: spacing.md, borderRadius: 18, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                  <TouchableOpacity key={filter.value} onPress={() => setActiveFilter(filter.value)} accessibilityRole="radio" accessibilityLabel={`Show ${filter.label} LIVE streams`} accessibilityState={{ checked: selected }} style={{ minHeight: 44, paddingHorizontal: spacing.md, borderRadius: 18, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                     <Text style={[typography.small, { color: selected ? colors.background : colors.textSecondary, fontWeight: '800' }]}>{filter.label}</Text>
                   </TouchableOpacity>
                 );
@@ -375,7 +375,7 @@ export default function LiveHubScreen({ navigation }) {
                 <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
               </TouchableOpacity>
               {item.creator_id && !item.is_creator && (
-                <TouchableOpacity disabled={busy} onPress={() => toggleFollow(item.creator_id)} accessibilityRole="button" style={{ paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, borderRadius: radii.md, backgroundColor: followingIds.includes(item.creator_id) ? colors.surface : colors.primary + '18', borderWidth: 1, borderColor: colors.border }}>
+                <TouchableOpacity disabled={busy} onPress={() => toggleFollow(item.creator_id)} accessibilityRole="button" accessibilityLabel={followingIds.includes(item.creator_id) ? `Unfollow ${item.creator_name || item.title || 'LIVE creator'}` : `Follow ${item.creator_name || item.title || 'LIVE creator'}`} accessibilityState={{ disabled: busy, busy }} style={{ paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, borderRadius: radii.md, backgroundColor: followingIds.includes(item.creator_id) ? colors.surface : colors.primary + '18', borderWidth: 1, borderColor: colors.border }}>
                   <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>{followingIds.includes(item.creator_id) ? 'Following' : 'Follow'}</Text>
                 </TouchableOpacity>
               )}
