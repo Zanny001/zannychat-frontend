@@ -63,7 +63,7 @@ export default function CallHistoryScreen({ navigation }) {
         </View>
         {error ? <View style={{ padding: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, gap: spacing.sm }}>
           <Text accessibilityRole="alert" style={[typography.body, { color: colors.textSecondary }]}>{error}</Text>
-          <TouchableOpacity onPress={() => load(true)} accessibilityRole="button"><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => load(true)} accessibilityRole="button" accessibilityLabel="Retry loading call history" style={{ minHeight: 44, justifyContent: 'center' }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity>
         </View> : null}
         {loading ? <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} /> : null}
         {!loading && !error && calls.length === 0 ? <View style={{ alignItems: 'center', paddingVertical: spacing.xxl || spacing.xl, gap: spacing.sm }}>
