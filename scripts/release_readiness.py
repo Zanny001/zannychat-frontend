@@ -44,7 +44,10 @@ try:
     check("Phone discovery opt-in hardening migration exists", hardening_migration.is_file(), str(hardening_migration.relative_to(repo)) if hardening_migration.exists() else "required follow-up migration missing")
     check("Native contact package is declared for SDK 57", declared.get("expo-contacts") == "57.0.8", f"declared={declared.get('expo-contacts')}")
     check("Media library package is declared for SDK 57", declared.get("expo-media-library", "").lstrip("~^") == "57.0.6", f"declared={declared.get('expo-media-library')}")
-    check("WebRTC native dependencies are declared and pinned", declared.get("react-native-webrtc") == "124.0.7" and declared.get("@config-plugins/react-native-webrtc") == "15.0.2", "native package and Expo config plugin must remain explicit; SDK 57 compatibility still needs a successful native build")
+    livekit_webrtc = declared.get("@livekit/react-native-webrtc")
+    livekit_lock = lock.get("packages", {}).get("node_modules/@livekit/react-native-webrtc", {}).get("version")
+    webrtc_plugin = declared.get("@config-plugins/react-native-webrtc")
+    check("LiveKit WebRTC native dependencies are declared and pinned", livekit_webrtc == "150.1.1" and livekit_lock == livekit_webrtc and webrtc_plugin == "15.0.2" and "from '@livekit/react-native-webrtc'" in (root / "src" / "screens" / "CallScreen.js").read_text(), f"LiveKit WebRTC declared={livekit_webrtc}, locked={livekit_lock}, Expo plugin={webrtc_plugin}; native build validation is a separate gate")
     call_screen = (root / "src" / "screens" / "CallScreen.js").read_text()
     call_service = (root / "src" / "services" / "calls.js").read_text()
     call_migration = backend / "supabase" / "migrations" / "0059_realtime_audio_video_calls.sql"
@@ -60,11 +63,20 @@ try:
     check("Client roles cannot create objects in exposed public schema", public_schema_hardening.is_file() and "revoke create on schema public from public, anon, authenticated" in public_schema_hardening.read_text().lower(), str(public_schema_hardening.relative_to(repo)) if public_schema_hardening.exists() else "schema privilege hardening migration missing")
     definer_hardening = backend / "supabase" / "migrations" / "0063_harden_qualified_definer_search_paths.sql"
     definer_hardening_text = definer_hardening.read_text().lower() if definer_hardening.is_file() else ""
-    check("Reviewed SECURITY DEFINER routines use empty search_path", definer_hardening.is_file() and definer_hardening_text.count("set search_path = ''") == 10, "migration 0063 must harden all ten reviewed function signatures")
-    cleanup_binding = backend / "supabase" / "migrations" / "0068_bind_attachment_cleanup_to_conversation.sql"
-    cleanup_binding_text = cleanup_binding.read_text().lower() if cleanup_binding.is_file() else ""
+    definer_signatures = definer_hardening_text.count("'public.")
+    check("Reviewed SECURITY DEFINER routines use empty search_path", definer_hardening.is_file() and definer_signatures == 10 and "foreach v_signature in array array[" in definer_hardening_text and "to_regprocedure(v_signature)" in definer_hardening_text and "alter function %s set search_path = %l" in definer_hardening_text and "''" in definer_hardening_text, f"expected ten reviewed signatures guarded by a conditional ALTER FUNCTION loop; found {definer_signatures}")
+    migrations_dir = backend / "supabase" / "migrations"
+    cleanup_binding_files = list(migrations_dir.glob("*_bind_attachment_cleanup_to_conversation_0068.sql"))
+    cleanup_claim_files = list(migrations_dir.glob("*_attachment_cleanup_claim_conversation_binding_0072.sql"))
+    cleanup_binding_text = cleanup_binding_files[0].read_text().lower() if len(cleanup_binding_files) == 1 else ""
+    cleanup_claim_text = cleanup_claim_files[0].read_text().lower() if len(cleanup_claim_files) == 1 else ""
     cleanup_worker = backend / "src" / "jobs" / "messageAttachmentCleanup.js"
-    check("Attachment cleanup is bound to its source conversation", cleanup_binding.is_file() and "old.conversation_id" in cleanup_binding_text and "conversation_id" in cleanup_worker.read_text() and "does not belong to the queued message conversation" in cleanup_worker.read_text(), "worker must refuse cross-conversation Storage deletion")
+    cleanup_worker_text = cleanup_worker.read_text().lower() if cleanup_worker.is_file() else ""
+    cleanup_test = backend / "tests" / "messageAttachmentCleanup.test.cjs"
+    cleanup_test_text = cleanup_test.read_text().lower() if cleanup_test.is_file() else ""
+    ownership_guard = cleanup_worker_text.find("does not belong to the queued message conversation")
+    storage_delete = cleanup_worker_text.find(".remove([object.path])")
+    check("Attachment cleanup is bound to its source conversation", len(cleanup_binding_files) == 1 and "old.conversation_id" in cleanup_binding_text and len(cleanup_claim_files) == 1 and "conversation_id uuid" in cleanup_claim_text and "q.conversation_id" in cleanup_claim_text and ownership_guard >= 0 and storage_delete > ownership_guard and "refuses to delete an object outside the message conversation" in cleanup_test_text, "timestamped migrations must bind and return conversation_id; worker and regression test must reject cross-conversation deletion before Storage removal")
     group_privacy = backend / "src" / "routes" / "conversations.js"
     group_privacy_helper = backend / "src" / "utils" / "groupInvitePrivacy.cjs"
     check("Group invitation preferences and blocks are enforced before membership writes", group_privacy.is_file() and group_privacy_helper.is_file() and "evaluateGroupInvitePrivacy" in group_privacy.read_text() and "group_invite_permission" in group_privacy.read_text() and "blocked_users" in group_privacy.read_text(), "trusted group creation must enforce recipient privacy and block state")
