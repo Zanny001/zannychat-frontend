@@ -21,6 +21,8 @@ const keyboardScrollableForms = [
   'ScheduledMessagesScreen.js',
   'StatusUpdatesScreen.js',
   'LiveStreamScreen.web.js',
+  'PinnedMessagesScreen.js',
+  'SavedMessagesScreen.js',
 ];
 
 test('all scrollable form screens preserve handled taps while the keyboard is open', () => {
@@ -31,7 +33,7 @@ test('all scrollable form screens preserve handled taps while the keyboard is op
 });
 
 test('searchable lists preserve item taps while the keyboard is open', () => {
-  for (const file of ['ChatListScreen.js', 'NewChatScreen.js', 'ChatScreen.js', 'LiveStreamScreen.js']) {
+  for (const file of ['ChatListScreen.js', 'NewChatScreen.js', 'ChatScreen.js', 'LiveStreamScreen.js', 'LiveHubScreen.js']) {
     const source = fs.readFileSync(path.join(root, 'src/screens', file), 'utf8');
     const lists = [...source.matchAll(/<FlatList\b[^>]*>/g)];
     assert.ok(lists.length > 0, file + ' should contain its expected list');
