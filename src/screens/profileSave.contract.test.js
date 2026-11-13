@@ -17,25 +17,25 @@ test('profile editor keeps every reusable section and control at module scope', 
 });
 
 test('save validates username, birthday, website and waits for both persisted profile records', () => {
-  assert.match(screen, /\\^\\[a-z0-9_\\]\\{3,24\\}\\$/);
-  assert.match(screen, /validateBirthday\\(details\\.birthday\\)/);
-  assert.match(screen, /validateWebsite\\(details\\.website\\)/);
+  assert.match(screen, /\^\[a-z0-9_\]\{3,24\}\$/);
+  assert.match(screen, /validateBirthday\(details\.birthday\)/);
+  assert.match(screen, /validateWebsite\(details\.website\)/);
   const identityWrite = screen.indexOf('await updateProfile(');
   const detailsWrite = screen.indexOf('await updateMyProfileDetails(');
   assert.ok(identityWrite >= 0 && detailsWrite > identityWrite, 'both profile writes must be awaited');
-  assert.match(screen, /Alert\\.alert\\('Profile saved'/);
+  assert.match(screen, /Alert\.alert\('Profile saved'/);
   assert.match(screen, /Some changes were saved/);
 });
 
 test('save cannot run while profile media is uploading and username conflicts are explained', () => {
-  assert.match(screen, /disabled=\\{saving \\|\\| uploadingPhoto \\|\\| uploadingCover\\}/);
-  assert.match(screen, /uploadingPhoto \\|\\| uploadingCover/);
-  assert.match(screen, /duplicate\\|unique/);
+  assert.match(screen, /disabled=\{saving \|\| uploadingPhoto \|\| uploadingCover\}/);
+  assert.match(screen, /uploadingPhoto \|\| uploadingCover/);
+  assert.match(screen, /duplicate\|unique/);
   assert.match(screen, /That username is already taken/);
 });
 
 test('profile API persists username in profiles and optional details in the owner profile_details row', () => {
-  assert.match(api, /\\.from\\('profiles'\\)[\\s\\S]*?\\.update\\([\\s\\S]*?username: normalizedUsername/);
-  assert.match(api, /\\.from\\('profile_details'\\)[\\s\\S]*?\\.upsert\\(row, \\{ onConflict: 'user_id' \\}\\)/);
+  assert.match(api, /\.from\('profiles'\)[\s\S]*?\.update\([\s\S]*?username: normalizedUsername/);
+  assert.match(api, /\.from\('profile_details'\)[\s\S]*?\.upsert\(row, \{ onConflict: 'user_id' \}\)/);
   assert.match(api, /grant|profile_details/);
 });
