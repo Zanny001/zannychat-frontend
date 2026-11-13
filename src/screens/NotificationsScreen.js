@@ -129,7 +129,7 @@ export default function NotificationsScreen({ navigation }) {
 
         <GlassCard style={{ marginBottom: spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ flex: 1, marginRight: spacing.md }}>
+            <View style={{ flex: 1, minWidth: 0, marginRight: spacing.md }}>
               <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Quiet hours</Text>
               <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>Silence banners and sounds while the app is open</Text>
             </View>
@@ -181,7 +181,7 @@ export default function NotificationsScreen({ navigation }) {
         <GlassCard>
           <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
             <Ionicons name="volume-mute-outline" size={18} color={colors.accent} style={{ marginTop: 1 }} />
-            <Text style={[typography.caption, { color: colors.textSecondary, flex: 1, marginLeft: spacing.sm, lineHeight: 20 }]}>
+            <Text style={[typography.caption, { color: colors.textSecondary, flex: 1, minWidth: 0, marginLeft: spacing.sm, lineHeight: 20 }]}>
               To mute one conversation, open it and tap ⋮ → Mute. Conversation mute is separate from these device-level presentation settings.
             </Text>
           </View>
