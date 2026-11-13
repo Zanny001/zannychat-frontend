@@ -16,14 +16,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const memoryWebStorage = new Map();
 function readLocalStorage(key) {
   try {
-    if (typeof window !== 'undefined' && window.sessionStorage) {
-      const value = window.sessionStorage.getItem(key);
-      if (value !== null) return value;
-    }
-  } catch (_) { /* Try persistent local storage and then memory. */ }
-  try {
     if (typeof window !== 'undefined' && window.localStorage) {
       const value = window.localStorage.getItem(key);
+      if (value !== null) return value;
+    }
+  } catch (_) { /* Try session storage and then memory. */ }
+  try {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      const value = window.sessionStorage.getItem(key);
       if (value !== null) return value;
     }
   } catch (_) { /* Fall through to tab-memory storage. */ }
@@ -37,7 +37,10 @@ function writeLocalStorage(key, value) {
       memoryWebStorage.delete(key);
       return;
     }
-  } catch (_) { /* Try session storage before the memory-only fallback. */ }
+  } catch (_) {
+    // Remove a stale local value when reads still work but writes are blocked.
+    try { window.localStorage?.removeItem(key); } catch (_) {}
+  }
   try {
     if (typeof window !== 'undefined' && window.sessionStorage) {
       window.sessionStorage.setItem(key, value);
