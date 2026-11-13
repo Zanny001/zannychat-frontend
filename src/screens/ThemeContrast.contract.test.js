@@ -198,3 +198,37 @@ test('native LIVE moderation, discovery and call recovery actions have explicit 
   const call = readFileSync(new URL('CallScreen.js', import.meta.url), 'utf8');
   assert.match(call, /accessibilityLabel="Show call connection details"/);
 });
+
+test('channels, status publishing and chat recovery actions expose accessible labels', () => {
+  const channels = readFileSync(new URL('ChannelsScreen.js', import.meta.url), 'utf8');
+  for (const label of [
+    'Retry loading community feed',
+    'Refresh channels',
+    'Save channel details',
+    'Create channel invitation',
+    'Delete channel',
+    'Review channel reports',
+    'Publish channel post',
+    'Send channel comment',
+    'Create channel',
+    'Join channel with invitation code',
+  ]) assert.ok(channels.includes('accessibilityLabel="' + label + '"'), 'Missing channel action label: ' + label);
+  assert.ok(channels.includes('accessibilityLabel={member.moderator ?'), 'Channel moderator action needs a dynamic accessible label');
+
+  const statuses = readFileSync(new URL('StatusUpdatesScreen.js', import.meta.url), 'utf8');
+  for (const label of [
+    'Add or change status photo',
+    'Remove selected status media',
+    'Add or change status video',
+    'Choose status audience contacts',
+    'Publish status',
+    'Manage excluded status contacts',
+    'Refresh statuses',
+    'Close status privacy settings',
+  ]) assert.ok(statuses.includes('accessibilityLabel="' + label + '"'), 'Missing status action label: ' + label);
+
+  const chat = readFileSync(new URL('ChatScreen.js', import.meta.url), 'utf8');
+  assert.match(chat, /accessibilityLabel="Retry sending pending messages"/);
+  assert.match(chat, /accessibilityLabel="Dismiss message error"/);
+  assert.match(chat, /accessibilityLabel="Send selected media"/);
+});
