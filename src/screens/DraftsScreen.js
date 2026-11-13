@@ -76,7 +76,7 @@ export default function DraftsScreen({ navigation }) {
             <View style={{ width: 44, height: 44, borderRadius: 15, backgroundColor: `${colors.primary}20`, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="document-text-outline" size={22} color={colors.primary} />
             </View>
-            <View style={{ flex: 1, marginLeft: spacing.md }}>
+            <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.md }}>
               <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Pick up where you left off</Text>
               <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>Drafts stay on this device and do not sync across devices.</Text>
             </View>
@@ -107,7 +107,7 @@ export default function DraftsScreen({ navigation }) {
               <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
                 <TouchableOpacity onPress={() => openDraft(draft)} accessibilityRole="button" accessibilityLabel={`Continue draft for ${title}`} style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start' }}>
                   <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: `${colors.accent}18`, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.accent} /></View>
-                  <View style={{ flex: 1, marginLeft: spacing.md }}>
+                  <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.md }}>
                     <Text style={[typography.bodyStrong, { color: colors.textPrimary }]} numberOfLines={1}>{title}</Text>
                     <Text style={[typography.body, { color: colors.textSecondary, marginTop: 5 }]} numberOfLines={3}>{draft.text}</Text>
                     <Text style={[typography.caption, { color: colors.primary, marginTop: spacing.sm }]}>{updatedLabel(draft.updatedAt).toUpperCase()}  ·  CONTINUE DRAFT</Text>
