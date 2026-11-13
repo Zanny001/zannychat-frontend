@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
 import { useTheme } from '../theme/ThemeContext';
+import { hexToRgba } from '../utils/color';
 import GlassCard from '../components/GlassCard';
 
 const VISIBILITIES = [
@@ -219,15 +220,15 @@ export default function LiveHubScreen({ navigation }) {
 
             <GlassCard glow style={{ marginHorizontal: spacing.md, marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.md }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#E34D68' + '20', alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="videocam" size={22} color="#E34D68" />
+                <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: hexToRgba(colors.danger, 0.12), alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="videocam" size={22} color={colors.danger} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Start a broadcast</Text>
                   <Text style={[typography.caption, { color: colors.textSecondary }]}>Set the mood before you go live</Text>
                 </View>
-                <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, backgroundColor: '#E34D68' + '18' }}>
-                  <Text style={[typography.caption, { color: '#E34D68', fontWeight: '800' }]}>LIVE</Text>
+                <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, backgroundColor: hexToRgba(colors.danger, 0.1) }}>
+                  <Text style={[typography.caption, { color: colors.danger, fontWeight: '800' }]}>LIVE</Text>
                 </View>
               </View>
 
@@ -351,21 +352,21 @@ export default function LiveHubScreen({ navigation }) {
             </ScrollView>
 
             {loading && <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing.md }} />}
-            {!!error && <Text accessibilityRole="alert" style={[typography.caption, { color: '#D64545', paddingHorizontal: spacing.md, paddingBottom: spacing.sm }]}>{error}</Text>}
+            {!!error && <Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger, paddingHorizontal: spacing.md, paddingBottom: spacing.sm }]}>{error}</Text>}
           </View>
         }
         renderItem={({ item }) => (
           <GlassCard style={{ marginHorizontal: spacing.md, marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
               <TouchableOpacity disabled={busy} onPress={() => joinLive(item)} accessibilityRole="button" accessibilityLabel={'Join LIVE: ' + item.title} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                <View style={{ width: 48, height: 48, borderRadius: 16, backgroundColor: '#E34D68' + '18', alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="videocam" size={23} color="#E34D68" />
+                <View style={{ width: 48, height: 48, borderRadius: 16, backgroundColor: hexToRgba(colors.danger, 0.1), alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="videocam" size={23} color={colors.danger} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.xs }}>
                     <Text numberOfLines={2} style={[typography.bodyStrong, { color: colors.textPrimary, flexShrink: 1 }]}>{item.title}</Text>
-                    <View style={{ paddingHorizontal: 7, paddingVertical: 3, borderRadius: 10, backgroundColor: '#E34D68' + '18' }}>
-                      <Text style={[typography.caption, { color: '#E34D68', fontWeight: '900' }]}>● LIVE</Text>
+                    <View style={{ paddingHorizontal: 7, paddingVertical: 3, borderRadius: 10, backgroundColor: hexToRgba(colors.danger, 0.1) }}>
+                      <Text style={[typography.caption, { color: colors.danger, fontWeight: '900' }]}>● LIVE</Text>
                     </View>
                   </View>
                   {!!item.description && <Text numberOfLines={2} style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>{item.description}</Text>}
