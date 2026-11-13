@@ -175,13 +175,14 @@ function MainTabNavigator() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarIcon: ({ color, size, focused }) => {
-          const icons = { Chats: 'chatbubbles', Calls: 'call', Updates: 'camera', Channels: 'compass', Profile: 'person-circle' };
+          const icons = { Chats: 'chatbubbles', Calls: 'call', LIVE: 'radio', Updates: 'camera', Channels: 'compass', Profile: 'person-circle' };
           return <TabIcon name={icons[route.name]} color={color} size={size} focused={focused} accent={colors.primary} cameraAccent={colors.accent} cameraForeground={colors.onAccent} isCamera={route.name === 'Updates'} reducedMotion={reducedMotion} />;
         },
       })}
     >
       <MainTabs.Screen name="Chats" component={ChatListScreen} />
       <MainTabs.Screen name="Calls" component={CallHistoryScreen} />
+      <MainTabs.Screen name="LIVE" component={LiveHubScreen} options={{ tabBarLabel: "LIVE" }} />
       <MainTabs.Screen name="Updates" component={StatusUpdatesScreen} options={{ tabBarLabel: 'Updates' }} />
       <MainTabs.Screen name="Channels" component={ChannelsScreen} options={{ tabBarLabel: 'Explore' }} />
       <MainTabs.Screen name="Profile" component={ProfileScreen} />
