@@ -677,7 +677,10 @@ export async function fetchContactById(userId) {
   const { data: authData } = await supabase.auth.getUser();
   if (!authData?.user) throw new Error('Sign in before connecting to a contact.');
   if (authData.user.id === userId) throw new Error("That's your own QR code. Scan someone else's code.");
-  const { data, error } = await supabase.rpc('get_contact_directory', { p_user_id: userId });
+  // QR codes can introduce two people who have never chatted. The legacy
+  // contact-directory RPC intentionally requires a shared conversation;
+  // resolve the QR through the privacy-aware public profile lookup instead.
+  const { data, error } = await supabase.rpc('get_public_profile_by_id', { p_user_id: userId });
   if (error) throw error;
   const profile = Array.isArray(data) ? data[0] : null;
   if (!profile) {
