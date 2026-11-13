@@ -283,18 +283,26 @@ export async function getCurrentUser() {
 // don't survive an app restart — same honesty tradeoff as everything
 // else that's mock-backed.
 export async function updateProfile({ name, status, username }) {
+  const normalizedUsername = username === undefined
+    ? undefined
+    : String(username).trim().replace(/^@/, '').toLowerCase();
+  if (normalizedUsername !== undefined && !/^[a-z0-9_]{3,24}$/.test(normalizedUsername)) {
+    throw new Error('Choose a username using 3–24 letters, numbers or underscores.');
+  }
+
   if (!SUPABASE_ENABLED) {
     if (name !== undefined) mockUser.name = name;
     if (status !== undefined) mockUser.status = status;
-    if (username !== undefined) mockUser.username = username;
+    if (normalizedUsername !== undefined) mockUser.username = normalizedUsername;
     return mockUser;
   }
 
   const { data: authData } = await supabase.auth.getUser();
+  if (!authData?.user?.id) throw new Error('Sign in to update your profile.');
   const { data, error } = await supabase
     .from('profiles')
-    .update({ ...(name !== undefined && { name }), ...(status !== undefined && { status }), ...(username !== undefined && { username: username || null }) })
-    .eq('id', authData?.user?.id)
+    .update({ ...(name !== undefined && { name }), ...(status !== undefined && { status }), ...(normalizedUsername !== undefined && { username: normalizedUsername }) })
+    .eq('id', authData.user.id)
     .select()
     .single();
 
@@ -696,6 +704,33 @@ export async function fetchContacts() {
   if (!SUPABASE_ENABLED) return MOCK_CONTACTS;
 
   const { data, error } = await supabase.rpc('get_contact_directory');
+  if (error) throw error;
+  return (Array.isArray(data) ? data : []).map(normalizeProfile);
+}
+
+// Search all discoverable members without exposing private auth metadata.
+// The database RPC enforces profile visibility, block relationships and
+// bounded pagination; the shared-chat directory remains a separate source.
+export async function searchPublicProfiles(query, { limit = 20, offset = 0 } = {}) {
+  const normalizedQuery = String(query || '').trim().replace(/^@/, '').toLowerCase();
+  if (normalizedQuery.length < 2) return [];
+  if (normalizedQuery.length > 40) throw new Error('Search must be 40 characters or fewer.');
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 20, 30));
+  const safeOffset = Math.max(0, Math.min(Number(offset) || 0, 1000));
+
+  if (!SUPABASE_ENABLED) {
+    return MOCK_CONTACTS.filter((member) =>
+      [member.name, member.username].some((value) =>
+        typeof value === 'string' && value.toLowerCase().includes(normalizedQuery)
+      )
+    ).slice(safeOffset, safeOffset + safeLimit);
+  }
+
+  const { data, error } = await supabase.rpc('search_public_profiles', {
+    p_query: normalizedQuery,
+    p_limit: safeLimit,
+    p_offset: safeOffset,
+  });
   if (error) throw error;
   return (Array.isArray(data) ? data : []).map(normalizeProfile);
 }
