@@ -119,7 +119,7 @@ ${invite.token}` });
     <Header title="Group members" subtitle={`${groupMetadata.name || conversation?.participant?.name || 'Group'} · ${members.length} members`} onBack={() => navigation.goBack()} />
     {loading ? <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} /> : error ? <View style={{ padding: spacing.lg }}>
       <Text style={[typography.body, { color: colors.textSecondary }]}>{error}</Text>
-      <TouchableOpacity onPress={refresh} accessibilityRole="button" style={{ paddingVertical: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity>
+      <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading group members" style={{ paddingVertical: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity>
     </View> : <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xl }}>
       <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Manage members</Text>
@@ -138,7 +138,7 @@ ${invite.token}` });
           </View>
           <Switch value={Boolean(groupMetadata.adminOnlyMessages)} onValueChange={(adminOnlyMessages) => setGroupMetadata((current) => ({ ...current, adminOnlyMessages }))} accessibilityLabel="Only admins can send group messages" trackColor={{ false: colors.border, true: colors.primary }} />
         </View>
-        <TouchableOpacity disabled={metadataBusy || !groupMetadata.name.trim() || groupMetadata.name.trim().length > 80 || groupMetadata.topic.length > 80 || groupMetadata.description.length > 500} onPress={saveMetadata} accessibilityRole="button" style={[actionStyle, { alignSelf: 'flex-start', backgroundColor: colors.primary, borderColor: colors.primary, opacity: metadataBusy ? 0.6 : 1 }]}>
+        <TouchableOpacity disabled={metadataBusy || !groupMetadata.name.trim() || groupMetadata.name.trim().length > 80 || groupMetadata.topic.length > 80 || groupMetadata.description.length > 500} onPress={saveMetadata} accessibilityRole="button" accessibilityLabel="Save group details" accessibilityState={{ disabled: metadataBusy || !groupMetadata.name.trim() || groupMetadata.name.trim().length > 80 || groupMetadata.topic.length > 80 || groupMetadata.description.length > 500, busy: metadataBusy }} style={[actionStyle, { alignSelf: 'flex-start', backgroundColor: colors.primary, borderColor: colors.primary, opacity: metadataBusy ? 0.6 : 1 }]}>
           {metadataBusy ? <ActivityIndicator color={colors.onPrimary} /> : <Text style={[typography.caption, { color: colors.onPrimary }]}>Save group details</Text>}
         </TouchableOpacity>
       </GlassCard> : <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
@@ -148,7 +148,7 @@ ${invite.token}` });
       {isAdmin ? <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Invite people</Text>
         <Text style={[typography.caption, { color: colors.textSecondary }]}>Create a one-time-visible invite link. It expires in 7 days and can be used by up to 25 new members. You can revoke active invites through the backend if a link is shared accidentally.</Text>
-        <TouchableOpacity disabled={inviteBusy} onPress={createInvite} accessibilityRole="button" style={[actionStyle, { alignSelf: 'flex-start', backgroundColor: colors.primary, borderColor: colors.primary, opacity: inviteBusy ? 0.6 : 1 }]}>
+        <TouchableOpacity disabled={inviteBusy} onPress={createInvite} accessibilityRole="button" accessibilityLabel="Create and share group invitation" accessibilityState={{ disabled: inviteBusy, busy: inviteBusy }} style={[actionStyle, { alignSelf: 'flex-start', backgroundColor: colors.primary, borderColor: colors.primary, opacity: inviteBusy ? 0.6 : 1 }]}>
           {inviteBusy ? <ActivityIndicator color={colors.onPrimary} /> : <Text style={[typography.caption, { color: colors.onPrimary }]}>Create and share invite</Text>}
         </TouchableOpacity>
         {activeInvite ? <Text style={[typography.caption, { color: colors.textSecondary }]}>Latest invite expires {new Date(activeInvite.expiresAt).toLocaleString()} · up to {activeInvite.maxUses} uses. Its raw token is shown only once when shared.</Text> : null}
@@ -157,7 +157,7 @@ ${invite.token}` });
           {groupInvites.map((invite) => <View key={invite.id} style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm, gap: spacing.xs }}>
             <Text style={[typography.caption, { color: colors.textPrimary }]}>{invite.status === 'used_up' ? 'Used up' : invite.status === 'expired' ? 'Expired' : invite.status === 'revoked' ? 'Revoked' : 'Active'} · {invite.useCount}/{invite.maxUses} uses</Text>
             <Text style={[typography.small, { color: colors.textSecondary }]}>Expires {new Date(invite.expiresAt).toLocaleString()}</Text>
-            {invite.status === 'active' ? <TouchableOpacity disabled={inviteBusy} onPress={() => revokeInvite(invite)} accessibilityRole="button" style={[actionStyle, { alignSelf: 'flex-start', borderColor: colors.danger || colors.border }]}><Text style={[typography.caption, { color: colors.danger || colors.textPrimary }]}>Revoke invite</Text></TouchableOpacity> : null}
+            {invite.status === 'active' ? <TouchableOpacity disabled={inviteBusy} onPress={() => revokeInvite(invite)} accessibilityRole="button" accessibilityLabel="Revoke group invitation" accessibilityState={{ disabled: inviteBusy, busy: inviteBusy }} style={[actionStyle, { alignSelf: 'flex-start', borderColor: colors.danger || colors.border }]}><Text style={[typography.caption, { color: colors.danger || colors.textPrimary }]}>Revoke invite</Text></TouchableOpacity> : null}
           </View>)}
         </View> : null}
       </GlassCard> : null}
@@ -165,7 +165,7 @@ ${invite.token}` });
         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Members ({visibleMembers.length}{visibleMembers.length !== members.length ? ` of ${members.length}` : ''})</Text>
         <TextInput value={memberSearch} onChangeText={setMemberSearch} placeholder="Search members by name" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search group members by name" returnKeyType="search" style={[typography.body, { color: colors.textPrimary, borderColor: colors.border, borderWidth: 1, borderRadius: radii.md, padding: spacing.sm }]} />
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
-          {[['all', 'Everyone'], ['admins', 'Admins'], ['members', 'Members']].map(([value, label]) => <TouchableOpacity key={value} onPress={() => setMemberRoleFilter(value)} accessibilityRole="button" accessibilityState={{ selected: memberRoleFilter === value }} style={[actionStyle, { backgroundColor: memberRoleFilter === value ? colors.primary : 'transparent', borderColor: memberRoleFilter === value ? colors.primary : colors.border }]}><Text style={[typography.caption, { color: memberRoleFilter === value ? (colors.onPrimary) : colors.textPrimary }]}>{label}</Text></TouchableOpacity>)}
+          {[['all', 'Everyone'], ['admins', 'Admins'], ['members', 'Members']].map(([value, label]) => <TouchableOpacity key={value} onPress={() => setMemberRoleFilter(value)} accessibilityRole="radio" accessibilityLabel={`Show ${label.toLowerCase()} in group members`} accessibilityState={{ checked: memberRoleFilter === value }} style={[actionStyle, { backgroundColor: memberRoleFilter === value ? colors.primary : 'transparent', borderColor: memberRoleFilter === value ? colors.primary : colors.border }]}><Text style={[typography.caption, { color: memberRoleFilter === value ? (colors.onPrimary) : colors.textPrimary }]}>{label}</Text></TouchableOpacity>)}
         </View>
       </GlassCard>
       {visibleMembers.map((member) => {
@@ -185,11 +185,11 @@ ${invite.token}` });
               <TouchableOpacity disabled={Boolean(busyId)} onPress={() => changeAdmin(member)} accessibilityRole="button" accessibilityLabel={`${member.isAdmin ? 'Remove admin role from' : 'Promote'} ${member.profile?.name || 'member'}`} style={actionStyle}>
                 <Text style={[typography.caption, { color: colors.primary }]}>{member.isAdmin ? 'Remove admin' : 'Make admin'}</Text>
               </TouchableOpacity>
-              <TouchableOpacity disabled={Boolean(busyId)} onPress={() => removeMember(member)} accessibilityRole="button" style={[actionStyle, { borderColor: colors.danger || colors.border }]}>
+              <TouchableOpacity disabled={Boolean(busyId)} onPress={() => removeMember(member)} accessibilityRole="button" accessibilityLabel={`Remove ${member.profile?.name || 'member'} from group`} accessibilityState={{ disabled: Boolean(busyId), busy }} style={[actionStyle, { borderColor: colors.danger || colors.border }]}>
                 <Text style={[typography.caption, { color: colors.danger || colors.textPrimary }]}>Remove member</Text>
               </TouchableOpacity>
             </> : null}
-            {isSelf ? <TouchableOpacity disabled={Boolean(busyId)} onPress={() => removeMember(member)} accessibilityRole="button" style={actionStyle}>
+            {isSelf ? <TouchableOpacity disabled={Boolean(busyId)} onPress={() => removeMember(member)} accessibilityRole="button" accessibilityLabel="Leave this group" accessibilityState={{ disabled: Boolean(busyId), busy }} style={actionStyle}>
               <Text style={[typography.caption, { color: colors.textPrimary }]}>Leave group</Text>
             </TouchableOpacity> : null}
           </View> : null}
