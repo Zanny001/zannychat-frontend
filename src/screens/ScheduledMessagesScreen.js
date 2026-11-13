@@ -138,7 +138,7 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
         {loading ? <ActivityIndicator color={colors.primary} style={{ padding: spacing.xl }} /> : error ? (
           <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
             <Text accessibilityRole="alert" style={[typography.body, { color: colors.textSecondary }]}>{error}</Text>
-            <TouchableOpacity onPress={refresh} accessibilityRole="button"><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity>
+            <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh scheduled messages"><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity>
           </GlassCard>
         ) : items.length === 0 ? (
           <View style={{ alignItems: 'center', paddingVertical: spacing.xl }}>
