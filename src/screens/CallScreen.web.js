@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Avatar from '../components/Avatar';
+import { useTheme } from '../theme/ThemeContext';
 import { sendCallSignal, subscribeToCallSession, subscribeToCallSignals, updateCallStatus } from '../services/calls';
 import { backendFetch } from '../services/backendClient';
 import { supabase } from '../services/supabaseClient';
@@ -12,6 +13,7 @@ const FALLBACK_ICE_SERVERS = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stu
 
 export default function CallScreenWeb({ route, navigation }) {
   const params = route.params || {};
+  const { colors, resolvedMode } = useTheme();
   const { call: initialCall, callId, conversationId, callType = 'audio', isCaller = false, participantName = 'ZannyChat contact', avatarColor } = params;
   const initial = initialCall || { id: callId, conversation_id: conversationId, call_type: callType, status: 'accepted' };
   const [call, setCall] = useState(initial);
@@ -37,6 +39,9 @@ export default function CallScreenWeb({ route, navigation }) {
   const iceRestartInProgressRef = useRef(false);
 
   const activeCallType = call?.call_type || callType;
+  const immersiveVideo = activeCallType === 'video';
+  const foreground = immersiveVideo ? '#FFFFFF' : colors.textPrimary;
+  const secondaryForeground = immersiveVideo ? '#C4C2D2' : colors.textSecondary;
 
   useEffect(() => {
     if (remoteVideoRef.current && remoteStream) {
@@ -297,15 +302,15 @@ export default function CallScreenWeb({ route, navigation }) {
   };
   const control = (icon, label, action, active = false, danger = false) => (
     <TouchableOpacity key={label} onPress={action} accessibilityRole="button" accessibilityLabel={label}
-      style={[styles.control, { backgroundColor: danger ? '#E4475A' : active ? '#6C5CE7' : 'rgba(255,255,255,0.13)' }]}>
-      <Ionicons name={icon} size={23} color="#FFFFFF" />
-      <Text style={styles.controlLabel}>{label}</Text>
+      style={[styles.control, { backgroundColor: danger ? colors.danger : active ? colors.primary : immersiveVideo ? 'rgba(255,255,255,0.13)' : colors.surfaceAlt, borderColor: immersiveVideo ? 'transparent' : colors.border, borderWidth: immersiveVideo ? 0 : 1 }]}>
+      <Ionicons name={icon} size={23} color={danger ? colors.onDanger : active ? colors.onPrimary : foreground} />
+      <Text style={[styles.controlLabel, { color: danger ? colors.onDanger : active ? colors.onPrimary : foreground }]}>{label}</Text>
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: immersiveVideo ? '#11101A' : colors.background }]}>
+      <StatusBar barStyle={!immersiveVideo && resolvedMode === 'light' ? 'dark-content' : 'light-content'} />
       {activeCallType === 'video' && remoteStream ? React.createElement('video', {
         ref: remoteVideoRef, autoPlay: true, playsInline: true,
         style: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', backgroundColor: '#11101A' },
@@ -316,26 +321,26 @@ export default function CallScreenWeb({ route, navigation }) {
       }) : null}
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => endCall('ended')} accessibilityRole="button" accessibilityLabel="Close call">
-          <Ionicons name="chevron-down" size={26} color="#FFFFFF" />
+          <Ionicons name="chevron-down" size={26} color={foreground} />
         </TouchableOpacity>
-        <View style={styles.encryption}><Ionicons name="lock-closed" size={12} color="#A8E6C1" /><Text style={styles.encryptionText}>Encrypted media transport</Text></View>
+        <View style={[styles.encryption, { backgroundColor: immersiveVideo ? 'rgba(255,255,255,0.08)' : colors.surface, borderColor: colors.border, borderWidth: 1 }]}><Ionicons name="lock-closed" size={12} color={colors.accent} /><Text style={[styles.encryptionText, { color: secondaryForeground }]}>Encrypted media transport</Text></View>
         <View style={{ width: 26 }} />
       </View>
       <View style={styles.identity}>
         {!(activeCallType === 'video' && remoteStream) ? <Avatar name={participantName} color={avatarColor || '#6C5CE7'} size={108} /> : null}
-        <Text style={styles.name}>{participantName}</Text>
-        <Text style={styles.phase}>{phase === 'Connected' ? formatCallDuration(seconds) : phase}</Text>
-        {networkNotice ? <Text style={styles.networkNotice}>{networkNotice}</Text> : null}
-        {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
-        {phase !== 'Connected' && phase !== 'Unavailable' && !isTerminalCallStatus(call?.status) ? <ActivityIndicator style={{ marginTop: 18 }} color="#FFFFFF" /> : null}
+        <Text style={[styles.name, { color: foreground }]}>{participantName}</Text>
+        <Text style={[styles.phase, { color: secondaryForeground }]}>{phase === 'Connected' ? formatCallDuration(seconds) : phase}</Text>
+        {networkNotice ? <Text style={[styles.networkNotice, { color: immersiveVideo ? '#F2D28B' : colors.warning }]}>{networkNotice}</Text> : null}
+        {errorText ? <Text style={[styles.error, { color: immersiveVideo ? '#FFB8C0' : colors.danger }]}>{errorText}</Text> : null}
+        {phase !== 'Connected' && phase !== 'Unavailable' && !isTerminalCallStatus(call?.status) ? <ActivityIndicator style={{ marginTop: 18 }} color={immersiveVideo ? '#FFFFFF' : colors.primary} /> : null}
       </View>
       <View style={styles.bottom}>
         <View style={styles.controlsRow}>
           {control(muted ? 'mic-off' : 'mic', muted ? 'Unmute' : 'Mute', toggleMute, muted)}
           {activeCallType === 'video' ? control(cameraOff ? 'videocam-off' : 'videocam', cameraOff ? 'Camera on' : 'Camera off', toggleCamera, cameraOff) : null}
         </View>
-        <TouchableOpacity onPress={() => endCall('ended')} accessibilityRole="button" accessibilityLabel="End call" style={styles.endButton}>
-          <Ionicons name="call" size={27} color="#FFFFFF" style={{ transform: [{ rotate: '135deg' }] }} />
+        <TouchableOpacity onPress={() => endCall('ended')} accessibilityRole="button" accessibilityLabel="End call" style={[styles.endButton, { backgroundColor: colors.danger }]}>
+          <Ionicons name="call" size={27} color={colors.onDanger} style={{ transform: [{ rotate: '135deg' }] }} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>

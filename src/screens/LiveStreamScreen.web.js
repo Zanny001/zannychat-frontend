@@ -2,16 +2,16 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Room, RoomEvent, Track } from 'livekit-client';
 import { backendFetch } from '../services/backendClient';
+import { useTheme } from '../theme/ThemeContext';
 
-const C = { bg: '#100F18', panel: '#242235', panel2: '#302D45', text: '#FFFFFF', muted: '#AAA7BD', primary: '#8B7CFF', live: '#D83A59', danger: '#F0B4C0' };
-
-function Action({ label, onPress, disabled = false, danger = false }) {
-  return <TouchableOpacity disabled={disabled} onPress={onPress} accessibilityRole="button" style={{ minHeight: 40, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 12, backgroundColor: danger ? '#512B3A' : C.panel2, justifyContent: 'center', alignItems: 'center', opacity: disabled ? 0.5 : 1 }}>
-    <Text style={{ color: danger ? C.danger : C.text, fontWeight: '800' }}>{label}</Text>
+function Action({ colors, label, onPress, disabled = false, danger = false }) {
+  return <TouchableOpacity disabled={disabled} onPress={onPress} accessibilityRole="button" style={{ minHeight: 40, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 12, backgroundColor: danger ? colors.danger : colors.surfaceAlt, justifyContent: 'center', alignItems: 'center', opacity: disabled ? 0.5 : 1 }}>
+    <Text style={{ color: danger ? colors.onDanger : colors.textPrimary, fontWeight: '800' }}>{label}</Text>
   </TouchableOpacity>;
 }
 
 export default function LiveStreamScreen({ route, navigation }) {
+  const { colors } = useTheme();
   const connection = route.params?.connection;
   const stream = connection?.stream;
   const creatorMode = Boolean(route.params?.creatorMode || connection?.role === 'creator');
@@ -198,56 +198,56 @@ export default function LiveStreamScreen({ route, navigation }) {
     } catch (err) { setError(err?.message || 'Could not update report.'); }
   };
 
-  if (!stream || !connection) return <SafeAreaView style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' }}><Text style={{ color: C.text }}>This LIVE room is unavailable.</Text><Action label="Go back" onPress={() => navigation.goBack()} /></SafeAreaView>;
+  if (!stream || !connection) return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}><Text style={{ color: colors.textPrimary }}>This LIVE room is unavailable.</Text><Action colors={colors} label="Go back" onPress={() => navigation.goBack()} /></SafeAreaView>;
 
-  return <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
     <View style={{ flexDirection: 'row', alignItems: 'center', padding: 12, gap: 10 }}>
-      <Text style={{ color: C.live, fontWeight: '900' }}>● LIVE</Text>
-      <Text numberOfLines={1} style={{ color: C.text, flex: 1, fontWeight: '800' }}>{stream.title}</Text>
-      <Text style={{ color: C.muted, fontSize: 11 }}>{status}</Text>
+      <Text style={{ color: colors.danger, fontWeight: '900' }}>● LIVE</Text>
+      <Text numberOfLines={1} style={{ color: colors.textPrimary, flex: 1, fontWeight: '800' }}>{stream.title}</Text>
+      <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{status}</Text>
     </View>
-    {!!error && <Text accessibilityRole="alert" style={{ color: C.danger, paddingHorizontal: 14, paddingBottom: 8 }}>{error}</Text>}
+    {!!error && <Text accessibilityRole="alert" style={{ color: colors.danger, paddingHorizontal: 14, paddingBottom: 8 }}>{error}</Text>}
     <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
       <View style={{ minHeight: 260, marginHorizontal: 12, borderRadius: 18, overflow: 'hidden', backgroundColor: '#050509' }}>
         {publisherMode && <View ref={localRef} collapsable={false} style={{ width: '100%', minHeight: 260 }} />}
         <View ref={remoteRef} collapsable={false} style={{ width: '100%', minHeight: 260 }} />
-        {!publisherMode && <Text style={{ color: C.muted, textAlign: 'center', padding: 12 }}>If the creator is not on screen yet, their video will appear here.</Text>}
+        {!publisherMode && <Text style={{ color: colors.textSecondary, textAlign: 'center', padding: 12 }}>If the creator is not on screen yet, their video will appear here.</Text>}
       </View>
-      {audioBlocked && <View style={{ padding: 12 }}><Action label="Enable LIVE audio" onPress={() => roomRef.current?.startAudio().then(() => setAudioBlocked(false)).catch((err) => setError(err?.message || 'Audio playback is blocked.'))} /></View>}
+      {audioBlocked && <View style={{ padding: 12 }}><Action colors={colors} label="Enable LIVE audio" onPress={() => roomRef.current?.startAudio().then(() => setAudioBlocked(false)).catch((err) => setError(err?.message || 'Audio playback is blocked.'))} /></View>}
       {publisherMode && <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, padding: 12 }}>
-        <Action label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={toggleCamera} />
-        <Action label={mic ? 'Mute mic' : 'Unmute mic'} onPress={toggleMic} />
+        <Action colors={colors} label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={toggleCamera} />
+        <Action colors={colors} label={mic ? 'Mute mic' : 'Unmute mic'} onPress={toggleMic} />
       </View>}
-      {moderatorMode && <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}><Action label={panel === 'reports' ? 'Close safety reports' : 'Safety reports'} onPress={loadReports} /></View>}
-      {panel === 'reports' && <View style={{ margin: 12, padding: 12, borderRadius: 14, backgroundColor: C.panel }}>
-        <Text style={{ color: C.text, fontWeight: '900', marginBottom: 8 }}>LIVE safety reports</Text>
+      {moderatorMode && <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}><Action colors={colors} label={panel === 'reports' ? 'Close safety reports' : 'Safety reports'} onPress={loadReports} /></View>}
+      {panel === 'reports' && <View style={{ margin: 12, padding: 12, borderRadius: 14, backgroundColor: colors.surface }}>
+        <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 8 }}>LIVE safety reports</Text>
         {reports.map((item) => <View key={item.id} style={{ paddingVertical: 7 }}>
-          <Text style={{ color: C.text }}>{item.reason} · {item.status}</Text>
-          {item.status === 'open' && <Action label="Review" onPress={() => reviewReport(item.id, 'reviewing')} />}
+          <Text style={{ color: colors.textPrimary }}>{item.reason} · {item.status}</Text>
+          {item.status === 'open' && <Action colors={colors} label="Review" onPress={() => reviewReport(item.id, 'reviewing')} />}
           {['open','reviewing'].includes(item.status) && <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
-            <Action label="Resolve" onPress={() => reviewReport(item.id, 'resolved')} /><Action label="Dismiss" onPress={() => reviewReport(item.id, 'dismissed')} />
+            <Action colors={colors} label="Resolve" onPress={() => reviewReport(item.id, 'resolved')} /><Action colors={colors} label="Dismiss" onPress={() => reviewReport(item.id, 'dismissed')} />
           </View>}
         </View>)}
       </View>}
       {!publisherMode && stream.allow_guests && <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}>
-        {guestApproved ? <Action label="Join the stage" onPress={joinGuest} /> : <Action label={guestStatus === 'requested' ? 'Guest request pending' : 'Request to join on stage'} disabled={guestStatus === 'requested'} onPress={requestGuest} />}
+        {guestApproved ? <Action colors={colors} label="Join the stage" onPress={joinGuest} /> : <Action colors={colors} label={guestStatus === 'requested' ? 'Guest request pending' : 'Request to join on stage'} disabled={guestStatus === 'requested'} onPress={requestGuest} />}
       </View>}
       <View style={{ paddingHorizontal: 14, paddingTop: 6 }}>
-        <Text style={{ color: C.text, fontWeight: '900', marginBottom: 8 }}>LIVE chat</Text>
+        <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 8 }}>LIVE chat</Text>
         {comments.map((item) => <View key={item.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 5, gap: 8 }}>
-          <Text style={{ color: C.primary, fontWeight: '800' }}>{item.user_name || 'ZannyChat user'}</Text>
-          <Text style={{ color: C.text, flex: 1 }}>{item.body}</Text>
-          {moderatorMode && <TouchableOpacity onPress={() => hideComment(item.id)}><Text style={{ color: C.danger }}>Hide</Text></TouchableOpacity>}
+          <Text style={{ color: colors.accent, fontWeight: '800' }}>{item.user_name || 'ZannyChat user'}</Text>
+          <Text style={{ color: colors.textPrimary, flex: 1 }}>{item.body}</Text>
+          {moderatorMode && <TouchableOpacity onPress={() => hideComment(item.id)}><Text style={{ color: colors.danger }}>Hide</Text></TouchableOpacity>}
         </View>)}
-        {!comments.length && <Text style={{ color: C.muted, paddingVertical: 8 }}>Be the first to say hello.</Text>}
+        {!comments.length && <Text style={{ color: colors.textSecondary, paddingVertical: 8 }}>Be the first to say hello.</Text>}
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 }}>
-        <TextInput value={draft} onChangeText={(v) => setDraft(v.slice(0, 500))} maxLength={500} placeholder="Say something kind…" placeholderTextColor={C.muted} style={{ flex: 1, color: C.text, backgroundColor: C.panel, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 }} />
-        <Action label="Send" disabled={busy || !draft.trim()} onPress={sendComment} /><Action label="♥" onPress={react} />
-        {!creatorMode && <Action label="Report" onPress={report} />}
+        <TextInput value={draft} onChangeText={(v) => setDraft(v.slice(0, 500))} maxLength={500} placeholder="Say something kind…" placeholderTextColor={colors.textSecondary} style={{ flex: 1, color: colors.textPrimary, backgroundColor: colors.surface, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 }} />
+        <Action colors={colors} label="Send" disabled={busy || !draft.trim()} onPress={sendComment} /><Action colors={colors} label="♥" onPress={react} />
+        {!creatorMode && <Action colors={colors} label="Report" onPress={report} />}
       </View>
     </ScrollView>
-    <View style={{ alignItems: 'center', padding: 12, borderTopWidth: 1, borderTopColor: '#39364B' }}><Action label={creatorMode ? 'End LIVE' : 'Leave LIVE'} danger disabled={busy} onPress={leave} /></View>
-    {busy && <View style={{ position: 'absolute', top: '50%', alignSelf: 'center' }}><ActivityIndicator color={C.text} /></View>}
+    <View style={{ alignItems: 'center', padding: 12, borderTopWidth: 1, borderTopColor: colors.border }}><Action colors={colors} label={creatorMode ? 'End LIVE' : 'Leave LIVE'} danger disabled={busy} onPress={leave} /></View>
+    {busy && <View style={{ position: 'absolute', top: '50%', alignSelf: 'center' }}><ActivityIndicator color={colors.textPrimary} /></View>}
   </SafeAreaView>;
 }

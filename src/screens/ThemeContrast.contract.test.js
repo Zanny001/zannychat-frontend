@@ -48,7 +48,7 @@ for (const mood of Object.values(MOODS)) {
 const screenDirectory = fileURLToPath(new URL('.', import.meta.url));
 
 test('every primary screen consumes the shared dynamic theme context', () => {
-  const screenFiles = readdirSync(screenDirectory).filter((name) => name.endsWith('Screen.js'));
+  const screenFiles = readdirSync(screenDirectory).filter((name) => name.endsWith('Screen.js') || name.endsWith('Screen.web.js'));
   const missingTheme = screenFiles.filter((name) => !/\buseTheme\b/.test(readFileSync(new URL(name, import.meta.url), 'utf8')));
   assert.deepEqual(missingTheme, [], `Screens missing shared theme context: ${missingTheme.join(', ')}`);
 });
@@ -65,6 +65,9 @@ test('high-impact feedback and call actions use semantic theme colours', () => {
     ['IncomingCallScreen.js', /backgroundColor: colors\.danger/],
     ['OutgoingCallScreen.js', /backgroundColor: colors\.danger/],
     ['LiveStreamScreen.js', /backgroundColor: colors\.danger/],
+    ['CallScreen.web.js', /danger \\? colors\\.danger/],
+    ['GroupCallScreen.web.js', /backgroundColor: colors\\.background/],
+    ['LiveStreamScreen.web.js', /danger \\? colors\\.danger/],
   ];
   for (const [file, pattern] of contracts) {
     assert.match(readFileSync(new URL(file, import.meta.url), 'utf8'), pattern, `${file} must use its semantic theme token`);
