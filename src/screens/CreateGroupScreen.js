@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
@@ -20,9 +20,27 @@ export default function CreateGroupScreen({ navigation }) {
   const [selectedIds, setSelectedIds] = useState([]);
   const [name, setName] = useState('');
   const [creating, setCreating] = useState(false);
+  const [loadingContacts, setLoadingContacts] = useState(true);
+  const [contactsError, setContactsError] = useState('');
+  const mountedRef = useRef(true);
+
+  async function loadContacts() {
+    setLoadingContacts(true);
+    setContactsError('');
+    try {
+      const result = await fetchContacts();
+      if (mountedRef.current) setContacts(Array.isArray(result) ? result : []);
+    } catch (err) {
+      if (mountedRef.current) setContactsError(err?.message || 'Could not load contacts. Please try again.');
+    } finally {
+      if (mountedRef.current) setLoadingContacts(false);
+    }
+  }
 
   useEffect(() => {
-    fetchContacts().then(setContacts);
+    mountedRef.current = true;
+    loadContacts();
+    return () => { mountedRef.current = false; };
   }, []);
 
   function toggle(contactId) {
@@ -56,7 +74,7 @@ export default function CreateGroupScreen({ navigation }) {
           creating ? (
             <ActivityIndicator size="small" color={colors.primary} />
           ) : (
-            <TouchableOpacity onPress={handleCreate} disabled={!canCreate}>
+            <TouchableOpacity onPress={handleCreate} disabled={!canCreate || creating} accessibilityRole="button" accessibilityLabel="Create group" accessibilityState={{ disabled: !canCreate || creating, busy: creating }} style={{ minHeight: 44, justifyContent: "center" }}>
               <Text style={[typography.bodyStrong, { color: canCreate ? colors.primary : colors.textSecondary }]}>Create</Text>
             </TouchableOpacity>
           )
@@ -64,7 +82,7 @@ export default function CreateGroupScreen({ navigation }) {
       />
 
       <View style={{ padding: spacing.md }}>
-        <GlassInput value={name} onChangeText={setName} placeholder="Group name" />
+        <GlassInput value={name} onChangeText={setName} placeholder="Group name" accessibilityLabel="Group name" />
         <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.xs }]}>
           {selectedIds.length === 0
             ? `Pick at least ${MIN_OTHER_MEMBERS} people`
@@ -75,11 +93,25 @@ export default function CreateGroupScreen({ navigation }) {
       <FlatList
         data={contacts}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.lg }}
+        contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.lg, flexGrow: 1 }}
+        ListEmptyComponent={
+          loadingContacts ? (
+            <ActivityIndicator color={colors.primary} style={{ padding: spacing.xl }} />
+          ) : contactsError ? (
+            <View style={{ alignItems: 'center', padding: spacing.lg, gap: spacing.sm }}>
+              <Text accessibilityRole="alert" style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{contactsError}</Text>
+              <TouchableOpacity onPress={loadContacts} accessibilityRole="button" accessibilityLabel="Retry loading contacts" style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md }}>
+                <Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', padding: spacing.lg }]}>No contacts available to add yet.</Text>
+          )
+        }
         renderItem={({ item }) => {
           const selected = selectedIds.includes(item.id);
           return (
-            <TouchableOpacity onPress={() => toggle(item.id)} activeOpacity={0.8}>
+            <TouchableOpacity onPress={() => toggle(item.id)} activeOpacity={0.8} accessibilityRole="checkbox" accessibilityLabel={'Select ' + item.name + ' for group'} accessibilityState={{ checked: selected }} style={{ minHeight: 48 }}>
               <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={styles.row} intensity={26}>
                 <Avatar name={item.name} color={item.avatarColor} imageUrl={item.avatarUrl} online={item.online} />
                 <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm, flex: 1 }]}>{item.name}</Text>
