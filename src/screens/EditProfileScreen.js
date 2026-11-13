@@ -170,7 +170,7 @@ export default function EditProfileScreen({ navigation }) {
               </TouchableOpacity>
               <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Profile photo</Text>
             </View>
-            {mediaError ? <Text accessibilityRole="alert" style={[typography.caption, { color: '#D64545', marginBottom: spacing.sm }]}>{mediaError}</Text> : null}
+            {mediaError ? <Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger, marginBottom: spacing.sm }]}>{mediaError}</Text> : null}
             <Field label="Display name" value={name} onChangeText={setName} placeholder="Your name" />
             <Field label="Username" value={username} onChangeText={setUsername} placeholder="your_username" />
             <Field label="About / status" value={status} onChangeText={setStatus} placeholder="Hey there, I'm using ZannyChat" />
