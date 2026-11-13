@@ -1190,22 +1190,21 @@ export default function ChatScreen({ route, navigation }) {
         ...(display.isGroup && isMineMessage(sheetMessage) && !sheetMessage.deletedAt && !String(sheetMessage.id).startsWith('temp-')
           ? [{ key: 'receipts', label: 'View message status', icon: 'people-outline', onPress: () => handleShowGroupReceiptDetails(sheetMessage) }]
           : []),
-        ...(isMineMessage(sheetMessage) && !sheetMessage.deletedAt
+        ...(isMineMessage(sheetMessage)
           ? [
               {
                 key: 'delete',
-                label: 'Delete',
+                label: sheetMessage.deletedAt ? 'Remove deleted message' : 'Delete',
                 icon: 'trash-outline',
                 destructive: true,
                 onPress: () => {
-                    if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
-                      setActiveSheet(null);
-                      confirmDeleteMessage(sheetMessage);
-                    } else {
-                      setActiveSheet(null);
-                      setTimeout(() => confirmDeleteMessage(sheetMessage), 350);
-                    }
-                  },
+                  setActiveSheet(null);
+                  if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
+                    confirmDeleteMessage(sheetMessage);
+                  } else {
+                    setTimeout(() => confirmDeleteMessage(sheetMessage), 350);
+                  }
+                },
               },
             ]
           : []),
@@ -1683,7 +1682,7 @@ Choose whether to remove this message only from your chat or retract it
                   </Text>
                 )}
               </TouchableOpacity>
-              {deleteMessageTarget?.senderId === myUserId ? (
+              {!deleteMessageTarget?.deletedAt && deleteMessageTarget?.senderId === myUserId ? (
                 <TouchableOpacity
                   disabled={deletingMessage}
                   onPress={() => performDeleteMessage(deleteMessageTarget, 'everyone')}
