@@ -24,13 +24,13 @@ function LiveMedia({ creatorMode, moderatorMode, canManageGuests, canRequestGues
         </View>
         <View style={{ flex: 1, justifyContent: 'center' }}>
           {videos.length ? (
-            <FlatList data={videos} keyExtractor={(item) => item.participant.identity} renderItem={({ item }) => <VideoTrack trackRef={item} style={{ height: 340, margin: 4, borderRadius: 18 }} />} />
+            <FlatList keyboardShouldPersistTaps="handled" data={videos} keyExtractor={(item) => item.participant.identity} renderItem={({ item }) => <VideoTrack trackRef={item} style={{ height: 340, margin: 4, borderRadius: 18 }} />} />
           ) : (
             <View style={{ alignItems: 'center', padding: 24 }}><Ionicons name="videocam-outline" size={44} color={colors.accent} /><Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '800', marginTop: 14 }}>{creatorMode ? 'Your LIVE is starting' : 'Waiting for the creator video'}</Text><Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>Keep this screen open while you are live.</Text></View>
           )}
         </View>
         <View style={{ maxHeight: 230, paddingHorizontal: 14 }}>
-          <FlatList data={comments} keyExtractor={(item) => item.id} renderItem={({ item }) => (
+          <FlatList keyboardShouldPersistTaps="handled" data={comments} keyExtractor={(item) => item.id} renderItem={({ item }) => (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 }}>
               <Text style={{ color: colors.accent, fontSize: 11, fontWeight: '900' }}>{item.user_name || 'ZannyChat user'}</Text>
               <Text style={{ color: '#FFFFFF', flex: 1, fontSize: 13 }}>{item.body}</Text>
@@ -41,7 +41,7 @@ function LiveMedia({ creatorMode, moderatorMode, canManageGuests, canRequestGues
         {showParticipants && creatorMode && (
           <View style={{ maxHeight: 190, marginHorizontal: 14, marginBottom: 8, padding: 10, borderRadius: 14, backgroundColor: hexToRgba(colors.surface, 0.94), borderWidth: 1, borderColor: colors.border }}>
             <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 6 }}>Manage LIVE moderators</Text>
-            <FlatList data={participants} keyExtractor={(item) => item.userId} renderItem={({ item }) => (
+            <FlatList keyboardShouldPersistTaps="handled" data={participants} keyExtractor={(item) => item.userId} renderItem={({ item }) => (
               <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 7, borderTopWidth: 1, borderTopColor: colors.border }}>
                 <Text numberOfLines={1} style={{ color: colors.textPrimary, flex: 1, fontSize: 12 }}>{item.name}{!item.joined ? ' · offline' : ''}</Text>
                 {(item.moderator || item.joined) && <TouchableOpacity onPress={() => onSetModerator(item.userId, !item.moderator)} accessibilityRole="button" accessibilityLabel={item.moderator ? `Remove ${item.name} as LIVE moderator` : `Make ${item.name} a LIVE moderator`}>
@@ -54,7 +54,7 @@ function LiveMedia({ creatorMode, moderatorMode, canManageGuests, canRequestGues
         {showGuestRequests && creatorMode && (
           <View style={{ maxHeight: 190, marginHorizontal: 14, marginBottom: 8, padding: 10, borderRadius: 14, backgroundColor: hexToRgba(colors.surface, 0.94), borderWidth: 1, borderColor: colors.border }}>
             <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 6 }}>Guest requests ({guestRequests.length})</Text>
-            <FlatList data={guestRequests} keyExtractor={(item) => item.user_id} renderItem={({ item }) => (
+            <FlatList keyboardShouldPersistTaps="handled" data={guestRequests} keyExtractor={(item) => item.user_id} renderItem={({ item }) => (
               <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 7, borderTopWidth: 1, borderTopColor: colors.border }}>
                 <Text numberOfLines={1} style={{ color: colors.textPrimary, flex: 1, fontSize: 12 }}>{item.name}</Text>
                 <TouchableOpacity onPress={() => onReviewGuestRequest(item.user_id, 'accepted')} accessibilityRole="button" accessibilityLabel={`Approve LIVE guest request from ${item.name}`}><Text style={{ color: colors.success, fontWeight: '800', fontSize: 11, marginRight: 10 }}>Approve</Text></TouchableOpacity>
@@ -66,7 +66,7 @@ function LiveMedia({ creatorMode, moderatorMode, canManageGuests, canRequestGues
         {showReports && moderatorMode && (
           <View style={{ maxHeight: 190, marginHorizontal: 14, marginBottom: 8, padding: 10, borderRadius: 14, backgroundColor: hexToRgba(colors.surface, 0.94), borderWidth: 1, borderColor: colors.border }}>
             <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 6 }}>LIVE safety reports ({reports.length})</Text>
-            <FlatList data={reports} keyExtractor={(item) => item.id} renderItem={({ item }) => (
+            <FlatList keyboardShouldPersistTaps="handled" data={reports} keyExtractor={(item) => item.id} renderItem={({ item }) => (
               <View style={{ paddingVertical: 7, borderTopWidth: 1, borderTopColor: colors.border }}>
                 <Text style={{ color: colors.textPrimary, fontWeight: '800' }}>{item.reason} · {item.status}</Text>
                 {!!item.details && <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 3 }}>{item.details}</Text>}
