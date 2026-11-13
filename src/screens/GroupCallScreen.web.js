@@ -11,7 +11,7 @@ export default function GroupCallScreen({ navigation }) {
       </View>
       <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: '800', textAlign: 'center' }}>Group calling needs the native app</Text>
       <Text style={{ color: colors.textSecondary, textAlign: 'center', lineHeight: 22, marginTop: 10 }}>Install a native ZannyChat build to use the LiveKit media engine. The web client does not start group media calls.</Text>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 24, backgroundColor: '#6557D9', paddingHorizontal: 22, paddingVertical: 12, borderRadius: 14 }}><Text style={{ color: colors.onPrimary, fontWeight: '800' }}>Go back</Text></TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 24, backgroundColor: colors.primary, paddingHorizontal: 22, paddingVertical: 12, borderRadius: 14 }}><Text style={{ color: colors.onPrimary, fontWeight: '800' }}>Go back</Text></TouchableOpacity>
     </SafeAreaView>
   );
 }
