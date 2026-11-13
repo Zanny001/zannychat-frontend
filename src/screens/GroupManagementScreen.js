@@ -107,7 +107,7 @@ ${invite.token}` });
       finally { setInviteBusy(false); }
     } },
   ]); };
-  const actionStyle = { minHeight: 38, borderRadius: radii.md, paddingHorizontal: spacing.sm, justifyContent: 'center', borderWidth: 1, borderColor: colors.border };
+  const actionStyle = { minHeight: 44, borderRadius: radii.md, paddingHorizontal: spacing.sm, justifyContent: 'center', borderWidth: 1, borderColor: colors.border };
   const saveMetadata = async () => {
     const validation = validateGroupMetadata(groupMetadata);
     if (!validation.ok) { Alert.alert('Group details need attention', validation.errors.join('\n')); return; }
