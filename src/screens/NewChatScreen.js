@@ -289,6 +289,8 @@ export default function NewChatScreen({ navigation, route }) {
             onPress={retryContacts}
             disabled={loadingContacts}
             accessibilityRole="button"
+            accessibilityLabel="Retry loading contacts"
+            accessibilityState={{ disabled: loadingContacts, busy: loadingContacts }}
           >
             <Text
               style={[
