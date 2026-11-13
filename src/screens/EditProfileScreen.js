@@ -47,6 +47,53 @@ function Field({ label, value, onChangeText, placeholder, multiline = false, key
   );
 }
 
+function Toggle({ label, value, onValueChange, hint, spacing, typography, colors }) {
+  return <View style={styles.toggleRow}>
+    <View style={{ flex: 1, paddingRight: spacing.md }}>
+      <Text style={[typography.body, { color: colors.text }]}>{label}</Text>
+      {hint ? <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>{hint}</Text> : null}
+    </View>
+    <Switch value={Boolean(value)} onValueChange={onValueChange} trackColor={{ false: colors.border, true: colors.primary }} />
+  </View>;
+}
+
+function Choice({ label, value, options, onChange, spacing, typography, colors }) {
+  const current = Math.max(0, options.findIndex((item) => item.value === value));
+  const next = options[(current + 1) % options.length];
+  return <TouchableOpacity accessibilityRole="button" accessibilityLabel={`${label}; currently ${options[current].label}. Activate to change.`} onPress={() => onChange(next.value)} style={[styles.choiceRow, { minHeight: 48 }]}>
+    <Text style={[typography.body, { color: colors.text, flex: 1 }]}>{label}</Text>
+    <Text style={[typography.bodyStrong, { color: colors.primary }]}>{options[current].label}</Text>
+    <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+  </TouchableOpacity>;
+}
+
+function validateBirthday(value) {
+  const birthday = String(value || '').trim();
+  if (!birthday) return true;
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(birthday)) return false;
+  const [year, month, day] = birthday.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year
+    && date.getUTCMonth() === month - 1
+    && date.getUTCDate() === day
+    && date.getTime() <= Date.now();
+}
+
+function validateWebsite(value) {
+  const website = String(value || '').trim();
+  if (!website) return true;
+  try {
+    const candidate = /^[a-z][a-z0-9+.-]*:/i.test(website) ? website : `https://${website}`;
+    const parsed = new URL(candidate);
+    return ['http:', 'https:'].includes(parsed.protocol)
+      && Boolean(parsed.hostname)
+      && !parsed.username
+      && !parsed.password;
+  } catch {
+    return false;
+  }
+}
+
 export default function EditProfileScreen({ navigation }) {
   const { colors, spacing, typography, radii } = useTheme();
   const [user, setUser] = useState(null);
@@ -120,6 +167,7 @@ export default function EditProfileScreen({ navigation }) {
   }
 
   async function handleSave() {
+    if (saving) return;
     if (!name.trim()) return Alert.alert('Name required', 'Enter a display name before saving.');
     const normalizedUsername = username.trim().replace(/^@/, '').toLowerCase();
     if (!normalizedUsername) {
@@ -128,43 +176,46 @@ export default function EditProfileScreen({ navigation }) {
     if (!/^[a-z0-9_]{3,24}$/.test(normalizedUsername)) {
       return Alert.alert('Invalid username', 'Use 3–24 letters, numbers or underscores.');
     }
+    if (!validateBirthday(details.birthday)) {
+      return Alert.alert('Invalid birthday', 'Enter a real date in YYYY-MM-DD format. Birthday cannot be in the future.');
+    }
+    if (!validateWebsite(details.website)) {
+      return Alert.alert('Invalid website', 'Enter a valid website address, such as example.com or https://example.com.');
+    }
+    if (uploadingPhoto || uploadingCover) {
+      return Alert.alert('Please wait', 'Your profile photo or cover is still uploading.');
+    }
+
     setSaving(true);
+    let profileIdentitySaved = false;
     try {
       await updateProfile({ name: name.trim(), status: status.trim(), username: normalizedUsername });
-      await updateMyProfileDetails({ ...details, birthday: details.birthday || null });
-      navigation.goBack();
+      profileIdentitySaved = true;
+      const savedDetails = await updateMyProfileDetails({ ...details, birthday: details.birthday || null });
+      setDetails({ ...DEFAULT_DETAILS, ...(savedDetails || {}) });
+      Alert.alert('Profile saved', 'Your name, username and profile information have been saved.', [
+        { text: 'Done', onPress: () => navigation.goBack() },
+      ]);
     } catch (err) {
       const message = String(err?.message || 'Please try again.');
-      Alert.alert("Couldn't save profile", /duplicate|unique/i.test(message) ? 'That username is already taken. Choose another.' : message);
+      const friendly = /duplicate|unique/i.test(message)
+        ? 'That username is already taken. Choose another.'
+        : message;
+      Alert.alert(
+        profileIdentitySaved ? 'Some changes were saved' : "Couldn't save profile",
+        profileIdentitySaved
+          ? `Your name and username were saved, but the additional profile information could not be saved. ${friendly} Please try again.`
+          : friendly,
+      );
     } finally {
       setSaving(false);
     }
   }
 
-  function Toggle({ label, value, onValueChange, hint }) {
-    return <View style={styles.toggleRow}>
-      <View style={{ flex: 1, paddingRight: spacing.md }}>
-        <Text style={[typography.body, { color: colors.text }]}>{label}</Text>
-        {hint ? <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>{hint}</Text> : null}
-      </View>
-      <Switch value={Boolean(value)} onValueChange={onValueChange} trackColor={{ false: colors.border, true: colors.primary }} />
-    </View>;
-  }
-
-  function Choice({ label, value, options, onChange }) {
-    const current = Math.max(0, options.findIndex((item) => item.value === value));
-    const next = options[(current + 1) % options.length];
-    return <TouchableOpacity accessibilityRole="button" accessibilityLabel={`${label}; currently ${options[current].label}. Activate to change.`} onPress={() => onChange(next.value)} style={[styles.choiceRow, { minHeight: 48 }]}>
-      <Text style={[typography.body, { color: colors.text, flex: 1 }]}>{label}</Text>
-      <Text style={[typography.bodyStrong, { color: colors.primary }]}>{options[current].label}</Text>
-      <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
-    </TouchableOpacity>;
-  }
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Edit profile" onBack={() => navigation.goBack()} right={
-        <TouchableOpacity onPress={handleSave} disabled={saving} accessibilityRole="button" accessibilityLabel="Save profile">
+        <TouchableOpacity onPress={handleSave} disabled={saving || uploadingPhoto || uploadingCover} accessibilityRole="button" accessibilityLabel="Save profile" accessibilityState={{ disabled: saving || uploadingPhoto || uploadingCover, busy: saving }}>
           {saving ? <ActivityIndicator size="small" color={colors.primary} /> : <Text style={[typography.bodyStrong, { color: colors.primary }]}>Save</Text>}
         </TouchableOpacity>
       } />
@@ -187,6 +238,7 @@ export default function EditProfileScreen({ navigation }) {
             {mediaError ? <Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger, marginBottom: spacing.sm }]}>{mediaError}</Text> : null}
             <Field label="Display name" value={name} onChangeText={setName} placeholder="Your name" colors={colors} spacing={spacing} typography={typography} />
             <Field label="Username" value={username} onChangeText={setUsername} placeholder="your_username" colors={colors} spacing={spacing} typography={typography} />
+            <Text style={[typography.caption, { color: colors.textSecondary, marginTop: -spacing.sm, marginBottom: spacing.md }]}>Your unique public handle. Use 3–24 letters, numbers or underscores. You can change it whenever you choose an available username.</Text>
             <Field label="About / status" value={status} onChangeText={setStatus} placeholder="Hey there, I'm using ZannyChat" colors={colors} spacing={spacing} typography={typography} />
             <Field label="About details" value={details.about} onChangeText={(v) => setDetail('about', v)} placeholder="Tell people a little about yourself" multiline colors={colors} spacing={spacing} typography={typography} />
             <View style={{ marginTop: 4, marginBottom: spacing.md }}>
@@ -214,22 +266,22 @@ export default function EditProfileScreen({ navigation }) {
           </Section>
 
           <Section title="Profile privacy" colors={colors} spacing={spacing} typography={typography} radii={radii}>
-            <Choice label="Who can view your profile" value={details.profile_visibility} onChange={(v) => setDetail('profile_visibility', v)} options={[{ value: 'everyone', label: 'Everyone' }, { value: 'contacts', label: 'Contacts' }, { value: 'nobody', label: 'Nobody' }]} />
-            <Choice label="Profile photo visibility" value={details.photo_visibility} onChange={(v) => setDetail('photo_visibility', v)} options={[{ value: 'everyone', label: 'Everyone' }, { value: 'contacts', label: 'Contacts' }, { value: 'nobody', label: 'Nobody' }]} />
-            <Toggle label="Show location" value={details.show_location} onValueChange={(v) => setDetail('show_location', v)} />
-            <Toggle label="Show occupation" value={details.show_occupation} onValueChange={(v) => setDetail('show_occupation', v)} />
-            <Toggle label="Show website" value={details.show_website} onValueChange={(v) => setDetail('show_website', v)} />
-            <Toggle label="Show birthday" value={details.show_birthday} onValueChange={(v) => setDetail('show_birthday', v)} />
-            <Toggle label="Show pronouns" value={details.show_pronouns} onValueChange={(v) => setDetail('show_pronouns', v)} />
-            <Toggle label="Show online status" value={details.show_online_status} onValueChange={(v) => setDetail('show_online_status', v)} />
-            <Toggle label="Show last seen" value={details.show_last_seen} onValueChange={(v) => setDetail('show_last_seen', v)} />
-            <Toggle label="Show read receipts" value={details.show_read_receipts} onValueChange={(v) => setDetail('show_read_receipts', v)} />
+            <Choice spacing={spacing} typography={typography} colors={colors} label="Who can view your profile" value={details.profile_visibility} onChange={(v) => setDetail('profile_visibility', v)} options={[{ value: 'everyone', label: 'Everyone' }, { value: 'contacts', label: 'Contacts' }, { value: 'nobody', label: 'Nobody' }]} />
+            <Choice spacing={spacing} typography={typography} colors={colors} label="Profile photo visibility" value={details.photo_visibility} onChange={(v) => setDetail('photo_visibility', v)} options={[{ value: 'everyone', label: 'Everyone' }, { value: 'contacts', label: 'Contacts' }, { value: 'nobody', label: 'Nobody' }]} />
+            <Toggle spacing={spacing} typography={typography} colors={colors} label="Show location" value={details.show_location} onValueChange={(v) => setDetail('show_location', v)} />
+            <Toggle spacing={spacing} typography={typography} colors={colors} label="Show occupation" value={details.show_occupation} onValueChange={(v) => setDetail('show_occupation', v)} />
+            <Toggle spacing={spacing} typography={typography} colors={colors} label="Show website" value={details.show_website} onValueChange={(v) => setDetail('show_website', v)} />
+            <Toggle spacing={spacing} typography={typography} colors={colors} label="Show birthday" value={details.show_birthday} onValueChange={(v) => setDetail('show_birthday', v)} />
+            <Toggle spacing={spacing} typography={typography} colors={colors} label="Show pronouns" value={details.show_pronouns} onValueChange={(v) => setDetail('show_pronouns', v)} />
+            <Toggle spacing={spacing} typography={typography} colors={colors} label="Show online status" value={details.show_online_status} onValueChange={(v) => setDetail('show_online_status', v)} />
+            <Toggle spacing={spacing} typography={typography} colors={colors} label="Show last seen" value={details.show_last_seen} onValueChange={(v) => setDetail('show_last_seen', v)} />
+            <Toggle spacing={spacing} typography={typography} colors={colors} label="Show read receipts" value={details.show_read_receipts} onValueChange={(v) => setDetail('show_read_receipts', v)} />
           </Section>
 
           <Section title="Contact and audience permissions" colors={colors} spacing={spacing} typography={typography} radii={radii}>
-            <Choice label="Group invitations" value={details.group_invite_permission} onChange={(v) => setDetail('group_invite_permission', v)} options={[{ value: 'everyone', label: 'Everyone' }, { value: 'contacts', label: 'Contacts' }, { value: 'nobody', label: 'Nobody' }]} />
-            <Choice label="Calls" value={details.call_permission} onChange={(v) => setDetail('call_permission', v)} options={[{ value: 'everyone', label: 'Everyone' }, { value: 'contacts', label: 'Contacts' }, { value: 'nobody', label: 'Nobody' }]} />
-            <Choice label="Status audience" value={details.status_audience} onChange={(v) => setDetail('status_audience', v)} options={[{ value: 'everyone', label: 'Everyone' }, { value: 'contacts', label: 'Contacts' }, { value: 'selected', label: 'Selected contacts' }, { value: 'nobody', label: 'Nobody' }]} />
+            <Choice spacing={spacing} typography={typography} colors={colors} label="Group invitations" value={details.group_invite_permission} onChange={(v) => setDetail('group_invite_permission', v)} options={[{ value: 'everyone', label: 'Everyone' }, { value: 'contacts', label: 'Contacts' }, { value: 'nobody', label: 'Nobody' }]} />
+            <Choice spacing={spacing} typography={typography} colors={colors} label="Calls" value={details.call_permission} onChange={(v) => setDetail('call_permission', v)} options={[{ value: 'everyone', label: 'Everyone' }, { value: 'contacts', label: 'Contacts' }, { value: 'nobody', label: 'Nobody' }]} />
+            <Choice spacing={spacing} typography={typography} colors={colors} label="Status audience" value={details.status_audience} onChange={(v) => setDetail('status_audience', v)} options={[{ value: 'everyone', label: 'Everyone' }, { value: 'contacts', label: 'Contacts' }, { value: 'selected', label: 'Selected contacts' }, { value: 'nobody', label: 'Nobody' }]} />
           </Section>
           <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.sm }]}>Your private profile settings are stored separately from your public profile. Profile-details visibility and call permissions are enforced by the new database layer. Legacy public avatar URLs, presence/read receipts, group invitations and status audiences still require their own enforcement rollout before every privacy preference can be certified end-to-end.</Text>
         </ScrollView>
