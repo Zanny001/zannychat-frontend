@@ -10,8 +10,9 @@ import { startCallTone, stopCallTone } from '../services/callAudio';
 import { answerNativeCall, endNativeCall } from '../services/nativeCallSystem';
 
 export default function IncomingCallScreen({ route, navigation }) {
-  const { call, participantName = 'ZannyChat contact', avatarColor = '#6C5CE7', autoAnswer = false, nativeCallId = null } = route.params || {};
+  const { call, participantName = 'ZannyChat contact', avatarColor: avatarColorParam, autoAnswer = false, nativeCallId = null } = route.params || {};
   const { colors, resolvedMode } = useTheme();
+  const avatarColor = avatarColorParam || colors.primary;
   const [busy, setBusy] = useState(false);
   const closingRef = useRef(false);
   const autoAnswerHandledRef = useRef(false);

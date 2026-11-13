@@ -11,8 +11,9 @@ import { startCallTone, stopCallTone } from '../services/callAudio';
 import { endNativeCall } from '../services/nativeCallSystem';
 
 export default function OutgoingCallScreen({ route, navigation }) {
-  const { call: initialCall, callType = 'audio', participantName = 'ZannyChat contact', avatarColor = '#6C5CE7' } = route.params || {};
+  const { call: initialCall, callType = 'audio', participantName = 'ZannyChat contact', avatarColor: avatarColorParam } = route.params || {};
   const { colors, resolvedMode } = useTheme();
+  const avatarColor = avatarColorParam || colors.primary;
   const [call, setCall] = useState(initialCall);
   const [remaining, setRemaining] = useState(() => Math.max(0, Math.ceil((new Date(initialCall?.expires_at || Date.now()).getTime() - Date.now()) / 1000)));
   const [statusText, setStatusText] = useState(callType === 'video' ? 'Calling with video…' : 'Calling…');

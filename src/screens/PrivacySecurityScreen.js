@@ -167,7 +167,7 @@ export default function PrivacySecurityScreen({ navigation }) {
               <View key={entry.userId} style={[styles.blockRow, { marginBottom: spacing.sm }]}>
                 <Avatar
                   name={entry.profile?.name || 'Unknown'}
-                  color={entry.profile?.avatar_color || entry.profile?.avatarColor || '#6C5CE7'}
+                  color={entry.profile?.avatar_color || entry.profile?.avatarColor || colors.primary}
                   imageUrl={entry.profile?.avatar_url || entry.profile?.avatarUrl}
                   size={36}
                 />

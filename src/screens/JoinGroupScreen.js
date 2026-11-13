@@ -28,9 +28,9 @@ export default function JoinGroupScreen({ navigation, route }) {
         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Group invite token</Text>
         <Text style={[typography.caption, { color: colors.textSecondary }]}>If you received a ZannyChat invite link but it did not open automatically, copy the token from the message and paste it here. Invites can expire or be revoked.</Text>
         <TextInput value={token} onChangeText={(value) => { setToken(value); setError(''); }} autoCapitalize="none" autoCorrect={false} multiline placeholder="Paste invite token" placeholderTextColor={colors.textSecondary} accessibilityLabel="Group invite token" style={{ minHeight: 92, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.md, color: colors.textPrimary, textAlignVertical: 'top' }} />
-        {error ? <Text style={[typography.caption, { color: colors.danger || '#E05B5B' }]}>{error}</Text> : null}
+        {error ? <Text style={[typography.caption, { color: colors.danger }]}>{error}</Text> : null}
         <TouchableOpacity disabled={busy} onPress={submit} accessibilityRole="button" style={{ minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: radii.md, backgroundColor: colors.primary, opacity: busy ? 0.65 : 1 }}>
-          {busy ? <ActivityIndicator color={colors.onPrimary || '#FFFFFF'} /> : <Text style={[typography.bodyStrong, { color: colors.onPrimary || '#FFFFFF' }]}>Join group</Text>}
+          {busy ? <ActivityIndicator color={colors.onPrimary} /> : <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Join group</Text>}
         </TouchableOpacity>
       </GlassCard>
     </ScrollView>
