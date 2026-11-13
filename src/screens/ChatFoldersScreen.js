@@ -65,7 +65,7 @@ export default function ChatFoldersScreen({ navigation }) {
   ]);
 
   const Choice = ({ item, selected, onPress, subtitle }) => (
-    <TouchableOpacity onPress={onPress} accessibilityRole="checkbox" accessibilityState={{ checked: selected }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 11 }}>
+    <TouchableOpacity onPress={onPress} accessibilityRole="checkbox" accessibilityLabel={item.label} accessibilityState={{ checked: selected }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 11 }}>
       <Ionicons name={selected ? 'checkbox' : 'square-outline'} size={21} color={selected ? colors.primary : colors.textSecondary} />
       <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm, flex: 1 }]}>{item.label}</Text>
       {item.icon ? <Ionicons name={item.icon} size={18} color={colors.textSecondary} /> : null}
@@ -86,11 +86,11 @@ export default function ChatFoldersScreen({ navigation }) {
           <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Additional filters</Text>
           {EXCLUSIONS.map((item) => <Choice key={item.key} item={item} selected={excluded.includes(item.key)} onPress={() => toggle(excluded, setExcluded, item.key)} />)}
           {error ? <Text style={[typography.caption, { color: colors.danger, marginTop: spacing.sm }]}>{error}</Text> : null}
-          <TouchableOpacity onPress={create} disabled={saving || !rules.length} accessibilityRole="button" style={{ backgroundColor: colors.primary, opacity: saving || !rules.length ? 0.55 : 1, borderRadius: radii.pill, paddingVertical: 13, alignItems: 'center', marginTop: spacing.md, flexDirection: 'row', justifyContent: 'center' }}>
+          <TouchableOpacity onPress={create} disabled={saving || !rules.length} accessibilityRole="button" accessibilityLabel={editingId ? 'Save chat folder changes' : 'Create chat folder'} accessibilityState={{ disabled: saving || !rules.length, busy: saving }} style={{ backgroundColor: colors.primary, opacity: saving || !rules.length ? 0.55 : 1, borderRadius: radii.pill, paddingVertical: 13, alignItems: 'center', marginTop: spacing.md, flexDirection: 'row', justifyContent: 'center' }}>
             {saving ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name="add-circle-outline" size={18} color={colors.onPrimary} />}
             <Text style={[typography.bodyStrong, { color: colors.onPrimary, marginLeft: 8 }]}>{saving ? 'Saving…' : editingId ? 'Save changes' : 'Create folder'}</Text>
           </TouchableOpacity>
-          {editingId ? <TouchableOpacity onPress={cancelEdit} accessibilityRole="button" style={{ alignItems: 'center', paddingVertical: 10 }}><Text style={[typography.body, { color: colors.textSecondary }]}>Cancel editing</Text></TouchableOpacity> : null}
+          {editingId ? <TouchableOpacity onPress={cancelEdit} accessibilityRole="button" accessibilityLabel="Cancel chat folder editing" style={{ alignItems: 'center', paddingVertical: 10 }}><Text style={[typography.body, { color: colors.textSecondary }]}>Cancel editing</Text></TouchableOpacity> : null}
         </GlassCard>
         <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.sm }]}>Your folders · {folders.length}</Text>
         {loading ? <ActivityIndicator color={colors.primary} /> : folders.length ? folders.map((folder) => (
