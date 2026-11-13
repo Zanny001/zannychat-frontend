@@ -129,6 +129,16 @@ function accessibleForeground(background) {
   return blackContrast >= whiteContrast ? '#080B18' : '#FFFFFF';
 }
 
+function accessibleText(hex, background, minimum = 4.5) {
+  const original = parseHex(hex);
+  for (let step = 0; step <= 100; step += 2) {
+    const factor = 1 - step / 100;
+    const candidate = '#' + original.map((value) => Math.round(value + (255 - value) * (1 - factor)).toString(16).padStart(2, '0')).join('').toUpperCase();
+    if (contrastRatio(candidate, background) >= minimum) return candidate;
+  }
+  return '#FFFFFF';
+}
+
 function accessibleAccent(hex, background, minimum = 4.5) {
   const original = parseHex(hex);
   for (let step = 0; step <= 100; step += 2) {
@@ -165,7 +175,7 @@ export function resolveMoodColors(mood, mode = 'dark', highContrast = false) {
     surface: mood.inkRaised,
     surfaceAlt: mood.inkRaisedAlt,
     textPrimary: mood.paper,
-    textSecondary: highContrast ? '#D2CCDE' : mood.inkSoft,
+    textSecondary: highContrast ? '#D2CCDE' : accessibleText(mood.inkSoft, mood.ink, 4.5),
     border: highContrast ? '#716A82' : mood.line,
     borderSubtle: highContrast ? '#5A536B' : mood.line,
     surfaceElevated: mood.inkRaisedAlt,
