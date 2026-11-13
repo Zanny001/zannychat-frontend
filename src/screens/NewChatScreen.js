@@ -414,7 +414,7 @@ export default function NewChatScreen({ navigation, route }) {
                     online={item.online}
                   />
 
-                  <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                  <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm, marginRight: spacing.xs }}>
                     <Text style={[typography.body, { color: colors.textPrimary }]} numberOfLines={1}>{item.name}</Text>
                     {item.username ? <Text style={[typography.caption, { color: colors.textSecondary }]} numberOfLines={1}>@{item.username}</Text> : null}
                   </View>
@@ -444,6 +444,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
+    minWidth: 0,
   },
   qrRow: {
     flexDirection: 'row',
