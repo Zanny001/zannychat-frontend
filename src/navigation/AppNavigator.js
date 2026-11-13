@@ -82,15 +82,20 @@ const MainTabs = createBottomTabNavigator();
 // underneath, tinted toward the mood's background color.
 function GlassTabBackground() {
   const { colors, resolvedMode } = useTheme();
+  // Match GlassCard's low-end Android fallback so the floating tab bar
+  // never forces a live blur pass on Android 10/11 devices.
+  const supportsBackdropBlur = Platform.OS !== 'android' || Number(Platform.Version) >= 31;
   return (
     <View style={[StyleSheet.absoluteFill, styles.tabBackground]}>
-      <BlurView
-        intensity={32}
-        tint={resolvedMode}
-        style={StyleSheet.absoluteFill}
-        experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
-      />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: hexToRgba(colors.background, 0.72) }]} />
+      {supportsBackdropBlur ? (
+        <BlurView
+          intensity={32}
+          tint={resolvedMode}
+          style={StyleSheet.absoluteFill}
+          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+        />
+      ) : null}
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: hexToRgba(colors.background, 0.84) }]} />
     </View>
   );
 }
