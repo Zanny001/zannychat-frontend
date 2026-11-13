@@ -779,12 +779,16 @@ export async function fetchConversations({ limit = 50, offset = 0 } = {}) {
   const participantIds = [...new Set(
     (data || []).flatMap((row) => (row.conversation_participants || []).map((participant) => participant.user_id)).filter(Boolean),
   )];
-  const { data: participantProfiles, error: participantProfilesError } = await supabase.rpc(
-    'get_conversation_profile_directory',
-    { p_user_ids: participantIds },
-  );
-  if (participantProfilesError) throw participantProfilesError;
-  const profilesById = new Map((participantProfiles || []).map((profile) => [profile.id, profile]));
+  const participantProfiles = [];
+  for (let start = 0; start < participantIds.length; start += 500) {
+    const { data: batchProfiles, error: participantProfilesError } = await supabase.rpc(
+      'get_conversation_profile_directory',
+      { p_user_ids: participantIds.slice(start, start + 500) },
+    );
+    if (participantProfilesError) throw participantProfilesError;
+    participantProfiles.push(...(batchProfiles || []));
+  }
+  const profilesById = new Map(participantProfiles.map((profile) => [profile.id, profile]));
   for (const row of data || []) {
     row.conversation_participants = (row.conversation_participants || []).map((participant) => ({
       ...participant,
