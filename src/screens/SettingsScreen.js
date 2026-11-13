@@ -196,7 +196,7 @@ export default function SettingsScreen({ navigation }) {
             {palettes.map((mood) => {
               const selected = paletteKey === mood.key;
               return (
-                <TouchableOpacity key={mood.key} onPress={() => setPalette(mood.key)} style={styles.swatchWrap}>
+                <TouchableOpacity key={mood.key} onPress={() => setPalette(mood.key)} accessibilityRole="radio" accessibilityLabel={`Select ${mood.label} colour palette`} accessibilityState={{ checked: currentPalette === mood.key }} style={styles.swatchWrap}>
                   <View
                     style={[
                       styles.swatchRing,
