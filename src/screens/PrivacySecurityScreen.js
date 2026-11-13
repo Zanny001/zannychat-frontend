@@ -228,7 +228,7 @@ export default function PrivacySecurityScreen({ navigation }) {
             accessibilityState={{ disabled: savingPassword || !SUPABASE_ENABLED, busy: savingPassword }}
             style={[styles.passwordButton, { backgroundColor: colors.primary, opacity: savingPassword || !SUPABASE_ENABLED ? 0.55 : 1 }]}
           >
-            <Text style={[typography.bodyStrong, { color: '#FFFFFF' }]}>{savingPassword ? 'Updating…' : 'Update password'}</Text>
+            <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>{savingPassword ? 'Updating…' : 'Update password'}</Text>
           </TouchableOpacity>
         </GlassCard>
 
@@ -334,7 +334,7 @@ export default function PrivacySecurityScreen({ navigation }) {
             accessibilityRole="button"
             accessibilityLabel="Permanently delete ZannyChat account"
             accessibilityState={{ disabled: deletingAccount || !SUPABASE_ENABLED || !BACKEND_ENABLED, busy: deletingAccount }}
-            style={[styles.passwordButton, { backgroundColor: '#B4232C', opacity: deletingAccount || !SUPABASE_ENABLED || !BACKEND_ENABLED ? 0.55 : 1 }]}
+            style={[styles.passwordButton, { backgroundColor: colors.danger, opacity: deletingAccount || !SUPABASE_ENABLED || !BACKEND_ENABLED ? 0.55 : 1 }]}
           >
             <Text style={[typography.bodyStrong, { color: '#FFFFFF' }]}>{deletingAccount ? 'Deleting account…' : 'Delete my account permanently'}</Text>
           </TouchableOpacity>
