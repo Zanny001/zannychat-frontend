@@ -177,6 +177,8 @@ export default function LiveHubScreen({ navigation }) {
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radii.md,
+    minWidth: 0,
+    width: '100%',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   };
@@ -223,8 +225,8 @@ export default function LiveHubScreen({ navigation }) {
                 <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: hexToRgba(colors.danger, 0.12), alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="videocam" size={22} color={colors.danger} />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Start a broadcast</Text>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary }]}>Start a broadcast</Text>
                   <Text style={[typography.caption, { color: colors.textSecondary }]}>Set the mood before you go live</Text>
                 </View>
                 <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, backgroundColor: hexToRgba(colors.danger, 0.1) }}>
@@ -331,8 +333,8 @@ export default function LiveHubScreen({ navigation }) {
             )}
 
             <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.xs, paddingBottom: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              <View style={{ flex: 1 }}>
-                <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Live now</Text>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary }]}>Live now</Text>
                 <Text style={[typography.caption, { color: colors.textSecondary }]}>Join a conversation happening right now</Text>
               </View>
               <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh LIVE streams" style={{ padding: spacing.sm }}>
@@ -358,11 +360,11 @@ export default function LiveHubScreen({ navigation }) {
         renderItem={({ item }) => (
           <GlassCard style={{ marginHorizontal: spacing.md, marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              <TouchableOpacity disabled={busy} onPress={() => joinLive(item)} accessibilityRole="button" accessibilityLabel={'Join LIVE: ' + item.title} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              <TouchableOpacity disabled={busy} onPress={() => joinLive(item)} accessibilityRole="button" accessibilityLabel={'Join LIVE: ' + item.title} style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                 <View style={{ width: 48, height: 48, borderRadius: 16, backgroundColor: hexToRgba(colors.danger, 0.1), alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="videocam" size={23} color={colors.danger} />
                 </View>
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, minWidth: 0 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.xs }}>
                     <Text numberOfLines={2} style={[typography.bodyStrong, { color: colors.textPrimary, flexShrink: 1 }]}>{item.title}</Text>
                     <View style={{ paddingHorizontal: 7, paddingVertical: 3, borderRadius: 10, backgroundColor: hexToRgba(colors.danger, 0.1) }}>
