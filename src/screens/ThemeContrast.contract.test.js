@@ -118,3 +118,15 @@ test('web group-call fallback provides an accessible native-app explanation and 
   assert.match(fallback, /accessibilityLabel="Go back"/);
   assert.match(fallback, /minHeight: 44/);
 });
+
+test('create-group screen exposes accessible selection controls and complete contact states', () => {
+  const createGroup = readFileSync(new URL('CreateGroupScreen.js', import.meta.url), 'utf8');
+  assert.match(createGroup, /accessibilityRole="checkbox"/);
+  assert.match(createGroup, /accessibilityLabel=\{'Select ' \+ item\.name \+ ' for group'\}/);
+  assert.match(createGroup, /accessibilityState=\{\{ checked: selected \}\}/);
+  assert.match(createGroup, /accessibilityLabel="Create group"/);
+  assert.match(createGroup, /loadingContacts/);
+  assert.match(createGroup, /contactsError/);
+  assert.match(createGroup, /No contacts available to add yet/);
+  assert.match(createGroup, /minHeight: 48/);
+});
