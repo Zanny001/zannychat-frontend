@@ -99,7 +99,7 @@ export default function QRContactScreen({ navigation, route }) {
               <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.sm }]}>{loadingUser ? 'Loading account…' : 'Connect a live account and backend to create your QR code.'}</Text>
             </View>
           )}
-          <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginTop: spacing.md }]}>{user?.name || 'Your ZannyChat profile'}</Text>
+          <Text numberOfLines={2} style={[typography.bodyStrong, { color: colors.textPrimary, marginTop: spacing.md, textAlign: 'center', maxWidth: '100%' }]}>{user?.name || 'Your ZannyChat profile'}</Text>
         </GlassCard>
 
         <GlassCard style={{ width: '100%' }}>
