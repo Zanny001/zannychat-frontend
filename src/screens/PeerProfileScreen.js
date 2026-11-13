@@ -167,7 +167,7 @@ export default function PeerProfileScreen({ route, navigation }) {
             hitSlop={12}
             style={styles.photoViewerClose}
           >
-            <Ionicons name="close" size={27} color={colors.textPrimary} />
+            <Ionicons name="close" size={27} color="#FFFFFF" />
           </Pressable>
         </View>
         {avatarUrl ? <Image source={{ uri: avatarUrl }} resizeMode="contain" style={styles.photoViewerImage} accessibilityLabel={`${name}'s full-size profile photo`} onError={() => setPhotoViewerVisible(false)} /> : null}
