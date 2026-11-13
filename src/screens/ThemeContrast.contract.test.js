@@ -285,7 +285,7 @@ function interactiveOpeningTags(source) {
     let cursor = 0;
     while ((cursor = source.indexOf('<' + name, cursor)) !== -1) {
       const next = source[cursor + name.length + 1];
-      if (next && !/[\\s/>]/.test(next)) {
+      if (next && !/[\s/>]/.test(next)) {
         cursor += name.length + 1;
         continue;
       }
@@ -296,7 +296,7 @@ function interactiveOpeningTags(source) {
       for (; index < source.length; index += 1) {
         const character = source[index];
         if (quote) {
-          if (character === quote && source[index - 1] !== '\\\\') quote = null;
+          if (character === quote && source[index - 1] !== '\\') quote = null;
           continue;
         }
         if (character === "'" || character === '"' || character === '`') {
@@ -327,11 +327,11 @@ test('every interactive control in every screen file has an explicit accessible 
     const controls = interactiveOpeningTags(source);
     totalControls += controls.length;
     for (const tag of controls) {
-      if (!/\\baccessibilityLabel\\s*=/.test(tag) || !/\\baccessibilityRole\\s*=/.test(tag)) {
-        violations.push(file + ': ' + tag.replace(/\\s+/g, ' ').slice(0, 180));
+      if (!/\baccessibilityLabel\s*=/.test(tag) || !/\baccessibilityRole\s*=/.test(tag)) {
+        violations.push(file + ': ' + tag.replace(/\s+/g, ' ').slice(0, 180));
       }
     }
   }
   assert.ok(totalControls >= 300, 'Expected to audit at least 300 interactive controls, found ' + totalControls);
-  assert.deepEqual(violations, [], 'Interactive controls missing an accessibility label or role:\\n' + violations.join('\\n'));
+  assert.deepEqual(violations, [], 'Interactive controls missing an accessibility label or role:\n' + violations.join('\n'));
 });
