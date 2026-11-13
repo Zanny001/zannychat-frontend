@@ -110,3 +110,11 @@ test('web LIVE actions expose labels, disabled state and accessible touch target
   assert.match(liveScreen, /accessibilityLabel="LIVE chat message"/);
   assert.match(liveScreen, /accessibilityLabel="Send heart reaction"/);
 });
+
+test('web group-call fallback provides an accessible native-app explanation and back action', () => {
+  const fallback = readFileSync(new URL('GroupCallScreen.web.js', import.meta.url), 'utf8');
+  assert.match(fallback, /Group calling needs the native app/);
+  assert.match(fallback, /accessibilityRole="button"/);
+  assert.match(fallback, /accessibilityLabel="Go back"/);
+  assert.match(fallback, /minHeight: 44/);
+});
