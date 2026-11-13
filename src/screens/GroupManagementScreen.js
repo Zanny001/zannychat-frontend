@@ -120,7 +120,7 @@ ${invite.token}` });
     {loading ? <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} /> : error ? <View style={{ padding: spacing.lg }}>
       <Text style={[typography.body, { color: colors.textSecondary }]}>{error}</Text>
       <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading group members" style={{ paddingVertical: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity>
-    </View> : <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xl }}>
+    </View> : <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xl }}>
       <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Manage members</Text>
         <Text style={[typography.caption, { color: colors.textSecondary }]}>{isAdmin ? 'You are a group admin. Changes are verified by the server.' : 'You can review members and leave the group. Only admins can change other members.'}</Text>
