@@ -376,8 +376,8 @@ export default function ChatListScreen({ navigation }) {
       )}
 
       {conversationActionError ? (
-        <View style={{ marginHorizontal: spacing.md, marginBottom: spacing.sm, padding: spacing.sm, borderRadius: radii.md || 12, borderWidth: 1, borderColor: colors.danger || '#dc2626', backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center' }}>
-          <Ionicons name="alert-circle-outline" size={18} color={colors.danger || '#dc2626'} />
+        <View style={{ marginHorizontal: spacing.md, marginBottom: spacing.sm, padding: spacing.sm, borderRadius: radii.md || 12, borderWidth: 1, borderColor: colors.danger, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center' }}>
+          <Ionicons name="alert-circle-outline" size={18} color={colors.danger} />
           <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textPrimary, flex: 1, marginHorizontal: spacing.sm }]}>{conversationActionError}</Text>
           <TouchableOpacity onPress={() => setConversationActionError('')} accessibilityRole="button" accessibilityLabel="Dismiss chat action error" style={{ minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="close" size={18} color={colors.textSecondary} />
@@ -564,7 +564,7 @@ export default function ChatListScreen({ navigation }) {
               <Text
                 accessibilityRole="alert"
                 style={{
-                  color: colors.danger || '#dc2626',
+                  color: colors.danger,
                   marginBottom: spacing.md,
                 }}
               >

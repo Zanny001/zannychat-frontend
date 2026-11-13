@@ -944,7 +944,7 @@ export default function ChatScreen({ route, navigation }) {
       const profile = contacts.find((c) => c.id === sharedUserId) || {
         id: sharedUserId,
         name: name || 'Contact',
-        avatarColor: '#6C5CE7',
+        avatarColor: colors.primary,
       };
       const newConversation = await createConversation(sharedUserId, profile);
       navigation.push('Chat', { conversation: newConversation });
@@ -1494,7 +1494,7 @@ export default function ChatScreen({ route, navigation }) {
                   <Text style={{ color: colors.accent, fontWeight: '700', fontSize: 12 }}>Retry</Text>
                 </TouchableOpacity>
                 <TouchableOpacity disabled={retryingAttachments} onPress={() => discardPendingAttachment(item)} accessibilityRole="button" accessibilityLabel={`Remove queued ${item.kind} attachment`} style={{ padding: 6 }}>
-                  <Text style={{ color: colors.danger || '#D84C4C', fontWeight: '700', fontSize: 12 }}>Remove</Text>
+                  <Text style={{ color: colors.danger, fontWeight: '700', fontSize: 12 }}>Remove</Text>
                 </TouchableOpacity>
               </View>
             ))}
