@@ -47,41 +47,41 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 
 ### Social and community
 
-- [ ] Updates
-- [ ] StatusUpdates
+- [~] Updates
+- [~] StatusUpdates
 - [~] Channels
 - [~] Polls
 - [~] Events
 
 ### Profiles, groups and discovery
 
-- [ ] Profile
-- [ ] PeerProfile
-- [ ] EditProfile
-- [ ] CreateGroup
-- [ ] GroupManagement
-- [ ] JoinGroup
-- [ ] QRContact
-- [ ] ContactDiscovery
+- [~] Profile
+- [~] PeerProfile
+- [~] EditProfile
+- [~] CreateGroup
+- [~] GroupManagement
+- [~] JoinGroup
+- [~] QRContact
+- [~] ContactDiscovery
 
 ### Account, settings and support
 
 - [~] Settings — theme presets and custom colour studio
-- [ ] PrivacySecurity
-- [ ] Notifications
-- [ ] DataStorage
-- [ ] DataExport
-- [ ] Sessions
-- [ ] Help
+- [~] PrivacySecurity
+- [~] Notifications
+- [~] DataStorage
+- [~] DataExport
+- [~] Sessions
+- [~] Help
 
 ### Authentication
 
-- [ ] Onboarding
-- [ ] Login
-- [ ] Signup
-- [ ] VerifyEmail
-- [ ] PasswordRecovery
-- [ ] PasswordReset
+- [~] Onboarding
+- [~] Login
+- [~] Signup
+- [~] VerifyEmail
+- [~] PasswordRecovery
+- [~] PasswordReset
 
 ### Additional route
 
@@ -95,3 +95,11 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 4. Respect reduced motion; no continuous high-cost visual effects.
 5. Test web export and native Android behavior; do not treat a web preview as proof of native calling/camera support.
 6. No production deploy, database migration or PR merge without its own validation and approval.
+
+
+## Latest implementation notes
+
+- Profile, peer profile and edit-profile action foregrounds now use contrast-safe theme tokens.
+- Group creation, QR scanner and the authentication primary actions now use the selected palette's readable foreground token.
+- Privacy/security destructive actions, session revocation and data export actions now use dynamic danger/primary tokens rather than fixed brand colours.
+- Status updates, notifications, storage, export, sessions and help were inspected and already consume the shared theme provider; further interaction/accessibility validation remains open.
