@@ -49,7 +49,7 @@ function Field({ label, value, onChangeText, placeholder, multiline = false, key
 
 function Toggle({ label, value, onValueChange, hint, spacing, typography, colors }) {
   return <View style={styles.toggleRow}>
-    <View style={{ flex: 1, paddingRight: spacing.md }}>
+    <View style={{ flex: 1, minWidth: 0, paddingRight: spacing.md }}>
       <Text style={[typography.body, { color: colors.text }]}>{label}</Text>
       {hint ? <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>{hint}</Text> : null}
     </View>
@@ -61,7 +61,7 @@ function Choice({ label, value, options, onChange, spacing, typography, colors }
   const current = Math.max(0, options.findIndex((item) => item.value === value));
   const next = options[(current + 1) % options.length];
   return <TouchableOpacity accessibilityRole="button" accessibilityLabel={`${label}; currently ${options[current].label}. Activate to change.`} onPress={() => onChange(next.value)} style={[styles.choiceRow, { minHeight: 48 }]}>
-    <Text style={[typography.body, { color: colors.text, flex: 1 }]}>{label}</Text>
+    <Text style={[typography.body, { color: colors.text, flex: 1, minWidth: 0 }]}>{label}</Text>
     <Text style={[typography.bodyStrong, { color: colors.primary }]}>{options[current].label}</Text>
     <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
   </TouchableOpacity>;
