@@ -11,19 +11,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // is more than adequate for a session token, so web gets that instead;
 // native keeps AsyncStorage, which is the only real option there.
 // Browsers can disable localStorage (private mode, embedded/sandboxed views,
-// or enterprise policy). Never let a storage SecurityError crash auth startup;
-// use a tab-memory fallback for the current runtime when persistence is blocked.
+// or enterprise policy). Prefer sessionStorage as a reload-safe, tab-scoped
+// fallback before falling back to memory for the current runtime.
 const memoryWebStorage = new Map();
 function readLocalStorage(key) {
   try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const value = window.localStorage.getItem(key);
-      if (value !== null) return value;
-    }
-  } catch (_) { /* Try session storage and then the in-memory fallback. */ }
-  try {
     if (typeof window !== 'undefined' && window.sessionStorage) {
       const value = window.sessionStorage.getItem(key);
+      if (value !== null) return value;
+    }
+  } catch (_) { /* Try persistent local storage and then memory. */ }
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const value = window.localStorage.getItem(key);
       if (value !== null) return value;
     }
   } catch (_) { /* Fall through to tab-memory storage. */ }
@@ -33,6 +33,7 @@ function writeLocalStorage(key, value) {
   try {
     if (typeof window !== 'undefined' && window.localStorage) {
       window.localStorage.setItem(key, value);
+      try { window.sessionStorage?.removeItem(key); } catch (_) {}
       memoryWebStorage.delete(key);
       return;
     }
