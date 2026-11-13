@@ -40,3 +40,10 @@ Royal Neon is the first-run visual direction for ZannyChat: deep obsidian surfac
 - Floating neon glass navigation with reduced-motion-aware spring feedback.
 
 This document records the foundation only. Screen-by-screen redesign and full device validation remain separate completion gates.
+
+## Calls, LIVE and community surfaces
+
+- Incoming, outgoing, active and group-call controls consume the active palette's primary, danger and contrast-safe foreground tokens.
+- LIVE video keeps a dark cinematic media stage for video legibility, while headers, moderation sheets, guest controls, comments and reactions adapt to the user's palette.
+- Channel discovery, public LIVE accents, polls and event actions use the same dynamic palette and contrast-safe action foregrounds.
+- Media content itself is not tinted; only interface chrome and controls follow the selected palette.
