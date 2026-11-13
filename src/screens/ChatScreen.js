@@ -1507,7 +1507,7 @@ export default function ChatScreen({ route, navigation }) {
         {pendingOutbox.length > 0 ? (
           <View style={{ marginHorizontal: spacing.md, marginBottom: 8, padding: 10, borderRadius: 8, backgroundColor: hexToRgba(colors.accent, 0.10) }}>
             <Text style={{ color: colors.text, fontSize: 13 }}>{pendingOutbox.length} message{pendingOutbox.length === 1 ? '' : 's'} waiting to send. They are saved on this device.</Text>
-            <TouchableOpacity disabled={retryingOutbox} onPress={async () => { if (automaticRetryInFlightRef.current) return; automaticRetryInFlightRef.current = true; setRetryingOutbox(true); try { for (const item of [...pendingOutbox]) { const ok = await handleSend(item.text, item.requestId, item.replyToId); if (!ok) break; } } finally { automaticRetryInFlightRef.current = false; setRetryingOutbox(false); } }} style={{ alignSelf: 'flex-end', paddingTop: 6 }} accessibilityRole="button">
+            <TouchableOpacity disabled={retryingOutbox} onPress={async () => { if (automaticRetryInFlightRef.current) return; automaticRetryInFlightRef.current = true; setRetryingOutbox(true); try { for (const item of [...pendingOutbox]) { const ok = await handleSend(item.text, item.requestId, item.replyToId); if (!ok) break; } } finally { automaticRetryInFlightRef.current = false; setRetryingOutbox(false); } }} style={{ alignSelf: 'flex-end', paddingTop: 6 }} accessibilityRole="button" accessibilityLabel="Retry sending pending messages" accessibilityState={{ disabled: retryingOutbox, busy: retryingOutbox }}>
               <Text style={{ color: colors.accent, fontWeight: '700' }}>{retryingOutbox ? 'Retrying…' : 'Retry pending messages'}</Text>
             </TouchableOpacity>
           </View>
@@ -1518,7 +1518,7 @@ export default function ChatScreen({ route, navigation }) {
             <Text style={{ color: colors.danger, fontSize: 13 }}>
               Message not sent: {sendError}
             </Text>
-            <TouchableOpacity onPress={() => setSendError('')} style={{ alignSelf: 'flex-end', paddingTop: 6 }} accessibilityRole="button">
+            <TouchableOpacity onPress={() => setSendError('')} style={{ alignSelf: 'flex-end', paddingTop: 6 }} accessibilityRole="button" accessibilityLabel="Dismiss message error">
               <Text style={{ color: colors.danger, fontWeight: '600' }}>Dismiss</Text>
             </TouchableOpacity>
           </View>
