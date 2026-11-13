@@ -161,7 +161,7 @@ export default function SharedMediaScreen({ route, navigation }) {
           })}
         </View>
         <GlassCard noPadding glow intensity={22} tintAlpha={0.42} style={{ marginTop: spacing.sm }}>
-          <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder={`Search ${TABS.find((item) => item.key === tab)?.label.toLowerCase() || 'shared items'}…`} placeholderTextColor={colors.textSecondary} accessibilityLabel={`Search shared ${tab}`} returnKeyType="search" clearButtonMode="while-editing" style={[typography.body, { color: colors.textPrimary, minHeight: 48, paddingHorizontal: spacing.md, paddingVertical: spacing.sm }]} />
+          <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder={`Search ${TABS.find((item) => item.key === tab)?.label.toLowerCase() || 'shared items'}…`} placeholderTextColor={colors.textSecondary} accessibilityLabel={`Search shared ${tab}`} returnKeyType="search" clearButtonMode="while-editing" style={[typography.body, { color: colors.textPrimary, minWidth: 0, width: '100%', minHeight: 48, paddingHorizontal: spacing.md, paddingVertical: spacing.sm }]} />
         </GlassCard>
         <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Recent shared items · private attachments use expiring access links.</Text>
       </View>
@@ -199,7 +199,7 @@ export default function SharedMediaScreen({ route, navigation }) {
             <TouchableOpacity key={item.id} onPress={() => openAttachment(item)} activeOpacity={0.82} accessibilityRole="button" accessibilityLabel={`Open ${item.mediaName || (item.mediaType === 'voice' ? 'voice note' : 'shared file')}`} style={{ marginBottom: spacing.sm }}>
               <GlassCard contentStyle={styles.fileRow}>
                 <View style={[styles.fileIcon, { backgroundColor: `${colors.primary}18`, borderRadius: radii.md }]}><Ionicons name={item.mediaType === 'voice' || item.mediaType === 'audio' ? 'musical-notes-outline' : item.mediaType === 'video' ? 'videocam-outline' : 'document-text-outline'} size={22} color={colors.primary} /></View>
-                <View style={{ flex: 1, marginLeft: spacing.md }}>
+                <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.md }}>
                   <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.mediaName || (item.mediaType === 'voice' ? 'Voice note' : item.mediaType === 'video' ? 'Video' : 'Shared file')}</Text>
                   <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>{readableDate(item.createdAt)}{item.mediaSize ? ` · ${Math.max(1, Math.round(item.mediaSize / 1024))} KB` : ''}</Text>
                 </View>
@@ -211,7 +211,7 @@ export default function SharedMediaScreen({ route, navigation }) {
             <TouchableOpacity key={`${item.messageId}-${item.url}-${index}`} onPress={() => openLink(item.url)} activeOpacity={0.82} accessibilityRole="link" accessibilityLabel={`Open link to ${item.host}`} style={{ marginBottom: spacing.sm }}>
               <GlassCard contentStyle={styles.linkRow}>
                 <View style={[styles.linkIcon, { backgroundColor: `${colors.primary}18`, borderRadius: radii.md }]}><Ionicons name="link-outline" size={21} color={colors.primary} /></View>
-                <View style={{ flex: 1, marginLeft: spacing.md }}>
+                <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.md }}>
                   <Text numberOfLines={2} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.title}</Text>
                   <Text numberOfLines={1} style={[typography.caption, { color: colors.primary, marginTop: 4 }]}>{item.host}</Text>
                   {item.senderName ? <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>Shared by {item.senderName}</Text> : null}
