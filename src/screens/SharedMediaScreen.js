@@ -175,7 +175,7 @@ export default function SharedMediaScreen({ route, navigation }) {
           <TouchableOpacity onPress={loadInitial} accessibilityRole="button" accessibilityLabel="Retry loading shared media" style={[styles.retryButton, { backgroundColor: colors.primary, borderRadius: radii.md }]}><Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Try again</Text></TouchableOpacity>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl }}>
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl }}>
           {error ? <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.sm }]}>{error}</Text> : null}
           {tab === 'photos' && visibleItems.length > 0 ? (
             <View style={styles.photoGrid}>
