@@ -12,7 +12,7 @@ Source of truth: the current `src/navigation/AppNavigator.js` route declarations
 - [x] Floating glass bottom navigation with reduced-motion-aware icon animation.
 - [x] Chats camera shortcut and privacy-filtered Moments tray.
 - [x] Palette-aware message composer send control.
-- [ ] Run frontend unit tests and release audits on the latest feature-branch head.
+- [x] Run frontend unit tests and release audits on the validated feature-branch head (13 Nov 2026).
 - [ ] Verify custom-palette contrast on LIVE video overlays and call controls.
 - [ ] Verify Android 10 / lower-powered device performance.
 - [ ] Approve and merge the design foundation.
@@ -101,7 +101,11 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 
 - Additional contrast pass: dynamic foreground tokens now cover chat deletion and media send, contact matching, LIVE hub badges, missed-call history, story publishing, profile/group actions, account security, session revocation, export and authentication actions.
 - Theme accessibility tests now exercise danger-action foreground contrast across every built-in palette in both Light and Dark appearance.
-- Two GitHub quality workflows were started during this pass but were cancelled before completing their export/test stages; do not treat them as passing. A clean latest-head validation is still required after implementation work settles.
+- Latest-head validation supersedes the earlier cancelled runs: the Premium status and LIVE quality workflow and Advanced calling client checks both passed on commit `73a292d` (13 Nov 2026). The run passed web export, Android Expo export, unit/call-recovery/native receiver tests, release/contract/integrity audits, Android Kotlin compilation, Android debug APK assembly and artifact upload, iOS prebuild, and the iOS CallKit end-event patch verification.
+- The Android QA APK artifact `zannychat-royal-neon-android-debug` was successfully uploaded (artifact ID `14010614222`, seven-day retention). It is a debug build with placeholder Firebase configuration; it is not a production release and has not yet been installed/validated on a physical device.
+- Route inventory is 41 root-stack routes plus five Main-tab destinations, with Channels shared between them: 45 unique navigation experiences. All screen component files (including web-specific call/LIVE screens) are covered by the shared-theme-hook contract test.
+- The screen entries remain `[~]` until their individual visual, interaction, accessibility and regression validation is complete. Remaining external/device gates include Android 10 performance and physical-device call/camera/push checks; iOS prebuild and source-level CallKit patch checks are not a substitute for an iOS device build/test.
+- The Figma design file was created, but its pages/components are still unpopulated because the Figma Starter-plan tool-call limit was reached. Do not represent the Figma handoff as finished.
 
 - Contact discovery, LIVE hub badges, missed-call history, chat deletion, message deletion and media-send actions now consume dynamic theme danger/primary foreground tokens.
 - Story publishing actions use the contrast-safe primary foreground; full-screen story media remains a dark cinematic stage so image/video content and white overlay controls remain legible.
