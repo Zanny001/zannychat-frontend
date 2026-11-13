@@ -1514,12 +1514,12 @@ export default function ChatScreen({ route, navigation }) {
         ) : null}
 
         {sendError ? (
-          <View style={{ marginHorizontal: spacing.md, marginBottom: 8, padding: 10, borderRadius: 8, backgroundColor: '#FCE8E6' }}>
-            <Text style={{ color: '#9B1C1C', fontSize: 13 }}>
+          <View style={{ marginHorizontal: spacing.md, marginBottom: 8, padding: 10, borderRadius: 8, backgroundColor: colors.surface }}>
+            <Text style={{ color: colors.danger, fontSize: 13 }}>
               Message not sent: {sendError}
             </Text>
             <TouchableOpacity onPress={() => setSendError('')} style={{ alignSelf: 'flex-end', paddingTop: 6 }} accessibilityRole="button">
-              <Text style={{ color: '#9B1C1C', fontWeight: '600' }}>Dismiss</Text>
+              <Text style={{ color: colors.danger, fontWeight: '600' }}>Dismiss</Text>
             </TouchableOpacity>
           </View>
         ) : null}
@@ -1628,7 +1628,7 @@ Choose whether to remove this message only from your chat or retract it
             {deleteMessageError ? (
               <Text
                 style={{
-                  color: '#B42318',
+                  color: colors.danger,
                   marginBottom: 14,
                   fontSize: 14,
                 }}
@@ -1669,16 +1669,16 @@ Choose whether to remove this message only from your chat or retract it
                   paddingHorizontal: 16,
                   paddingVertical: 11,
                   borderRadius: radii.md || 10,
-                  backgroundColor: '#B42318',
+                  backgroundColor: colors.danger,
                   opacity: deletingMessage ? 0.65 : 1,
                   minWidth: 90,
                   alignItems: 'center',
                 }}
               >
                 {deletingMessage ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={colors.onDanger} />
                 ) : (
-                  <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>
+                  <Text style={{ color: colors.onDanger, fontWeight: '700' }}>
                     Delete for me
                   </Text>
                 )}
@@ -1689,9 +1689,9 @@ Choose whether to remove this message only from your chat or retract it
                   onPress={() => performDeleteMessage(deleteMessageTarget, 'everyone')}
                   accessibilityRole="button"
                   accessibilityLabel="Delete message for everyone"
-                  style={{ paddingHorizontal: 16, paddingVertical: 11, borderRadius: radii.md || 10, backgroundColor: '#B42318', opacity: deletingMessage ? 0.65 : 1, minWidth: 120, alignItems: 'center' }}
+                  style={{ paddingHorizontal: 16, paddingVertical: 11, borderRadius: radii.md || 10, backgroundColor: colors.danger, opacity: deletingMessage ? 0.65 : 1, minWidth: 120, alignItems: 'center' }}
                 >
-                  {deletingMessage ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Delete for everyone</Text>}
+                  {deletingMessage ? <ActivityIndicator size="small" color={colors.onDanger} /> : <Text style={{ color: colors.onDanger, fontWeight: '700' }}>Delete for everyone</Text>}
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -1715,8 +1715,8 @@ Choose whether to remove this message only from your chat or retract it
             {['❤️', '😂', '🔥', '😍', '✨', '👍', '🎉', '🥹'].map((emoji) => <TouchableOpacity key={emoji} onPress={() => setMediaCaption((value) => `${value}${emoji}`)} accessibilityRole="button" accessibilityLabel={`Add ${emoji}`}><Text style={{ fontSize: 24 }}>{emoji}</Text></TouchableOpacity>)}
           </View>
           <TouchableOpacity onPress={sendMediaDraft} disabled={uploading} style={{ marginTop: spacing.lg, borderRadius: radii.md, backgroundColor: colors.primary, padding: spacing.md, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', opacity: uploading ? 0.65 : 1 }}>
-            {uploading ? <ActivityIndicator color="#fff" /> : <Ionicons name="send" size={18} color="#fff" />}
-            <Text style={[typography.bodyStrong, { color: '#fff', marginLeft: 8 }]}>{uploading ? 'Sending…' : 'Send media'}</Text>
+            {uploading ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name="send" size={18} color={colors.onPrimary} />}
+            <Text style={[typography.bodyStrong, { color: colors.onPrimary, marginLeft: 8 }]}>{uploading ? 'Sending…' : 'Send media'}</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -1730,7 +1730,7 @@ Choose whether to remove this message only from your chat or retract it
             accessibilityLabel="Save image to device"
             accessibilityRole="button"
           >
-            <Ionicons name="download-outline" size={25} color="#fff" />
+            <Ionicons name="download-outline" size={25} color={colors.onPrimary} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.lightboxClose}
@@ -1739,7 +1739,7 @@ Choose whether to remove this message only from your chat or retract it
             accessibilityLabel="Close fullscreen image"
             accessibilityRole="button"
           >
-            <Ionicons name="close" size={28} color="#fff" />
+            <Ionicons name="close" size={28} color={colors.onPrimary} />
           </TouchableOpacity>
           {fullscreenImage && (
             <Image
