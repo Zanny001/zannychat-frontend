@@ -109,8 +109,8 @@ export default function SessionsScreen({ navigation }) {
         <TouchableOpacity onPress={() => endSession('local')} disabled={busy || loading || !session} accessibilityRole="button" accessibilityLabel="Sign out on this device" accessibilityState={{ disabled: busy || loading || !session, busy }} style={[styles.secondaryButton, { borderColor: colors.border, opacity: busy || loading || !session ? 0.5 : 1 }]}>
           <Ionicons name="log-out-outline" size={19} color={colors.textPrimary} /><Text style={[typography.bodyStrong, { color: colors.textPrimary, marginLeft: 9 }]}>{busy ? 'Signing out…' : 'Sign out on this device'}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => endSession('global')} disabled={busy || loading || !session} accessibilityRole="button" accessibilityLabel="Sign out everywhere" accessibilityState={{ disabled: busy || loading || !session, busy }} style={[styles.dangerButton, { backgroundColor: '#B4232C', opacity: busy || loading || !session ? 0.5 : 1 }]}>
-          <Ionicons name="shield-checkmark-outline" size={19} color="#FFFFFF" /><Text style={[typography.bodyStrong, { color: '#FFFFFF', marginLeft: 9 }]}>Sign out everywhere</Text>
+        <TouchableOpacity onPress={() => endSession('global')} disabled={busy || loading || !session} accessibilityRole="button" accessibilityLabel="Sign out everywhere" accessibilityState={{ disabled: busy || loading || !session, busy }} style={[styles.dangerButton, { backgroundColor: colors.danger, opacity: busy || loading || !session ? 0.5 : 1 }]}>
+          <Ionicons name="shield-checkmark-outline" size={19} color={colors.onDanger} /><Text style={[typography.bodyStrong, { color: colors.onDanger, marginLeft: 9 }]}>Sign out everywhere</Text>
         </TouchableOpacity>
         {!SUPABASE_ENABLED ? <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: 12 }]}>Session controls are disabled in demo mode.</Text> : null}
       </ScrollView>
