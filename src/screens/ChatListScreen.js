@@ -48,6 +48,7 @@ export default function ChatListScreen({ navigation }) {
   const [activeFilter, setActiveFilter] = useState('all');
   const [customFolders, setCustomFolders] = useState([]);
   const [storyGroups, setStoryGroups] = useState([]);
+  const [ownProfile, setOwnProfile] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [sheetFor, setSheetFor] = useState(null); // conversation whose long-press sheet is open
   const [onlineIds, setOnlineIds] = useState(new Set());
@@ -87,6 +88,7 @@ export default function ChatListScreen({ navigation }) {
     (async () => {
       try {
         const user = await getCurrentUser();
+        if (alive) setOwnProfile(user || null);
         const folders = await loadChatFolders(user?.id || 'guest');
         if (alive) setCustomFolders(folders);
       } catch (_) {}
@@ -295,7 +297,7 @@ export default function ChatListScreen({ navigation }) {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storyTray}>
           <TouchableOpacity onPress={() => navigation.navigate('Updates')} accessibilityRole="button" accessibilityLabel="Add or view your story" style={styles.storyItem}>
             <View style={[styles.storyRing, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Avatar name="Your story" color={colors.primary} size={52} />
+              <Avatar name={ownProfile?.name || "You"} color={ownProfile?.avatarColor || colors.primary} imageUrl={ownProfile?.avatarUrl || ownProfile?.avatar_url} size={52} />
               <View style={[styles.storyAdd, { backgroundColor: colors.primary, borderColor: colors.background }]}>
                 <Ionicons name="add" size={14} color={colors.onPrimary} />
               </View>
