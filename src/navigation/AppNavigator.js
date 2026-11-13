@@ -231,15 +231,19 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
     if (!SUPABASE_ENABLED || !supabase) return undefined;
     let active = true;
     let attachedUserId = null;
+    let activeUserId = null;
     const deliverIncoming = async (incoming) => {
-      if (!active || !incoming?.id || incomingIdsRef.current.has(incoming.id)) return;
+      if (!active || !incoming?.id || incoming.callee_id !== activeUserId || incomingIdsRef.current.has(incoming.id)) return;
       // Claim before awaiting profile/native work so realtime and backfill
       // cannot race and open duplicate incoming-call screens.
       incomingIdsRef.current.add(incoming.id);
       try {
         const callerName = await getCallParticipantName(incoming.caller_id);
         const nativeCallId = Platform.OS === 'web' ? null : await reportIncomingCallIfNeeded(incoming, callerName);
-        if (!active) return;
+        if (!active || incoming.callee_id !== activeUserId) {
+          incomingIdsRef.current.delete(incoming.id);
+          return;
+        }
         if (incomingIdsRef.current.size > 50) {
           incomingIdsRef.current.delete(incomingIdsRef.current.values().next().value);
         }
@@ -274,6 +278,7 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
     const attach = (userId) => {
       if (userId === attachedUserId) return;
       attachedUserId = userId;
+      activeUserId = userId;
       incomingUnsubscribeRef.current?.();
       incomingUnsubscribeRef.current = null;
       incomingIdsRef.current.clear();
