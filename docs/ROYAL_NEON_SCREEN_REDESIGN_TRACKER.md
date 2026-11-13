@@ -111,3 +111,5 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 - Group creation, QR scanner and the authentication primary actions now use the selected palette's readable foreground token.
 - Privacy/security destructive actions, session revocation and data export actions now use dynamic danger/primary tokens rather than fixed brand colours.
 - Status updates, notifications, storage, export, sessions and help were inspected and already consume the shared theme provider; further interaction/accessibility validation remains open.
+
+- Profile photo viewer close control retains a fixed white foreground on its intentionally black full-screen media stage; dynamic palette foregrounds remain applied to surrounding profile UI.
