@@ -34,7 +34,7 @@ function SectionHeading({ title, detail }) {
 function QuickAction({ icon, label, onPress, primary = false }) {
   const { colors, spacing, radii, typography, mood } = useTheme();
   return <TouchableOpacity onPress={onPress} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel={label} style={[styles.quickAction, { borderRadius: radii.lg, backgroundColor: primary ? colors.primary : hexToRgba(mood.signal, 0.11), borderColor: primary ? colors.primary : hexToRgba(mood.signal, 0.23), marginHorizontal: spacing.xs }]}>
-    <Ionicons name={icon} size={21} color={primary ? '#FFFFFF' : colors.textPrimary} />
+    <Ionicons name={icon} size={21} color={primary ? colors.onPrimary : colors.textPrimary} />
     <Text style={[typography.caption, { color: primary ? '#FFFFFF' : colors.textPrimary, fontWeight: '700', marginTop: 7 }]}>{label}</Text>
   </TouchableOpacity>;
 }
@@ -167,7 +167,7 @@ export default function PeerProfileScreen({ route, navigation }) {
             hitSlop={12}
             style={styles.photoViewerClose}
           >
-            <Ionicons name="close" size={27} color="#FFFFFF" />
+            <Ionicons name="close" size={27} color={colors.textPrimary} />
           </Pressable>
         </View>
         {avatarUrl ? <Image source={{ uri: avatarUrl }} resizeMode="contain" style={styles.photoViewerImage} accessibilityLabel={`${name}'s full-size profile photo`} onError={() => setPhotoViewerVisible(false)} /> : null}
