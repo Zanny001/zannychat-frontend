@@ -20,9 +20,7 @@ test('light theme uses light surfaces and dark readable text', () => {
   assert.equal(colors.surface, '#FFFFFF');
   assert.equal(colors.textPrimary, '#171925');
   assert.ok(contrastRatio(colors.onPrimary, colors.primary) >= 4.5);
-  assert.ok(contrastRatio(colors.onDanger, colors.danger) >= 4.5);
   assert.equal(colors.onPrimary, '#FFFFFF');
-  assert.ok(contrastRatio(colors.onDanger, colors.danger) >= 4.5);
 });
 
 test('dark theme retains the selected mood palette', () => {
@@ -59,4 +57,13 @@ test('outgoing message text uses a readable dark foreground on dark signal bubbl
   assert.equal(colors.bubbleMineMeta, MOODS.ember.inkRaised);
   assert.ok(contrastRatio(colors.bubbleMineText, colors.bubbleMine) >= 4.5);
   assert.ok(contrastRatio(colors.bubbleMineMeta, colors.bubbleMine) >= 4.5);
+});
+
+test('danger actions retain readable foregrounds across every preset and appearance', () => {
+  for (const mood of Object.values(MOODS)) {
+    for (const mode of ['light', 'dark']) {
+      const colors = resolveMoodColors(mood, mode);
+      assert.ok(contrastRatio(colors.onDanger, colors.danger) >= 4.5, `${mood.key} ${mode} danger action`);
+    }
+  }
 });
