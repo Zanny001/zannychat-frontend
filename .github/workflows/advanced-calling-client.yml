@@ -13,6 +13,7 @@ on:
 jobs:
   client-quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
@@ -53,16 +54,24 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          cache: gradle
       # Compile native Kotlin sources, verify Expo module autolinking, and build a CI-only debug APK.
       # The APK uses placeholder Firebase config for visual QA; it is not a production release.
       - run: cd android && ./gradlew :app:compileDebugKotlin
       - name: Assemble Android debug APK for physical-device QA
         run: cd android && ./gradlew :app:assembleDebug
-      - name: Upload Android debug APK for physical-device QA
+      - name: Verify and checksum Android debug APK
+        run: |
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          sha256sum "$APK" | tee "$APK.sha256"
+      - name: Upload Android debug APK and checksum for physical-device QA
         uses: actions/upload-artifact@v4
         with:
           name: zannychat-royal-neon-android-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/debug/app-debug.apk.sha256
           if-no-files-found: error
           retention-days: 7
       - run: npx expo prebuild --platform ios --no-install
