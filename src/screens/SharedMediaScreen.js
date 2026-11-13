@@ -172,7 +172,7 @@ export default function SharedMediaScreen({ route, navigation }) {
         <View style={styles.center}>
           <Ionicons name="cloud-offline-outline" size={30} color={colors.textSecondary} />
           <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md, marginHorizontal: spacing.xl }]}>{error}</Text>
-          <TouchableOpacity onPress={loadInitial} style={[styles.retryButton, { backgroundColor: colors.primary, borderRadius: radii.md }]}><Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Try again</Text></TouchableOpacity>
+          <TouchableOpacity onPress={loadInitial} accessibilityRole="button" accessibilityLabel="Retry loading shared media" style={[styles.retryButton, { backgroundColor: colors.primary, borderRadius: radii.md }]}><Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Try again</Text></TouchableOpacity>
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl }}>
@@ -220,9 +220,9 @@ export default function SharedMediaScreen({ route, navigation }) {
               </GlassCard>
             </TouchableOpacity>
           ))}
-          {!visibleItems.length && !loading ? (searchQuery.trim() ? <View style={styles.emptyWrap}><Ionicons name="search-outline" size={28} color={colors.textSecondary} /><Text style={[typography.bodyStrong, { color: colors.textPrimary, marginTop: spacing.md }]}>No matching items</Text><Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>Try a different name, sender, file type or link.</Text><TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" style={[styles.retryButton, { backgroundColor: colors.primary, borderRadius: radii.md }]}><Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Clear search</Text></TouchableOpacity></View> : renderEmpty()) : null}
+          {!visibleItems.length && !loading ? (searchQuery.trim() ? <View style={styles.emptyWrap}><Ionicons name="search-outline" size={28} color={colors.textSecondary} /><Text style={[typography.bodyStrong, { color: colors.textPrimary, marginTop: spacing.md }]}>No matching items</Text><Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>Try a different name, sender, file type or link.</Text><TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear shared media search" style={[styles.retryButton, { backgroundColor: colors.primary, borderRadius: radii.md }]}><Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Clear search</Text></TouchableOpacity></View> : renderEmpty()) : null}
           {hasMore ? (
-            <TouchableOpacity onPress={loadOlder} disabled={loadingMore} activeOpacity={0.82} style={[styles.loadMore, { borderColor: colors.border, borderRadius: radii.lg }]} accessibilityRole="button">
+            <TouchableOpacity onPress={loadOlder} disabled={loadingMore} activeOpacity={0.82} accessibilityLabel="Load older shared items" accessibilityState={{ disabled: loadingMore, busy: loadingMore }} style={[styles.loadMore, { borderColor: colors.border, borderRadius: radii.lg }]} accessibilityRole="button">
               {loadingMore ? <ActivityIndicator color={colors.primary} /> : <Ionicons name="time-outline" size={17} color={colors.primary} />}
               <Text style={[typography.bodyStrong, { color: colors.primary, marginLeft: spacing.sm }]}>{loadingMore ? 'Loading older items…' : 'Load older shared items'}</Text>
             </TouchableOpacity>
