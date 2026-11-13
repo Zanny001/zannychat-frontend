@@ -37,7 +37,7 @@ import {
 //     previews (see zannychat-backend's README for why).
 //
 // Actual Supabase schema (see zannychat-backend/supabase/migrations):
-//   profiles(id, name, avatar_color, avatar_url, status, online)
+//   profile fields are merged from get_conversation_profile_directory()
 //   conversations(id, created_at, name, is_group)
 //   conversation_participants(conversation_id, user_id)
 //   messages(id, conversation_id, sender_id, text, created_at, reply_to_id,
