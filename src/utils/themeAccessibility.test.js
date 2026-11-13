@@ -87,5 +87,6 @@ test('custom user colours retain readable action foregrounds in both appearances
     const colors = resolveMoodColors(mood, mode);
     assert.ok(contrastRatio(colors.onPrimary, colors.primary) >= 4.5, `${mode} custom primary action`);
     assert.ok(contrastRatio(colors.onAccent, colors.accent) >= 4.5, `${mode} custom accent action`);
+    assert.ok(contrastRatio(colors.onDanger, colors.danger) >= 4.5, `${mode} custom danger action`);
   }
 });
