@@ -242,8 +242,8 @@ export default function InputBar({
             style={[
               styles.inputWrap,
               {
-                backgroundColor: hexToRgba(colors.surface, 0.55),
-                borderColor: hexToRgba(colors.textPrimary, 0.1),
+                backgroundColor: hexToRgba(colors.surface, 0.32),
+                borderColor: hexToRgba(colors.textPrimary, 0.045),
                 borderRadius: radii.pill,
               },
             ]}
@@ -254,7 +254,9 @@ export default function InputBar({
               editable={draftReady || Boolean(editing)}
               placeholder={editing ? 'Edit message' : draftReady && text ? 'Message · draft saved on this device' : 'Message'}
               placeholderTextColor={colors.textSecondary}
-              style={[typography.body, { color: colors.textPrimary, flex: 1, paddingVertical: 8 }]}
+              underlineColorAndroid="transparent"
+              selectionColor={colors.primary}
+              style={[typography.body, { color: colors.textPrimary, flex: 1, minHeight: 38, paddingVertical: 9 }]}
               multiline
               accessibilityLabel={editing ? 'Edit message text' : 'Message text'}
             />
@@ -282,7 +284,7 @@ const styles = StyleSheet.create({
   wrap: { borderTopWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   draftStatus: { flexDirection: 'row', alignItems: 'center', paddingTop: 5, paddingBottom: 1 },
   row: { flexDirection: 'row', alignItems: 'flex-end' },
-  inputWrap: { flex: 1, paddingHorizontal: 14, marginHorizontal: 6, maxHeight: 120, borderWidth: 1 },
+  inputWrap: { flex: 1, minWidth: 0, paddingHorizontal: 14, marginHorizontal: 6, maxHeight: 120, borderWidth: StyleSheet.hairlineWidth },
   sendBtn: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' },
   replyBar: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
   recordingIndicator: {
