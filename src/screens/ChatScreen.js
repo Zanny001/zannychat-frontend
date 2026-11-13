@@ -1343,7 +1343,7 @@ export default function ChatScreen({ route, navigation }) {
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="search"
-              style={[typography.body, { color: colors.textPrimary, flex: 1, marginLeft: spacing.sm, paddingVertical: 8 }]}
+              style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, marginLeft: spacing.sm, paddingVertical: 8 }]}
               accessibilityLabel="Search messages in this conversation"
               accessibilityHint="Searches text and attachment names in messages already loaded"
               autoFocus
@@ -1355,7 +1355,7 @@ export default function ChatScreen({ route, navigation }) {
             )}
           </View>
           <View style={styles.searchControls}>
-            <Text style={[typography.small, { color: colors.textSecondary, flex: 1 }]}>
+            <Text style={[typography.small, { color: colors.textSecondary, flex: 1, minWidth: 0 }]}>
               {!searchQuery.trim() ? 'Search loaded messages' : searchMatches.length ? `${normalizedSearchIndex + 1} of ${searchMatches.length} matches` : 'No matches in loaded messages'}
             </Text>
             <TouchableOpacity onPress={() => moveSearchResult(-1)} disabled={searchMatches.length < 2} accessibilityLabel="Previous search result" accessibilityRole="button" accessibilityState={{ disabled: searchMatches.length < 2 }} style={styles.searchNavButton}>
