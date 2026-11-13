@@ -289,6 +289,7 @@ const styles = StyleSheet.create({
   replyBar: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
   recordingIndicator: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 6,
