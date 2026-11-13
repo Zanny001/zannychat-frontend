@@ -4,8 +4,8 @@ import { Room, RoomEvent, Track } from 'livekit-client';
 import { backendFetch } from '../services/backendClient';
 import { useTheme } from '../theme/ThemeContext';
 
-function Action({ colors, label, onPress, disabled = false, danger = false }) {
-  return <TouchableOpacity disabled={disabled} onPress={onPress} accessibilityRole="button" style={{ minHeight: 40, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 12, backgroundColor: danger ? colors.danger : colors.surfaceAlt, justifyContent: 'center', alignItems: 'center', opacity: disabled ? 0.5 : 1 }}>
+function Action({ colors, label, accessibilityLabel, onPress, disabled = false, danger = false }) {
+  return <TouchableOpacity disabled={disabled} onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel || label} accessibilityState={{ disabled }} style={{ minHeight: 44, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 12, backgroundColor: danger ? colors.danger : colors.surfaceAlt, justifyContent: 'center', alignItems: 'center', opacity: disabled ? 0.5 : 1 }}>
     <Text style={{ color: danger ? colors.onDanger : colors.textPrimary, fontWeight: '800' }}>{label}</Text>
   </TouchableOpacity>;
 }
@@ -237,13 +237,13 @@ export default function LiveStreamScreen({ route, navigation }) {
         {comments.map((item) => <View key={item.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 5, gap: 8 }}>
           <Text style={{ color: colors.accent, fontWeight: '800' }}>{item.user_name || 'ZannyChat user'}</Text>
           <Text style={{ color: colors.textPrimary, flex: 1 }}>{item.body}</Text>
-          {moderatorMode && <TouchableOpacity onPress={() => hideComment(item.id)}><Text style={{ color: colors.danger }}>Hide</Text></TouchableOpacity>}
+          {moderatorMode && <TouchableOpacity onPress={() => hideComment(item.id)} accessibilityRole="button" accessibilityLabel="Hide comment" style={{ minWidth: 44, minHeight: 44, justifyContent: "center", alignItems: "center" }}><Text style={{ color: colors.danger }}>Hide</Text></TouchableOpacity>}
         </View>)}
         {!comments.length && <Text style={{ color: colors.textSecondary, paddingVertical: 8 }}>Be the first to say hello.</Text>}
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 }}>
-        <TextInput value={draft} onChangeText={(v) => setDraft(v.slice(0, 500))} maxLength={500} placeholder="Say something kind…" placeholderTextColor={colors.textSecondary} style={{ flex: 1, color: colors.textPrimary, backgroundColor: colors.surface, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 }} />
-        <Action colors={colors} label="Send" disabled={busy || !draft.trim()} onPress={sendComment} /><Action colors={colors} label="♥" onPress={react} />
+        <TextInput value={draft} onChangeText={(v) => setDraft(v.slice(0, 500))} maxLength={500} placeholder="Say something kind…" placeholderTextColor={colors.textSecondary} accessibilityLabel="LIVE chat message" style={{ flex: 1, color: colors.textPrimary, backgroundColor: colors.surface, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 }} />
+        <Action colors={colors} label="Send" disabled={busy || !draft.trim()} onPress={sendComment} /><Action colors={colors} label="♥" accessibilityLabel="Send heart reaction" onPress={react} />
         {!creatorMode && <Action colors={colors} label="Report" onPress={report} />}
       </View>
     </ScrollView>
