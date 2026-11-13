@@ -37,6 +37,9 @@ test('native release CI protects main and compiles Android native code', () => {
   assert.match(workflow, /path: zannychat-back-github/);
   assert.match(workflow, /Create non-production Firebase config for compile-only CI/);
   assert.match(workflow, /CI_ONLY_NOT_A_REAL_FIREBASE_KEY/);
+  assert.match(workflow, /zannychat-android-compile-only-not-for-install/);
+  assert.match(workflow, /not installable for QA/i);
+  assert.doesNotMatch(workflow, /Upload Android debug APK for physical-device QA/);
   assert.match(workflow, /:app:compileDebugKotlin/);
   assert.match(workflow, /expo export --platform web/);
   assert.match(workflow, /expo export --platform android/);
