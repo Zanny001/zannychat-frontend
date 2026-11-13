@@ -231,28 +231,75 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
     if (!SUPABASE_ENABLED || !supabase) return undefined;
     let active = true;
     let attachedUserId = null;
+    let activeUserId = null;
+    const deliverIncoming = async (incoming) => {
+      if (!active || !incoming?.id || incoming.callee_id !== activeUserId || incomingIdsRef.current.has(incoming.id)) return;
+      // Claim before awaiting profile/native work so realtime and backfill
+      // cannot race and open duplicate incoming-call screens.
+      incomingIdsRef.current.add(incoming.id);
+      try {
+        const callerName = await getCallParticipantName(incoming.caller_id);
+        const nativeCallId = Platform.OS === 'web' ? null : await reportIncomingCallIfNeeded(incoming, callerName);
+        if (!active || incoming.callee_id !== activeUserId) {
+          incomingIdsRef.current.delete(incoming.id);
+          return;
+        }
+        if (incomingIdsRef.current.size > 50) {
+          incomingIdsRef.current.delete(incomingIdsRef.current.values().next().value);
+        }
+        const params = { call: incoming, participantName: callerName, ...(nativeCallId ? { nativeCallId } : {}) };
+
+        if (Platform.OS === 'web' && typeof window !== 'undefined' &&
+            typeof Notification !== 'undefined' && Notification.permission === 'granted' &&
+            typeof document !== 'undefined' && document.visibilityState !== 'visible') {
+          try {
+            const notice = new Notification(
+              incoming.call_type === 'video' ? 'Incoming video call' : 'Incoming audio call',
+              { body: `${callerName} is calling you`, tag: `zannychat-call-${incoming.id}` }
+            );
+            notice.onclick = () => {
+              try { window.focus(); } catch (_) {}
+              if (navigationRef.isReady()) navigationRef.navigate('IncomingCall', params);
+              notice.close();
+            };
+          } catch (_) {
+            // Browser notifications are optional; the in-app call screen remains available.
+          }
+        }
+
+        if (navigationRef.isReady()) navigationRef.navigate('IncomingCall', params);
+        else pendingIncomingRef.current = params;
+      } catch (error) {
+        incomingIdsRef.current.delete(incoming.id);
+        console.warn('[calls] incoming invitation could not be displayed:', error?.message || error);
+      }
+    };
+
     const attach = (userId) => {
       if (userId === attachedUserId) return;
       attachedUserId = userId;
+      activeUserId = userId;
       incomingUnsubscribeRef.current?.();
       incomingUnsubscribeRef.current = null;
-      if (userId) incomingUnsubscribeRef.current = subscribeToIncomingCalls(userId, async (incoming) => {
-        if (!active || incomingIdsRef.current.has(incoming.id)) return;
-        const callerName = await getCallParticipantName(incoming.caller_id);
-        const nativeCallId = Platform.OS === 'web' ? null : await reportIncomingCallIfNeeded(incoming, callerName);
-        if (!active || incomingIdsRef.current.has(incoming.id)) return;
-        incomingIdsRef.current.add(incoming.id);
-        if (incomingIdsRef.current.size > 50) incomingIdsRef.current.delete(incomingIdsRef.current.values().next().value);
-        const params = { call: incoming, participantName: callerName, ...(nativeCallId ? { nativeCallId } : {}) };
-        if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof Notification !== 'undefined'
-          && Notification.permission === 'granted' && document.visibilityState !== 'visible') {
-          const notice = new Notification(incoming.call_type === 'video' ? 'Incoming video call' : 'Incoming audio call', {
-            body: `${callerName} is calling you`, tag: `zannychat-call-${incoming.id}`,
-          });
-          notice.onclick = () => { window.focus(); if (navigationRef.isReady()) navigationRef.navigate('IncomingCall', params); notice.close(); };
-        }
-        if (navigationRef.isReady()) navigationRef.navigate('IncomingCall', params);
-        else pendingIncomingRef.current = params;
+      incomingIdsRef.current.clear();
+      pendingIncomingRef.current = null;
+      if (!userId) return;
+
+      // Subscribe first, then recover invitations created before this client
+      // connected. This closes the realtime-subscription timing gap.
+      incomingUnsubscribeRef.current = subscribeToIncomingCalls(userId, deliverIncoming);
+      void (async () => {
+        const { data, error } = await supabase.from('call_sessions')
+          .select('id,conversation_id,caller_id,callee_id,call_type,status,created_at,expires_at')
+          .eq('callee_id', userId)
+          .eq('status', 'ringing')
+          .gt('expires_at', new Date().toISOString())
+          .order('created_at', { ascending: false })
+          .limit(5);
+        if (error) throw error;
+        for (const incoming of data || []) await deliverIncoming(incoming);
+      })().catch((error) => {
+        if (active) console.warn('[calls] pending invitation backfill failed:', error?.message || error);
       });
     };
     supabase.auth.getSession().then(({ data }) => { if (active) attach(data?.session?.user?.id || null); }).catch(() => {});
