@@ -64,4 +64,4 @@ jobs:
           npx expo config --type prebuild --json > /tmp/zannychat-production-config.json
           node -e "const c=require('/tmp/zannychat-production-config.json'); if(c.android?.versionCode !== 243) throw new Error('Unexpected Android versionCode'); if(c.android?.googleServicesFile !== './google-services.json') throw new Error('Unexpected Firebase config path');"
       - name: Build signed production Android App Bundle
-        run: npx eas-cli@latest build --platform android --profile production --non-interactive --wait
+        run: npx eas-cli@latest build --platform android --profile production --non-interactive
