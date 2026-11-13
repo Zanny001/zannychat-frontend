@@ -64,4 +64,4 @@ export default function VerifyEmailScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({ container: { flex: 1 }, button: { marginTop: 12, paddingVertical: 16, alignItems: 'center' }, buttonText: { color: '#fff', fontFamily: 'Manrope_700Bold', fontSize: 16 } });
+const styles = StyleSheet.create({ container: { flex: 1 }, button: { marginTop: 12, paddingVertical: 16, alignItems: 'center' }, buttonText: { fontFamily: 'Manrope_700Bold', fontSize: 16 } });

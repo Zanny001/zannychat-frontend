@@ -320,7 +320,7 @@ export default function CallScreen({ route, navigation }) {
         <View style={{ width: 26 }} />
       </View>
       <View style={styles.identity}>
-        {!(callType === 'video' && remoteStream) ? <Avatar name={participantName} color={avatarColor || '#6C5CE7'} size={108} /> : null}
+        {!(callType === 'video' && remoteStream) ? <Avatar name={participantName} color={avatarColor || colors.primary} size={108} /> : null}
         <Text style={[styles.name, { color: foreground }]}>{participantName}</Text>
         <Text style={[styles.phase, { color: secondaryForeground }]}>{phase === 'Connected' ? formatTime(seconds) : phase}</Text>
         {networkNotice ? <Text style={[styles.networkNotice, { color: immersiveVideo ? '#F2D28B' : colors.warning }]}>{networkNotice}</Text> : null}
