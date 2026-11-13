@@ -70,7 +70,7 @@ function Choice({ label, value, options, onChange, spacing, typography, colors }
 function validateBirthday(value) {
   const birthday = String(value || '').trim();
   if (!birthday) return true;
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(birthday)) return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(birthday)) return false;
   const [year, month, day] = birthday.split('-').map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
   return date.getUTCFullYear() === year
