@@ -140,7 +140,7 @@ export default function EditProfileScreen({ navigation }) {
   function Choice({ label, value, options, onChange }) {
     const current = Math.max(0, options.findIndex((item) => item.value === value));
     const next = options[(current + 1) % options.length];
-    return <TouchableOpacity accessibilityRole="button" onPress={() => onChange(next.value)} style={styles.choiceRow}>
+    return <TouchableOpacity accessibilityRole="button" accessibilityLabel={`${label}; currently ${options[current].label}. Activate to change.`} onPress={() => onChange(next.value)} style={[styles.choiceRow, { minHeight: 48 }]}>
       <Text style={[typography.body, { color: colors.text, flex: 1 }]}>{label}</Text>
       <Text style={[typography.bodyStrong, { color: colors.primary }]}>{options[current].label}</Text>
       <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
@@ -157,12 +157,12 @@ export default function EditProfileScreen({ navigation }) {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl }}>
           <Section title="Profile appearance">
-            <TouchableOpacity onPress={() => chooseImage('cover')} disabled={uploadingCover} style={[styles.cover, { backgroundColor: colors.surfaceElevated, borderRadius: radii.md }]}>
+            <TouchableOpacity onPress={() => chooseImage('cover')} disabled={uploadingCover} accessibilityRole="button" accessibilityLabel="Add or change profile cover image" accessibilityState={{ disabled: uploadingCover, busy: uploadingCover }} style={[styles.cover, { backgroundColor: colors.surfaceElevated, borderRadius: radii.md }]}>
               {(coverPreviewUri || details.cover_image_url) ? <Image source={{ uri: coverPreviewUri || details.cover_image_url }} resizeMode="cover" style={StyleSheet.absoluteFillObject} /> : <Ionicons name="image-outline" size={26} color={colors.textSecondary} />}
               {uploadingCover ? <ActivityIndicator color={colors.primary} /> : <Text style={[typography.caption, { color: colors.textSecondary }]}>Add or change cover image</Text>}
             </TouchableOpacity>
             <View style={{ alignItems: 'center', marginVertical: spacing.md }}>
-              <TouchableOpacity onPress={() => chooseImage('avatar')} disabled={uploadingPhoto} style={styles.avatarWrap} accessibilityLabel="Change profile picture">
+              <TouchableOpacity onPress={() => chooseImage('avatar')} disabled={uploadingPhoto} style={styles.avatarWrap} accessibilityRole="button" accessibilityLabel="Change profile picture" accessibilityState={{ disabled: uploadingPhoto, busy: uploadingPhoto }}>
                 <Avatar name={name || 'You'} color={user?.avatarColor || colors.primary} size={96} imageUrl={avatarPreviewUri || avatarUrl} />
                 <View style={[styles.cameraBadge, { backgroundColor: colors.primary, borderColor: colors.surface }]}>
                   {uploadingPhoto ? <ActivityIndicator size="small" color={colors.onPrimary} /> : <Ionicons name="camera" size={16} color={colors.onPrimary} />}
@@ -184,7 +184,7 @@ export default function EditProfileScreen({ navigation }) {
                 <View style={{ height: 6, width: `${profileCompletion}%`, backgroundColor: colors.primary, borderRadius: 4 }} />
               </View>
             </View>
-            <TouchableOpacity onPress={() => setPreviewVisible(true)} accessibilityRole="button" style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: radii.md, backgroundColor: colors.surfaceElevated }}>
+            <TouchableOpacity onPress={() => setPreviewVisible(true)} accessibilityRole="button" accessibilityLabel="Preview your profile" style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: radii.md, backgroundColor: colors.surfaceElevated }}>
               <Ionicons name="eye-outline" size={18} color={colors.primary} />
               <Text style={[typography.bodyStrong, { color: colors.primary }]}>Preview your profile</Text>
             </TouchableOpacity>
