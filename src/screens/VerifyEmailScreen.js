@@ -50,7 +50,7 @@ export default function VerifyEmailScreen({ navigation, route }) {
           <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.sm, marginBottom: spacing.lg }]}>Enter the 6-digit code sent to {email || 'your email address'}. Make sure your Supabase email template is configured to send the code.</Text>
           <GlassInput value={token} onChangeText={(value) => setToken(value.replace(/[^0-9]/g, '').slice(0, 6))} placeholder="6-digit code" accessibilityLabel="Email verification code" keyboardType="number-pad" autoComplete="one-time-code" maxLength={6} />
           <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary, borderRadius: radii.pill, opacity: loading ? 0.65 : 1 }]} onPress={verify} disabled={loading} accessibilityRole="button" accessibilityState={{ disabled: loading, busy: loading }}>
-            <Text style={styles.buttonText}>{loading ? 'Verifying…' : 'Verify email'}</Text>
+            <Text style={[styles.buttonText, { color: colors.onPrimary }]}>{loading ? 'Verifying…' : 'Verify email'}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={{ marginTop: spacing.md, alignItems: 'center' }} onPress={resend} disabled={resending} accessibilityRole="button">
             <Text style={[typography.caption, { color: colors.primary }]}>{resending ? 'Requesting code…' : 'Resend verification code'}</Text>
