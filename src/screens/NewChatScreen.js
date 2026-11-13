@@ -362,7 +362,7 @@ export default function NewChatScreen({ navigation, route }) {
               { color: colors.textSecondary, marginTop: spacing.sm },
             ]}
           >
-            Loading contacts...
+            {hasPeopleSearch ? 'Searching members…' : 'Loading contacts…'}
           </Text>
         </View>
       ) : (
