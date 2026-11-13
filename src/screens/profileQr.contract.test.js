@@ -8,6 +8,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const editProfile = fs.readFileSync(path.join(root, 'src/screens/EditProfileScreen.js'), 'utf8');
 const api = fs.readFileSync(path.join(root, 'src/services/api.js'), 'utf8');
 const qrScreen = fs.readFileSync(path.join(root, 'src/screens/QRContactScreen.js'), 'utf8');
+const appConfig = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8'));
 
 test('profile field and section components are stable module-level component types', () => {
   const screenStart = editProfile.indexOf('export default function EditProfileScreen');
@@ -41,4 +42,17 @@ test('QR deep links from the native camera route into the contact resolver', () 
   assert.match(navigator, /QRContact:\s*'contact\/:userId'/);
   assert.match(qrScreen, /route\?\.params\?\.userId/);
   assert.match(qrScreen, /connectToUser\(userId\)/);
+});
+
+
+test('Android registers the custom contact QR URL scheme with the operating system', () => {
+  const filters = appConfig.expo.android.intentFilters || [];
+  assert.ok(filters.some((filter) =>
+    filter.action === 'VIEW'
+    && filter.category?.includes('BROWSABLE')
+    && filter.category?.includes('DEFAULT')
+    && filter.data?.some((item) =>
+      item.scheme === 'zannychat' && item.host === 'contact' && item.pathPrefix === '/'
+    )
+  ));
 });
