@@ -23,7 +23,7 @@ export default function JoinGroupScreen({ navigation, route }) {
   };
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
     <Header title="Join a group" subtitle="Use an invite from a group admin" onBack={() => navigation.goBack()} />
-    <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
       <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Group invite token</Text>
         <Text style={[typography.caption, { color: colors.textSecondary }]}>If you received a ZannyChat invite link but it did not open automatically, copy the token from the message and paste it here. Invites can expire or be revoked.</Text>
