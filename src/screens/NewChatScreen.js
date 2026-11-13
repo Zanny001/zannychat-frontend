@@ -271,7 +271,7 @@ export default function NewChatScreen({ navigation, route }) {
       {!isShareMode && (
         <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md, gap: spacing.sm, marginBottom: spacing.sm }}>
           <Text style={[typography.title, { color: colors.textPrimary }]}>Find people on ZannyChat</Text>
-          <Text style={[typography.caption, { color: colors.textSecondary }]}>Search registered members and start a private conversation instantly.</Text>
+          <Text style={[typography.caption, { color: colors.textSecondary }]}>Search by display name or @username to find discoverable members and start a private conversation.</Text>
           <GlassCard noPadding glow intensity={26} tintAlpha={0.42}>
             <View style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md }}>
               <Ionicons name="search-outline" size={19} color={colors.textSecondary} />
@@ -282,7 +282,7 @@ export default function NewChatScreen({ navigation, route }) {
           <View style={{ gap: spacing.sm }}>
             <Text style={[typography.caption, { color: colors.textSecondary }]}>{hasPeopleSearch ? (peopleSearchLoading ? 'Searching ZannyChat…' : `${visibleContacts.length} discoverable result${visibleContacts.length === 1 ? '' : 's'}`) : loadingContacts ? 'Finding members…' : `${visibleContacts.length} of ${contacts.length} member${contacts.length === 1 ? '' : 's'}${favoriteIds.length ? ` · ${favoriteIds.length} saved` : ''}`}</Text>
             <View style={{ flexDirection: 'row', gap: spacing.xs, flexWrap: 'wrap' }}>
-              {[{ id: 'all', label: 'All members', icon: 'people-outline' }, { id: 'online', label: 'Online', icon: 'radio-button-on-outline' }, { id: 'favorites', label: 'Favorites', icon: 'star-outline' }].map((option) => {
+              {[{ id: 'all', label: 'Your chats', icon: 'people-outline' }, { id: 'online', label: 'Online', icon: 'radio-button-on-outline' }, { id: 'favorites', label: 'Favorites', icon: 'star-outline' }].map((option) => {
                 const selected = activeFilter === option.id;
                 return <TouchableOpacity key={option.id} onPress={() => { setDirectoryFilter(option.id); setOnlineOnly(false); }} accessibilityRole="radio" accessibilityLabel={option.label} accessibilityState={{ checked: selected }} style={{ minHeight: 44, paddingHorizontal: spacing.md, borderRadius: 22, borderWidth: 1, borderColor: selected ? colors.accent : colors.border, backgroundColor: selected ? colors.surface : 'transparent', flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name={option.icon} size={16} color={selected ? colors.accent : colors.textSecondary} /><Text style={[typography.caption, { color: selected ? colors.accent : colors.textSecondary }]}>{option.label}</Text></TouchableOpacity>;
               })}
@@ -386,7 +386,7 @@ export default function NewChatScreen({ navigation, route }) {
                     { color: colors.textSecondary, textAlign: 'center' },
                   ]}
                 >
-                  {hasPeopleSearch ? `No discoverable members match “${memberSearch.trim()}”. Try their full or partial @username or display name.` : contacts.length === 0 ? 'No ZannyChat members found yet.' : activeFilter === 'favorites' && !memberSearch.trim() ? 'No favorites saved yet. Tap the star beside a member to keep them close.' : activeFilter === 'online' ? 'Nobody is online right now. Try All members to see everyone.' : `No members match “${memberSearch.trim()}”. Try another name or @username.`}
+                  {hasPeopleSearch ? `No discoverable members match “${memberSearch.trim()}”. Try their full or partial @username or display name.` : contacts.length === 0 ? 'No ZannyChat members found yet.' : activeFilter === 'favorites' && !memberSearch.trim() ? 'No favorites saved yet. Tap the star beside a member to keep them close.' : activeFilter === 'online' ? 'Nobody is online right now. Try Your chats to see your existing contacts.' : `No members match “${memberSearch.trim()}”. Try another name or @username.`}
                 </Text>
               </View>
             ) : null
