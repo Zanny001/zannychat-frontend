@@ -661,8 +661,10 @@ export async function signOutEverywhere() {
 
 export async function signOut() {
   if (!SUPABASE_ENABLED || !supabase) return;
-  await removeVoipTokensBeforeSignOut('global');
-  const { error } = await supabase.auth.signOut();
+  // The ordinary Settings "Log out" action should affect this device only.
+  // Revoking every device is a separate, explicit action in Devices & sessions.
+  await removeVoipTokensBeforeSignOut('local');
+  const { error } = await supabase.auth.signOut({ scope: 'local' });
   if (error) throw error;
 }
 
