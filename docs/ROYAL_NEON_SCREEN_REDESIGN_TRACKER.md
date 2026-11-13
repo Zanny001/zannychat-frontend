@@ -119,3 +119,12 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 - Profile photo viewer close control retains a fixed white foreground on its intentionally black full-screen media stage; dynamic palette foregrounds remain applied to surrounding profile UI.
 
 - GlassCard now skips live backdrop blur on Android API 30 and below while retaining the tinted surface, specular edge and elevation; Android 12+ and iOS keep the blur treatment. Physical Android 10 performance validation remains open.
+
+## Screen-level accessibility audit — 13 Nov 2026
+
+- Inspected all 46 screen implementation files (45 unique navigation experiences plus web-specific call/LIVE variants) for theme-context use, interactive-control semantics, declared touch-target dimensions and hard-coded colours.
+- Raised undersized interactive targets to a 44-point minimum in StatusUpdates, Channels, Polls, ContactDiscovery, GroupManagement, LiveHub, NewChat and SharedMedia.
+- Added a regression contract to keep the updated high-traffic controls at or above the 44-point target baseline.
+- Earlier targeted fixes added explicit labels/disabled states to web LIVE actions, a larger accessible web group-call fallback action, and explicit Create Group selection/loading/error/empty states.
+- The source audit is not a visual/device sign-off. Each of the 45 navigation experiences remains [~] until its visual layout, state transitions, accessibility and regression behavior are validated on supported platforms.
+- Latest source commits are awaiting fresh CI after the touch-target matcher correction. Do not treat earlier workflow results as validation of these new commits.
