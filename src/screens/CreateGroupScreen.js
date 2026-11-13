@@ -114,7 +114,7 @@ export default function CreateGroupScreen({ navigation }) {
             <TouchableOpacity onPress={() => toggle(item.id)} activeOpacity={0.8} accessibilityRole="checkbox" accessibilityLabel={'Select ' + item.name + ' for group'} accessibilityState={{ checked: selected }} style={{ minHeight: 48 }}>
               <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={styles.row} intensity={26}>
                 <Avatar name={item.name} color={item.avatarColor} imageUrl={item.avatarUrl} online={item.online} />
-                <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm, flex: 1 }]}>{item.name}</Text>
+                <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm, flex: 1, minWidth: 0 }]}>{item.name}</Text>
                 <View
                   style={[
                     styles.checkbox,

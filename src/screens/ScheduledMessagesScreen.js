@@ -103,7 +103,7 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
                 const active = row.id === conversationId;
                 return <TouchableOpacity key={row.id} onPress={() => setSelectedConversationId(row.id)} accessibilityRole="radio" accessibilityState={{ checked: active }} accessibilityLabel={`Schedule for ${conversationName(row.id)}`} style={{ padding: spacing.sm, borderRadius: radii.md, borderWidth: 1, borderColor: active ? colors.primary : colors.border, backgroundColor: active ? `${colors.primary}14` : 'transparent', flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <Ionicons name={active ? 'radio-button-on' : 'radio-button-off'} size={18} color={active ? colors.primary : colors.textSecondary} />
-                  <Text numberOfLines={1} style={[typography.body, { color: colors.textPrimary, flex: 1 }]}>{conversationName(row.id)}</Text>
+                  <Text numberOfLines={1} style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0 }]}>{conversationName(row.id)}</Text>
                 </TouchableOpacity>;
               })}
             </View>
@@ -150,7 +150,7 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
           <GlassCard key={item.id} style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm }}>
               <View style={{ width: 38, height: 38, borderRadius: 13, backgroundColor: `${colors.primary}20`, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="time-outline" size={19} color={colors.primary} /></View>
-              <View style={{ flex: 1, gap: 4 }}>
+              <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
                 <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{conversationName(item.conversation_id)}</Text>
                 <Text style={[typography.caption, { color: colors.textSecondary }]}>{item.scheduled_for ? new Date(item.scheduled_for).toLocaleString() : 'Time unavailable'}</Text>
               </View>

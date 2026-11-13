@@ -84,7 +84,7 @@ export default function OutgoingCallScreen({ route, navigation }) {
       </View>
       <View style={styles.person}>
         <View style={[styles.avatarRing, { borderColor: hexToRgba(colors.primary, 0.42), backgroundColor: hexToRgba(colors.surface, 0.55), shadowColor: colors.primary }]}><Avatar name={participantName} color={avatarColor} size={112} /></View>
-        <Text style={[styles.name, { color: colors.textPrimary }]}>{participantName}</Text>
+        <Text numberOfLines={2} style={[styles.name, { color: colors.textPrimary, maxWidth: '100%', paddingHorizontal: 8 }]}>{participantName}</Text>
         <Text style={[styles.kind, { color: colors.textSecondary }]}>{callType === 'video' ? 'Video call' : 'Audio call'}</Text>
         <ActivityIndicator size="small" color={colors.accent} style={{ marginTop: 18 }} />
         <Text style={[styles.status, { color: colors.textPrimary }]}>{statusText}</Text>
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   secureText: { color: '#A8A6B8', fontSize: 12 },
   person: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   avatarRing: { padding: 8, borderWidth: 1, borderRadius: 72, shadowOpacity: 0.28, shadowRadius: 22, shadowOffset: { width: 0, height: 7 }, elevation: 6 },
-  name: { color: '#FFFFFF', fontSize: 28, fontWeight: '800', marginTop: 28, textAlign: 'center' },
+  name: { color: '#FFFFFF', fontSize: 28, fontWeight: '800', marginTop: 28, textAlign: 'center', flexShrink: 1 },
   kind: { color: '#C8C5D8', fontSize: 15, marginTop: 9 },
   status: { color: '#FFFFFF', fontSize: 15, fontWeight: '600', marginTop: 13 },
   countdown: { color: '#8F8C9F', fontSize: 12, marginTop: 10 },

@@ -58,7 +58,7 @@ function VoiceBubbleContent({ message, isMine, captionColor }) {
       <View style={[styles.playButton, { backgroundColor: isMine ? 'rgba(255,255,255,0.22)' : colors.surface }]}>
         <Ionicons name={status.playing ? 'pause' : 'play'} size={16} color={captionColor} />
       </View>
-      <View style={{ flex: 1, marginLeft: spacing.sm }}>
+      <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm }}>
         <View style={[styles.waveTrack, { backgroundColor: isMine ? hexToRgba(colors.bubbleMineMeta, 0.32) : colors.border }]}>
           <View
             style={[
@@ -285,7 +285,7 @@ export default function ChatBubble({
           <View style={[styles.fileIcon, { backgroundColor: isMine ? 'rgba(255,255,255,0.2)' : colors.surface }]}>
             <Ionicons name="document-text-outline" size={20} color={captionColor} />
           </View>
-          <View style={{ flex: 1, marginLeft: spacing.sm }}>
+          <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm }}>
             <Text style={[typography.bodyStrong, { color: captionColor }]} numberOfLines={1}>
               {message.mediaName || 'File'}
             </Text>
@@ -309,7 +309,7 @@ export default function ChatBubble({
           accessibilityHint="Opens a conversation with this contact"
         >
           <Avatar name={message.mediaName || 'Contact'} size={36} />
-          <View style={{ flex: 1, marginLeft: spacing.sm }}>
+          <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm }}>
             <Text style={[typography.bodyStrong, { color: captionColor }]} numberOfLines={1}>
               {message.mediaName || 'Contact'}
             </Text>
@@ -352,7 +352,7 @@ export default function ChatBubble({
       ]}
     >
       {!isMine && <View style={[styles.threadRail, { backgroundColor: colors.thread }]} />}
-      <View style={{ maxWidth: '76%' }}>
+      <View style={{ maxWidth: '76%', minWidth: 0 }}>
         {senderName ? (
           <Text style={[typography.small, { color: colors.thread, marginBottom: 2, marginLeft: 4 }]}>{senderName}</Text>
         ) : null}
@@ -460,9 +460,9 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 12 },
   bubble: { paddingVertical: 8, paddingHorizontal: 12 },
   threadRail: { width: 3, borderRadius: 2, alignSelf: 'stretch', marginRight: 6, opacity: 0.85 },
-  linkCard: { marginTop: 8, borderWidth: 1, overflow: 'hidden', minWidth: 200 },
+  linkCard: { marginTop: 8, borderWidth: 1, overflow: 'hidden', minWidth: 0, maxWidth: '100%' },
   linkImage: { width: '100%', height: 120 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-end', marginTop: 2 },
+  metaRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', alignSelf: 'flex-end', marginTop: 2 },
   replyPreview: {
     borderLeftWidth: 2,
     paddingLeft: 6,
@@ -486,11 +486,12 @@ const styles = StyleSheet.create({
   fileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    minWidth: 200,
+    minWidth: 0,
+    maxWidth: '100%',
     paddingVertical: 4,
   },
   fileIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  voiceRow: { flexDirection: 'row', alignItems: 'center', minWidth: 180, paddingVertical: 4 },
+  voiceRow: { flexDirection: 'row', alignItems: 'center', minWidth: 0, maxWidth: '100%', paddingVertical: 4 },
   playButton: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   waveTrack: { height: 4, borderRadius: 2, overflow: 'hidden' },
   waveFill: { height: 4, borderRadius: 2 },

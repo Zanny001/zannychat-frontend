@@ -56,9 +56,9 @@ export default function ChatAppearanceScreen({ navigation }) {
                   <View style={[styles.swatchBubble, { backgroundColor: colors.primary }]} />
                   <View style={[styles.swatchBubble, { backgroundColor: colors.surface, alignSelf: 'flex-end' }]} />
                 </View>
-                <View style={{ flex: 1, marginLeft: spacing.md }}>
+                <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.md }}>
                   <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{canvas.label}</Text>
-                  <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>{canvas.description}</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 3, flexShrink: 1 }]}>{canvas.description}</Text>
                 </View>
                 <Ionicons name={active ? 'checkmark-circle' : 'ellipse-outline'} size={22} color={active ? colors.primary : colors.textSecondary} />
               </GlassCard>

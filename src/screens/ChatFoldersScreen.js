@@ -67,7 +67,7 @@ export default function ChatFoldersScreen({ navigation }) {
   const Choice = ({ item, selected, onPress, subtitle }) => (
     <TouchableOpacity onPress={onPress} accessibilityRole="checkbox" accessibilityLabel={item.label} accessibilityState={{ checked: selected }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 11 }}>
       <Ionicons name={selected ? 'checkbox' : 'square-outline'} size={21} color={selected ? colors.primary : colors.textSecondary} />
-      <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm, flex: 1 }]}>{item.label}</Text>
+      <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm, flex: 1, minWidth: 0 }]}>{item.label}</Text>
       {item.icon ? <Ionicons name={item.icon} size={18} color={colors.textSecondary} /> : null}
     </TouchableOpacity>
   );
@@ -96,7 +96,7 @@ export default function ChatFoldersScreen({ navigation }) {
         {loading ? <ActivityIndicator color={colors.primary} /> : folders.length ? folders.map((folder) => (
           <GlassCard key={folder.id} style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, flexDirection: 'row', alignItems: 'center' }}>
             <View style={{ width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: `${colors.primary}18` }}><Ionicons name="folder-open-outline" size={20} color={colors.primary} /></View>
-            <View style={{ flex: 1, marginLeft: spacing.sm }}><Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{folder.name}</Text><Text style={[typography.caption, { color: colors.textSecondary }]}>{folder.rules.join(' · ')}{folder.excluded.length ? ` · excludes ${folder.excluded.join(', ')}` : ''}</Text></View>
+            <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm }}><Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{folder.name}</Text><Text style={[typography.caption, { color: colors.textSecondary }]}>{folder.rules.join(' · ')}{folder.excluded.length ? ` · excludes ${folder.excluded.join(', ')}` : ''}</Text></View>
             <TouchableOpacity onPress={() => edit(folder)} accessibilityRole="button" accessibilityLabel={`Edit ${folder.name} folder`} hitSlop={8} style={{ padding: 7 }}><Ionicons name="create-outline" size={19} color={colors.primary} /></TouchableOpacity>
             <TouchableOpacity onPress={() => remove(folder)} accessibilityRole="button" accessibilityLabel={`Delete ${folder.name} folder`} hitSlop={8} style={{ padding: 7 }}><Ionicons name="trash-outline" size={19} color={colors.danger} /></TouchableOpacity>
           </GlassCard>

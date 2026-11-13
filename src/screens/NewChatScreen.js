@@ -272,7 +272,7 @@ export default function NewChatScreen({ navigation, route }) {
           <GlassCard noPadding glow intensity={26} tintAlpha={0.42}>
             <View style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md }}>
               <Ionicons name="search-outline" size={19} color={colors.textSecondary} />
-              <TextInput value={memberSearch} onChangeText={setMemberSearch} placeholder="Search names or @username…" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search ZannyChat members" returnKeyType="search" autoCapitalize="none" style={[typography.body, { flex: 1, marginLeft: spacing.sm, color: colors.textPrimary, minHeight: 46 }]} />
+              <TextInput value={memberSearch} onChangeText={setMemberSearch} placeholder="Search names or @username…" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search ZannyChat members" returnKeyType="search" autoCapitalize="none" style={[typography.body, { flex: 1, minWidth: 0, marginLeft: spacing.sm, color: colors.textPrimary, minHeight: 46 }]} />
               {memberSearch ? <TouchableOpacity onPress={() => setMemberSearch('')} accessibilityRole="button" accessibilityLabel="Clear member search" style={{ minWidth: 40, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={20} color={colors.textSecondary} /></TouchableOpacity> : null}
             </View>
           </GlassCard>
@@ -307,7 +307,7 @@ export default function NewChatScreen({ navigation, route }) {
             },
           ]}
         >
-          <Text style={styles.errorText}>{chatError}</Text>
+          <Text style={[styles.errorText, { color: colors.danger }]}>{chatError}</Text>
         </View>
       )}
 
@@ -323,7 +323,7 @@ export default function NewChatScreen({ navigation, route }) {
             },
           ]}
         >
-          <Text style={styles.errorText}>{contactsError}</Text>
+          <Text style={[styles.errorText, { color: colors.danger }]}>{contactsError}</Text>
 
           <TouchableOpacity
             onPress={retryContacts}
@@ -414,7 +414,7 @@ export default function NewChatScreen({ navigation, route }) {
                     online={item.online}
                   />
 
-                  <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                  <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm, marginRight: spacing.xs }}>
                     <Text style={[typography.body, { color: colors.textPrimary }]} numberOfLines={1}>{item.name}</Text>
                     {item.username ? <Text style={[typography.caption, { color: colors.textSecondary }]} numberOfLines={1}>@{item.username}</Text> : null}
                   </View>
@@ -444,6 +444,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
+    minWidth: 0,
   },
   qrRow: {
     flexDirection: 'row',
@@ -468,7 +469,6 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   errorText: {
-    color: colors.danger, 
     fontSize: 14,
   },
 });

@@ -85,7 +85,7 @@ export default function DataStorageScreen({ navigation }) {
             <View style={[styles.qualityIcon, { backgroundColor: hexToRgba(mood.thread, 0.12) }]}>
               <Ionicons name="leaf-outline" size={22} color={mood.thread} />
             </View>
-            <View style={{ flex: 1, marginHorizontal: spacing.sm }}>
+            <View style={{ flex: 1, minWidth: 0, marginHorizontal: spacing.sm }}>
               <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Data saver</Text>
               <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>Use compact photo uploads even when High detail is selected.</Text>
             </View>
@@ -101,7 +101,7 @@ export default function DataStorageScreen({ navigation }) {
           </View>
           <View style={[styles.note, { backgroundColor: hexToRgba(mood.thread, 0.08), borderColor: hexToRgba(mood.thread, 0.18) }]}>
             <Ionicons name="information-circle-outline" size={17} color={mood.thread} />
-            <Text style={[typography.caption, { color: colors.textSecondary, flex: 1, marginLeft: 8, lineHeight: 19 }]}>
+            <Text style={[typography.caption, { color: colors.textSecondary, flex: 1, minWidth: 0, marginLeft: 8, lineHeight: 19 }]}>
               These settings affect photo upload compression. They do not change your mobile carrier plan or automatically download incoming media.
             </Text>
           </View>
@@ -109,7 +109,7 @@ export default function DataStorageScreen({ navigation }) {
 
         <View style={[styles.footer, { borderTopColor: colors.border }]}>
           <Ionicons name="shield-checkmark-outline" size={17} color={colors.accent} />
-          <Text style={[typography.caption, { color: colors.textSecondary, marginLeft: 8, flex: 1 }]}>Your preferences stay on this device and can be changed at any time.</Text>
+          <Text style={[typography.caption, { color: colors.textSecondary, marginLeft: 8, flex: 1, minWidth: 0 }]}>Your preferences stay on this device and can be changed at any time.</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

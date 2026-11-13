@@ -134,7 +134,7 @@ export default function PrivacySecurityScreen({ navigation }) {
           {getPrivacyCheckupItems().map((item, index) => (
             <View key={item.id} style={{ flexDirection: 'row', alignItems: 'flex-start', paddingVertical: spacing.sm, borderTopWidth: index === 0 ? 0 : StyleSheet.hairlineWidth, borderTopColor: colors.border }}>
               <Ionicons name={item.icon} size={19} color={colors.textSecondary} style={{ marginTop: 2 }} />
-              <View style={{ flex: 1, marginLeft: spacing.sm }}>
+              <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm }}>
                 <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.title}</Text>
                 <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 19, marginTop: 2 }]}>{item.detail}</Text>
                 {item.action && (
@@ -171,7 +171,7 @@ export default function PrivacySecurityScreen({ navigation }) {
                   imageUrl={entry.profile?.avatar_url || entry.profile?.avatarUrl}
                   size={36}
                 />
-                <Text style={[typography.body, { color: colors.textPrimary, flex: 1, marginLeft: spacing.sm }]} numberOfLines={1}>
+                <Text style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, marginLeft: spacing.sm }]} numberOfLines={1}>
                   {entry.profile?.name || 'Unknown'}
                 </Text>
                 <TouchableOpacity

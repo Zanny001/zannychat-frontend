@@ -49,7 +49,7 @@ export default function PinnedMessagesScreen({ route, navigation }) {
         <GlassCard noPadding glow intensity={24} tintAlpha={0.42}>
           <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, minHeight: 48 }}>
             <Ionicons name="search-outline" size={19} color={colors.textSecondary} />
-            <TextInput value={query} onChangeText={setQuery} placeholder="Search pinned messages" placeholderTextColor={colors.textSecondary} style={[typography.body, { flex: 1, color: colors.textPrimary, marginLeft: spacing.sm, paddingVertical: 10 }]} accessibilityLabel="Search pinned messages" returnKeyType="search" />
+            <TextInput value={query} onChangeText={setQuery} placeholder="Search pinned messages" placeholderTextColor={colors.textSecondary} style={[typography.body, { flex: 1, minWidth: 0, color: colors.textPrimary, marginLeft: spacing.sm, paddingVertical: 10 }]} accessibilityLabel="Search pinned messages" returnKeyType="search" />
             {query ? <TouchableOpacity onPress={() => setQuery('')} accessibilityRole="button" accessibilityLabel="Clear search"><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
           </View>
         </GlassCard>
@@ -63,7 +63,7 @@ export default function PinnedMessagesScreen({ route, navigation }) {
             <GlassCard key={item.id} style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <View style={{ width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: `${colors.primary}18` }}><Ionicons name={item.attachment ? 'attach-outline' : 'pin'} size={19} color={colors.primary} /></View>
-                <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm }}>
                   <Text style={[typography.bodyStrong, { color: colors.textPrimary }]} numberOfLines={1}>{item.senderName || 'Pinned message'}</Text>
                   <Text style={[typography.caption, { color: colors.textSecondary }]} numberOfLines={1}>{item.conversationName}{item.createdAt ? ` · ${String(item.createdAt).slice(0, 10)}` : ''}</Text>
                 </View>

@@ -48,6 +48,7 @@ export default function ChatListScreen({ navigation }) {
   const [activeFilter, setActiveFilter] = useState('all');
   const [customFolders, setCustomFolders] = useState([]);
   const [storyGroups, setStoryGroups] = useState([]);
+  const [ownProfile, setOwnProfile] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [sheetFor, setSheetFor] = useState(null); // conversation whose long-press sheet is open
   const [onlineIds, setOnlineIds] = useState(new Set());
@@ -87,6 +88,7 @@ export default function ChatListScreen({ navigation }) {
     (async () => {
       try {
         const user = await getCurrentUser();
+        if (alive) setOwnProfile(user || null);
         const folders = await loadChatFolders(user?.id || 'guest');
         if (alive) setCustomFolders(folders);
       } catch (_) {}
@@ -295,7 +297,7 @@ export default function ChatListScreen({ navigation }) {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storyTray}>
           <TouchableOpacity onPress={() => navigation.navigate('Updates')} accessibilityRole="button" accessibilityLabel="Add or view your story" style={styles.storyItem}>
             <View style={[styles.storyRing, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Avatar name="Your story" color={colors.primary} size={52} />
+              <Avatar name={ownProfile?.name || "You"} color={ownProfile?.avatarColor || colors.primary} imageUrl={ownProfile?.avatarUrl || ownProfile?.avatar_url} size={52} />
               <View style={[styles.storyAdd, { backgroundColor: colors.primary, borderColor: colors.background }]}>
                 <Ionicons name="add" size={14} color={colors.onPrimary} />
               </View>
@@ -324,7 +326,7 @@ export default function ChatListScreen({ navigation }) {
               onChangeText={setQuery}
               placeholder="Search"
               placeholderTextColor={colors.textSecondary}
-              style={[typography.body, { color: colors.textPrimary, marginLeft: 8, flex: 1 }]}
+              style={[typography.body, { color: colors.textPrimary, marginLeft: 8, flex: 1, minWidth: 0 }]}
               accessibilityLabel="Search chats"
             />
           </View>
@@ -378,7 +380,7 @@ export default function ChatListScreen({ navigation }) {
       {conversationActionError ? (
         <View style={{ marginHorizontal: spacing.md, marginBottom: spacing.sm, padding: spacing.sm, borderRadius: radii.md || 12, borderWidth: 1, borderColor: colors.danger, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center' }}>
           <Ionicons name="alert-circle-outline" size={18} color={colors.danger} />
-          <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textPrimary, flex: 1, marginHorizontal: spacing.sm }]}>{conversationActionError}</Text>
+          <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textPrimary, flex: 1, minWidth: 0, marginHorizontal: spacing.sm }]}>{conversationActionError}</Text>
           <TouchableOpacity onPress={() => setConversationActionError('')} accessibilityRole="button" accessibilityLabel="Dismiss chat action error" style={{ minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="close" size={18} color={colors.textSecondary} />
           </TouchableOpacity>

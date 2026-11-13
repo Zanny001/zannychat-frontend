@@ -321,7 +321,7 @@ export default function CallScreen({ route, navigation }) {
       </View>
       <View style={styles.identity}>
         {!(callType === 'video' && remoteStream) ? <Avatar name={participantName} color={avatarColor || colors.primary} size={108} /> : null}
-        <Text style={[styles.name, { color: foreground }]}>{participantName}</Text>
+        <Text numberOfLines={2} style={[styles.name, { color: foreground, maxWidth: '100%', paddingHorizontal: 8 }]}>{participantName}</Text>
         <Text style={[styles.phase, { color: secondaryForeground }]}>{phase === 'Connected' ? formatTime(seconds) : phase}</Text>
         {networkNotice ? <Text style={[styles.networkNotice, { color: immersiveVideo ? '#F2D28B' : colors.warning }]}>{networkNotice}</Text> : null}
         {errorText ? <Text style={[styles.error, { color: immersiveVideo ? '#FFB8C0' : colors.danger }]}>{errorText}</Text> : null}
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
   encryption: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 18, paddingVertical: 7, paddingHorizontal: 11, backgroundColor: 'rgba(255,255,255,0.08)' },
   encryptionText: { color: '#C5C5D1', fontSize: 11, fontWeight: '600' },
   identity: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28 },
-  name: { color: '#FFFFFF', fontSize: 27, fontWeight: '700', marginTop: 24, textAlign: 'center' },
+  name: { color: '#FFFFFF', fontSize: 27, fontWeight: '700', marginTop: 24, textAlign: 'center', flexShrink: 1 },
   phase: { color: '#C4C2D2', fontSize: 15, marginTop: 9 },
   networkNotice: { color: '#F2D28B', fontSize: 12, textAlign: 'center', marginTop: 12, maxWidth: 320, lineHeight: 17 },
   error: { color: '#FFB8C0', fontSize: 13, textAlign: 'center', marginTop: 16, maxWidth: 290 },

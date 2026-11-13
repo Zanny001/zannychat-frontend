@@ -44,7 +44,9 @@ try:
     check("Phone discovery opt-in hardening migration exists", hardening_migration.is_file(), str(hardening_migration.relative_to(repo)) if hardening_migration.exists() else "required follow-up migration missing")
     check("Native contact package is declared for SDK 57", declared.get("expo-contacts") == "57.0.8", f"declared={declared.get('expo-contacts')}")
     check("Media library package is declared for SDK 57", declared.get("expo-media-library", "").lstrip("~^") == "57.0.6", f"declared={declared.get('expo-media-library')}")
-    check("WebRTC native dependencies are declared and pinned", declared.get("react-native-webrtc") == "124.0.7" and declared.get("@config-plugins/react-native-webrtc") == "15.0.2", "native package and Expo config plugin must remain explicit; SDK 57 compatibility still needs a successful native build")
+    app_plugins_text = json.dumps(app.get("plugins", []))
+    check("WebRTC native dependencies are declared and pinned", declared.get("@livekit/react-native-webrtc") == "150.1.1" and declared.get("@config-plugins/react-native-webrtc") == "15.0.2" and "@config-plugins/react-native-webrtc" in app_plugins_text, f"LiveKit WebRTC fork={declared.get('@livekit/react-native-webrtc')}; config plugin={declared.get('@config-plugins/react-native-webrtc')}")
+    check("Call screen uses the pinned LiveKit WebRTC native module", "from '@livekit/react-native-webrtc'" in (root / "src" / "screens" / "CallScreen.js").read_text(), "call screen must import the declared native implementation")
     call_screen = (root / "src" / "screens" / "CallScreen.js").read_text()
     call_service = (root / "src" / "services" / "calls.js").read_text()
     call_migration = backend / "supabase" / "migrations" / "0059_realtime_audio_video_calls.sql"
@@ -60,18 +62,36 @@ try:
     check("Client roles cannot create objects in exposed public schema", public_schema_hardening.is_file() and "revoke create on schema public from public, anon, authenticated" in public_schema_hardening.read_text().lower(), str(public_schema_hardening.relative_to(repo)) if public_schema_hardening.exists() else "schema privilege hardening migration missing")
     definer_hardening = backend / "supabase" / "migrations" / "0063_harden_qualified_definer_search_paths.sql"
     definer_hardening_text = definer_hardening.read_text().lower() if definer_hardening.is_file() else ""
-    check("Reviewed SECURITY DEFINER routines use empty search_path", definer_hardening.is_file() and definer_hardening_text.count("set search_path = ''") == 10, "migration 0063 must harden all ten reviewed function signatures")
-    cleanup_binding = backend / "supabase" / "migrations" / "0068_bind_attachment_cleanup_to_conversation.sql"
-    cleanup_binding_text = cleanup_binding.read_text().lower() if cleanup_binding.is_file() else ""
+    reviewed_definer_signatures = [
+        "public.get_channel_post_stats(uuid[], uuid)",
+        "public.get_own_status_view_counts(uuid[])",
+        "public.get_conversation_poll_vote_counts(uuid)",
+        "public.get_poll_vote_counts_for_ids(uuid, uuid[])",
+        "public.cast_poll_vote(uuid, uuid[])",
+        "public.cast_poll_vote(uuid, uuid)",
+        "public.create_conversation_poll(uuid, text, text[], timestamptz, boolean)",
+        "public.create_conversation_poll(uuid, text, text[], timestamptz)",
+        "public.set_pinned_message_snapshot()",
+        "public.deliver_due_scheduled_messages(integer)",
+    ]
+    normalized_definer_migration = " ".join(definer_hardening_text.split())
+    definer_signatures_present = all(signature in normalized_definer_migration for signature in reviewed_definer_signatures)
+    definer_sets_empty_path = "to_regprocedure(v_signature)" in normalized_definer_migration and "set search_path = %l" in normalized_definer_migration and "if v_function is not null then" in normalized_definer_migration and "alter function" in normalized_definer_migration
+    check("Reviewed SECURITY DEFINER routines use empty search_path", definer_hardening.is_file() and len(reviewed_definer_signatures) == 10 and definer_signatures_present and definer_sets_empty_path, "migration must conditionally ALTER all ten reviewed signatures to an empty search_path")
+    cleanup_migrations = sorted((backend / "supabase" / "migrations").glob("*bind_attachment_cleanup_to_conversation_0068.sql"))
+    cleanup_binding_text = cleanup_migrations[-1].read_text().lower() if cleanup_migrations else ""
     cleanup_worker = backend / "src" / "jobs" / "messageAttachmentCleanup.js"
-    check("Attachment cleanup is bound to its source conversation", cleanup_binding.is_file() and "old.conversation_id" in cleanup_binding_text and "conversation_id" in cleanup_worker.read_text() and "does not belong to the queued message conversation" in cleanup_worker.read_text(), "worker must refuse cross-conversation Storage deletion")
+    cleanup_tests = backend / "tests" / "messageAttachmentCleanup.test.cjs"
+    cleanup_worker_text = cleanup_worker.read_text().lower() if cleanup_worker.is_file() else ""
+    cleanup_test_text = cleanup_tests.read_text().lower() if cleanup_tests.is_file() else ""
+    check("Attachment cleanup is bound to its source conversation", len(cleanup_migrations) == 1 and "add column if not exists conversation_id uuid" in cleanup_binding_text and "old.conversation_id" in cleanup_binding_text and "insert into public.message_attachment_cleanup(message_id, conversation_id, media_url)" in cleanup_binding_text and "set search_path = ''" in cleanup_binding_text and "conversation_id" in cleanup_worker_text and "startswith(`${conversationid}/`)" in cleanup_worker_text and "does not belong to the queued message conversation" in cleanup_worker_text and "worker refuses to delete an object outside the message conversation" in cleanup_test_text, "timestamped 0068 migration must bind OLD.conversation_id and worker tests must reject cross-conversation objects")
     group_privacy = backend / "src" / "routes" / "conversations.js"
     group_privacy_helper = backend / "src" / "utils" / "groupInvitePrivacy.cjs"
     check("Group invitation preferences and blocks are enforced before membership writes", group_privacy.is_file() and group_privacy_helper.is_file() and "evaluateGroupInvitePrivacy" in group_privacy.read_text() and "group_invite_permission" in group_privacy.read_text() and "blocked_users" in group_privacy.read_text(), "trusted group creation must enforce recipient privacy and block state")
     security_inventory = backend / "supabase" / "audits" / "security_definer_inventory.sql"
     security_inventory_text = security_inventory.read_text().lower() if security_inventory.is_file() else ""
     check("Read-only SECURITY DEFINER staging inventory exists", security_inventory.is_file() and "p.prosecdef" in security_inventory_text and "has_function_privilege('authenticated'" in security_inventory_text and "search_path_not_pinned" in security_inventory_text and "aclexplode(" in security_inventory_text and "critical review" in security_inventory_text, "inventory must triage unpinned search paths and PUBLIC/role EXECUTE access without mutating database state")
-    native_validation = repo / "WEBRTC_SDK57_NATIVE_VALIDATION.md"
+    native_validation = root / "WEBRTC_SDK57_NATIVE_VALIDATION.md"
     native_validation_text = native_validation.read_text() if native_validation.is_file() else ""
     check("WebRTC native build compatibility is validated for SDK 57", "**VALIDATED: YES**" in native_validation_text.splitlines(), "requires clean Android and iOS builds plus real-device call smoke tests; source/static tests are insufficient")
     check("TURN credentials are generated server-side", turn_route.is_file() and turn_helper.is_file() and "createHmac('sha1'" in turn_helper.read_text() and "TURN_SHARED_SECRET" in turn_route.read_text(), "never embed the TURN shared secret in the app")

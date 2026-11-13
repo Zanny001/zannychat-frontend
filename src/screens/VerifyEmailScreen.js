@@ -4,6 +4,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { resendSignupEmailOtp, verifySignupEmailOtp } from '../services/api';
 import GlassInput from '../components/GlassInput';
 import Knot from '../components/Knot';
+import { SUPABASE_ENABLED } from '../services/supabaseClient';
 
 function message(title, body) {
   if (Platform.OS === 'web' && typeof window !== 'undefined') window.alert(`${title}\n\n${body}`);
@@ -44,7 +45,7 @@ export default function VerifyEmailScreen({ navigation, route }) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <View style={{ flex: 1, justifyContent: 'center', padding: spacing.lg }}>
+        <View style={{ flex: 1, minWidth: 0, justifyContent: 'center', padding: spacing.lg }}>
           <Knot size={40} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={7} />
           <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.md }]}>Verify your email</Text>
           <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.sm, marginBottom: spacing.lg }]}>Enter the 6-digit code sent to {email || 'your email address'}. Make sure your Supabase email template is configured to send the code.</Text>

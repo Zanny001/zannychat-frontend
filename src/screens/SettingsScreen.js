@@ -69,7 +69,7 @@ export default function SettingsScreen({ navigation }) {
             <View style={[styles.appearanceIcon, { backgroundColor: hexToRgba(colors.online, 0.14) }]}>
               <Ionicons name="shield-checkmark-outline" size={21} color={colors.online} />
             </View>
-            <View style={{ flex: 1, marginLeft: spacing.sm }}>
+            <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm }}>
               <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Privacy & security center</Text>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>Blocked accounts, password and account protection</Text>
             </View>
@@ -88,7 +88,7 @@ export default function SettingsScreen({ navigation }) {
             <View style={[styles.appearanceIcon, { backgroundColor: hexToRgba(colors.primary, 0.14) }]}>
               <Ionicons name="phone-portrait-outline" size={21} color={colors.primary} />
             </View>
-            <View style={{ flex: 1, marginLeft: spacing.sm }}>
+            <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm }}>
               <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Devices & sessions</Text>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>Review sign-in and sign out of other devices</Text>
             </View>
@@ -151,7 +151,7 @@ export default function SettingsScreen({ navigation }) {
             })}
           </View>
           <View style={[styles.accessibilitySwitchRow, { borderTopColor: colors.border, marginTop: spacing.md, paddingTop: spacing.md }]}>
-            <View style={{ flex: 1, paddingRight: spacing.md }}>
+            <View style={{ flex: 1, minWidth: 0, paddingRight: spacing.md }}>
               <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Higher contrast</Text>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>Make supporting text and boundaries easier to distinguish.</Text>
             </View>
@@ -178,7 +178,7 @@ export default function SettingsScreen({ navigation }) {
             <View style={[styles.appearanceIcon, { backgroundColor: hexToRgba(colors.primary, 0.14) }]}>
               <Ionicons name="color-wand-outline" size={20} color={colors.primary} />
             </View>
-            <View style={{ flex: 1, marginLeft: spacing.sm }}>
+            <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm }}>
               <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Chat appearance</Text>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>Personalize the conversation canvas</Text>
             </View>
@@ -258,7 +258,7 @@ export default function SettingsScreen({ navigation }) {
             disabled, labelled, no fake state. */}
         <GlassCard style={{ marginBottom: spacing.md, opacity: 0.6 }}>
           <View style={styles.row}>
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, minWidth: 0 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Zero-Knowledge Vault</Text>
                 <View
@@ -381,7 +381,7 @@ function ConnectionRow({ label, detail, status, last }) {
   return (
     <View style={[styles.row, { marginBottom: last ? 0 : spacing.sm }]}>
       <View style={[styles.dot, { backgroundColor: dotColor }]} />
-      <View style={{ flex: 1, marginLeft: spacing.sm }}>
+      <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm }}>
         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{label}</Text>
         <Text style={[typography.caption, { color: colors.textSecondary }]}>{detail}</Text>
       </View>

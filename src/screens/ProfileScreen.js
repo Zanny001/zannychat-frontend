@@ -36,7 +36,7 @@ export default function ProfileScreen({ navigation }) {
               <Avatar name={user?.name || 'You'} color={user?.avatarColor || colors.primary} size={76} imageUrl={user?.avatarUrl || user?.avatar_url} />
               <View style={[styles.avatarStatus, { backgroundColor: colors.online, borderColor: colors.surface }]} />
             </View>
-            <View style={{ flex: 1, marginLeft: 16 }}>
+            <View style={{ flex: 1, minWidth: 0, marginLeft: 16 }}>
               <Text style={[typography.small, { color: mood.thread, letterSpacing: 1.2 }]}>YOUR SPACE</Text>
               <Text style={[typography.title, { color: colors.textPrimary, marginTop: 4 }]} numberOfLines={2}>{user?.name || 'You'}</Text>
               {user?.username ? <Text style={[typography.caption, { color: colors.accent, marginTop: 3 }]} numberOfLines={1}>@{user.username}</Text> : <Text style={[typography.caption, { color: colors.danger, marginTop: 3 }]}>Set your username so people can find you</Text>}
@@ -47,11 +47,11 @@ export default function ProfileScreen({ navigation }) {
           <View style={styles.profileActions}>
             <TouchableOpacity style={[styles.profileAction, { backgroundColor: hexToRgba(mood.signal, 0.13), borderColor: hexToRgba(mood.signal, 0.24) }]} onPress={() => navigation.navigate('EditProfile')} accessibilityRole="button" accessibilityLabel="Edit your profile">
               <Ionicons name="pencil-outline" size={16} color={mood.signal} />
-              <Text style={[typography.small, { color: colors.textPrimary, marginLeft: 7 }]}>Edit profile</Text>
+              <Text numberOfLines={1} style={[typography.small, { color: colors.textPrimary, marginLeft: 7, flexShrink: 1 }]}>Edit profile</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.profileAction, { backgroundColor: hexToRgba(mood.thread, 0.1), borderColor: hexToRgba(mood.thread, 0.2) }]} onPress={() => navigation.navigate('QRContact')} accessibilityRole="button" accessibilityLabel="Show your contact QR code">
               <Ionicons name="qr-code-outline" size={16} color={mood.thread} />
-              <Text style={[typography.small, { color: colors.textPrimary, marginLeft: 7 }]}>My QR code</Text>
+              <Text numberOfLines={1} style={[typography.small, { color: colors.textPrimary, marginLeft: 7, flexShrink: 1 }]}>My QR code</Text>
             </TouchableOpacity>
           </View>
         </GlassCard>
@@ -92,8 +92,8 @@ const styles = StyleSheet.create({
   avatarHalo: { width: 88, height: 88, borderRadius: 44, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   avatarStatus: { position: 'absolute', right: 2, bottom: 3, width: 14, height: 14, borderRadius: 7, borderWidth: 2 },
   profileDivider: { height: StyleSheet.hairlineWidth, marginVertical: 18 },
-  profileActions: { flexDirection: 'row', gap: 10 },
-  profileAction: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 11, flex: 1 },
+  profileActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  profileAction: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 11, flex: 1, minWidth: 132 },
   row: { flexDirection: 'row', alignItems: 'center' },
   editPill: {
     flexDirection: 'row',

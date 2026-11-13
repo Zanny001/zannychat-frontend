@@ -272,6 +272,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    minWidth: 0,
     justifyContent: 'center',
   },
   button: {

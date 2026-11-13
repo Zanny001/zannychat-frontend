@@ -65,7 +65,7 @@ export default function HelpScreen({ navigation }) {
                 accessibilityState={{ expanded: open }}
                 style={[styles.faqRow, { padding: spacing.md }]}
               >
-                <Text style={[typography.bodyStrong, { color: colors.textPrimary, flex: 1 }]}>{item.q}</Text>
+                <Text style={[typography.bodyStrong, { color: colors.textPrimary, flex: 1, minWidth: 0 }]}>{item.q}</Text>
                 <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textSecondary} />
               </TouchableOpacity>
               {open && (
@@ -85,7 +85,7 @@ export default function HelpScreen({ navigation }) {
         <TouchableOpacity onPress={handleContact} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Contact ZannyChat support by email" style={{ minHeight: 52, justifyContent: 'center' }}>
           <GlassCard contentStyle={styles.contactRow} intensity={26}>
             <Ionicons name="mail-outline" size={20} color={colors.accent} />
-            <Text style={[typography.body, { color: colors.textPrimary, flex: 1, marginLeft: spacing.sm }]}>
+            <Text style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, marginLeft: spacing.sm }]}>
               Contact support
             </Text>
             <Ionicons name="open-outline" size={16} color={colors.textSecondary} />
