@@ -53,7 +53,7 @@ export default function SavedMessagesScreen({ navigation }) {
         <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Bookmarks stay on this device and do not sync. Private attachment links are never stored here.</Text>
       </View>
       {loading ? <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Loading saved messages…</Text></View> : error ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl }}><Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{error}</Text><TouchableOpacity onPress={refresh} style={{ marginTop: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></View>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl }}><Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading saved messages" style={{ minHeight: 44, justifyContent: 'center', marginTop: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></View>
       ) : (
         <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl }}>
           {visible.map((item) => (
@@ -68,7 +68,7 @@ export default function SavedMessagesScreen({ navigation }) {
               </View>
               {item.text ? <Text style={[typography.body, { color: colors.textPrimary }]}>{item.text}</Text> : null}
               {item.attachment ? <Text style={[typography.caption, { color: colors.textSecondary }]}><Ionicons name="attach-outline" size={13} /> {item.attachment.name || (item.attachment.type === 'voice' ? 'Voice note' : 'Attachment')} · Open the conversation to access the original</Text> : null}
-              <TouchableOpacity onPress={() => navigation.navigate('Chat', { conversation: item.conversation, targetMessageId: item.messageId })} accessibilityRole="button" style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', paddingVertical: 5 }}>
+              <TouchableOpacity onPress={() => navigation.navigate('Chat', { conversation: item.conversation, targetMessageId: item.messageId })} accessibilityRole="button" accessibilityLabel="Open saved message in conversation" style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', paddingVertical: 5 }}>
                 <Text style={[typography.small, { color: colors.primary, fontWeight: '700' }]}>Open conversation</Text><Ionicons name="arrow-forward" size={15} color={colors.primary} style={{ marginLeft: 5 }} />
               </TouchableOpacity>
             </GlassCard>
