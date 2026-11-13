@@ -23,6 +23,30 @@ const DEFAULT_DETAILS = {
   call_permission: 'everyone', status_audience: 'contacts',
 };
 
+function Section({ title, children, colors, spacing, typography, radii }) {
+  return (
+    <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.lg }]}>
+      <Text style={[typography.bodyStrong, { color: colors.text, marginBottom: spacing.md }]}>{title}</Text>
+      {children}
+    </View>
+  );
+}
+
+function Field({ label, value, onChangeText, placeholder, multiline = false, keyboardType, colors, spacing, typography }) {
+  return (
+    <View style={{ marginBottom: spacing.md }}>
+      <Text style={[typography.small, { color: colors.textSecondary, marginBottom: 6 }]}>{label.toUpperCase()}</Text>
+      <GlassInput
+        value={value == null ? '' : String(value)}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        multiline={multiline}
+        keyboardType={keyboardType}
+      />
+    </View>
+  );
+}
+
 export default function EditProfileScreen({ navigation }) {
   const { colors, spacing, typography, radii } = useTheme();
   const [user, setUser] = useState(null);
@@ -117,20 +141,6 @@ export default function EditProfileScreen({ navigation }) {
     }
   }
 
-  function Section({ title, children }) {
-    return <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.lg }]}>
-      <Text style={[typography.bodyStrong, { color: colors.text, marginBottom: spacing.md }]}>{title}</Text>
-      {children}
-    </View>;
-  }
-
-  function Field({ label, value, onChangeText, placeholder, multiline = false, keyboardType }) {
-    return <View style={{ marginBottom: spacing.md }}>
-      <Text style={[typography.small, { color: colors.textSecondary, marginBottom: 6 }]}>{label.toUpperCase()}</Text>
-      <GlassInput value={value == null ? '' : String(value)} onChangeText={onChangeText} placeholder={placeholder} multiline={multiline} keyboardType={keyboardType} />
-    </View>;
-  }
-
   function Toggle({ label, value, onValueChange, hint }) {
     return <View style={styles.toggleRow}>
       <View style={{ flex: 1, paddingRight: spacing.md }}>
@@ -160,7 +170,7 @@ export default function EditProfileScreen({ navigation }) {
       } />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl }}>
-          <Section title="Profile appearance">
+          <Section title="Profile appearance" colors={colors} spacing={spacing} typography={typography} radii={radii}>
             <TouchableOpacity onPress={() => chooseImage('cover')} disabled={uploadingCover} accessibilityRole="button" accessibilityLabel="Add or change profile cover image" accessibilityState={{ disabled: uploadingCover, busy: uploadingCover }} style={[styles.cover, { backgroundColor: colors.surfaceElevated, borderRadius: radii.md }]}>
               {(coverPreviewUri || details.cover_image_url) ? <Image source={{ uri: coverPreviewUri || details.cover_image_url }} resizeMode="cover" style={StyleSheet.absoluteFillObject} /> : <Ionicons name="image-outline" size={26} color={colors.textSecondary} />}
               {uploadingCover ? <ActivityIndicator color={colors.primary} /> : <Text style={[typography.caption, { color: colors.textSecondary }]}>Add or change cover image</Text>}
@@ -175,10 +185,10 @@ export default function EditProfileScreen({ navigation }) {
               <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Profile photo</Text>
             </View>
             {mediaError ? <Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger, marginBottom: spacing.sm }]}>{mediaError}</Text> : null}
-            <Field label="Display name" value={name} onChangeText={setName} placeholder="Your name" />
-            <Field label="Username" value={username} onChangeText={setUsername} placeholder="your_username" />
-            <Field label="About / status" value={status} onChangeText={setStatus} placeholder="Hey there, I'm using ZannyChat" />
-            <Field label="About details" value={details.about} onChangeText={(v) => setDetail('about', v)} placeholder="Tell people a little about yourself" multiline />
+            <Field label="Display name" value={name} onChangeText={setName} placeholder="Your name" colors={colors} spacing={spacing} typography={typography} />
+            <Field label="Username" value={username} onChangeText={setUsername} placeholder="your_username" colors={colors} spacing={spacing} typography={typography} />
+            <Field label="About / status" value={status} onChangeText={setStatus} placeholder="Hey there, I'm using ZannyChat" colors={colors} spacing={spacing} typography={typography} />
+            <Field label="About details" value={details.about} onChangeText={(v) => setDetail('about', v)} placeholder="Tell people a little about yourself" multiline colors={colors} spacing={spacing} typography={typography} />
             <View style={{ marginTop: 4, marginBottom: spacing.md }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
                 <Text style={[typography.caption, { color: colors.textSecondary }]}>Profile completeness</Text>
@@ -194,16 +204,16 @@ export default function EditProfileScreen({ navigation }) {
             </TouchableOpacity>
           </Section>
 
-          <Section title="Additional information">
-            <Field label="Occupation" value={details.occupation} onChangeText={(v) => setDetail('occupation', v)} placeholder="What do you do?" />
-            <Field label="Location" value={details.location} onChangeText={(v) => setDetail('location', v)} placeholder="City or region" />
-            <Field label="Website" value={details.website} onChangeText={(v) => setDetail('website', v)} placeholder="https://example.com" keyboardType="url" />
-            <Field label="Birthday" value={details.birthday} onChangeText={(v) => setDetail('birthday', v)} placeholder="YYYY-MM-DD" />
-            <Field label="Pronouns" value={details.pronouns} onChangeText={(v) => setDetail('pronouns', v)} placeholder="Optional" />
+          <Section title="Additional information" colors={colors} spacing={spacing} typography={typography} radii={radii}>
+            <Field label="Occupation" value={details.occupation} onChangeText={(v) => setDetail('occupation', v)} placeholder="What do you do?" colors={colors} spacing={spacing} typography={typography} />
+            <Field label="Location" value={details.location} onChangeText={(v) => setDetail('location', v)} placeholder="City or region" colors={colors} spacing={spacing} typography={typography} />
+            <Field label="Website" value={details.website} onChangeText={(v) => setDetail('website', v)} placeholder="https://example.com" keyboardType="url" colors={colors} spacing={spacing} typography={typography} />
+            <Field label="Birthday" value={details.birthday} onChangeText={(v) => setDetail('birthday', v)} placeholder="YYYY-MM-DD" colors={colors} spacing={spacing} typography={typography} />
+            <Field label="Pronouns" value={details.pronouns} onChangeText={(v) => setDetail('pronouns', v)} placeholder="Optional" colors={colors} spacing={spacing} typography={typography} />
             <Text style={[typography.caption, { color: colors.textSecondary }]}>These details are optional. Visibility is controlled separately below.</Text>
           </Section>
 
-          <Section title="Profile privacy">
+          <Section title="Profile privacy" colors={colors} spacing={spacing} typography={typography} radii={radii}>
             <Choice label="Who can view your profile" value={details.profile_visibility} onChange={(v) => setDetail('profile_visibility', v)} options={[{ value: 'everyone', label: 'Everyone' }, { value: 'contacts', label: 'Contacts' }, { value: 'nobody', label: 'Nobody' }]} />
             <Choice label="Profile photo visibility" value={details.photo_visibility} onChange={(v) => setDetail('photo_visibility', v)} options={[{ value: 'everyone', label: 'Everyone' }, { value: 'contacts', label: 'Contacts' }, { value: 'nobody', label: 'Nobody' }]} />
             <Toggle label="Show location" value={details.show_location} onValueChange={(v) => setDetail('show_location', v)} />
@@ -216,7 +226,7 @@ export default function EditProfileScreen({ navigation }) {
             <Toggle label="Show read receipts" value={details.show_read_receipts} onValueChange={(v) => setDetail('show_read_receipts', v)} />
           </Section>
 
-          <Section title="Contact and audience permissions">
+          <Section title="Contact and audience permissions" colors={colors} spacing={spacing} typography={typography} radii={radii}>
             <Choice label="Group invitations" value={details.group_invite_permission} onChange={(v) => setDetail('group_invite_permission', v)} options={[{ value: 'everyone', label: 'Everyone' }, { value: 'contacts', label: 'Contacts' }, { value: 'nobody', label: 'Nobody' }]} />
             <Choice label="Calls" value={details.call_permission} onChange={(v) => setDetail('call_permission', v)} options={[{ value: 'everyone', label: 'Everyone' }, { value: 'contacts', label: 'Contacts' }, { value: 'nobody', label: 'Nobody' }]} />
             <Choice label="Status audience" value={details.status_audience} onChange={(v) => setDetail('status_audience', v)} options={[{ value: 'everyone', label: 'Everyone' }, { value: 'contacts', label: 'Contacts' }, { value: 'selected', label: 'Selected contacts' }, { value: 'nobody', label: 'Nobody' }]} />
