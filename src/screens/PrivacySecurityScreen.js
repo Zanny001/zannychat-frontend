@@ -336,7 +336,7 @@ export default function PrivacySecurityScreen({ navigation }) {
             accessibilityState={{ disabled: deletingAccount || !SUPABASE_ENABLED || !BACKEND_ENABLED, busy: deletingAccount }}
             style={[styles.passwordButton, { backgroundColor: colors.danger, opacity: deletingAccount || !SUPABASE_ENABLED || !BACKEND_ENABLED ? 0.55 : 1 }]}
           >
-            <Text style={[typography.bodyStrong, { color: '#FFFFFF' }]}>{deletingAccount ? 'Deleting account…' : 'Delete my account permanently'}</Text>
+            <Text style={[typography.bodyStrong, { color: colors.onDanger }]}>{deletingAccount ? 'Deleting account…' : 'Delete my account permanently'}</Text>
           </TouchableOpacity>
         </GlassCard>
       </ScrollView>
