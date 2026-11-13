@@ -214,6 +214,7 @@ test('channels, status publishing and chat recovery actions expose accessible la
     'Join channel with invitation code',
   ]) assert.ok(channels.includes('accessibilityLabel="' + label + '"'), 'Missing channel action label: ' + label);
   assert.ok(channels.includes('accessibilityLabel={member.moderator ?'), 'Channel moderator action needs a dynamic accessible label');
+  assert.ok(channels.includes("accessibilityLabel={selected.subscribed ? 'Unsubscribe from channel'"), 'Channel subscription toggle needs a dynamic accessible label');
 
   const statuses = readFileSync(new URL('StatusUpdatesScreen.js', import.meta.url), 'utf8');
   for (const label of [
