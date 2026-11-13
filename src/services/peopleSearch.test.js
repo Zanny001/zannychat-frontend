@@ -10,6 +10,7 @@ const api = fs.readFileSync(path.join(src, 'services/api.js'), 'utf8');
 const newChat = fs.readFileSync(path.join(src, 'screens/NewChatScreen.js'), 'utf8');
 const editProfile = fs.readFileSync(path.join(src, 'screens/EditProfileScreen.js'), 'utf8');
 const signup = fs.readFileSync(path.join(src, 'screens/SignupScreen.js'), 'utf8');
+const googleAuth = fs.readFileSync(path.join(src, 'services/googleAuth.js'), 'utf8');
 
 test('server-backed people search calls the privacy-aware search_people RPC', () => {
   const start = api.indexOf('export async function searchPeople');
@@ -30,6 +31,8 @@ test('New Chat searches registered members by display name or @username', () => 
 test('email and Google registration receive an automatically generated username from the Auth profile trigger', () => {
   assert.match(signup, /unique @username is created automatically/i);
   assert.match(api, /options: \{ data: \{ name \} \}/);
+  assert.match(googleAuth, /provider: 'google'/);
+  assert.match(googleAuth, /scopes: 'openid email profile'/);
 });
 
 test('profile editing requires a valid normalized username', () => {
