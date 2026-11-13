@@ -62,7 +62,7 @@ export default function LoginScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <View style={{ padding: spacing.lg, flex: 1, justifyContent: 'center' }}>
+        <View style={{ padding: spacing.lg, flex: 1, minWidth: 0, justifyContent: 'center' }}>
           <Knot size={40} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={7} />
           <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.md, marginBottom: spacing.xs }]}>
             Welcome back
