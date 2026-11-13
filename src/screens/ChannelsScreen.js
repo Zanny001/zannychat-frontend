@@ -605,7 +605,7 @@ export default function ChannelsScreen({ navigation }) {
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, gap: spacing.md }}>
       <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-          <View style={{ width: 42, height: 42, borderRadius: radii.md, backgroundColor: '#FCE8ED', alignItems: 'center', justifyContent: 'center' }}><Ionicons name="radio" size={21} color="#D83A59" /></View>
+          <View style={{ width: 42, height: 42, borderRadius: radii.md, backgroundColor: hexToRgba(colors.danger, 0.12), alignItems: 'center', justifyContent: 'center' }}><Ionicons name="radio" size={21} color={colors.danger} /></View>
           <View style={{ flex: 1 }}>
             <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>ZannyChat LIVE</Text>
             <Text style={[typography.caption, { color: colors.textSecondary }]}>Broadcast or watch live video with audience chat.</Text>
@@ -637,8 +637,8 @@ export default function ChannelsScreen({ navigation }) {
               accessibilityLabel={`Join LIVE: ${stream.title || 'Live broadcast'}`}
               style={{ minHeight: 68, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing.sm }}
             >
-              <View style={{ width: 42, height: 42, borderRadius: radii.md, backgroundColor: '#E34D68' + '18', alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="videocam" size={21} color="#E34D68" />
+              <View style={{ width: 42, height: 42, borderRadius: radii.md, backgroundColor: hexToRgba(colors.danger, 0.12), alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="videocam" size={21} color={colors.danger} />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{stream.title || 'Live broadcast'}</Text>
