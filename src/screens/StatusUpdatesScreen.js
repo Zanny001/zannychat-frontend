@@ -637,8 +637,8 @@ export default function StatusUpdatesScreen({ navigation, route }) {
         </View>
         {audience === 'selected_contacts' ? <View style={{ gap: spacing.xs }}><Text style={[typography.caption, { color: colors.textSecondary }]}>{selectedAudienceIds.length} selected contact{selectedAudienceIds.length === 1 ? '' : 's'} can see this status. Other contacts will not be able to view it.</Text><TouchableOpacity onPress={loadSelectedAudienceContacts} disabled={privacyBusy} accessibilityRole="button" style={{ minHeight: 42, justifyContent: 'center' }}><Text style={[typography.small, { color: colors.primary }]}>{privacyBusy ? 'Loading contacts…' : 'Choose contacts or group members'}</Text></TouchableOpacity></View> : null}
         <TouchableOpacity onPress={publish} disabled={saving || (!text.trim() && !photo && !video) || (audience === 'selected_contacts' && selectedAudienceIds.length === 0)} accessibilityRole="button" style={{ minHeight: 48, borderRadius: radii.md, backgroundColor: saving || (!text.trim() && !photo && !video) || (audience === 'selected_contacts' && selectedAudienceIds.length === 0) ? colors.border : colors.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}>
-          {saving ? <ActivityIndicator color={colors.background} /> : <Ionicons name="paper-plane-outline" size={17} color={colors.background} />}
-          <Text style={[typography.bodyStrong, { color: colors.background }]}>{saving ? 'Publishing…' : 'Publish status'}</Text>
+          {saving ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name="paper-plane-outline" size={17} color={colors.onPrimary} />}
+          <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>{saving ? 'Publishing…' : 'Publish status'}</Text>
         </TouchableOpacity>
       </GlassCard>
       {discoverStatuses.length > 0 ? (
