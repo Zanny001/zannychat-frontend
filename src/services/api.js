@@ -301,6 +301,9 @@ export async function updateProfile({ name, status, username }) {
     .update({ ...(name !== undefined && { name }), ...(status !== undefined && { status }), ...(normalizedUsername !== undefined && { username: normalizedUsername }) })
     .eq('id', userId);
 
+  if (error?.code === '23505') {
+    throw new Error('That username is already taken. Try another one.');
+  }
   if (error) throw error;
   return getCurrentUser();
 }
