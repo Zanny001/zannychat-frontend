@@ -307,7 +307,7 @@ export default function NewChatScreen({ navigation, route }) {
             },
           ]}
         >
-          <Text style={styles.errorText}>{chatError}</Text>
+          <Text style={[styles.errorText, { color: colors.danger }]}>{chatError}</Text>
         </View>
       )}
 
@@ -323,7 +323,7 @@ export default function NewChatScreen({ navigation, route }) {
             },
           ]}
         >
-          <Text style={styles.errorText}>{contactsError}</Text>
+          <Text style={[styles.errorText, { color: colors.danger }]}>{contactsError}</Text>
 
           <TouchableOpacity
             onPress={retryContacts}
@@ -468,7 +468,6 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   errorText: {
-    color: colors.danger, 
     fontSize: 14,
   },
 });
