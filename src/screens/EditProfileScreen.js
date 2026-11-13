@@ -165,7 +165,7 @@ export default function EditProfileScreen({ navigation }) {
               <TouchableOpacity onPress={() => chooseImage('avatar')} disabled={uploadingPhoto} style={styles.avatarWrap} accessibilityLabel="Change profile picture">
                 <Avatar name={name || 'You'} color={user?.avatarColor || colors.primary} size={96} imageUrl={avatarPreviewUri || avatarUrl} />
                 <View style={[styles.cameraBadge, { backgroundColor: colors.primary, borderColor: colors.surface }]}>
-                  {uploadingPhoto ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="camera" size={16} color="#fff" />}
+                  {uploadingPhoto ? <ActivityIndicator size="small" color={colors.onPrimary} /> : <Ionicons name="camera" size={16} color={colors.onPrimary} />}
                 </View>
               </TouchableOpacity>
               <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Profile photo</Text>
