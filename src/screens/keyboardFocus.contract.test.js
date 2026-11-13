@@ -20,6 +20,7 @@ const keyboardScrollableForms = [
   'PollsScreen.js',
   'ScheduledMessagesScreen.js',
   'StatusUpdatesScreen.js',
+  'LiveStreamScreen.web.js',
 ];
 
 test('all scrollable form screens preserve handled taps while the keyboard is open', () => {
