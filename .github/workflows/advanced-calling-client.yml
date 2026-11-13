@@ -54,14 +54,14 @@ jobs:
           distribution: temurin
           java-version: '17'
       # Compile native Kotlin sources, verify Expo module autolinking, and build a CI-only debug APK.
-      # The APK uses placeholder Firebase config for visual QA; it is not a production release.
+      # This artifact is compile-only: placeholder Firebase config makes it unsuitable for app/runtime QA.
       - run: cd android && ./gradlew :app:compileDebugKotlin
-      - name: Assemble Android debug APK for physical-device QA
+      - name: Assemble Android compile-only APK (placeholder Firebase)
         run: cd android && ./gradlew :app:assembleDebug
-      - name: Upload Android debug APK for physical-device QA
+      - name: Upload Android compile-only artifact (not installable for QA)
         uses: actions/upload-artifact@v4
         with:
-          name: zannychat-royal-neon-android-debug
+          name: zannychat-android-compile-only-not-for-install
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7

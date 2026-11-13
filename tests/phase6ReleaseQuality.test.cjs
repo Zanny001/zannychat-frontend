@@ -37,8 +37,55 @@ test('native release CI protects main and compiles Android native code', () => {
   assert.match(workflow, /path: zannychat-back-github/);
   assert.match(workflow, /Create non-production Firebase config for compile-only CI/);
   assert.match(workflow, /CI_ONLY_NOT_A_REAL_FIREBASE_KEY/);
+  assert.match(workflow, /zannychat-android-compile-only-not-for-install/);
+  assert.match(workflow, /not installable for QA/i);
+  assert.doesNotMatch(workflow, /Upload Android debug APK for physical-device QA/);
   assert.match(workflow, /:app:compileDebugKotlin/);
   assert.match(workflow, /expo export --platform web/);
   assert.match(workflow, /expo export --platform android/);
   assert.match(workflow, /npm run audit:contract/);
+});
+
+test('startup cannot remain on the native splash when session restore stalls', () => {
+  const source = fs.readFileSync(path.join(root, 'App.js'), 'utf8');
+  assert.match(source, /Promise\.race\(\[/);
+  assert.match(source, /Session restoration timed out after 8 seconds/);
+  assert.match(source, /clearTimeout\(sessionTimeout\)/);
+  assert.match(source, /if \(mounted && !authStateObserved\)/);
+});
+
+test('font loading errors fall back to system fonts instead of blocking app readiness', () => {
+  const source = fs.readFileSync(path.join(root, 'App.js'), 'utf8');
+  assert.match(source, /const \[fontsLoaded, fontError\] = useAppFonts\(\)/);
+  assert.match(source, /\(fontsLoaded \|\| Boolean\(fontError\)\) && initialRoute !== null/);
+});
+
+
+test('startup has a hard deadline fallback for unexpected font or auth initialization stalls', () => {
+  const source = fs.readFileSync(path.join(root, 'App.js'), 'utf8');
+  assert.match(source, /startupDeadlineReached/);
+  assert.match(source, /setTimeout\(\(\) => \{/);
+  assert.match(source, /startup exceeded 12 seconds/i);
+  assert.match(source, /setInitialRoute\(\(currentRoute\) => currentRoute \|\| 'Onboarding'\)/);
+  assert.match(source, /Boolean\(fontError\) \|\| startupDeadlineReached/);
+  assert.match(source, /clearTimeout\(startupDeadline\)/);
+});
+
+
+test('Android release has an explicit positive version code', () => {
+  assert.equal(app.expo.android.package, 'com.zannychat.app');
+  assert.ok(Number.isInteger(app.expo.android.versionCode));
+  assert.ok(app.expo.android.versionCode > 0);
+});
+
+
+test('production Android build requires real Firebase and Expo credentials and never auto-submits', () => {
+  const releaseWorkflow = fs.readFileSync(path.join(root, '.github/workflows/android-production-build.yml'), 'utf8');
+  assert.match(releaseWorkflow, /workflow_dispatch/);
+  assert.match(releaseWorkflow, /secrets\.EXPO_TOKEN/);
+  assert.match(releaseWorkflow, /secrets\.GOOGLE_SERVICES_JSON_BASE64/);
+  assert.match(releaseWorkflow, /Firebase config is not a valid production config/);
+  assert.match(releaseWorkflow, /--profile production/);
+  assert.doesNotMatch(releaseWorkflow, /--auto-submit|build:submit|submit --platform/i);
+  assert.match(releaseWorkflow, /confirm_release/);
 });

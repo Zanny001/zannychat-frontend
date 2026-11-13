@@ -1,0 +1,67 @@
+name: Android production build
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_release:
+        description: "Confirm that you want to create a signed production Android App Bundle (no store submission)."
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zannychat-android-production-build
+  cancel-in-progress: false
+
+jobs:
+  production-build:
+    if: inputs.confirm_release == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+    steps:
+      - name: Check out release source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Validate production credentials without exposing them
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${EXPO_TOKEN:-}" ]; then
+            echo "::error::Missing EXPO_TOKEN GitHub Actions secret."
+            exit 1
+          fi
+          if [ -z "${GOOGLE_SERVICES_JSON_BASE64:-}" ]; then
+            echo "::error::Missing GOOGLE_SERVICES_JSON_BASE64 GitHub Actions secret."
+            exit 1
+          fi
+          printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > google-services.json
+          node <<'NODE'
+          const fs = require('node:fs');
+          const config = JSON.parse(fs.readFileSync('google-services.json', 'utf8'));
+          const projectId = config.project_info?.project_id;
+          const clients = config.client || [];
+          const hasApp = clients.some((client) =>
+            client.client_info?.android_client_info?.package_name === 'com.zannychat.app'
+          );
+          if (!projectId || /placeholder|example|ci-only/i.test(projectId) || !hasApp) {
+            throw new Error('Firebase config is not a valid production config for com.zannychat.app.');
+          }
+          console.log('Firebase config validated for com.zannychat.app.');
+          NODE
+      - name: Verify Expo production configuration
+        run: |
+          npx expo config --type prebuild --json > /tmp/zannychat-production-config.json
+          node -e "const c=require('/tmp/zannychat-production-config.json'); if(c.android?.versionCode !== 243) throw new Error('Unexpected Android versionCode'); if(c.android?.googleServicesFile !== './google-services.json') throw new Error('Unexpected Firebase config path');"
+      - name: Build signed production Android App Bundle
+        run: npx eas-cli@latest build --platform android --profile production --non-interactive
