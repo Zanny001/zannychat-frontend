@@ -130,3 +130,24 @@ test('create-group screen exposes accessible selection controls and complete con
   assert.match(createGroup, /No contacts available to add yet/);
   assert.match(createGroup, /minHeight: 48/);
 });
+
+test('interactive controls keep 44-point minimum touch targets on high-traffic screens', () => {
+  const contracts = [
+    ['StatusUpdatesScreen.js', 12],
+    ['ChannelsScreen.js', 10],
+    ['PollsScreen.js', 2],
+    ['ContactDiscoveryScreen.js', 2],
+    ['GroupManagementScreen.js', 1],
+    ['LiveHubScreen.js', 1],
+    ['NewChatScreen.js', 1],
+    ['SharedMediaScreen.js', 1],
+  ];
+  for (const [file, minimumCount] of contracts) {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    const targets = source.match(/minHeight\\s*:\\s*44\\b/g) || [];
+    assert.ok(
+      targets.length >= minimumCount,
+      file + ' expected at least ' + minimumCount + ' 44-point touch targets, found ' + targets.length,
+    );
+  }
+});
