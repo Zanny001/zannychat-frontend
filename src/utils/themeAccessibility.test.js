@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MOODS, resolveMoodColors } from '../theme/colors.js';
+import { createCustomMood } from '../theme/customPalette.js';
 
 function relativeLuminance(hex) {
   const value = hex.replace('#', '');
@@ -65,5 +66,26 @@ test('danger actions retain readable foregrounds across every preset and appeara
       const colors = resolveMoodColors(mood, mode);
       assert.ok(contrastRatio(colors.onDanger, colors.danger) >= 4.5, `${mood.key} ${mode} danger action`);
     }
+  }
+});
+
+
+test('primary and accent actions retain readable foregrounds across every preset and appearance', () => {
+  for (const mood of Object.values(MOODS)) {
+    for (const mode of ['light', 'dark']) {
+      const colors = resolveMoodColors(mood, mode);
+      assert.ok(contrastRatio(colors.onPrimary, colors.primary) >= 4.5, `${mood.key} ${mode} primary action`);
+      assert.ok(contrastRatio(colors.onAccent, colors.accent) >= 4.5, `${mood.key} ${mode} accent action`);
+    }
+  }
+});
+
+test('custom user colours retain readable action foregrounds in both appearances', () => {
+  const mood = createCustomMood({ signal: '#7C60FF', thread: '#39E7E0', gold: '#FFD58A' });
+  assert.ok(mood);
+  for (const mode of ['light', 'dark']) {
+    const colors = resolveMoodColors(mood, mode);
+    assert.ok(contrastRatio(colors.onPrimary, colors.primary) >= 4.5, `${mode} custom primary action`);
+    assert.ok(contrastRatio(colors.onAccent, colors.accent) >= 4.5, `${mode} custom accent action`);
   }
 });
