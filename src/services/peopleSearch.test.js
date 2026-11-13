@@ -35,6 +35,15 @@ test('email and Google registration receive an automatically generated username 
   assert.match(googleAuth, /scopes: 'openid email profile'/);
 });
 
+test('private profile columns are read only through owner and conversation-scoped RPCs', () => {
+  assert.match(api, /rpc\('get_my_profile'\)/);
+  assert.match(api, /rpc\('get_conversation_profile_directory'/);
+  assert.doesNotMatch(api, /from\('profiles'\)\s*\.select\(['"]\*['"]\)/);
+  const exporter = fs.readFileSync(path.join(src, 'services/personalDataExport.js'), 'utf8');
+  assert.match(exporter, /rpc\('get_my_profile'\)/);
+  assert.doesNotMatch(exporter, /from\('profiles'\)\s*\.select\(['"]\*['"]\)/);
+});
+
 test('profile editing requires a valid normalized username', () => {
   assert.match(editProfile, /normalizeUsername\(username\)/);
   assert.match(editProfile, /isValidUsername\(normalizedUsername\)/);
