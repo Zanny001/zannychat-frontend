@@ -130,3 +130,7 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 - Latest source commits are awaiting fresh CI after the touch-target matcher correction. Do not treat earlier workflow results as validation of these new commits.
 
 - Follow-up accessibility pass: profile editing controls announce the active choice and upload busy/disabled state; Help support, call-history retry, drafts retry and Events publish/retry actions now have explicit accessible names and relevant disabled/busy state. Regression assertions cover these contracts.
+
+- Further high-priority action audit: all interactive controls in the native LiveStream, LiveHub, GroupCall, Call, StatusUpdates and Chat screen files now expose explicit accessible names; Channels management, subscription, moderation, publishing, report and invitation actions were also labelled. Dynamic labels announce the target person/channel/report where appropriate.
+- Regression assertions now cover native LIVE moderation/discovery, call fallback, channel management, status publishing/privacy and chat outbox/media recovery controls.
+- These are source-level accessibility fixes and contract tests, not visual sign-off. The individual screen entries remain [~].
