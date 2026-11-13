@@ -25,7 +25,7 @@ function ThemedStatusBar() {
 }
 
 export default function App() {
-  const [fontsLoaded] = useAppFonts();
+  const [fontsLoaded, fontError] = useAppFonts();
   const [initialRoute, setInitialRoute] = useState(null);
 
   useEffect(() => {
@@ -77,8 +77,21 @@ export default function App() {
       authSubscription = authListener?.subscription;
 
       // Supabase restores and processes the OAuth callback automatically on web.
-      const { data, error: sessionError } =
-        await supabase.auth.getSession();
+      // Native splash must never remain visible forever if persisted-session
+      // restoration stalls (for example, a slow or unavailable device store).
+      // A later auth event can still move the app to the correct signed-in route.
+      let sessionTimeout;
+      const sessionResult = await Promise.race([
+        supabase.auth.getSession(),
+        new Promise((resolve) => {
+          sessionTimeout = setTimeout(() => resolve({
+            data: { session: null },
+            error: new Error('Session restoration timed out after 8 seconds'),
+          }), 8000);
+        }),
+      ]);
+      clearTimeout(sessionTimeout);
+      const { data, error: sessionError } = sessionResult;
 
       if (sessionError) {
         console.error(
@@ -139,7 +152,9 @@ export default function App() {
     return () => subscription.remove();
   }, []);
 
-  const appReady = fontsLoaded && initialRoute !== null;
+  // Font loading is an enhancement, not a reason to strand users on the
+  // native splash screen. React Native's system fonts are the safe fallback.
+  const appReady = (fontsLoaded || Boolean(fontError)) && initialRoute !== null;
 
   const onLayoutRootView = useCallback(async () => {
     if (appReady) {
