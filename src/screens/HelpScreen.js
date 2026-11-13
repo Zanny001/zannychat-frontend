@@ -82,7 +82,7 @@ export default function HelpScreen({ navigation }) {
           );
         })}
 
-        <TouchableOpacity onPress={handleContact} activeOpacity={0.8}>
+        <TouchableOpacity onPress={handleContact} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Contact ZannyChat support by email" style={{ minHeight: 52, justifyContent: 'center' }}>
           <GlassCard contentStyle={styles.contactRow} intensity={26}>
             <Ionicons name="mail-outline" size={20} color={colors.accent} />
             <Text style={[typography.body, { color: colors.textPrimary, flex: 1, marginLeft: spacing.sm }]}>
