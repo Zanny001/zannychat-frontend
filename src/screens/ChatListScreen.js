@@ -326,7 +326,7 @@ export default function ChatListScreen({ navigation }) {
               onChangeText={setQuery}
               placeholder="Search"
               placeholderTextColor={colors.textSecondary}
-              style={[typography.body, { color: colors.textPrimary, marginLeft: 8, flex: 1 }]}
+              style={[typography.body, { color: colors.textPrimary, marginLeft: 8, flex: 1, minWidth: 0 }]}
               accessibilityLabel="Search chats"
             />
           </View>
@@ -380,7 +380,7 @@ export default function ChatListScreen({ navigation }) {
       {conversationActionError ? (
         <View style={{ marginHorizontal: spacing.md, marginBottom: spacing.sm, padding: spacing.sm, borderRadius: radii.md || 12, borderWidth: 1, borderColor: colors.danger, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center' }}>
           <Ionicons name="alert-circle-outline" size={18} color={colors.danger} />
-          <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textPrimary, flex: 1, marginHorizontal: spacing.sm }]}>{conversationActionError}</Text>
+          <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textPrimary, flex: 1, minWidth: 0, marginHorizontal: spacing.sm }]}>{conversationActionError}</Text>
           <TouchableOpacity onPress={() => setConversationActionError('')} accessibilityRole="button" accessibilityLabel="Dismiss chat action error" style={{ minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="close" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
