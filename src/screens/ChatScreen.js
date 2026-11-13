@@ -1714,7 +1714,7 @@ Choose whether to remove this message only from your chat or retract it
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.sm }}>
             {['❤️', '😂', '🔥', '😍', '✨', '👍', '🎉', '🥹'].map((emoji) => <TouchableOpacity key={emoji} onPress={() => setMediaCaption((value) => `${value}${emoji}`)} accessibilityRole="button" accessibilityLabel={`Add ${emoji}`}><Text style={{ fontSize: 24 }}>{emoji}</Text></TouchableOpacity>)}
           </View>
-          <TouchableOpacity onPress={sendMediaDraft} disabled={uploading} style={{ marginTop: spacing.lg, borderRadius: radii.md, backgroundColor: colors.primary, padding: spacing.md, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', opacity: uploading ? 0.65 : 1 }}>
+          <TouchableOpacity onPress={sendMediaDraft} disabled={uploading} accessibilityRole="button" accessibilityLabel="Send selected media" accessibilityState={{ disabled: uploading, busy: uploading }} style={{ marginTop: spacing.lg, borderRadius: radii.md, backgroundColor: colors.primary, padding: spacing.md, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', opacity: uploading ? 0.65 : 1 }}>
             {uploading ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name="send" size={18} color={colors.onPrimary} />}
             <Text style={[typography.bodyStrong, { color: colors.onPrimary, marginLeft: 8 }]}>{uploading ? 'Sending…' : 'Send media'}</Text>
           </TouchableOpacity>
