@@ -285,7 +285,9 @@ export async function getCurrentUser() {
 export async function updateProfile({ name, status, username }) {
   const normalizedUsername = username === undefined
     ? undefined
-    : String(username).trim().replace(/^@/, '').toLowerCase();
+    : typeof username === 'string'
+      ? username.trim().replace(/^@/, '').toLowerCase()
+      : '';
   if (normalizedUsername !== undefined && !/^[a-z0-9_]{3,24}$/.test(normalizedUsername)) {
     throw new Error('Choose a username using 3–24 letters, numbers or underscores.');
   }
