@@ -172,3 +172,29 @@ test('profile, support, call-history, drafts and event recovery actions expose a
   assert.match(events, /accessibilityLabel="Publish event"/);
   assert.match(events, /accessibilityLabel="Retry loading events"/);
 });
+
+test('native LIVE moderation, discovery and call recovery actions have explicit accessibility names', () => {
+  const live = readFileSync(new URL('LiveStreamScreen.js', import.meta.url), 'utf8');
+  for (const label of [
+    'Make \${item.name} a LIVE moderator',
+    'Approve LIVE guest request from \${item.name}',
+    'Decline LIVE guest request from \${item.name}',
+    'Review \${item.reason} LIVE report',
+    'Resolve \${item.reason} LIVE report',
+    'Dismiss \${item.reason} LIVE report',
+  ]) assert.ok(live.includes(label), 'Missing native LIVE action label: ' + label);
+
+  const hub = readFileSync(new URL('LiveHubScreen.js', import.meta.url), 'utf8');
+  assert.match(hub, /accessibilityLabel="Load contacts to invite to private LIVE"/);
+  assert.ok(hub.includes('accessibilityLabel={\`Invite \${person.name} to this LIVE stream\`}'));
+  assert.match(hub, /accessibilityLabel="Allow approved viewers to join the LIVE stage"/);
+  assert.match(hub, /accessibilityLabel="Go LIVE"/);
+  assert.ok(hub.includes('accessibilityLabel={\`Accept invitation to \${item.stream.title}\`}'));
+  assert.match(hub, /Show \${filter.label} LIVE streams/);
+
+  const groupCall = readFileSync(new URL('GroupCallScreen.js', import.meta.url), 'utf8');
+  assert.match(groupCall, /accessibilityLabel="Go back"/);
+
+  const call = readFileSync(new URL('CallScreen.js', import.meta.url), 'utf8');
+  assert.match(call, /accessibilityLabel="Show call connection details"/);
+});
