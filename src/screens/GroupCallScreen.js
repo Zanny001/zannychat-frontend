@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   header: { alignItems: 'center', paddingTop: 14, paddingBottom: 10, paddingHorizontal: 20 },
   brand: { fontSize: 12, fontWeight: '800', letterSpacing: 1.4, textTransform: 'uppercase' },
-  title: { fontSize: 22, fontWeight: '800', marginTop: 8, maxWidth: '100%' },
+  title: { fontSize: 22, fontWeight: '800', marginTop: 8, maxWidth: '100%', textAlign: 'center' },
   subtitle: { fontSize: 13, marginTop: 4 },
   room: { flex: 1, justifyContent: 'space-between' },
   connectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, gap: 6 },
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   control: { minWidth: 76, minHeight: 72, borderRadius: 24, alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 10 },
   controlLabel: { fontSize: 11, fontWeight: '700' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28 },
-  error: { fontSize: 17, fontWeight: '700', textAlign: 'center', marginTop: 16 },
+  error: { fontSize: 17, fontWeight: '700', textAlign: 'center', marginTop: 16, maxWidth: '100%' },
   back: { marginTop: 22, paddingVertical: 12, paddingHorizontal: 22, borderRadius: 14 },
   backText: { color: '#FFFFFF', fontWeight: '800' },
 });
