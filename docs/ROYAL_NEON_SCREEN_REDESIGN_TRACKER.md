@@ -12,7 +12,8 @@ Source of truth: the current `src/navigation/AppNavigator.js` route declarations
 - [x] Floating glass bottom navigation with reduced-motion-aware icon animation.
 - [x] Chats camera shortcut and privacy-filtered Moments tray.
 - [x] Palette-aware message composer send control.
-- [ ] Run frontend unit tests and release audits on the feature branch.
+- [ ] Run frontend unit tests and release audits on the latest feature-branch head.
+- [ ] Verify custom-palette contrast on LIVE video overlays and call controls.
 - [ ] Verify Android 10 / lower-powered device performance.
 - [ ] Approve and merge the design foundation.
 
@@ -36,13 +37,13 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 
 ### Calls and live experiences
 
-- [ ] Calls
-- [ ] IncomingCall
-- [ ] OutgoingCall
-- [ ] Call
-- [ ] GroupCall
-- [ ] LiveHub
-- [ ] LiveStream
+- [~] Calls
+- [~] IncomingCall
+- [~] OutgoingCall
+- [~] Call
+- [~] GroupCall
+- [~] LiveHub
+- [~] LiveStream
 
 ### Social and community
 
