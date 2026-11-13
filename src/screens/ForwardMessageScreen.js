@@ -48,7 +48,7 @@ export default function ForwardMessageScreen({ navigation, route }) {
         <GlassCard glow style={{ marginBottom: spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
             <Ionicons name="arrow-redo-outline" size={18} color={colors.accent} style={{ marginRight: spacing.sm, marginTop: 2 }} />
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: 4 }]}>Text message</Text>
               <Text style={[typography.body, { color: colors.textPrimary }]} numberOfLines={4}>{messageText || 'Message unavailable'}</Text>
             </View>
@@ -68,7 +68,7 @@ export default function ForwardMessageScreen({ navigation, route }) {
             <TouchableOpacity onPress={() => forwardTo(item)} disabled={Boolean(sendingId)} accessibilityRole="button" accessibilityLabel={`Forward message to ${item.participant?.name || item.name || 'group chat'}`} accessibilityState={{ disabled: Boolean(sendingId), busy: sendingId === item.id }} activeOpacity={0.8}>
               <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Avatar name={item.participant?.name || item.name || 'Group'} color={item.participant?.avatarColor || colors.primary} imageUrl={item.participant?.avatarUrl} />
-                <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm }}>
                   <Text style={[typography.bodyStrong, { color: colors.textPrimary }]} numberOfLines={1}>{item.participant?.name || item.name || 'Group chat'}</Text>
                   <Text style={[typography.caption, { color: colors.textSecondary }]} numberOfLines={1}>{item.isGroup ? 'Group conversation' : item.lastMessage || 'No messages yet'}</Text>
                 </View>
