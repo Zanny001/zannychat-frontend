@@ -93,7 +93,7 @@ export default function CreateGroupScreen({ navigation }) {
                     },
                   ]}
                 >
-                  {selected && <Ionicons name="checkmark" size={14} color="#fff" />}
+                  {selected && <Ionicons name="checkmark" size={14} color={colors.onPrimary} />}
                 </View>
               </GlassCard>
             </TouchableOpacity>
