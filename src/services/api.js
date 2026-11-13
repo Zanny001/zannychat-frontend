@@ -270,13 +270,10 @@ export async function getCurrentUser() {
   const { data: authData } = await supabase.auth.getUser();
   if (!authData?.user) return null;
 
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', authData.user.id)
-    .single();
-
+  const { data, error } = await supabase.rpc('get_my_profile');
   if (error) throw error;
+  const profile = Array.isArray(data) ? data[0] : data;
+  if (!profile) throw new Error('Your profile is still being set up. Please try again.');
   return normalizeProfile(profile);
 }
 
@@ -295,16 +292,17 @@ export async function updateProfile({ name, status, username }) {
     return mockUser;
   }
 
-  const { data: authData } = await supabase.auth.getUser();
-  const { data, error } = await supabase
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError) throw authError;
+  const userId = authData?.user?.id;
+  if (!userId) throw new Error('Sign in to update your profile.');
+  const { error } = await supabase
     .from('profiles')
     .update({ ...(name !== undefined && { name }), ...(status !== undefined && { status }), ...(normalizedUsername !== undefined && { username: normalizedUsername }) })
-    .eq('id', authData?.user?.id)
-    .select()
-    .single();
+    .eq('id', userId);
 
   if (error) throw error;
-  return normalizeProfile(data);
+  return getCurrentUser();
 }
 
 const PROFILE_DETAIL_DEFAULTS = Object.freeze({
@@ -768,7 +766,7 @@ export async function fetchConversations({ limit = 50, offset = 0 } = {}) {
     .from('conversations')
     .select(
       `id, created_at, name, is_group,
-       conversation_participants(user_id, profiles(id, name, avatar_color, avatar_url, status, online), is_favorite, is_muted, is_archived),
+       conversation_participants(user_id, is_favorite, is_muted, is_archived),
        messages!messages_conversation_id_fkey(sender_id, text, created_at, media_type)`
     )
     .order('created_at', { ascending: false, referencedTable: 'messages' })
@@ -777,6 +775,22 @@ export async function fetchConversations({ limit = 50, offset = 0 } = {}) {
     .range(offset, offset + limit - 1);
 
   if (error) throw error;
+
+  const participantIds = [...new Set(
+    (data || []).flatMap((row) => (row.conversation_participants || []).map((participant) => participant.user_id)).filter(Boolean),
+  )];
+  const { data: participantProfiles, error: participantProfilesError } = await supabase.rpc(
+    'get_conversation_profile_directory',
+    { p_user_ids: participantIds },
+  );
+  if (participantProfilesError) throw participantProfilesError;
+  const profilesById = new Map((participantProfiles || []).map((profile) => [profile.id, profile]));
+  for (const row of data || []) {
+    row.conversation_participants = (row.conversation_participants || []).map((participant) => ({
+      ...participant,
+      profiles: profilesById.get(participant.user_id) || null,
+    }));
+  }
 
   let readCursors;
   const { data: rpcReadCursors, error: readCursorError } = await supabase.rpc('get_my_read_cursors');
