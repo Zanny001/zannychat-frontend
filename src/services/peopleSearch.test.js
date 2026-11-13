@@ -38,6 +38,7 @@ test('email and Google registration receive an automatically generated username 
 test('private profile columns are read only through owner and conversation-scoped RPCs', () => {
   assert.match(api, /rpc\('get_my_profile'\)/);
   assert.match(api, /rpc\('get_conversation_profile_directory'/);
+  assert.doesNotMatch(api, /conversation_participants\(user_id,\s*profiles/);
   assert.doesNotMatch(api, /from\('profiles'\)\s*\.select\(['"]\*['"]\)/);
   const exporter = fs.readFileSync(path.join(src, 'services/personalDataExport.js'), 'utf8');
   assert.match(exporter, /rpc\('get_my_profile'\)/);
