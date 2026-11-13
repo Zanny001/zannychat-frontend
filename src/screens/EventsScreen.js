@@ -49,7 +49,7 @@ export default function EventsScreen({ navigation, route }) {
         <TextInput value={location} onChangeText={setLocation} maxLength={240} placeholder="Location (optional)" placeholderTextColor={colors.textSecondary} accessibilityLabel="Event location" style={fieldStyle} />
         <TextInput value={description} onChangeText={setDescription} maxLength={1000} multiline placeholder="Details (optional)" placeholderTextColor={colors.textSecondary} accessibilityLabel="Event details" style={[fieldStyle, { minHeight: 80, textAlignVertical: 'top' }]} />
         <TouchableOpacity onPress={publish} disabled={saving || !title.trim() || !startsAt.trim()} accessibilityRole="button" style={{ minHeight: 46, borderRadius: radii.md, backgroundColor: saving || !title.trim() || !startsAt.trim() ? colors.border : colors.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}>
-          {saving ? <ActivityIndicator color={colors.background} /> : <Ionicons name="calendar-outline" size={17} color={colors.background} />}
+          {saving ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name="calendar-outline" size={17} color={colors.onPrimary} />}
           <Text style={[typography.bodyStrong, { color: colors.background }]}>{saving ? 'Creating…' : 'Create event'}</Text>
         </TouchableOpacity>
         <Text style={[typography.caption, { color: colors.textSecondary }]}>Choose a future date and time in your device's local timezone. Database migration 0018 is required.</Text>
@@ -65,7 +65,7 @@ export default function EventsScreen({ navigation, route }) {
           {event.description ? <Text style={[typography.body, { color: colors.textSecondary }]}>{event.description}</Text> : null}
           <Text style={[typography.caption, { color: colors.textSecondary }]}>{rsvps.filter((r) => r.response === 'going').length} going · {rsvps.filter((r) => r.response === 'maybe').length} maybe · {rsvps.filter((r) => r.response === 'not_going').length} not going</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
-            {[['going', 'Going'], ['maybe', 'Maybe'], ['not_going', 'Can’t go']].map(([value, label]) => <TouchableOpacity key={value} onPress={() => respond(event, value)} accessibilityRole="button" accessibilityLabel={`RSVP ${label}`} style={{ borderWidth: 1, borderColor: colors.primary, backgroundColor: mine === value ? colors.primary : 'transparent', borderRadius: radii.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.md }}><Text style={[typography.caption, { color: mine === value ? colors.background : colors.primary }]}>{label}</Text></TouchableOpacity>)}
+            {[['going', 'Going'], ['maybe', 'Maybe'], ['not_going', 'Can’t go']].map(([value, label]) => <TouchableOpacity key={value} onPress={() => respond(event, value)} accessibilityRole="button" accessibilityLabel={`RSVP ${label}`} style={{ borderWidth: 1, borderColor: colors.primary, backgroundColor: mine === value ? colors.primary : 'transparent', borderRadius: radii.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.md }}><Text style={[typography.caption, { color: mine === value ? colors.onPrimary : colors.primary }]}>{label}</Text></TouchableOpacity>)}
           </View>
         </GlassCard>;
       })}
