@@ -249,3 +249,31 @@ test('danger and accent action foregrounds meet WCAG AA contrast across every bu
     }
   }
 });
+
+test('contact discovery, group management, settings and verification actions expose accessible labels', () => {
+  const discovery = readFileSync(new URL('ContactDiscoveryScreen.js', import.meta.url), 'utf8');
+  assert.match(discovery, /accessibilityLabel="Phone number discoverability"/);
+  assert.match(discovery, /accessibilityLabel="Import contacts for private review"/);
+  assert.ok(discovery.includes('accessibilityLabel=') && discovery.includes('row.phone'));
+  assert.match(discovery, /accessibilityLabel="Match selected phone numbers"/);
+
+  const groups = readFileSync(new URL('GroupManagementScreen.js', import.meta.url), 'utf8');
+  assert.match(groups, /accessibilityLabel="Save group details"/);
+  assert.match(groups, /accessibilityLabel="Create and share group invitation"/);
+  assert.match(groups, /accessibilityLabel="Revoke group invitation"/);
+  assert.match(groups, /label\.toLowerCase\(\)/);
+
+  const settings = readFileSync(new URL('SettingsScreen.js', import.meta.url), 'utf8');
+  assert.match(settings, /accessibilityLabel=.*colour palette/);
+  assert.match(settings, /accessibilityState=\{\{ checked: selected \}\}/);
+  assert.match(settings, /accessibilityLabel="Log out of ZannyChat"/);
+
+  const verify = readFileSync(new URL('VerifyEmailScreen.js', import.meta.url), 'utf8');
+  assert.match(verify, /accessibilityLabel="Verify email address"/);
+  assert.match(verify, /accessibilityLabel="Resend verification code"/);
+  assert.match(verify, /accessibilityLabel="Back to sign in"/);
+
+  const newChat = readFileSync(new URL('NewChatScreen.js', import.meta.url), 'utf8');
+  assert.match(newChat, /accessibilityLabel=\{option\.label\}/);
+  assert.match(newChat, /accessibilityLabel="Retry loading contacts"/);
+});
