@@ -38,7 +38,7 @@ export default function EventsScreen({ navigation, route }) {
     try { await respondToConversationEvent(event.id, response); await refresh(); }
     catch (e) { Alert.alert('Could not save RSVP', e?.message || 'Please try again.'); }
   };
-  const fieldStyle = [typography.body, { color: colors.textPrimary, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.md }];
+  const fieldStyle = [typography.body, { color: colors.textPrimary, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.md, minWidth: 0, width: '100%' }];
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
     <Header title="Events" subtitle="Plan something together" onBack={() => navigation.goBack()} />
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl }}>
@@ -59,10 +59,10 @@ export default function EventsScreen({ navigation, route }) {
         const rsvps = event.conversation_event_rsvps || [];
         const mine = rsvps.find((r) => r.user_id === currentUserId)?.response;
         return <GlassCard key={event.id} style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
-          <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{event.title}</Text>
+          <Text style={[typography.bodyStrong, { color: colors.textPrimary, flexShrink: 1 }]}>{event.title}</Text>
           <Text style={[typography.caption, { color: colors.textSecondary }]}>{new Date(event.starts_at).toLocaleString()}</Text>
-          {event.location ? <Text style={[typography.body, { color: colors.textPrimary }]}>{event.location}</Text> : null}
-          {event.description ? <Text style={[typography.body, { color: colors.textSecondary }]}>{event.description}</Text> : null}
+          {event.location ? <Text style={[typography.body, { color: colors.textPrimary, flexShrink: 1 }]}>{event.location}</Text> : null}
+          {event.description ? <Text style={[typography.body, { color: colors.textSecondary, flexShrink: 1, lineHeight: 21 }]}>{event.description}</Text> : null}
           <Text style={[typography.caption, { color: colors.textSecondary }]}>{rsvps.filter((r) => r.response === 'going').length} going · {rsvps.filter((r) => r.response === 'maybe').length} maybe · {rsvps.filter((r) => r.response === 'not_going').length} not going</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
             {[['going', 'Going'], ['maybe', 'Maybe'], ['not_going', 'Can’t go']].map(([value, label]) => <TouchableOpacity key={value} onPress={() => respond(event, value)} accessibilityRole="button" accessibilityLabel={`RSVP ${label}`} style={{ borderWidth: 1, borderColor: colors.primary, backgroundColor: mine === value ? colors.primary : 'transparent', borderRadius: radii.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.md }}><Text style={[typography.caption, { color: mine === value ? colors.onPrimary : colors.primary }]}>{label}</Text></TouchableOpacity>)}
