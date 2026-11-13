@@ -104,7 +104,7 @@ export default function IncomingCallScreen({ route, navigation }) {
       </View>
       <View style={styles.person}>
         <View style={[styles.avatarRing, { borderColor: hexToRgba(colors.primary, 0.42), backgroundColor: hexToRgba(colors.surface, 0.55), shadowColor: colors.primary }]}><Avatar name={participantName} color={avatarColor} size={112} /></View>
-        <Text style={[styles.name, { color: colors.textPrimary }]}>{participantName}</Text>
+        <Text numberOfLines={2} style={[styles.name, { color: colors.textPrimary, maxWidth: '100%', paddingHorizontal: 8 }]}>{participantName}</Text>
         <Text style={[styles.callKind, { color: colors.textSecondary }]}>{isVideo ? 'Incoming video call' : 'Incoming audio call'}</Text>
         <View style={[styles.statusPill, { backgroundColor: hexToRgba(colors.surface, 0.78), borderColor: colors.border }]}><View style={[styles.liveDot, { backgroundColor: colors.online }]} /><Text style={[styles.statusText, { color: colors.textPrimary }]}>{remaining > 0 ? `Ringing · ${remaining}s` : 'Call expired'}</Text></View>
       </View>
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   secure: { color: '#A8A6B8', fontSize: 12, marginTop: 8 },
   person: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   avatarRing: { padding: 8, borderWidth: 1, borderRadius: 72, shadowOpacity: 0.28, shadowRadius: 22, shadowOffset: { width: 0, height: 7 }, elevation: 6 },
-  name: { color: '#FFFFFF', fontSize: 28, fontWeight: '800', marginTop: 28, textAlign: 'center' },
+  name: { color: '#FFFFFF', fontSize: 28, fontWeight: '800', marginTop: 28, textAlign: 'center', flexShrink: 1 },
   callKind: { color: '#C8C5D8', fontSize: 15, marginTop: 9 },
   statusPill: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 19, paddingVertical: 8, paddingHorizontal: 13, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.07)' },
   liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#70D9A4' },
