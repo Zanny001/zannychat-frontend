@@ -42,3 +42,17 @@ test('native release CI protects main and compiles Android native code', () => {
   assert.match(workflow, /expo export --platform android/);
   assert.match(workflow, /npm run audit:contract/);
 });
+
+test('startup cannot remain on the native splash when session restore stalls', () => {
+  const source = fs.readFileSync(path.join(root, 'App.js'), 'utf8');
+  assert.match(source, /Promise\.race\(\[/);
+  assert.match(source, /Session restoration timed out after 8 seconds/);
+  assert.match(source, /clearTimeout\(sessionTimeout\)/);
+  assert.match(source, /if \(mounted && !authStateObserved\)/);
+});
+
+test('font loading errors fall back to system fonts instead of blocking app readiness', () => {
+  const source = fs.readFileSync(path.join(root, 'App.js'), 'utf8');
+  assert.match(source, /const \[fontsLoaded, fontError\] = useAppFonts\(\)/);
+  assert.match(source, /\(fontsLoaded \|\| Boolean\(fontError\)\) && initialRoute !== null/);
+});
