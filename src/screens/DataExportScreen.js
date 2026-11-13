@@ -68,7 +68,7 @@ export default function DataExportScreen({ navigation }) {
         <GlassCard style={{ marginBottom: spacing.lg }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
             <Ionicons name="information-circle-outline" size={19} color={mood.signal} style={{ marginTop: 1 }} />
-            <View style={{ flex: 1, marginLeft: 10 }}>
+            <View style={{ flex: 1, minWidth: 0, marginLeft: 10 }}>
               <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>What isn't included</Text>
               <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 21, marginTop: 5 }]}>Actual attachment files and private media URLs are excluded. Message text visible to this account is included, including messages from other participants in your conversations. Keep the exported file private: it may contain sensitive conversations.</Text>
             </View>
@@ -100,7 +100,7 @@ function InfoRow({ icon, title, detail }) {
       <View style={{ width: 38, height: 38, borderRadius: 13, backgroundColor: hexToRgba(mood.thread, 0.11), alignItems: 'center', justifyContent: 'center' }}>
         <Ionicons name={icon} size={19} color={mood.thread} />
       </View>
-      <View style={{ flex: 1, marginLeft: 11 }}>
+      <View style={{ flex: 1, minWidth: 0, marginLeft: 11 }}>
         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{title}</Text>
         <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 19, marginTop: 3 }]}>{detail}</Text>
       </View>
