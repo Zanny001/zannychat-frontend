@@ -77,3 +77,15 @@ test('Android release has an explicit positive version code', () => {
   assert.ok(Number.isInteger(app.expo.android.versionCode));
   assert.ok(app.expo.android.versionCode > 0);
 });
+
+
+test('production Android build requires real Firebase and Expo credentials and never auto-submits', () => {
+  const releaseWorkflow = fs.readFileSync(path.join(root, '.github/workflows/android-production-build.yml'), 'utf8');
+  assert.match(releaseWorkflow, /workflow_dispatch/);
+  assert.match(releaseWorkflow, /secrets\.EXPO_TOKEN/);
+  assert.match(releaseWorkflow, /secrets\.GOOGLE_SERVICES_JSON_BASE64/);
+  assert.match(releaseWorkflow, /Firebase config is not a valid production config/);
+  assert.match(releaseWorkflow, /--profile production/);
+  assert.doesNotMatch(releaseWorkflow, /--auto-submit|build:submit|submit --platform/i);
+  assert.match(releaseWorkflow, /confirm_release/);
+});
