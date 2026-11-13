@@ -27,6 +27,19 @@ function ThemedStatusBar() {
 export default function App() {
   const [fontsLoaded, fontError] = useAppFonts();
   const [initialRoute, setInitialRoute] = useState(null);
+  const [startupDeadlineReached, setStartupDeadlineReached] = useState(false);
+
+  // A final safety net for unexpected stalls in either local font loading or
+  // auth initialization. This guarantees the JS app can render a recoverable
+  // onboarding state instead of leaving the native splash visible forever.
+  useEffect(() => {
+    const startupDeadline = setTimeout(() => {
+      console.error('App startup exceeded 12 seconds; continuing with safe defaults.');
+      setStartupDeadlineReached(true);
+      setInitialRoute((currentRoute) => currentRoute || 'Onboarding');
+    }, 12000);
+    return () => clearTimeout(startupDeadline);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -154,7 +167,7 @@ export default function App() {
 
   // Font loading is an enhancement, not a reason to strand users on the
   // native splash screen. React Native's system fonts are the safe fallback.
-  const appReady = (fontsLoaded || Boolean(fontError)) && initialRoute !== null;
+  const appReady = (fontsLoaded || Boolean(fontError) || startupDeadlineReached) && initialRoute !== null;
 
   const onLayoutRootView = useCallback(async () => {
     if (appReady) {
