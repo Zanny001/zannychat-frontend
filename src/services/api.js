@@ -1,4 +1,5 @@
 import { normalizeEmail, parseRecoveryCallback } from '../utils/authValidation';
+import { isValidUsername, normalizeUsername } from '../utils/username';
 import { Platform } from 'react-native';
 import { getPasswordRecoveryRedirectUrl } from '../utils/oauthRedirect';
 import { getSafeMessageSendError } from '../utils/safeMessagingError';
@@ -283,17 +284,21 @@ export async function getCurrentUser() {
 // don't survive an app restart — same honesty tradeoff as everything
 // else that's mock-backed.
 export async function updateProfile({ name, status, username }) {
+  const normalizedUsername = username === undefined ? undefined : normalizeUsername(username);
+  if (username !== undefined && !isValidUsername(normalizedUsername)) {
+    throw new Error('Use a username with 3–24 lowercase letters, numbers or underscores.');
+  }
   if (!SUPABASE_ENABLED) {
     if (name !== undefined) mockUser.name = name;
     if (status !== undefined) mockUser.status = status;
-    if (username !== undefined) mockUser.username = username;
+    if (normalizedUsername !== undefined) mockUser.username = normalizedUsername;
     return mockUser;
   }
 
   const { data: authData } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from('profiles')
-    .update({ ...(name !== undefined && { name }), ...(status !== undefined && { status }), ...(username !== undefined && { username: username || null }) })
+    .update({ ...(name !== undefined && { name }), ...(status !== undefined && { status }), ...(normalizedUsername !== undefined && { username: normalizedUsername }) })
     .eq('id', authData?.user?.id)
     .select()
     .single();
@@ -696,6 +701,29 @@ export async function fetchContacts() {
   if (!SUPABASE_ENABLED) return MOCK_CONTACTS;
 
   const { data, error } = await supabase.rpc('get_contact_directory');
+  if (error) throw error;
+  return (Array.isArray(data) ? data : []).map(normalizeProfile);
+}
+
+// Searches discoverable ZannyChat members on the server. The RPC enforces
+// profile visibility, bidirectional blocks, a bounded result set, and rate limits.
+export async function searchPeople(query, limit = 20) {
+  const cleanQuery = typeof query === 'string' ? query.trim().replace(/^@/, '') : '';
+  if (cleanQuery.length < 2 || cleanQuery.length > 40) return [];
+  const boundedLimit = Math.max(1, Math.min(Number.isInteger(limit) ? limit : 20, 25));
+
+  if (!SUPABASE_ENABLED) {
+    const needle = cleanQuery.toLowerCase();
+    return MOCK_CONTACTS.filter((profile) =>
+      String(profile?.name || '').toLowerCase().startsWith(needle)
+      || String(profile?.username || '').toLowerCase().startsWith(needle)
+    ).slice(0, boundedLimit).map(normalizeProfile);
+  }
+
+  const { data, error } = await supabase.rpc('search_people', {
+    p_query: cleanQuery,
+    p_limit: boundedLimit,
+  });
   if (error) throw error;
   return (Array.isArray(data) ? data : []).map(normalizeProfile);
 }
