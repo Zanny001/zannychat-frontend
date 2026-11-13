@@ -597,7 +597,7 @@ export default function ChannelsScreen({ navigation }) {
   const isOwner = Boolean(selected && userId && selected.owner_id === userId);
   const isModerator = Boolean(selected?.isModerator);
   const canModerate = isOwner || isModerator;
-  const buttonStyle = (disabled = false) => ({ minHeight: 42, borderRadius: radii.md, backgroundColor: disabled ? colors.border : colors.primary, paddingHorizontal: spacing.md, alignItems: 'center', justifyContent: 'center', opacity: busy ? 0.65 : 1 });
+  const buttonStyle = (disabled = false) => ({ minHeight: 44, borderRadius: radii.md, backgroundColor: disabled ? colors.border : colors.primary, paddingHorizontal: spacing.md, alignItems: 'center', justifyContent: 'center', opacity: busy ? 0.65 : 1 });
   const buttonText = [typography.bodyStrong, { color: colors.onPrimary || colors.background }];
 
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -610,21 +610,21 @@ export default function ChannelsScreen({ navigation }) {
             <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>ZannyChat LIVE</Text>
             <Text style={[typography.caption, { color: colors.textSecondary }]}>Broadcast or watch live video with audience chat.</Text>
           </View>
-          <TouchableOpacity onPress={() => navigation.navigate('LiveHub')} accessibilityRole="button" accessibilityLabel="Open creator LIVE" style={[buttonStyle(false), { minHeight: 38 }]}><Text style={buttonText}>Open</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('LiveHub')} accessibilityRole="button" accessibilityLabel="Open creator LIVE" style={[buttonStyle(false), { minHeight: 44 }]}><Text style={buttonText}>Open</Text></TouchableOpacity>
         </View>
       </GlassCard>
       {!selected ? (
         <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={[typography.bodyStrong, { color: colors.textPrimary, flex: 1 }]}>Live now</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('LiveHub')} accessibilityRole="button" accessibilityLabel="See all LIVE streams" style={{ minHeight: 40, justifyContent: 'center', paddingHorizontal: spacing.xs }}>
+            <TouchableOpacity onPress={() => navigation.navigate('LiveHub')} accessibilityRole="button" accessibilityLabel="See all LIVE streams" style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.xs }}>
               <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>See all</Text>
             </TouchableOpacity>
           </View>
           {liveLoading ? <ActivityIndicator color={colors.primary} /> : liveError ? (
             <View style={{ gap: spacing.xs }}>
               <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textSecondary }]}>{liveError}</Text>
-              <TouchableOpacity onPress={refreshLive} accessibilityRole="button" accessibilityLabel="Retry LIVE discovery" style={{ alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center' }}>
+              <TouchableOpacity onPress={refreshLive} accessibilityRole="button" accessibilityLabel="Retry LIVE discovery" style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
                 <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>Try again</Text>
               </TouchableOpacity>
             </View>
@@ -661,7 +661,7 @@ export default function ChannelsScreen({ navigation }) {
           {communityError ? (
             <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
               <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textSecondary }]}>{communityError}</Text>
-              <Pressable onPress={refreshCommunityFeed} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center' }}>
+              <Pressable onPress={refreshCommunityFeed} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
                 <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>Try again</Text>
               </Pressable>
             </GlassCard>
@@ -690,7 +690,7 @@ export default function ChannelsScreen({ navigation }) {
                       accessibilityState={{ selected: active, disabled: busy || communityLoading }}
                       accessibilityLabel={`${emoji} reaction${count ? `, ${count}` : ''}`}
                       style={({ pressed }) => ({
-                        minHeight: 40,
+                        minHeight: 44,
                         borderRadius: radii.lg,
                         borderWidth: 1,
                         borderColor: active ? colors.primary : colors.border,
@@ -712,7 +712,7 @@ export default function ChannelsScreen({ navigation }) {
                   onPress={() => openChannel({ id: post.channelId, title: post.channelTitle, is_private: false })}
                   accessibilityRole="button"
                   accessibilityLabel={`Open ${post.channelTitle || 'community'} discussion`}
-                  style={{ minHeight: 40, justifyContent: 'center', paddingHorizontal: spacing.xs }}
+                  style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.xs }}
                 >
                   <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>Open community</Text>
                 </Pressable>
@@ -761,13 +761,13 @@ export default function ChannelsScreen({ navigation }) {
         {isOwner ? <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
           <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Channel moderators</Text>
           <Text style={[typography.caption, { color: colors.textSecondary }]}>Only subscribers can be moderators. Moderators can pin posts and remove posts/comments, but cannot publish or edit posts or delete the channel.</Text>
-          {moderatorMembers.map((member) => <View key={member.userId} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}><View style={{ flex: 1 }}><Text style={[typography.body, { color: colors.textPrimary }]}>{member.name}</Text><Text style={[typography.caption, { color: colors.textSecondary }]}>{member.moderator ? 'Moderator' : 'Subscriber'}</Text></View><TouchableOpacity disabled={busy} onPress={() => toggleModerator(member)} style={[buttonStyle(busy), { minHeight: 36 }]}><Text style={buttonText}>{member.moderator ? 'Remove role' : 'Make moderator'}</Text></TouchableOpacity></View>)}
+          {moderatorMembers.map((member) => <View key={member.userId} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}><View style={{ flex: 1 }}><Text style={[typography.body, { color: colors.textPrimary }]}>{member.name}</Text><Text style={[typography.caption, { color: colors.textSecondary }]}>{member.moderator ? 'Moderator' : 'Subscriber'}</Text></View><TouchableOpacity disabled={busy} onPress={() => toggleModerator(member)} style={[buttonStyle(busy), { minHeight: 44 }]}><Text style={buttonText}>{member.moderator ? 'Remove role' : 'Make moderator'}</Text></TouchableOpacity></View>)}
           {!moderatorMembers.length ? <Text style={[typography.caption, { color: colors.textSecondary }]}>No subscribers available to appoint yet.</Text> : null}
         </GlassCard> : null}
         {isOwner ? <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
           <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Channel invitations</Text>
           <Text style={[typography.caption, { color: colors.textSecondary }]}>Invitation tokens are shown only when created. Revoke a token if it was shared with the wrong person.</Text>
-          {channelInvites.map((invite) => <View key={invite.id} style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}><View style={{ flex: 1, gap: 2 }}><Text style={[typography.body, { color: colors.textPrimary }]}>{invite.revoked_at ? 'Revoked' : new Date(invite.expires_at).getTime() <= Date.now() ? 'Expired' : 'Active'} · {invite.use_count}/{invite.max_uses} uses</Text><Text style={[typography.caption, { color: colors.textSecondary }]}>Expires {dateLabel(invite.expires_at)}</Text></View>{!invite.revoked_at && new Date(invite.expires_at).getTime() > Date.now() ? <TouchableOpacity disabled={busy} onPress={() => revokeInvite(invite)} style={[buttonStyle(busy), { minHeight: 36, backgroundColor: colors.danger }]}><Text style={buttonText}>Revoke</Text></TouchableOpacity> : null}</View>)}
+          {channelInvites.map((invite) => <View key={invite.id} style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}><View style={{ flex: 1, gap: 2 }}><Text style={[typography.body, { color: colors.textPrimary }]}>{invite.revoked_at ? 'Revoked' : new Date(invite.expires_at).getTime() <= Date.now() ? 'Expired' : 'Active'} · {invite.use_count}/{invite.max_uses} uses</Text><Text style={[typography.caption, { color: colors.textSecondary }]}>Expires {dateLabel(invite.expires_at)}</Text></View>{!invite.revoked_at && new Date(invite.expires_at).getTime() > Date.now() ? <TouchableOpacity disabled={busy} onPress={() => revokeInvite(invite)} style={[buttonStyle(busy), { minHeight: 44, backgroundColor: colors.danger }]}><Text style={buttonText}>Revoke</Text></TouchableOpacity> : null}</View>)}
           {!channelInvites.length ? <Text style={[typography.caption, { color: colors.textSecondary }]}>No invitations created yet. Use “Create invite” to share one.</Text> : null}
         </GlassCard> : null}
         {showReports && canModerate ? <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
