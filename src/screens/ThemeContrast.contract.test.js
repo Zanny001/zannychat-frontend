@@ -151,3 +151,24 @@ test('interactive controls keep 44-point minimum touch targets on high-traffic s
     );
   }
 });
+
+test('profile, support, call-history, drafts and event recovery actions expose accessible names and states', () => {
+  const editProfile = readFileSync(new URL('EditProfileScreen.js', import.meta.url), 'utf8');
+  assert.match(editProfile, /accessibilityLabel=\{\`\$\{label\}; currently \$\{options\[current\]\.label\}\. Activate to change\.\`\}/);
+  assert.match(editProfile, /accessibilityLabel="Add or change profile cover image"/);
+  assert.match(editProfile, /accessibilityState=\{\{ disabled: uploadingPhoto, busy: uploadingPhoto \}\}/);
+  assert.match(editProfile, /accessibilityLabel="Preview your profile"/);
+
+  const help = readFileSync(new URL('HelpScreen.js', import.meta.url), 'utf8');
+  assert.match(help, /accessibilityLabel="Contact ZannyChat support by email"/);
+
+  const calls = readFileSync(new URL('CallHistoryScreen.js', import.meta.url), 'utf8');
+  assert.match(calls, /accessibilityLabel="Retry loading call history"/);
+
+  const drafts = readFileSync(new URL('DraftsScreen.js', import.meta.url), 'utf8');
+  assert.match(drafts, /accessibilityLabel="Retry loading drafts"/);
+
+  const events = readFileSync(new URL('EventsScreen.js', import.meta.url), 'utf8');
+  assert.match(events, /accessibilityLabel="Publish event"/);
+  assert.match(events, /accessibilityLabel="Retry loading events"/);
+});
