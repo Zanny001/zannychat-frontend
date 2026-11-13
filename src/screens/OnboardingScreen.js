@@ -52,7 +52,7 @@ function Feature({ icon, text }) {
       <View style={[styles.featureIcon, { backgroundColor: colors.surface }]} accessible={false} importantForAccessibility="no">
         <Ionicons name={icon} size={18} color={colors.accent} />
       </View>
-      <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm }]}>{text}</Text>
+      <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm, flex: 1, minWidth: 0 }]}>{text}</Text>
     </View>
   );
 }
