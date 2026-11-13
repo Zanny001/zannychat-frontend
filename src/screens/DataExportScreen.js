@@ -83,8 +83,8 @@ export default function DataExportScreen({ navigation }) {
           accessibilityState={{ disabled: busy || !SUPABASE_ENABLED, busy }}
           style={[styles.primaryButton, { backgroundColor: mood.signal, opacity: busy || !SUPABASE_ENABLED ? 0.55 : 1 }]}
         >
-          {busy ? <ActivityIndicator color="#FFFFFF" /> : <Ionicons name="download-outline" size={19} color="#FFFFFF" />}
-          <Text style={[typography.bodyStrong, { color: '#FFFFFF', marginLeft: 9 }]}>{busy ? 'Preparing your export…' : 'Create data export'}</Text>
+          {busy ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name="download-outline" size={19} color="#FFFFFF" />}
+          <Text style={[typography.bodyStrong, { color: colors.onPrimary, marginLeft: 9 }]}>{busy ? 'Preparing your export…' : 'Create data export'}</Text>
         </TouchableOpacity>
         {!SUPABASE_ENABLED && <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: 10 }]}>Connect a live Supabase project to export account data. Demo mode is intentionally disabled.</Text>}
         <Text style={[typography.small, { color: colors.textSecondary, textAlign: 'center', marginTop: 16, lineHeight: 19 }]}>The file is written to temporary app storage, then shared through your device's share sheet. ZannyChat does not upload the export file.</Text>
