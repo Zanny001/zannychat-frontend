@@ -272,7 +272,7 @@ export default function NewChatScreen({ navigation, route }) {
           <GlassCard noPadding glow intensity={26} tintAlpha={0.42}>
             <View style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md }}>
               <Ionicons name="search-outline" size={19} color={colors.textSecondary} />
-              <TextInput value={memberSearch} onChangeText={setMemberSearch} placeholder="Search names or @username…" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search ZannyChat members" returnKeyType="search" autoCapitalize="none" style={[typography.body, { flex: 1, marginLeft: spacing.sm, color: colors.textPrimary, minHeight: 46 }]} />
+              <TextInput value={memberSearch} onChangeText={setMemberSearch} placeholder="Search names or @username…" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search ZannyChat members" returnKeyType="search" autoCapitalize="none" style={[typography.body, { flex: 1, minWidth: 0, marginLeft: spacing.sm, color: colors.textPrimary, minHeight: 46 }]} />
               {memberSearch ? <TouchableOpacity onPress={() => setMemberSearch('')} accessibilityRole="button" accessibilityLabel="Clear member search" style={{ minWidth: 40, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={20} color={colors.textSecondary} /></TouchableOpacity> : null}
             </View>
           </GlassCard>
