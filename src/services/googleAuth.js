@@ -39,7 +39,7 @@ export async function startGoogleOAuth(supabase) {
   if (Platform.OS === 'web') {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: getWebRedirect() },
+      options: { redirectTo: getWebRedirect(), scopes: 'openid email profile' },
     });
     if (error) throw error;
     return { started: true };
@@ -51,6 +51,7 @@ export async function startGoogleOAuth(supabase) {
     options: {
       redirectTo,
       skipBrowserRedirect: true,
+      scopes: 'openid email profile',
     },
   });
 
