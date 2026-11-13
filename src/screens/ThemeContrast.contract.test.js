@@ -99,3 +99,14 @@ test('glass tab navigation has a no-blur fallback for older Android versions', (
   assert.match(navigator, /supportsBackdropBlur = Platform\.OS !== 'android' \|\| Number\(Platform\.Version\) >= 31/);
   assert.match(navigator, /supportsBackdropBlur \? \(/);
 });
+
+test('web LIVE actions expose labels, disabled state and accessible touch targets', () => {
+  const liveScreen = readFileSync(new URL('LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.match(liveScreen, /accessibilityRole="button"/);
+  assert.match(liveScreen, /accessibilityLabel=\{accessibilityLabel \|\| label\}/);
+  assert.match(liveScreen, /accessibilityState=\{\{ disabled \}\}/);
+  assert.match(liveScreen, /minHeight: 44/);
+  assert.match(liveScreen, /accessibilityLabel="Hide comment"/);
+  assert.match(liveScreen, /accessibilityLabel="LIVE chat message"/);
+  assert.match(liveScreen, /accessibilityLabel="Send heart reaction"/);
+});
