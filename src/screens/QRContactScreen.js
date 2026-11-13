@@ -11,7 +11,7 @@ import { BACKEND_ENABLED } from '../services/backendClient';
 import { SUPABASE_ENABLED } from '../services/supabaseClient';
 import { buildContactQr, parseContactQr } from '../utils/contactQr';
 
-export default function QRContactScreen({ navigation }) {
+export default function QRContactScreen({ navigation, route }) {
   const { colors, spacing, typography, radii } = useTheme();
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
@@ -45,22 +45,44 @@ export default function QRContactScreen({ navigation }) {
     setScanning(true);
   }
 
-  async function handleBarcode({ data }) {
-    if (handledRef.current || processing) return;
-    handledRef.current = true;
+  async function connectToUser(userId) {
+    if (processing) return;
     setProcessing(true);
     setScanning(false);
     try {
-      const userId = parseContactQr(data);
-      if (!userId) throw new Error('This QR code is not a ZannyChat contact code.');
       const contact = await fetchContactById(userId);
       const conversation = await createConversation(contact.id, contact);
+      if (!conversation?.id) throw new Error('A conversation could not be created. Please try again.');
       navigation.replace('Chat', { conversation });
     } catch (error) {
-      Alert.alert('Could not add contact', error.message || 'Try scanning a ZannyChat contact QR code.');
+      handledRef.current = false;
+      Alert.alert('Could not connect to contact', error.message || 'Check the QR code and try again.');
       setProcessing(false);
     }
   }
+
+  async function handleBarcode({ data }) {
+    if (handledRef.current || processing) return;
+    const userId = parseContactQr(data);
+    if (!userId) {
+      handledRef.current = true;
+      setScanning(false);
+      Alert.alert('Not a ZannyChat QR code', 'Scan a QR code from a ZannyChat profile.');
+      handledRef.current = false;
+      return;
+    }
+    handledRef.current = true;
+    await connectToUser(userId);
+  }
+
+  // Also handle a QR opened by the phone's built-in camera or another QR app.
+  // The generated zannychat://contact/<uuid> link lands here through navigation linking.
+  useEffect(() => {
+    const userId = route?.params?.userId;
+    if (!userId || handledRef.current) return;
+    handledRef.current = true;
+    void connectToUser(userId);
+  }, [route?.params?.userId]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
