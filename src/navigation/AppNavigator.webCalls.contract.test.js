@@ -38,3 +38,9 @@ test('web audio/video calling requests browser media and creates a peer connecti
   assert.ok(webCall.includes('new window.RTCPeerConnection'));
   assert.ok(webCall.includes('updateCallStatus(current.id, nextStatus)'));
 });
+
+test('late invitations from a previous signed-in account are ignored after account switches', () => {
+  assert.ok(app.includes('let activeUserId = null'));
+  assert.ok(app.includes('incoming.callee_id !== activeUserId'));
+  assert.ok(app.includes('activeUserId = userId'));
+});
