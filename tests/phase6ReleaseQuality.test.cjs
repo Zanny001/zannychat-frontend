@@ -70,3 +70,10 @@ test('startup has a hard deadline fallback for unexpected font or auth initializ
   assert.match(source, /Boolean\(fontError\) \|\| startupDeadlineReached/);
   assert.match(source, /clearTimeout\(startupDeadline\)/);
 });
+
+
+test('Android release has an explicit positive version code', () => {
+  assert.equal(app.expo.android.package, 'com.zannychat.app');
+  assert.ok(Number.isInteger(app.expo.android.versionCode));
+  assert.ok(app.expo.android.versionCode > 0);
+});
