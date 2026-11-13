@@ -132,7 +132,7 @@ ${invite.token}` });
         <TextInput value={groupMetadata.topic} onChangeText={(topic) => setGroupMetadata((current) => ({ ...current, topic }))} maxLength={80} placeholder="Group topic (80 characters)" placeholderTextColor={colors.textSecondary} accessibilityLabel="Group topic" style={[typography.body, { color: colors.textPrimary, borderColor: colors.border, borderWidth: 1, borderRadius: radii.md, padding: spacing.sm }]} />
         <TextInput value={groupMetadata.description} onChangeText={(description) => setGroupMetadata((current) => ({ ...current, description }))} maxLength={500} multiline placeholder="Group description (500 characters)" placeholderTextColor={colors.textSecondary} accessibilityLabel="Group description" style={[typography.body, { color: colors.textPrimary, borderColor: colors.border, borderWidth: 1, borderRadius: radii.md, padding: spacing.sm, minHeight: 84, textAlignVertical: 'top' }]} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm }}>
-          <View style={{ flex: 1, gap: 3 }}>
+          <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
             <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Announcement mode</Text>
             <Text style={[typography.caption, { color: colors.textSecondary }]}>When enabled, only group admins can send messages. The server enforces this for all clients.</Text>
           </View>
@@ -174,7 +174,7 @@ ${invite.token}` });
         return <GlassCard key={member.id} style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
             <Avatar name={member.profile?.name || 'Member'} imageUrl={member.profile?.avatarUrl} size={42} />
-            <View style={{ flex: 1, gap: 2 }}>
+            <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
               <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{member.profile?.name || 'ZannyChat member'}{isSelf ? ' (you)' : ''}</Text>
               <Text style={[typography.caption, { color: member.isAdmin ? colors.primary : colors.textSecondary }]}>{member.isAdmin ? 'Group admin' : 'Member'}</Text>
             </View>
