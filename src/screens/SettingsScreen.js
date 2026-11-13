@@ -196,7 +196,7 @@ export default function SettingsScreen({ navigation }) {
             {palettes.map((mood) => {
               const selected = paletteKey === mood.key;
               return (
-                <TouchableOpacity key={mood.key} onPress={() => setPalette(mood.key)} accessibilityRole="radio" accessibilityLabel={`Select ${mood.label} colour palette`} accessibilityState={{ checked: currentPalette === mood.key }} style={styles.swatchWrap}>
+                <TouchableOpacity key={mood.key} onPress={() => setPalette(mood.key)} accessibilityRole="radio" accessibilityLabel={`Select ${mood.label} colour palette`} accessibilityState={{ checked: selected }} style={styles.swatchWrap}>
                   <View
                     style={[
                       styles.swatchRing,
@@ -283,6 +283,8 @@ export default function SettingsScreen({ navigation }) {
             { borderColor: colors.danger, borderRadius: radii.pill, backgroundColor: hexToRgba(colors.danger, 0.1) },
           ]}
           onPress={handleLogout}
+          accessibilityRole="button"
+          accessibilityLabel="Log out of ZannyChat"
         >
           <Text style={[typography.bodyStrong, { color: colors.danger }]}>Log out</Text>
         </TouchableOpacity>
