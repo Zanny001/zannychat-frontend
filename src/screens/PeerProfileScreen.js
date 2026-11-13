@@ -16,7 +16,7 @@ function DetailRow({ icon, label, value, last = false }) {
   if (value === null || value === undefined || String(value).trim() === '') return null;
   return <View style={[styles.detailRow, { paddingVertical: spacing.md, borderBottomColor: colors.border, borderBottomWidth: last ? 0 : StyleSheet.hairlineWidth }]}>
     <View style={[styles.detailIcon, { backgroundColor: hexToRgba(colors.primary, 0.12), borderRadius: radii.md }]}><Ionicons name={icon} size={18} color={colors.primary} /></View>
-    <View style={{ flex: 1, marginLeft: spacing.md }}>
+    <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.md }}>
       <Text style={[typography.caption, { color: colors.textSecondary }]}>{label}</Text>
       <Text selectable style={[typography.body, { color: colors.textPrimary, marginTop: 4 }]}>{value}</Text>
     </View>
@@ -99,7 +99,7 @@ export default function PeerProfileScreen({ route, navigation }) {
             <Avatar name={name} color={participant.avatarColor} imageUrl={avatarUrl} size={104} />
             <View style={[styles.presenceDot, { backgroundColor: online ? colors.online : colors.textSecondary, borderColor: colors.surface }]} />
           </TouchableOpacity>
-          <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.md, textAlign: 'center', fontSize: 25 }]}>{name}</Text>
+          <Text numberOfLines={2} style={[typography.title, { color: colors.textPrimary, marginTop: spacing.md, textAlign: 'center', fontSize: 25, paddingHorizontal: spacing.md }]}>{name}</Text>
           {username ? <Text style={[typography.body, { color: colors.textSecondary, marginTop: 4 }]}>{username}</Text> : null}
           <View style={[styles.presenceLine, { backgroundColor: hexToRgba(online ? colors.online : colors.textSecondary, 0.11), borderColor: hexToRgba(online ? colors.online : colors.textSecondary, 0.22) }]}>
             <View style={[styles.liveDot, { backgroundColor: online ? colors.online : colors.textSecondary }]} />
@@ -135,7 +135,7 @@ export default function PeerProfileScreen({ route, navigation }) {
         <GlassCard contentStyle={{ padding: spacing.md }} intensity={30}>
           <TouchableOpacity onPress={() => navigation.navigate('SharedMedia', { conversation })} activeOpacity={0.75} style={styles.mediaRow} accessibilityRole="button" accessibilityLabel="Open shared photos and videos">
             <View style={[styles.featureIcon, { backgroundColor: hexToRgba(mood.signal, 0.14), borderRadius: radii.lg }]}><Ionicons name="images-outline" size={22} color={colors.primary} /></View>
-            <View style={{ flex: 1, marginLeft: spacing.md }}>
+            <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.md }}>
               <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Photos, videos & files</Text>
               <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4 }]}>Browse media shared in this chat</Text>
             </View>
@@ -146,7 +146,7 @@ export default function PeerProfileScreen({ route, navigation }) {
 
       <View style={[styles.privacyNote, { borderColor: hexToRgba(mood.signal, 0.2), backgroundColor: hexToRgba(mood.signal, 0.06), borderRadius: radii.lg, marginTop: spacing.lg }]}>
         <Ionicons name="shield-checkmark-outline" size={19} color={colors.primary} />
-        <Text style={[typography.caption, { color: colors.textSecondary, flex: 1, marginLeft: spacing.sm, lineHeight: 19 }]}>Only details available to your account are shown. Private information is never invented or exposed by this screen.</Text>
+        <Text style={[typography.caption, { color: colors.textSecondary, flex: 1, minWidth: 0, marginLeft: spacing.sm, lineHeight: 19 }]}>Only details available to your account are shown. Private information is never invented or exposed by this screen.</Text>
       </View>
     </ScrollView>
     <Modal
