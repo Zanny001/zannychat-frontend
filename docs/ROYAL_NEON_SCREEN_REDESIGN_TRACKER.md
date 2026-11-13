@@ -85,7 +85,7 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 
 ### Additional route
 
-- [ ] ScheduledMessages
+- [~] ScheduledMessages
 
 ## Completion gates
 
@@ -98,6 +98,10 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 
 
 ## Latest implementation notes
+
+- Contact discovery, LIVE hub badges, missed-call history, chat deletion, message deletion and media-send actions now consume dynamic theme danger/primary foreground tokens.
+- Story publishing actions use the contrast-safe primary foreground; full-screen story media remains a dark cinematic stage so image/video content and white overlay controls remain legible.
+- ScheduledMessages was verified to use the shared palette provider; interaction and accessibility regression checks remain open.
 
 - Profile, peer profile and edit-profile action foregrounds now use contrast-safe theme tokens.
 - Group creation, QR scanner and the authentication primary actions now use the selected palette's readable foreground token.
