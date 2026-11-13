@@ -51,16 +51,17 @@ export default function Header({ title, onBack, right, subtitle, brand = false, 
           ) : (
             <Pressable
               disabled={!onTitlePress}
+              style={styles.titleContent}
               onPress={onTitlePress}
               style={({ pressed }) => pressed && onTitlePress ? styles.titlePressed : undefined}
               accessibilityRole={onTitlePress ? 'button' : undefined}
               accessibilityLabel={onTitlePress ? `View ${title} profile` : undefined}
             >
-              <Text style={[typography.heading, { color: colors.textPrimary }]} numberOfLines={1}>
+              <Text style={[typography.heading, styles.titleText, { color: colors.textPrimary }]} numberOfLines={1} ellipsizeMode="tail">
                 {title}
               </Text>
               {subtitle ? (
-                <Text style={[typography.caption, { color: colors.textSecondary }]}>{subtitle}</Text>
+                <Text style={[typography.caption, styles.subtitleText, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">{subtitle}</Text>
               ) : null}
             </Pressable>
           )}
@@ -80,9 +81,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  left: { flexDirection: 'row', alignItems: 'center', flexShrink: 1 },
+  left: { flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0, marginRight: 8 },
   backButton: { minWidth: 44, minHeight: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   titlePressed: { opacity: 0.72 },
+  titleContent: { flex: 1, minWidth: 0 },
+  titleText: { flexShrink: 1, minWidth: 0 },
+  subtitleText: { flexShrink: 1, minWidth: 0 },
   brandRow: { flexDirection: 'row', alignItems: 'center' },
-  right: { flexDirection: 'row', alignItems: 'center' },
+  right: { flexDirection: 'row', alignItems: 'center', flexShrink: 0 },
 });
