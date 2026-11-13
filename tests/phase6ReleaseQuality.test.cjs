@@ -56,3 +56,14 @@ test('font loading errors fall back to system fonts instead of blocking app read
   assert.match(source, /const \[fontsLoaded, fontError\] = useAppFonts\(\)/);
   assert.match(source, /\(fontsLoaded \|\| Boolean\(fontError\)\) && initialRoute !== null/);
 });
+
+
+test('startup has a hard deadline fallback for unexpected font or auth initialization stalls', () => {
+  const source = fs.readFileSync(path.join(root, 'App.js'), 'utf8');
+  assert.match(source, /startupDeadlineReached/);
+  assert.match(source, /setTimeout\(\(\) => \{/);
+  assert.match(source, /startup exceeded 12 seconds/i);
+  assert.match(source, /setInitialRoute\(\(currentRoute\) => currentRoute \|\| 'Onboarding'\)/);
+  assert.match(source, /Boolean\(fontError\) \|\| startupDeadlineReached/);
+  assert.match(source, /clearTimeout\(startupDeadline\)/);
+});
