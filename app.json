@@ -23,6 +23,7 @@
     },
     "android": {
       "package": "com.zannychat.app",
+      "versionCode": 243,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#15111C"
