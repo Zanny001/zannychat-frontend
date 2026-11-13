@@ -183,7 +183,7 @@ export default function LiveHubScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <FlatList
+      <FlatList keyboardShouldPersistTaps="handled"
         data={visibleStreams}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingBottom: spacing.xxl || spacing.xl }}
