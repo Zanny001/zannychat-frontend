@@ -64,9 +64,34 @@ export const MOODS = {
     line: '#3A2C24',
     danger: '#FF6157',
   },
+  royalNeon: {
+    key: 'royalNeon', label: 'Royal Neon', ink: '#080B18', inkRaised: '#11172A',
+    inkRaisedAlt: '#1A2340', signal: '#7C60FF', thread: '#39E7E0', gold: '#FFD58A',
+    paper: '#F4F2FF', inkSoft: '#A9A5D0', line: '#302B59', danger: '#FF6685',
+  },
+  ocean: {
+    key: 'ocean', label: 'Ocean', ink: '#061722', inkRaised: '#0D2432',
+    inkRaisedAlt: '#153447', signal: '#258BFF', thread: '#43E2D2', gold: '#FFD27D',
+    paper: '#ECF8FF', inkSoft: '#91B6C7', line: '#24465A', danger: '#FF7188',
+  },
+  emerald: {
+    key: 'emerald', label: 'Emerald', ink: '#071A16', inkRaised: '#102923',
+    inkRaisedAlt: '#183A30', signal: '#35C98A', thread: '#70D9E8', gold: '#E9CF79',
+    paper: '#F0FFF8', inkSoft: '#9BC5B3', line: '#285144', danger: '#FF7188',
+  },
+  roseGold: {
+    key: 'roseGold', label: 'Rose Gold', ink: '#1B101A', inkRaised: '#2A1A29',
+    inkRaisedAlt: '#3B2638', signal: '#F07FAE', thread: '#D8A6FF', gold: '#FFD59A',
+    paper: '#FFF2F7', inkSoft: '#C7A5B8', line: '#55364D', danger: '#FF6685',
+  },
+  sunset: {
+    key: 'sunset', label: 'Sunset', ink: '#1B101B', inkRaised: '#2A1A2C',
+    inkRaisedAlt: '#3B2440', signal: '#FF7A59', thread: '#A77BFF', gold: '#FFD27D',
+    paper: '#FFF3EC', inkSoft: '#C5A7B8', line: '#55364D', danger: '#FF6685',
+  },
 };
 
-export const DEFAULT_MOOD_KEY = 'ember';
+export const DEFAULT_MOOD_KEY = 'royalNeon';
 
 // Fixed across every mood on purpose — "online" should mean the same
 // thing regardless of which mood is active.
@@ -77,6 +102,49 @@ const ONLINE = '#4ADE80';
 // (signal/thread) means most screens never have to know the theme
 // changed, while ChatBubble and the mood picker can reach for the
 // literal "two voices" meaning.
+
+function parseHex(hex) {
+  const clean = String(hex || '').replace('#', '');
+  const expanded = clean.length === 3 ? clean.split('').map((part) => part + part).join('') : clean;
+  if (!/^[0-9a-fA-F]{6}$/.test(expanded)) return [0, 0, 0];
+  return [0, 2, 4].map((offset) => parseInt(expanded.slice(offset, offset + 2), 16));
+}
+
+function relativeLuminance(hex) {
+  const channels = parseHex(hex).map((value) => {
+    const channel = value / 255;
+    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function contrastRatio(first, second) {
+  const values = [relativeLuminance(first), relativeLuminance(second)].sort((a, b) => b - a);
+  return (values[0] + 0.05) / (values[1] + 0.05);
+}
+
+function accessibleForeground(background) {
+  const blackContrast = contrastRatio('#080B18', background);
+  const whiteContrast = contrastRatio('#FFFFFF', background);
+  return blackContrast >= whiteContrast ? '#080B18' : '#FFFFFF';
+}
+
+function accessibleAccent(hex, background, minimum = 4.5) {
+  const original = parseHex(hex);
+  for (let step = 0; step <= 100; step += 2) {
+    const factor = 1 - step / 100;
+    const candidate = '#' + original.map((value) => Math.round(value * factor).toString(16).padStart(2, '0')).join('').toUpperCase();
+    if (contrastRatio(candidate, background) >= minimum) return candidate;
+  }
+  return '#171925';
+}
+
+function tint(hex, amount = 0.84) {
+  const foreground = parseHex(hex);
+  const white = [255, 255, 255];
+  return '#' + foreground.map((value, index) => Math.round(value * (1 - amount) + white[index] * amount).toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
 export function resolveMoodColors(mood, mode = 'dark', highContrast = false) {
   const light = mode === 'light';
   const base = light ? {
@@ -110,21 +178,22 @@ export function resolveMoodColors(mood, mode = 'dark', highContrast = false) {
   const thread = mood.thread;
   return {
     ...base,
-    primary: light ? '#B93825' : signal,
-    primaryDark: light ? '#8F2C1D' : signal,
-    onPrimary: light ? '#FFFFFF' : mood.ink,
-    accent: light ? '#087C69' : thread,
+    primary: light ? accessibleAccent(signal, '#FFFFFF', 4.5) : signal,
+    primaryDark: light ? accessibleAccent(signal, '#FFFFFF', 5) : signal,
+    onPrimary: light ? '#FFFFFF' : contrastRatio(mood.ink, signal) >= 4.5 ? mood.ink : accessibleForeground(signal),
+    accent: light ? accessibleAccent(thread, '#FFFFFF', 4.5) : thread,
+    onAccent: light ? '#FFFFFF' : accessibleForeground(thread),
     signal,
     thread,
     gold: mood.gold,
-    bubbleMine: light ? '#FFE4DC' : signal,
-    // Bright signal surfaces need dark foregrounds; white text failed WCAG
-    // AA contrast in every dark mood (2.25:1–2.83:1). Keep the vivid brand
-    // color and use the mood's ink for readable message content instead.
-    bubbleMineText: light ? '#512018' : mood.ink,
-    bubbleMineMeta: light ? '#744238' : mood.inkRaised,
+    bubbleMine: light ? tint(signal, 0.84) : signal,
+    // Bright signal surfaces need dark foregrounds; use the mood's ink in
+    // dark mode and a high-contrast neutral on tinted light-mode bubbles.
+    bubbleMineText: light ? '#171925' : contrastRatio(mood.ink, signal) >= 4.5 ? mood.ink : accessibleForeground(signal),
+    bubbleMineMeta: light ? '#414658' : contrastRatio(mood.inkRaised, signal) >= 4.5 ? mood.inkRaised : accessibleForeground(signal),
     bubbleTheirs: light ? '#E9EDF5' : mood.inkRaisedAlt,
     danger: light ? '#B4233A' : mood.danger,
+    onDanger: accessibleForeground(light ? '#B4233A' : mood.danger),
     online: ONLINE,
     success: light ? '#16794B' : ONLINE,
     warning: light ? '#8A5A00' : mood.gold,

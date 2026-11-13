@@ -100,7 +100,7 @@ export default function LoginScreen({ navigation }) {
             accessibilityState={{ disabled: loading, busy: loading }}
             activeOpacity={0.75}
           >
-            <Text style={styles.buttonText}>{loading ? 'Signing in…' : 'Sign in'}</Text>
+            <Text style={[styles.buttonText, { color: colors.onPrimary }]}>{loading ? 'Signing in…' : 'Sign in'}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -145,5 +145,5 @@ export default function LoginScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   button: { paddingVertical: 16, alignItems: 'center', marginTop: 8 },
-  buttonText: { color: '#fff', fontFamily: 'Manrope_700Bold', fontSize: 16 },
+  buttonText: { fontFamily: 'Manrope_700Bold', fontSize: 16 },
 });

@@ -63,7 +63,7 @@ export default function CallHistoryScreen({ navigation }) {
         </View>
         {error ? <View style={{ padding: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, gap: spacing.sm }}>
           <Text accessibilityRole="alert" style={[typography.body, { color: colors.textSecondary }]}>{error}</Text>
-          <TouchableOpacity onPress={() => load(true)} accessibilityRole="button"><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => load(true)} accessibilityRole="button" accessibilityLabel="Retry loading call history" style={{ minHeight: 44, justifyContent: 'center' }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity>
         </View> : null}
         {loading ? <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} /> : null}
         {!loading && !error && calls.length === 0 ? <View style={{ alignItems: 'center', paddingVertical: spacing.xxl || spacing.xl, gap: spacing.sm }}>
@@ -81,12 +81,12 @@ export default function CallHistoryScreen({ navigation }) {
             <View style={{ flex: 1, gap: 3 }}>
               <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.participantName}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Ionicons name={item.call_type === 'video' ? 'videocam-outline' : 'call-outline'} size={14} color={missed ? '#D64545' : colors.textSecondary} />
-                <Text style={[typography.caption, { color: missed ? '#D64545' : colors.textSecondary }]}>{label} · {kind}</Text>
+                <Ionicons name={item.call_type === 'video' ? 'videocam-outline' : 'call-outline'} size={14} color={missed ? colors.danger : colors.textSecondary} />
+                <Text style={[typography.caption, { color: missed ? colors.danger : colors.textSecondary }]}>{label} · {kind}</Text>
               </View>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>{formatDate(item.created_at)}{item.durationSeconds ? ` · ${formatDuration(item.durationSeconds)}` : ''}</Text>
             </View>
-            <Ionicons name={item.direction === 'incoming' ? 'arrow-down-left' : 'arrow-up-right'} size={18} color={missed ? '#D64545' : colors.textSecondary} />
+            <Ionicons name={item.direction === 'incoming' ? 'arrow-down-left' : 'arrow-up-right'} size={18} color={missed ? colors.danger : colors.textSecondary} />
           </View>;
         })}
         {refreshing ? <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.md }} /> : null}

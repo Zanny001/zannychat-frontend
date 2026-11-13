@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
 import { useTheme } from '../theme/ThemeContext';
+import { hexToRgba } from '../utils/color';
 import GlassCard from '../components/GlassCard';
 
 const VISIBILITIES = [
@@ -217,17 +218,17 @@ export default function LiveHubScreen({ navigation }) {
               </View>
             </View>
 
-            <GlassCard style={{ marginHorizontal: spacing.md, marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.md }}>
+            <GlassCard glow style={{ marginHorizontal: spacing.md, marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.md }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#E34D68' + '20', alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="videocam" size={22} color="#E34D68" />
+                <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: hexToRgba(colors.danger, 0.12), alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="videocam" size={22} color={colors.danger} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Start a broadcast</Text>
                   <Text style={[typography.caption, { color: colors.textSecondary }]}>Set the mood before you go live</Text>
                 </View>
-                <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, backgroundColor: '#E34D68' + '18' }}>
-                  <Text style={[typography.caption, { color: '#E34D68', fontWeight: '800' }]}>LIVE</Text>
+                <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, backgroundColor: hexToRgba(colors.danger, 0.1) }}>
+                  <Text style={[typography.caption, { color: colors.danger, fontWeight: '800' }]}>LIVE</Text>
                 </View>
               </View>
 
@@ -240,7 +241,7 @@ export default function LiveHubScreen({ navigation }) {
                   {VISIBILITIES.map((item) => {
                     const selected = visibility === item.value;
                     return (
-                      <TouchableOpacity key={item.value} onPress={() => setVisibility(item.value)} accessibilityRole="radio" accessibilityState={{ checked: selected }} style={{ flex: 1, minHeight: 48, paddingVertical: spacing.xs, paddingHorizontal: 4, borderRadius: radii.md, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary + '18' : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                      <TouchableOpacity key={item.value} onPress={() => setVisibility(item.value)} accessibilityRole="radio" accessibilityLabel={item.label} accessibilityState={{ checked: selected }} style={{ flex: 1, minHeight: 48, paddingVertical: spacing.xs, paddingHorizontal: 4, borderRadius: radii.md, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary + '18' : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                         <Text style={[typography.small, { color: selected ? colors.primary : colors.textPrimary, fontWeight: '800' }]}>{item.label}</Text>
                       </TouchableOpacity>
                     );
@@ -251,7 +252,7 @@ export default function LiveHubScreen({ navigation }) {
 
               {visibility === 'private' && (
                 <View style={{ gap: spacing.sm }}>
-                  <TouchableOpacity onPress={loadInviteCandidates} disabled={loadingCandidates} accessibilityRole="button" style={{ borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.sm, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs }}>
+                  <TouchableOpacity onPress={loadInviteCandidates} disabled={loadingCandidates} accessibilityRole="button" accessibilityLabel="Load contacts to invite to private LIVE" accessibilityState={{ disabled: loadingCandidates, busy: loadingCandidates }} style={{ borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.sm, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs }}>
                     {loadingCandidates ? <ActivityIndicator color={colors.primary} /> : <Ionicons name="people-outline" size={18} color={colors.primary} />}
                     <Text style={[typography.small, { color: colors.primary, fontWeight: '800' }]}>{loadingCandidates ? 'Loading chat contacts…' : 'Choose people from your chats'}</Text>
                   </TouchableOpacity>
@@ -259,7 +260,7 @@ export default function LiveHubScreen({ navigation }) {
                     {inviteCandidates.map((person) => {
                       const selected = selectedInvitees.includes(person.id);
                       return (
-                        <TouchableOpacity key={person.id} onPress={() => toggleInvitee(person.id)} accessibilityRole="checkbox" accessibilityState={{ checked: selected }} style={{ flexDirection: 'row', alignItems: 'center', padding: spacing.sm, borderRadius: radii.md, backgroundColor: selected ? colors.primary + '18' : colors.surface }}>
+                        <TouchableOpacity key={person.id} onPress={() => toggleInvitee(person.id)} accessibilityRole="checkbox" accessibilityLabel={`Invite ${person.name} to this LIVE stream`} accessibilityState={{ checked: selected }} style={{ flexDirection: 'row', alignItems: 'center', padding: spacing.sm, borderRadius: radii.md, backgroundColor: selected ? colors.primary + '18' : colors.surface }}>
                           <Ionicons name={selected ? 'checkbox' : 'square-outline'} size={19} color={colors.primary} />
                           <Text numberOfLines={1} style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm, flex: 1 }]}>{person.name}</Text>
                         </TouchableOpacity>
@@ -271,7 +272,7 @@ export default function LiveHubScreen({ navigation }) {
                 </View>
               )}
 
-              <TouchableOpacity onPress={() => setAllowGuests((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: allowGuests }} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs }}>
+              <TouchableOpacity onPress={() => setAllowGuests((value) => !value)} accessibilityRole="checkbox" accessibilityLabel="Allow approved viewers to join the LIVE stage" accessibilityState={{ checked: allowGuests }} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs }}>
                 <Ionicons name={allowGuests ? 'checkbox' : 'square-outline'} size={21} color={colors.primary} />
                 <View style={{ flex: 1 }}>
                   <Text style={[typography.small, { color: colors.textPrimary, fontWeight: '700' }]}>Allow approved viewers on stage</Text>
@@ -279,7 +280,7 @@ export default function LiveHubScreen({ navigation }) {
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity disabled={busy} onPress={startLive} accessibilityRole="button" style={{ backgroundColor: busy ? colors.border : colors.primary, borderRadius: radii.md, minHeight: 52, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.sm }}>
+              <TouchableOpacity disabled={busy} onPress={startLive} accessibilityRole="button" accessibilityLabel="Go LIVE" accessibilityState={{ disabled: busy, busy }} style={{ backgroundColor: busy ? colors.border : colors.primary, borderRadius: radii.md, minHeight: 52, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.sm }}>
                 {busy ? <ActivityIndicator color={colors.background} /> : <Ionicons name="radio" size={20} color={colors.background} />}
                 <Text style={[typography.bodyStrong, { color: colors.background }]}>{busy ? 'Connecting…' : 'Go LIVE'}</Text>
               </TouchableOpacity>
@@ -304,7 +305,7 @@ export default function LiveHubScreen({ navigation }) {
                         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.stream.title}</Text>
                         <Text style={[typography.caption, { color: colors.textSecondary }]}>Private invitation</Text>
                       </View>
-                      <TouchableOpacity disabled={busy} onPress={() => acceptInvitation(item)} style={{ backgroundColor: colors.primary, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.md }}>
+                      <TouchableOpacity disabled={busy} onPress={() => acceptInvitation(item)} accessibilityRole="button" accessibilityLabel={`Accept invitation to ${item.stream.title}`} accessibilityState={{ disabled: busy, busy }} style={{ backgroundColor: colors.primary, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.md }}>
                         <Text style={[typography.small, { color: colors.background, fontWeight: '800' }]}>Join</Text>
                       </TouchableOpacity>
                     </View>
@@ -320,7 +321,7 @@ export default function LiveHubScreen({ navigation }) {
                   {followingCreators.map((creator) => (
                     <View key={creator.creator_id} style={{ minWidth: 150, padding: spacing.sm, borderRadius: radii.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
                       <Text numberOfLines={1} style={[typography.small, { color: colors.textPrimary, fontWeight: '800' }]}>{creator.name}</Text>
-                      <TouchableOpacity disabled={busy} onPress={() => toggleFollow(creator.creator_id)} style={{ marginTop: spacing.xs }}>
+                      <TouchableOpacity disabled={busy} onPress={() => toggleFollow(creator.creator_id)} accessibilityRole="button" accessibilityLabel={`Unfollow ${creator.name}`} accessibilityState={{ disabled: busy, busy }} style={{ marginTop: spacing.xs }}>
                         <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>Unfollow</Text>
                       </TouchableOpacity>
                     </View>
@@ -343,7 +344,7 @@ export default function LiveHubScreen({ navigation }) {
               {STREAM_FILTERS.map((filter) => {
                 const selected = activeFilter === filter.value;
                 return (
-                  <TouchableOpacity key={filter.value} onPress={() => setActiveFilter(filter.value)} accessibilityRole="radio" accessibilityState={{ checked: selected }} style={{ minHeight: 36, paddingHorizontal: spacing.md, borderRadius: 18, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                  <TouchableOpacity key={filter.value} onPress={() => setActiveFilter(filter.value)} accessibilityRole="radio" accessibilityLabel={`Show ${filter.label} LIVE streams`} accessibilityState={{ checked: selected }} style={{ minHeight: 44, paddingHorizontal: spacing.md, borderRadius: 18, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                     <Text style={[typography.small, { color: selected ? colors.background : colors.textSecondary, fontWeight: '800' }]}>{filter.label}</Text>
                   </TouchableOpacity>
                 );
@@ -351,21 +352,21 @@ export default function LiveHubScreen({ navigation }) {
             </ScrollView>
 
             {loading && <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing.md }} />}
-            {!!error && <Text accessibilityRole="alert" style={[typography.caption, { color: '#D64545', paddingHorizontal: spacing.md, paddingBottom: spacing.sm }]}>{error}</Text>}
+            {!!error && <Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger, paddingHorizontal: spacing.md, paddingBottom: spacing.sm }]}>{error}</Text>}
           </View>
         }
         renderItem={({ item }) => (
           <GlassCard style={{ marginHorizontal: spacing.md, marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
               <TouchableOpacity disabled={busy} onPress={() => joinLive(item)} accessibilityRole="button" accessibilityLabel={'Join LIVE: ' + item.title} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                <View style={{ width: 48, height: 48, borderRadius: 16, backgroundColor: '#E34D68' + '18', alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="videocam" size={23} color="#E34D68" />
+                <View style={{ width: 48, height: 48, borderRadius: 16, backgroundColor: hexToRgba(colors.danger, 0.1), alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="videocam" size={23} color={colors.danger} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.xs }}>
                     <Text numberOfLines={2} style={[typography.bodyStrong, { color: colors.textPrimary, flexShrink: 1 }]}>{item.title}</Text>
-                    <View style={{ paddingHorizontal: 7, paddingVertical: 3, borderRadius: 10, backgroundColor: '#E34D68' + '18' }}>
-                      <Text style={[typography.caption, { color: '#E34D68', fontWeight: '900' }]}>● LIVE</Text>
+                    <View style={{ paddingHorizontal: 7, paddingVertical: 3, borderRadius: 10, backgroundColor: hexToRgba(colors.danger, 0.1) }}>
+                      <Text style={[typography.caption, { color: colors.danger, fontWeight: '900' }]}>● LIVE</Text>
                     </View>
                   </View>
                   {!!item.description && <Text numberOfLines={2} style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>{item.description}</Text>}
@@ -374,7 +375,7 @@ export default function LiveHubScreen({ navigation }) {
                 <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
               </TouchableOpacity>
               {item.creator_id && !item.is_creator && (
-                <TouchableOpacity disabled={busy} onPress={() => toggleFollow(item.creator_id)} accessibilityRole="button" style={{ paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, borderRadius: radii.md, backgroundColor: followingIds.includes(item.creator_id) ? colors.surface : colors.primary + '18', borderWidth: 1, borderColor: colors.border }}>
+                <TouchableOpacity disabled={busy} onPress={() => toggleFollow(item.creator_id)} accessibilityRole="button" accessibilityLabel={followingIds.includes(item.creator_id) ? `Unfollow ${item.creator_name || item.title || 'LIVE creator'}` : `Follow ${item.creator_name || item.title || 'LIVE creator'}`} accessibilityState={{ disabled: busy, busy }} style={{ paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, borderRadius: radii.md, backgroundColor: followingIds.includes(item.creator_id) ? colors.surface : colors.primary + '18', borderWidth: 1, borderColor: colors.border }}>
                   <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>{followingIds.includes(item.creator_id) ? 'Following' : 'Follow'}</Text>
                 </TouchableOpacity>
               )}
@@ -382,7 +383,7 @@ export default function LiveHubScreen({ navigation }) {
           </GlassCard>
         )}
         ListEmptyComponent={!loading && !error ? (
-          <GlassCard style={{ marginHorizontal: spacing.md, marginTop: spacing.sm }} contentStyle={{ padding: spacing.lg, alignItems: 'center', gap: spacing.sm }}>
+          <GlassCard glow style={{ marginHorizontal: spacing.md, marginTop: spacing.sm }} contentStyle={{ padding: spacing.lg, alignItems: 'center', gap: spacing.sm }}>
             <View style={{ width: 58, height: 58, borderRadius: 20, backgroundColor: colors.primary + '18', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="videocam-outline" size={28} color={colors.primary} />
             </View>

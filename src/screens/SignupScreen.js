@@ -229,7 +229,7 @@ export default function SignupScreen({ navigation }) {
             }}
             activeOpacity={0.75}
           >
-            <Text style={styles.buttonText}>
+            <Text style={[styles.buttonText, { color: colors.onPrimary }]}>
               {loading ? 'Creating account…' : 'Create account'}
             </Text>
           </TouchableOpacity>
@@ -280,7 +280,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   buttonText: {
-    color: '#fff',
     fontFamily: 'Manrope_700Bold',
     fontSize: 16,
   },

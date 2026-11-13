@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { DeviceEventEmitter, StyleSheet, View, Platform, Linking } from 'react-native';
+import { Animated, DeviceEventEmitter, StyleSheet, View, Platform, Linking } from 'react-native';
 import { NavigationContainer, DarkTheme, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -7,6 +7,7 @@ import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
+import { useReducedMotion } from '../utils/motion';
 
 import OnboardingScreen from '../screens/OnboardingScreen';
 import LoginScreen from '../screens/LoginScreen';
@@ -62,27 +63,86 @@ import { completeGoogleOAuthCallback } from '../services/googleAuth';
 export const navigationRef = createNavigationContainerRef();
 
 const RootStack = createNativeStackNavigator();
+
+const styles = StyleSheet.create({
+  tabBackground: { borderRadius: 26, overflow: 'hidden' },
+  cameraTabIcon: { width: 50, height: 50, borderRadius: 25, marginTop: -18, borderWidth: 2, borderColor: 'rgba(255,255,255,0.48)' },
+  tabIconShell: {
+    width: 38,
+    height: 34,
+    borderRadius: 13,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
 const MainTabs = createBottomTabNavigator();
 
 // The bottom tab bar's background — real blur of whatever's scrolling
 // underneath, tinted toward the mood's background color.
 function GlassTabBackground() {
-  const { colors } = useTheme();
+  const { colors, resolvedMode } = useTheme();
+  // Match GlassCard's low-end Android fallback so the floating tab bar
+  // never forces a live blur pass on Android 10/11 devices.
+  const supportsBackdropBlur = Platform.OS !== 'android' || Number(Platform.Version) >= 31;
   return (
-    <View style={StyleSheet.absoluteFill}>
-      <BlurView
-        intensity={32}
-        tint="dark"
-        style={StyleSheet.absoluteFill}
-        experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
-      />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: hexToRgba(colors.background, 0.72) }]} />
+    <View style={[StyleSheet.absoluteFill, styles.tabBackground]}>
+      {supportsBackdropBlur ? (
+        <BlurView
+          intensity={32}
+          tint={resolvedMode}
+          style={StyleSheet.absoluteFill}
+          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+        />
+      ) : null}
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: hexToRgba(colors.background, 0.84) }]} />
     </View>
+  );
+}
+
+function TabIcon({ name, color, size, focused, accent, cameraAccent, cameraForeground, isCamera, reducedMotion }) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (reducedMotion) {
+      scale.setValue(1);
+      return undefined;
+    }
+    const animation = Animated.spring(scale, {
+      toValue: focused ? 1.08 : 1,
+      useNativeDriver: true,
+      tension: 170,
+      friction: 13,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [focused, reducedMotion, scale]);
+
+  const activeAccent = isCamera ? cameraAccent : accent;
+  return (
+    <Animated.View
+      style={[
+        styles.tabIconShell,
+        isCamera && styles.cameraTabIcon,
+        {
+          transform: [{ scale }],
+          backgroundColor: isCamera ? cameraAccent : focused ? hexToRgba(activeAccent, 0.17) : 'transparent',
+          borderColor: isCamera ? hexToRgba(cameraAccent, 0.72) : focused ? hexToRgba(activeAccent, 0.38) : 'transparent',
+          shadowColor: activeAccent,
+          shadowOpacity: isCamera ? 0.42 : focused ? 0.32 : 0,
+          shadowRadius: isCamera ? 17 : focused ? 11 : 0,
+          elevation: isCamera ? 8 : focused ? 4 : 0,
+        },
+      ]}
+    >
+      <Ionicons name={name} size={isCamera ? 25 : focused ? 23 : size} color={isCamera ? cameraForeground : color} />
+    </Animated.View>
   );
 }
 
 function MainTabNavigator() {
   const { colors } = useTheme();
+  const reducedMotion = useReducedMotion();
 
   return (
     <MainTabs.Navigator
@@ -94,20 +154,29 @@ function MainTabNavigator() {
         tabBarItemStyle: { paddingTop: 5, paddingBottom: 5 },
         tabBarStyle: {
           backgroundColor: 'transparent',
-          borderTopColor: hexToRgba(colors.textPrimary, 0.08),
+          borderTopColor: hexToRgba(colors.textPrimary, 0.12),
           position: 'absolute',
-          height: 68,
-          paddingTop: 5,
-          paddingBottom: Platform.OS === 'ios' ? 18 : 8,
+          height: 76,
+          marginHorizontal: 10,
+          marginBottom: Platform.OS === 'ios' ? 0 : 7,
+          paddingTop: 7,
+          paddingBottom: Platform.OS === 'ios' ? 18 : 9,
           borderTopWidth: 1,
-          elevation: 0,
+          borderWidth: 1,
+          borderColor: hexToRgba(colors.textPrimary, 0.1),
+          borderRadius: 26,
+          elevation: 12,
+          shadowColor: colors.primary,
+          shadowOpacity: 0.18,
+          shadowRadius: 22,
+          shadowOffset: { width: 0, height: -4 },
         },
         tabBarBackground: () => <GlassTabBackground />,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
-        tabBarIcon: ({ color, size }) => {
-          const icons = { Chats: 'chatbubbles', Calls: 'call', Updates: 'aperture', Channels: 'compass', Profile: 'person-circle' };
-          return <Ionicons name={icons[route.name]} size={size} color={color} />;
+        tabBarIcon: ({ color, size, focused }) => {
+          const icons = { Chats: 'chatbubbles', Calls: 'call', Updates: 'camera', Channels: 'compass', Profile: 'person-circle' };
+          return <TabIcon name={icons[route.name]} color={color} size={size} focused={focused} accent={colors.primary} cameraAccent={colors.accent} cameraForeground={colors.onAccent} isCamera={route.name === 'Updates'} reducedMotion={reducedMotion} />;
         },
       })}
     >

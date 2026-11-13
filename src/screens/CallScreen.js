@@ -3,6 +3,7 @@ import { DeviceEventEmitter, ActivityIndicator, Alert, Platform, SafeAreaView, S
 import { Ionicons } from '@expo/vector-icons';
 import { RTCView, mediaDevices, RTCPeerConnection, RTCSessionDescription, RTCIceCandidate } from '@livekit/react-native-webrtc';
 import { useTheme } from '../theme/ThemeContext';
+import { hexToRgba } from '../utils/color';
 import Avatar from '../components/Avatar';
 import { sendCallSignal, subscribeToCallSession, subscribeToCallSignals, updateCallStatus } from '../services/calls';
 import { backendFetch } from '../services/backendClient';
@@ -14,8 +15,11 @@ import { getIceNetworkNotice } from '../utils/callNetworkStatus';
 const FALLBACK_ICE_SERVERS = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
 
 export default function CallScreen({ route, navigation }) {
-  const { colors } = useTheme();
+  const { colors, resolvedMode } = useTheme();
   const { call: initialCall, callId, conversationId, callType = 'audio', isCaller = false, participantName = 'ZannyChat contact', avatarColor, nativeCallId = null, nativeRequestId = null } = route.params || {};
+  const immersiveVideo = callType === 'video';
+  const foreground = immersiveVideo ? '#FFFFFF' : colors.textPrimary;
+  const secondaryForeground = immersiveVideo ? '#C4C2D2' : colors.textSecondary;
   const [call, setCall] = useState(initialCall || { id: callId, conversation_id: conversationId, call_type: callType, status: isCaller ? 'ringing' : 'accepted' });
   const [phase, setPhase] = useState(isCaller ? 'Calling…' : 'Connecting…');
   const [muted, setMuted] = useState(false);
@@ -299,30 +303,30 @@ export default function CallScreen({ route, navigation }) {
   };
   const formatTime = formatCallDuration;
   const iconButton = (name, label, onPress, active = false, danger = false) => (
-    <TouchableOpacity key={label} onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={[styles.control, { backgroundColor: danger ? '#E4475A' : active ? colors.primary : 'rgba(255,255,255,0.13)' }]}>
-      <Ionicons name={name} size={23} color="#FFFFFF" />
-      <Text style={styles.controlLabel}>{label}</Text>
+    <TouchableOpacity key={label} onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={[styles.control, { backgroundColor: danger ? colors.danger : active ? colors.primary : immersiveVideo ? 'rgba(255,255,255,0.13)' : colors.surface, borderWidth: immersiveVideo ? 0 : 1, borderColor: colors.border, shadowColor: active ? colors.primary : '#000000', shadowOpacity: active ? 0.3 : 0.12, shadowRadius: active ? 12 : 6, elevation: active ? 5 : 2 }]}>
+      <Ionicons name={name} size={23} color={danger ? colors.onDanger : active ? colors.onPrimary : foreground} />
+      <Text style={[styles.controlLabel, { color: danger ? colors.onDanger : active ? colors.onPrimary : foreground }]}>{label}</Text>
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: '#11101A' }]}>
-      <StatusBar barStyle="light-content" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: immersiveVideo ? '#11101A' : colors.background }]}>
+      <StatusBar barStyle={!immersiveVideo && resolvedMode === 'light' ? 'dark-content' : 'light-content'} />
       {callType === 'video' && remoteStream ? <RTCView streamURL={remoteStream.toURL()} objectFit="cover" style={StyleSheet.absoluteFill} /> : null}
       {callType === 'video' && localStream && !cameraOff ? <RTCView streamURL={localStream.toURL()} mirror objectFit="cover" style={styles.localVideo} /> : null}
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => endCall(isCaller && call?.status === 'ringing' ? 'cancelled' : 'ended')} accessibilityRole="button" accessibilityLabel="Close call"><Ionicons name="chevron-down" size={26} color="#FFFFFF" /></TouchableOpacity>
-        <View style={styles.encryption}><Ionicons name="lock-closed" size={12} color="#A8E6C1" /><Text style={styles.encryptionText}>Encrypted media transport</Text></View>
+        <TouchableOpacity onPress={() => endCall(isCaller && call?.status === 'ringing' ? 'cancelled' : 'ended')} accessibilityRole="button" accessibilityLabel="Close call"><Ionicons name="chevron-down" size={26} color={foreground} /></TouchableOpacity>
+        <View style={[styles.encryption, { backgroundColor: immersiveVideo ? 'rgba(255,255,255,0.08)' : hexToRgba(colors.surface, 0.78), borderColor: colors.border, borderWidth: immersiveVideo ? 0 : 1 }]}><Ionicons name="lock-closed" size={12} color={colors.accent} /><Text style={[styles.encryptionText, { color: secondaryForeground }]}>Encrypted media transport</Text></View>
         <View style={{ width: 26 }} />
       </View>
       <View style={styles.identity}>
-        {!(callType === 'video' && remoteStream) ? <Avatar name={participantName} color={avatarColor || '#6C5CE7'} size={108} /> : null}
-        <Text style={styles.name}>{participantName}</Text>
-        <Text style={styles.phase}>{phase === 'Connected' ? formatTime(seconds) : phase}</Text>
-        {networkNotice ? <Text style={styles.networkNotice}>{networkNotice}</Text> : null}
-        {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
-        {phase === 'Unavailable' ? <TouchableOpacity onPress={() => Alert.alert('Call unavailable', errorText || 'Please try again.')} style={styles.retry}><Text style={styles.retryText}>Call details</Text></TouchableOpacity> : null}
-        {phase !== 'Connected' && phase !== 'Unavailable' ? <ActivityIndicator style={{ marginTop: 18 }} color="#FFFFFF" /> : null}
+        {!(callType === 'video' && remoteStream) ? <Avatar name={participantName} color={avatarColor || colors.primary} size={108} /> : null}
+        <Text style={[styles.name, { color: foreground }]}>{participantName}</Text>
+        <Text style={[styles.phase, { color: secondaryForeground }]}>{phase === 'Connected' ? formatTime(seconds) : phase}</Text>
+        {networkNotice ? <Text style={[styles.networkNotice, { color: immersiveVideo ? '#F2D28B' : colors.warning }]}>{networkNotice}</Text> : null}
+        {errorText ? <Text style={[styles.error, { color: immersiveVideo ? '#FFB8C0' : colors.danger }]}>{errorText}</Text> : null}
+        {phase === 'Unavailable' ? <TouchableOpacity onPress={() => Alert.alert('Call unavailable', errorText || 'Please try again.')} accessibilityRole="button" accessibilityLabel="Show call connection details" style={[styles.retry, { backgroundColor: immersiveVideo ? 'rgba(255,255,255,0.12)' : colors.primary, borderRadius: 12 }]}><Text style={[styles.retryText, { color: immersiveVideo ? '#FFFFFF' : colors.onPrimary }]}>Call details</Text></TouchableOpacity> : null}
+        {phase !== 'Connected' && phase !== 'Unavailable' ? <ActivityIndicator style={{ marginTop: 18 }} color={foreground} /> : null}
       </View>
       <View style={styles.bottom}>
         <View style={styles.controlsRow}>
@@ -331,8 +335,8 @@ export default function CallScreen({ route, navigation }) {
           {callType === 'video' ? iconButton(cameraOff ? 'videocam-off' : 'videocam', cameraOff ? 'Camera on' : 'Camera off', toggleCamera, cameraOff) : null}
           {callType === 'video' ? iconButton('camera-reverse', 'Flip', switchCamera) : null}
         </View>
-        <TouchableOpacity onPress={() => endCall(isCaller && call?.status === 'ringing' ? 'cancelled' : 'ended')} accessibilityRole="button" accessibilityLabel="End call" style={styles.endButton}>
-          <Ionicons name="call" size={27} color="#FFFFFF" style={{ transform: [{ rotate: '135deg' }] }} />
+        <TouchableOpacity onPress={() => endCall(isCaller && call?.status === 'ringing' ? 'cancelled' : 'ended')} accessibilityRole="button" accessibilityLabel="End call" style={[styles.endButton, { backgroundColor: colors.danger, shadowColor: colors.danger }]}>
+          <Ionicons name="call" size={27} color={colors.onDanger} style={{ transform: [{ rotate: '135deg' }] }} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -356,5 +360,5 @@ const styles = StyleSheet.create({
   controlsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 28 },
   control: { width: 68, height: 68, borderRadius: 22, alignItems: 'center', justifyContent: 'center', gap: 4 },
   controlLabel: { color: '#FFFFFF', fontSize: 10, fontWeight: '600' },
-  endButton: { width: 70, height: 70, borderRadius: 35, backgroundColor: '#E4475A', alignItems: 'center', justifyContent: 'center' },
+  endButton: { width: 70, height: 70, borderRadius: 35, alignItems: 'center', justifyContent: 'center', shadowOpacity: 0.36, shadowRadius: 17, shadowOffset: { width: 0, height: 6 }, elevation: 7 },
 });

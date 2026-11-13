@@ -944,7 +944,7 @@ export default function ChatScreen({ route, navigation }) {
       const profile = contacts.find((c) => c.id === sharedUserId) || {
         id: sharedUserId,
         name: name || 'Contact',
-        avatarColor: '#6C5CE7',
+        avatarColor: colors.primary,
       };
       const newConversation = await createConversation(sharedUserId, profile);
       navigation.push('Chat', { conversation: newConversation });
@@ -1262,26 +1262,26 @@ export default function ChatScreen({ route, navigation }) {
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             {!display.isGroup && display.participant?.id ? (
               <>
-                <TouchableOpacity style={{ marginRight: spacing.sm }} onPress={() => handleStartCall('audio')} accessibilityLabel="Start audio call" accessibilityRole="button">
+                <TouchableOpacity style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]} onPress={() => handleStartCall('audio')} accessibilityLabel="Start audio call" accessibilityRole="button">
                   <Ionicons name="call-outline" size={20} color={colors.textPrimary} />
                 </TouchableOpacity>
-                <TouchableOpacity style={{ marginRight: spacing.sm }} onPress={() => handleStartCall('video')} accessibilityLabel="Start video call" accessibilityRole="button">
+                <TouchableOpacity style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]} onPress={() => handleStartCall('video')} accessibilityLabel="Start video call" accessibilityRole="button">
                   <Ionicons name="videocam-outline" size={21} color={colors.textPrimary} />
                 </TouchableOpacity>
               </>
             ) : null}
             {display.isGroup ? (
               <>
-                <TouchableOpacity style={{ marginRight: spacing.sm }} onPress={() => handleStartGroupCall('audio')} accessibilityLabel="Start group audio call" accessibilityRole="button">
+                <TouchableOpacity style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]} onPress={() => handleStartGroupCall('audio')} accessibilityLabel="Start group audio call" accessibilityRole="button">
                   <Ionicons name="call-outline" size={20} color={colors.textPrimary} />
                 </TouchableOpacity>
-                <TouchableOpacity style={{ marginRight: spacing.sm }} onPress={() => handleStartGroupCall('video')} accessibilityLabel="Start group video call" accessibilityRole="button">
+                <TouchableOpacity style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]} onPress={() => handleStartGroupCall('video')} accessibilityLabel="Start group video call" accessibilityRole="button">
                   <Ionicons name="videocam-outline" size={21} color={colors.textPrimary} />
                 </TouchableOpacity>
               </>
             ) : null}
             <TouchableOpacity
-              style={{ marginRight: spacing.sm }}
+              style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]}
               onPress={toggleSearch}
               accessibilityLabel={searchOpen ? 'Close message search' : 'Search messages in this conversation'}
               accessibilityRole="button"
@@ -1289,7 +1289,7 @@ export default function ChatScreen({ route, navigation }) {
               <Ionicons name={searchOpen ? 'close' : 'search-outline'} size={20} color={colors.textPrimary} />
             </TouchableOpacity>
             <TouchableOpacity
-              style={{ marginRight: spacing.sm }}
+              style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]}
               onPress={handleSummarize}
               disabled={summarizing}
               accessibilityLabel="Summarize this conversation"
@@ -1301,12 +1301,9 @@ export default function ChatScreen({ route, navigation }) {
                 <Ionicons name="sparkles-outline" size={20} color={colors.textPrimary} />
               )}
             </TouchableOpacity>
-            {/* The dead call button the audit flagged is gone — voice
-                calls are a P3 undertaking (WebRTC + signaling), and a
-                button with no handler reads as broken, not unfinished. */}
             {display.isGroup ? (
               <TouchableOpacity
-                style={{ marginRight: spacing.sm }}
+                style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]}
                 onPress={() => navigation.navigate('GroupManagement', { conversation: display })}
                 accessibilityLabel="Manage group members"
                 accessibilityRole="button"
@@ -1315,7 +1312,7 @@ export default function ChatScreen({ route, navigation }) {
               </TouchableOpacity>
             ) : null}
             <TouchableOpacity
-              style={{ marginRight: spacing.sm }}
+              style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]}
               onPress={() => setActiveSheet('overflow')}
               accessibilityLabel="Conversation options"
               accessibilityRole="button"
@@ -1497,7 +1494,7 @@ export default function ChatScreen({ route, navigation }) {
                   <Text style={{ color: colors.accent, fontWeight: '700', fontSize: 12 }}>Retry</Text>
                 </TouchableOpacity>
                 <TouchableOpacity disabled={retryingAttachments} onPress={() => discardPendingAttachment(item)} accessibilityRole="button" accessibilityLabel={`Remove queued ${item.kind} attachment`} style={{ padding: 6 }}>
-                  <Text style={{ color: colors.danger || '#D84C4C', fontWeight: '700', fontSize: 12 }}>Remove</Text>
+                  <Text style={{ color: colors.danger, fontWeight: '700', fontSize: 12 }}>Remove</Text>
                 </TouchableOpacity>
               </View>
             ))}
@@ -1510,19 +1507,19 @@ export default function ChatScreen({ route, navigation }) {
         {pendingOutbox.length > 0 ? (
           <View style={{ marginHorizontal: spacing.md, marginBottom: 8, padding: 10, borderRadius: 8, backgroundColor: hexToRgba(colors.accent, 0.10) }}>
             <Text style={{ color: colors.text, fontSize: 13 }}>{pendingOutbox.length} message{pendingOutbox.length === 1 ? '' : 's'} waiting to send. They are saved on this device.</Text>
-            <TouchableOpacity disabled={retryingOutbox} onPress={async () => { if (automaticRetryInFlightRef.current) return; automaticRetryInFlightRef.current = true; setRetryingOutbox(true); try { for (const item of [...pendingOutbox]) { const ok = await handleSend(item.text, item.requestId, item.replyToId); if (!ok) break; } } finally { automaticRetryInFlightRef.current = false; setRetryingOutbox(false); } }} style={{ alignSelf: 'flex-end', paddingTop: 6 }} accessibilityRole="button">
+            <TouchableOpacity disabled={retryingOutbox} onPress={async () => { if (automaticRetryInFlightRef.current) return; automaticRetryInFlightRef.current = true; setRetryingOutbox(true); try { for (const item of [...pendingOutbox]) { const ok = await handleSend(item.text, item.requestId, item.replyToId); if (!ok) break; } } finally { automaticRetryInFlightRef.current = false; setRetryingOutbox(false); } }} style={{ alignSelf: 'flex-end', paddingTop: 6 }} accessibilityRole="button" accessibilityLabel="Retry sending pending messages" accessibilityState={{ disabled: retryingOutbox, busy: retryingOutbox }}>
               <Text style={{ color: colors.accent, fontWeight: '700' }}>{retryingOutbox ? 'Retrying…' : 'Retry pending messages'}</Text>
             </TouchableOpacity>
           </View>
         ) : null}
 
         {sendError ? (
-          <View style={{ marginHorizontal: spacing.md, marginBottom: 8, padding: 10, borderRadius: 8, backgroundColor: '#FCE8E6' }}>
-            <Text style={{ color: '#9B1C1C', fontSize: 13 }}>
+          <View style={{ marginHorizontal: spacing.md, marginBottom: 8, padding: 10, borderRadius: 8, backgroundColor: colors.surface }}>
+            <Text style={{ color: colors.danger, fontSize: 13 }}>
               Message not sent: {sendError}
             </Text>
-            <TouchableOpacity onPress={() => setSendError('')} style={{ alignSelf: 'flex-end', paddingTop: 6 }} accessibilityRole="button">
-              <Text style={{ color: '#9B1C1C', fontWeight: '600' }}>Dismiss</Text>
+            <TouchableOpacity onPress={() => setSendError('')} style={{ alignSelf: 'flex-end', paddingTop: 6 }} accessibilityRole="button" accessibilityLabel="Dismiss message error">
+              <Text style={{ color: colors.danger, fontWeight: '600' }}>Dismiss</Text>
             </TouchableOpacity>
           </View>
         ) : null}
@@ -1631,7 +1628,7 @@ Choose whether to remove this message only from your chat or retract it
             {deleteMessageError ? (
               <Text
                 style={{
-                  color: '#B42318',
+                  color: colors.danger,
                   marginBottom: 14,
                   fontSize: 14,
                 }}
@@ -1672,16 +1669,16 @@ Choose whether to remove this message only from your chat or retract it
                   paddingHorizontal: 16,
                   paddingVertical: 11,
                   borderRadius: radii.md || 10,
-                  backgroundColor: '#B42318',
+                  backgroundColor: colors.danger,
                   opacity: deletingMessage ? 0.65 : 1,
                   minWidth: 90,
                   alignItems: 'center',
                 }}
               >
                 {deletingMessage ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={colors.onDanger} />
                 ) : (
-                  <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>
+                  <Text style={{ color: colors.onDanger, fontWeight: '700' }}>
                     Delete for me
                   </Text>
                 )}
@@ -1692,9 +1689,9 @@ Choose whether to remove this message only from your chat or retract it
                   onPress={() => performDeleteMessage(deleteMessageTarget, 'everyone')}
                   accessibilityRole="button"
                   accessibilityLabel="Delete message for everyone"
-                  style={{ paddingHorizontal: 16, paddingVertical: 11, borderRadius: radii.md || 10, backgroundColor: '#B42318', opacity: deletingMessage ? 0.65 : 1, minWidth: 120, alignItems: 'center' }}
+                  style={{ paddingHorizontal: 16, paddingVertical: 11, borderRadius: radii.md || 10, backgroundColor: colors.danger, opacity: deletingMessage ? 0.65 : 1, minWidth: 120, alignItems: 'center' }}
                 >
-                  {deletingMessage ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Delete for everyone</Text>}
+                  {deletingMessage ? <ActivityIndicator size="small" color={colors.onDanger} /> : <Text style={{ color: colors.onDanger, fontWeight: '700' }}>Delete for everyone</Text>}
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -1717,9 +1714,9 @@ Choose whether to remove this message only from your chat or retract it
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.sm }}>
             {['❤️', '😂', '🔥', '😍', '✨', '👍', '🎉', '🥹'].map((emoji) => <TouchableOpacity key={emoji} onPress={() => setMediaCaption((value) => `${value}${emoji}`)} accessibilityRole="button" accessibilityLabel={`Add ${emoji}`}><Text style={{ fontSize: 24 }}>{emoji}</Text></TouchableOpacity>)}
           </View>
-          <TouchableOpacity onPress={sendMediaDraft} disabled={uploading} style={{ marginTop: spacing.lg, borderRadius: radii.md, backgroundColor: colors.primary, padding: spacing.md, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', opacity: uploading ? 0.65 : 1 }}>
-            {uploading ? <ActivityIndicator color="#fff" /> : <Ionicons name="send" size={18} color="#fff" />}
-            <Text style={[typography.bodyStrong, { color: '#fff', marginLeft: 8 }]}>{uploading ? 'Sending…' : 'Send media'}</Text>
+          <TouchableOpacity onPress={sendMediaDraft} disabled={uploading} accessibilityRole="button" accessibilityLabel="Send selected media" accessibilityState={{ disabled: uploading, busy: uploading }} style={{ marginTop: spacing.lg, borderRadius: radii.md, backgroundColor: colors.primary, padding: spacing.md, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', opacity: uploading ? 0.65 : 1 }}>
+            {uploading ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name="send" size={18} color={colors.onPrimary} />}
+            <Text style={[typography.bodyStrong, { color: colors.onPrimary, marginLeft: 8 }]}>{uploading ? 'Sending…' : 'Send media'}</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -1733,7 +1730,7 @@ Choose whether to remove this message only from your chat or retract it
             accessibilityLabel="Save image to device"
             accessibilityRole="button"
           >
-            <Ionicons name="download-outline" size={25} color="#fff" />
+            <Ionicons name="download-outline" size={25} color={colors.onPrimary} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.lightboxClose}
@@ -1742,7 +1739,7 @@ Choose whether to remove this message only from your chat or retract it
             accessibilityLabel="Close fullscreen image"
             accessibilityRole="button"
           >
-            <Ionicons name="close" size={28} color="#fff" />
+            <Ionicons name="close" size={28} color={colors.onPrimary} />
           </TouchableOpacity>
           {fullscreenImage && (
             <Image
@@ -1759,6 +1756,7 @@ Choose whether to remove this message only from your chat or retract it
 }
 
 const styles = StyleSheet.create({
+  headerAction: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center', shadowOpacity: 0.14, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
   searchPanel: { borderBottomWidth: StyleSheet.hairlineWidth },
   searchField: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, paddingHorizontal: 10 },
   searchControls: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },

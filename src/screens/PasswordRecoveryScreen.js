@@ -78,7 +78,7 @@ export default function PasswordRecoveryScreen({ navigation }) {
             <>
               <GlassInput value={email} onChangeText={setEmail} placeholder="Email" accessibilityLabel="Email address" textContentType="emailAddress" autoComplete="email" autoCapitalize="none" autoCorrect={false} keyboardType="email-address" returnKeyType="go" onSubmitEditing={handleSubmit} />
               <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary, borderRadius: radii.pill }]} onPress={handleSubmit} disabled={loading} accessibilityRole="button" accessibilityLabel={loading ? 'Requesting password reset' : 'Send recovery instructions'} accessibilityState={{ disabled: loading, busy: loading }}>
-                <Text style={styles.buttonText}>{loading ? 'Sending…' : 'Send recovery instructions'}</Text>
+                <Text style={[styles.buttonText, { color: colors.onPrimary }]}>{loading ? 'Sending…' : 'Send recovery instructions'}</Text>
               </TouchableOpacity>
             </>
           )}
@@ -91,4 +91,4 @@ export default function PasswordRecoveryScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({ button: { paddingVertical: 16, alignItems: 'center', marginTop: 8 }, buttonText: { color: '#fff', fontFamily: 'Manrope_700Bold', fontSize: 16 } });
+const styles = StyleSheet.create({ button: { paddingVertical: 16, alignItems: 'center', marginTop: 8 }, buttonText: { fontFamily: 'Manrope_700Bold', fontSize: 16 } });

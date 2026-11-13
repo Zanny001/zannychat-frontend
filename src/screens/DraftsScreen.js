@@ -71,7 +71,7 @@ export default function DraftsScreen({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Drafts" subtitle="Unsent messages on this device" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl }}>
-        <GlassCard style={{ marginBottom: spacing.md }}>
+        <GlassCard glow style={{ marginBottom: spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <View style={{ width: 44, height: 44, borderRadius: 15, backgroundColor: `${colors.primary}20`, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="document-text-outline" size={22} color={colors.primary} />
@@ -88,7 +88,7 @@ export default function DraftsScreen({ navigation }) {
         ) : error && drafts.length === 0 ? (
           <GlassCard>
             <Text accessibilityRole="alert" style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{error}</Text>
-            <TouchableOpacity onPress={load} accessibilityRole="button" style={{ alignSelf: 'center', marginTop: spacing.md, backgroundColor: colors.primary, borderRadius: radii.pill, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}><Text style={[typography.bodyStrong, { color: '#fff' }]}>Try again</Text></TouchableOpacity>
+            <TouchableOpacity onPress={load} accessibilityRole="button" accessibilityLabel="Retry loading drafts" style={{ minHeight: 44, alignSelf: 'center', marginTop: spacing.md, backgroundColor: colors.primary, borderRadius: radii.pill, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}><Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Try again</Text></TouchableOpacity>
           </GlassCard>
         ) : drafts.length === 0 ? (
           <View style={{ alignItems: 'center', paddingHorizontal: spacing.xl, paddingVertical: spacing.xxl }}>

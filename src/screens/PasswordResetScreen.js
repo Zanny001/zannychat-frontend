@@ -82,7 +82,7 @@ export default function PasswordResetScreen({ navigation, route }) {
             <GlassInput value={password} onChangeText={setPassword} placeholder="New password (8+ characters)" accessibilityLabel="New password" textContentType="newPassword" autoComplete="new-password" secureTextEntry />
             <GlassInput value={confirmPassword} onChangeText={setConfirmPassword} placeholder="Confirm new password" accessibilityLabel="Confirm new password" textContentType="newPassword" autoComplete="new-password" secureTextEntry />
             <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary, borderRadius: radii.pill, opacity: loading || !SUPABASE_ENABLED ? 0.55 : 1 }]} onPress={handleSave} disabled={loading || !SUPABASE_ENABLED} accessibilityRole="button" accessibilityLabel={loading ? 'Updating password' : 'Update password'} accessibilityState={{ disabled: loading || !SUPABASE_ENABLED, busy: loading }}>
-              <Text style={styles.buttonText}>{loading ? 'Updating…' : 'Update password'}</Text>
+              <Text style={[styles.buttonText, { color: colors.onPrimary }]}>{loading ? 'Updating…' : 'Update password'}</Text>
             </TouchableOpacity>
           </>}
           <TouchableOpacity style={{ marginTop: spacing.md, alignItems: 'center' }} onPress={() => navigation.navigate('Login')} accessibilityRole="button" accessibilityLabel="Return to sign in"><Text style={[typography.caption, { color: colors.textSecondary }]}>Back to <Text style={{ color: colors.primary, fontFamily: 'Manrope_700Bold' }}>sign in</Text></Text></TouchableOpacity>
@@ -92,4 +92,4 @@ export default function PasswordResetScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({ button: { paddingVertical: 16, alignItems: 'center', marginTop: 8 }, buttonText: { color: '#fff', fontFamily: 'Manrope_700Bold', fontSize: 16 } });
+const styles = StyleSheet.create({ button: { paddingVertical: 16, alignItems: 'center', marginTop: 8 }, buttonText: { fontFamily: 'Manrope_700Bold', fontSize: 16 } });

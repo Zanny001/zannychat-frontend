@@ -160,7 +160,9 @@ export default function SharedMediaScreen({ route, navigation }) {
             );
           })}
         </View>
-        <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder={`Search ${TABS.find((item) => item.key === tab)?.label.toLowerCase() || 'shared items'}…`} placeholderTextColor={colors.textSecondary} accessibilityLabel={`Search shared ${tab}`} returnKeyType="search" clearButtonMode="while-editing" style={[typography.body, { color: colors.textPrimary, marginTop: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md }]} />
+        <GlassCard noPadding glow intensity={22} tintAlpha={0.42} style={{ marginTop: spacing.sm }}>
+          <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder={`Search ${TABS.find((item) => item.key === tab)?.label.toLowerCase() || 'shared items'}…`} placeholderTextColor={colors.textSecondary} accessibilityLabel={`Search shared ${tab}`} returnKeyType="search" clearButtonMode="while-editing" style={[typography.body, { color: colors.textPrimary, minHeight: 48, paddingHorizontal: spacing.md, paddingVertical: spacing.sm }]} />
+        </GlassCard>
         <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Recent shared items · private attachments use expiring access links.</Text>
       </View>
 
@@ -170,7 +172,7 @@ export default function SharedMediaScreen({ route, navigation }) {
         <View style={styles.center}>
           <Ionicons name="cloud-offline-outline" size={30} color={colors.textSecondary} />
           <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md, marginHorizontal: spacing.xl }]}>{error}</Text>
-          <TouchableOpacity onPress={loadInitial} style={[styles.retryButton, { backgroundColor: colors.primary, borderRadius: radii.md }]}><Text style={[typography.bodyStrong, { color: '#fff' }]}>Try again</Text></TouchableOpacity>
+          <TouchableOpacity onPress={loadInitial} accessibilityRole="button" accessibilityLabel="Retry loading shared media" style={[styles.retryButton, { backgroundColor: colors.primary, borderRadius: radii.md }]}><Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Try again</Text></TouchableOpacity>
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl }}>
@@ -218,9 +220,9 @@ export default function SharedMediaScreen({ route, navigation }) {
               </GlassCard>
             </TouchableOpacity>
           ))}
-          {!visibleItems.length && !loading ? (searchQuery.trim() ? <View style={styles.emptyWrap}><Ionicons name="search-outline" size={28} color={colors.textSecondary} /><Text style={[typography.bodyStrong, { color: colors.textPrimary, marginTop: spacing.md }]}>No matching items</Text><Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>Try a different name, sender, file type or link.</Text><TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" style={[styles.retryButton, { backgroundColor: colors.primary, borderRadius: radii.md }]}><Text style={[typography.bodyStrong, { color: '#fff' }]}>Clear search</Text></TouchableOpacity></View> : renderEmpty()) : null}
+          {!visibleItems.length && !loading ? (searchQuery.trim() ? <View style={styles.emptyWrap}><Ionicons name="search-outline" size={28} color={colors.textSecondary} /><Text style={[typography.bodyStrong, { color: colors.textPrimary, marginTop: spacing.md }]}>No matching items</Text><Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>Try a different name, sender, file type or link.</Text><TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear shared media search" style={[styles.retryButton, { backgroundColor: colors.primary, borderRadius: radii.md }]}><Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Clear search</Text></TouchableOpacity></View> : renderEmpty()) : null}
           {hasMore ? (
-            <TouchableOpacity onPress={loadOlder} disabled={loadingMore} activeOpacity={0.82} style={[styles.loadMore, { borderColor: colors.border, borderRadius: radii.lg }]} accessibilityRole="button">
+            <TouchableOpacity onPress={loadOlder} disabled={loadingMore} activeOpacity={0.82} accessibilityLabel="Load older shared items" accessibilityState={{ disabled: loadingMore, busy: loadingMore }} style={[styles.loadMore, { borderColor: colors.border, borderRadius: radii.lg }]} accessibilityRole="button">
               {loadingMore ? <ActivityIndicator color={colors.primary} /> : <Ionicons name="time-outline" size={17} color={colors.primary} />}
               <Text style={[typography.bodyStrong, { color: colors.primary, marginLeft: spacing.sm }]}>{loadingMore ? 'Loading older items…' : 'Load older shared items'}</Text>
             </TouchableOpacity>
@@ -241,7 +243,7 @@ export default function SharedMediaScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   tabRail: { flexDirection: 'row', borderWidth: 1, padding: 4, gap: 4 },
-  tab: { flex: 1, minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 11, borderWidth: 1, paddingHorizontal: 4 },
+  tab: { flex: 1, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 11, borderWidth: 1, paddingHorizontal: 4 },
   count: { fontSize: 11, marginLeft: 5, fontVariant: ['tabular-nums'] },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28 },
   retryButton: { marginTop: 16, paddingHorizontal: 18, paddingVertical: 11 },

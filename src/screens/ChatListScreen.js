@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, RefreshControl, ScrollView, ActivityIndicator, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useTheme } from '../theme/ThemeContext';
 import ChatListItem from '../components/ChatListItem';
+import Avatar from '../components/Avatar';
 import GlassCard from '../components/GlassCard';
 import Knot from '../components/Knot';
 import ActionSheet from '../components/ActionSheet';
@@ -15,6 +17,9 @@ import { hexToRgba } from '../utils/color';
 import { filterConversations as filterChatList } from '../utils/filterConversations';
 import { filterByChatFolder } from '../utils/chatFolders';
 import { loadChatFolders } from '../services/chatFolders';
+import { listActiveStatuses, resolveStatusUserNames } from '../services/statusUpdates';
+import { readSeenStatusIds } from '../utils/statusSeen';
+import { buildStoryTrayGroups } from '../utils/storyTray';
 
 // All / Unread / Favorites / Groups / Archived — the same category set
 // WhatsApp itself uses, confirmed against real screenshots rather than
@@ -42,6 +47,7 @@ export default function ChatListScreen({ navigation }) {
   const [query, setQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [customFolders, setCustomFolders] = useState([]);
+  const [storyGroups, setStoryGroups] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [sheetFor, setSheetFor] = useState(null); // conversation whose long-press sheet is open
   const [onlineIds, setOnlineIds] = useState(new Set());
@@ -79,7 +85,25 @@ export default function ChatListScreen({ navigation }) {
     load().catch(() => {});
     let alive = true;
     (async () => {
-      try { const user = await getCurrentUser(); const folders = await loadChatFolders(user?.id || 'guest'); if (alive) setCustomFolders(folders); } catch (_) {}
+      try {
+        const user = await getCurrentUser();
+        const folders = await loadChatFolders(user?.id || 'guest');
+        if (alive) setCustomFolders(folders);
+      } catch (_) {}
+      if (!SUPABASE_ENABLED) {
+        if (alive) setStoryGroups([]);
+        return;
+      }
+      try {
+        const [statuses, seenIds] = await Promise.all([
+          listActiveStatuses(),
+          readSeenStatusIds(AsyncStorage),
+        ]);
+        const names = await resolveStatusUserNames(statuses.map((status) => status.user_id));
+        if (alive) setStoryGroups(buildStoryTrayGroups(statuses, names, seenIds));
+      } catch (_) {
+        if (alive) setStoryGroups([]);
+      }
     })();
     return () => { alive = false; };
   }, [load]));
@@ -235,6 +259,14 @@ export default function ChatListScreen({ navigation }) {
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity
+            style={[styles.cameraBtn, { backgroundColor: colors.accent, borderColor: hexToRgba(colors.accent, 0.5), shadowColor: colors.accent }]}
+            onPress={() => navigation.navigate('Updates')}
+            accessibilityLabel="Open camera and updates"
+            accessibilityRole="button"
+          >
+            <Ionicons name="camera" size={19} color={colors.onAccent} />
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[styles.draftsBtn, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.pill }]}
             onPress={() => navigation.navigate('Drafts')}
             accessibilityLabel="Open unsent drafts"
@@ -248,13 +280,43 @@ export default function ChatListScreen({ navigation }) {
             accessibilityLabel="Start a new chat"
             accessibilityRole="button"
           >
-            <Ionicons name="add" size={22} color="#fff" />
+            <Ionicons name="add" size={22} color={colors.onPrimary} />
           </TouchableOpacity>
         </View>
       </View>
 
+      <View style={{ marginBottom: spacing.sm }}>
+        <View style={styles.storyHeading}>
+          <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Moments</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Updates')} accessibilityRole="button" accessibilityLabel="See all moments">
+            <Text style={[typography.small, { color: colors.primary }]}>See all</Text>
+          </TouchableOpacity>
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storyTray}>
+          <TouchableOpacity onPress={() => navigation.navigate('Updates')} accessibilityRole="button" accessibilityLabel="Add or view your story" style={styles.storyItem}>
+            <View style={[styles.storyRing, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Avatar name="Your story" color={colors.primary} size={52} />
+              <View style={[styles.storyAdd, { backgroundColor: colors.primary, borderColor: colors.background }]}>
+                <Ionicons name="add" size={14} color={colors.onPrimary} />
+              </View>
+            </View>
+            <Text numberOfLines={1} style={[typography.small, { color: colors.textSecondary, marginTop: 6 }]}>Your story</Text>
+          </TouchableOpacity>
+          {storyGroups.filter((group) => !group.isOwn).map((group) => (
+            <TouchableOpacity key={group.userId} onPress={() => navigation.navigate('Updates', { userId: group.userId })} accessibilityRole="button" accessibilityLabel={`Open moments from ${group.name}`} style={styles.storyItem}>
+              <View style={[styles.storyRing, { borderColor: group.unseenCount > 0 ? colors.primary : colors.border, backgroundColor: group.unseenCount > 0 ? hexToRgba(colors.primary, 0.16) : colors.surface }]}>
+                <View style={[styles.storyInnerRing, { borderColor: colors.background }]}>
+                  <Avatar name={group.name} color={colors.accent} size={52} />
+                </View>
+              </View>
+              <Text numberOfLines={1} style={[typography.small, { color: colors.textSecondary, marginTop: 6 }]}>{group.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
       <View style={{ paddingHorizontal: spacing.md, marginBottom: spacing.sm }}>
-        <GlassCard noPadding intensity={24} tintAlpha={0.4}>
+        <GlassCard noPadding intensity={28} tintAlpha={0.42} glow>
           <View style={styles.searchBar}>
             <Ionicons name="search" size={16} color={colors.textSecondary} />
             <TextInput
@@ -294,7 +356,7 @@ export default function ChatListScreen({ navigation }) {
                   },
                 ]}
               >
-                <Text style={[typography.caption, { color: active ? '#FFFFFF' : colors.textSecondary }]}>{filter.label}</Text>
+                <Text style={[typography.caption, { color: active ? colors.onPrimary : colors.textSecondary }]}>{filter.label}</Text>
               </View>
             </TouchableOpacity>
           );
@@ -314,8 +376,8 @@ export default function ChatListScreen({ navigation }) {
       )}
 
       {conversationActionError ? (
-        <View style={{ marginHorizontal: spacing.md, marginBottom: spacing.sm, padding: spacing.sm, borderRadius: radii.md || 12, borderWidth: 1, borderColor: colors.danger || '#dc2626', backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center' }}>
-          <Ionicons name="alert-circle-outline" size={18} color={colors.danger || '#dc2626'} />
+        <View style={{ marginHorizontal: spacing.md, marginBottom: spacing.sm, padding: spacing.sm, borderRadius: radii.md || 12, borderWidth: 1, borderColor: colors.danger, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center' }}>
+          <Ionicons name="alert-circle-outline" size={18} color={colors.danger} />
           <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textPrimary, flex: 1, marginHorizontal: spacing.sm }]}>{conversationActionError}</Text>
           <TouchableOpacity onPress={() => setConversationActionError('')} accessibilityRole="button" accessibilityLabel="Dismiss chat action error" style={{ minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="close" size={18} color={colors.textSecondary} />
@@ -368,7 +430,7 @@ export default function ChatListScreen({ navigation }) {
                 <Text accessibilityRole="header" style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: spacing.xs, textAlign: 'center' }]}>Your chats couldn't load</Text>
                 <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.md }]}>{loadError}</Text>
                 <TouchableOpacity onPress={() => load().catch(() => {})} accessibilityRole="button" accessibilityLabel="Retry loading chats" style={{ minHeight: 44, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radii.pill, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={[typography.bodyStrong, { color: '#fff' }]}>Try again</Text>
+                  <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Try again</Text>
                 </TouchableOpacity>
               </>
             ) : query.trim() ? (
@@ -391,8 +453,8 @@ export default function ChatListScreen({ navigation }) {
                 <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.md }]}>{activeFilter === 'all' ? 'Start a private conversation or create a group. Your chats will appear here.' : 'Try another filter, or start a conversation to build your chat list.'}</Text>
                 {activeFilter === 'all' ? (
                   <TouchableOpacity onPress={() => navigation.navigate('NewChat')} accessibilityRole="button" accessibilityLabel="Start your first chat" style={{ minHeight: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.lg, borderRadius: radii.pill, backgroundColor: colors.primary }}>
-                    <Ionicons name="add" size={19} color="#fff" />
-                    <Text style={[typography.bodyStrong, { color: '#fff', marginLeft: spacing.xs }]}>Start a chat</Text>
+                    <Ionicons name="add" size={19} color={colors.onPrimary} />
+                    <Text style={[typography.bodyStrong, { color: colors.onPrimary, marginLeft: spacing.xs }]}>Start a chat</Text>
                   </TouchableOpacity>
                 ) : null}
               </>
@@ -502,7 +564,7 @@ export default function ChatListScreen({ navigation }) {
               <Text
                 accessibilityRole="alert"
                 style={{
-                  color: colors.danger || '#dc2626',
+                  color: colors.danger,
                   marginBottom: spacing.md,
                 }}
               >
@@ -549,11 +611,11 @@ export default function ChatListScreen({ navigation }) {
                   paddingVertical: spacing.sm,
                   paddingHorizontal: spacing.md,
                   borderRadius: 10,
-                  backgroundColor: deleting ? colors.border : '#dc2626',
+                  backgroundColor: deleting ? colors.border : colors.danger,
                   opacity: deleting ? 0.7 : 1,
                 }}
               >
-                <Text style={{ color: '#ffffff', fontWeight: '600' }}>
+                <Text style={{ color: colors.onDanger, fontWeight: '600' }}>
                   {deleting ? 'Deleting…' : 'Delete chat'}
                 </Text>
               </TouchableOpacity>
@@ -567,7 +629,14 @@ export default function ChatListScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  storyHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 9 },
+  storyTray: { paddingHorizontal: 16, gap: 14 },
+  storyItem: { width: 64, alignItems: 'center' },
+  storyRing: { width: 64, height: 64, borderRadius: 32, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  storyInnerRing: { borderWidth: 2, borderRadius: 30, padding: 2 },
+  storyAdd: { position: 'absolute', right: -1, bottom: -1, width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   draftsBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  cameraBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 15, shadowOpacity: 0.34, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 5 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   titleRow: { flexDirection: 'row', alignItems: 'center' },
   newChatBtn: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },

@@ -45,7 +45,7 @@ export default function ForwardMessageScreen({ navigation, route }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Forward message" onBack={() => navigation.goBack()} />
       <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md }}>
-        <GlassCard style={{ marginBottom: spacing.md }}>
+        <GlassCard glow style={{ marginBottom: spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
             <Ionicons name="arrow-redo-outline" size={18} color={colors.accent} style={{ marginRight: spacing.sm, marginTop: 2 }} />
             <View style={{ flex: 1 }}>

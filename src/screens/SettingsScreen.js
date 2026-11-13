@@ -1,18 +1,42 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, ActivityIndicator, Switch, Alert, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, ActivityIndicator, Switch, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import Header from '../components/Header';
 import MoodSwatch from '../components/MoodSwatch';
 import GlassCard from '../components/GlassCard';
 import { hexToRgba } from '../utils/color';
+import { normalizeHexColor } from '../theme/customPalette';
 import { signOut } from '../services/api';
 import { stopPresence } from '../services/presence';
 import { SUPABASE_ENABLED } from '../services/supabaseClient';
 import { BACKEND_ENABLED, checkBackendHealth } from '../services/backendClient';
 
 export default function SettingsScreen({ navigation }) {
-  const { colors, spacing, typography, radii, paletteKey, palettes, setPalette, appearance, setAppearance, resolvedMode, textScale, setTextScale, highContrast, setHighContrast } = useTheme();
+  const { colors, spacing, typography, radii, paletteKey, palettes, setPalette, customPalette, setCustomPalette, appearance, setAppearance, resolvedMode, textScale, setTextScale, highContrast, setHighContrast } = useTheme();
+  const [customSignal, setCustomSignal] = useState(customPalette?.signal || '#795CFF');
+  const [customThread, setCustomThread] = useState(customPalette?.thread || '#39E7E0');
+  const [customGold, setCustomGold] = useState(customPalette?.gold || '#FFD58A');
+  const [customColorError, setCustomColorError] = useState('');
+
+  useEffect(() => {
+    if (!customPalette) return;
+    setCustomSignal(customPalette.signal);
+    setCustomThread(customPalette.thread);
+    setCustomGold(customPalette.gold);
+  }, [customPalette]);
+
+  function applyCustomColors() {
+    const signal = normalizeHexColor(customSignal);
+    const thread = normalizeHexColor(customThread);
+    const gold = normalizeHexColor(customGold);
+    if (!signal || !thread || !gold) {
+      setCustomColorError('Enter valid hex colours, such as #795CFF.');
+      return;
+    }
+    const applied = setCustomPalette({ signal, thread, gold });
+    setCustomColorError(applied ? '' : 'These colours could not be applied. Please try again.');
+  }
 
   async function handleLogout() {
     try {
@@ -163,16 +187,16 @@ export default function SettingsScreen({ navigation }) {
         </TouchableOpacity>
 
         <GlassCard style={{ marginBottom: spacing.md }}>
-          <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.sm }]}>Mood</Text>
+          <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.sm }]}>Colour presets</Text>
           <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>
-            Each mood is two colors — one for you, one for them. Pick one and it applies everywhere.
+            Choose a signature colour story for the whole app, then fine-tune your own Signal, Thread and Highlight colours above.
           </Text>
 
           <View style={styles.swatchRow}>
             {palettes.map((mood) => {
               const selected = paletteKey === mood.key;
               return (
-                <TouchableOpacity key={mood.key} onPress={() => setPalette(mood.key)} style={styles.swatchWrap}>
+                <TouchableOpacity key={mood.key} onPress={() => setPalette(mood.key)} accessibilityRole="radio" accessibilityLabel={`Select ${mood.label} colour palette`} accessibilityState={{ checked: selected }} style={styles.swatchWrap}>
                   <View
                     style={[
                       styles.swatchRing,
@@ -193,6 +217,39 @@ export default function SettingsScreen({ navigation }) {
               );
             })}
           </View>
+        </GlassCard>
+
+        <GlassCard glow style={{ marginBottom: spacing.md }}>
+          <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.xs }]}>Create your own colours</Text>
+          <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>Choose your signature glow, conversation accent and highlight. Your choices are saved on this device.</Text>
+          <View style={styles.customColorRow}>
+            <View style={styles.customColorField}>
+              <Text style={[typography.small, { color: colors.textSecondary, marginBottom: 6 }]}>SIGNAL</Text>
+              <View style={[styles.customColorInputWrap, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+                <View style={[styles.customColorDot, { backgroundColor: normalizeHexColor(customSignal) || colors.primary }]} />
+                <TextInput value={customSignal} onChangeText={setCustomSignal} maxLength={7} autoCapitalize="characters" autoCorrect={false} accessibilityLabel="Your signal colour hex code" style={[styles.customColorInput, { color: colors.textPrimary }]} placeholder="#795CFF" placeholderTextColor={colors.textSecondary} />
+              </View>
+            </View>
+            <View style={styles.customColorField}>
+              <Text style={[typography.small, { color: colors.textSecondary, marginBottom: 6 }]}>THREAD</Text>
+              <View style={[styles.customColorInputWrap, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+                <View style={[styles.customColorDot, { backgroundColor: normalizeHexColor(customThread) || colors.accent }]} />
+                <TextInput value={customThread} onChangeText={setCustomThread} maxLength={7} autoCapitalize="characters" autoCorrect={false} accessibilityLabel="Your thread colour hex code" style={[styles.customColorInput, { color: colors.textPrimary }]} placeholder="#39E7E0" placeholderTextColor={colors.textSecondary} />
+              </View>
+            </View>
+          </View>
+          <View style={[styles.customColorField, { marginTop: spacing.sm }]}>
+            <Text style={[typography.small, { color: colors.textSecondary, marginBottom: 6 }]}>HIGHLIGHT</Text>
+            <View style={[styles.customColorInputWrap, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+              <View style={[styles.customColorDot, { backgroundColor: normalizeHexColor(customGold) || colors.gold }]} />
+              <TextInput value={customGold} onChangeText={setCustomGold} maxLength={7} autoCapitalize="characters" autoCorrect={false} accessibilityLabel="Your highlight colour hex code" style={[styles.customColorInput, { color: colors.textPrimary }]} placeholder="#FFD58A" placeholderTextColor={colors.textSecondary} />
+            </View>
+          </View>
+          {customColorError ? <Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger, marginTop: spacing.sm }]}>{customColorError}</Text> : null}
+          <TouchableOpacity onPress={applyCustomColors} accessibilityRole="button" accessibilityLabel="Apply my custom colours" style={[styles.applyCustomColors, { backgroundColor: colors.primary, borderRadius: radii.pill, marginTop: spacing.md }]}>
+            <Ionicons name="color-palette-outline" size={18} color={colors.onPrimary} />
+            <Text style={[typography.bodyStrong, { color: colors.onPrimary, marginLeft: 8 }]}>Apply my colours</Text>
+          </TouchableOpacity>
         </GlassCard>
 
         {/* The audit called the old version of this row out by name: a
@@ -226,6 +283,8 @@ export default function SettingsScreen({ navigation }) {
             { borderColor: colors.danger, borderRadius: radii.pill, backgroundColor: hexToRgba(colors.danger, 0.1) },
           ]}
           onPress={handleLogout}
+          accessibilityRole="button"
+          accessibilityLabel="Log out of ZannyChat"
         >
           <Text style={[typography.bodyStrong, { color: colors.danger }]}>Log out</Text>
         </TouchableOpacity>
@@ -332,6 +391,12 @@ function ConnectionRow({ label, detail, status, last }) {
 
 const styles = StyleSheet.create({
   optionRow: { flexDirection: 'row', gap: 8 },
+  customColorRow: { flexDirection: 'row', gap: 10 },
+  customColorField: { flex: 1, minWidth: 0 },
+  customColorInputWrap: { minHeight: 48, borderWidth: 1, borderRadius: 13, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10 },
+  customColorDot: { width: 18, height: 18, borderRadius: 9, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
+  customColorInput: { flex: 1, minWidth: 0, paddingVertical: 8, paddingLeft: 8, fontSize: 14, fontWeight: '700' },
+  applyCustomColors: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
   appearanceOption: { flex: 1, minHeight: 76, borderWidth: 1, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingVertical: 10, paddingHorizontal: 4 },
   textSizeOption: { flex: 1, minHeight: 70, borderWidth: 1, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingVertical: 8, paddingHorizontal: 3 },
   accessibilitySwitchRow: { flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },

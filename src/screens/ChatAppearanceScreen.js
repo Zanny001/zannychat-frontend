@@ -36,11 +36,11 @@ export default function ChatAppearanceScreen({ navigation }) {
         <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.md }]}>Make every chat feel like yours.</Text>
         <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.lg }]}>Choose a refined background for conversation screens. Your selected mood still controls message colors and the rest of the app.</Text>
 
-        <GlassCard style={{ marginBottom: spacing.lg }}>
+        <GlassCard glow style={{ marginBottom: spacing.lg }}>
           <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: spacing.sm }]}>LIVE PREVIEW</Text>
           <View style={[styles.preview, { backgroundColor: resolveChatCanvas(selected, colors.background), borderColor: colors.border, borderRadius: radii.lg }]}>
             <View style={[styles.previewPill, { backgroundColor: colors.surface, alignSelf: 'flex-start' }]}><Text style={[typography.small, { color: colors.textPrimary }]}>Hey! How's your day going?</Text></View>
-            <View style={[styles.previewPill, { backgroundColor: colors.primary, alignSelf: 'flex-end', marginTop: 10 }]}><Text style={[typography.small, { color: '#FFFFFF' }]}>Much better now ✨</Text></View>
+            <View style={[styles.previewPill, { backgroundColor: colors.primary, alignSelf: 'flex-end', marginTop: 10 }]}><Text style={[typography.small, { color: colors.onPrimary }]}>Much better now ✨</Text></View>
             <View style={[styles.previewMeta, { borderTopColor: `${colors.textPrimary}16` }]}><Ionicons name="lock-closed-outline" size={12} color={colors.textSecondary} /><Text style={[typography.small, { color: colors.textSecondary, marginLeft: 5 }]}>Appearance only · no message content changed</Text></View>
           </View>
         </GlassCard>

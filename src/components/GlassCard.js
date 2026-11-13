@@ -21,10 +21,13 @@ export default function GlassCard({
   tintAlpha = 0.46,
   borderRadius,
   noPadding = false,
+  glow = false,
 }) {
-  const { colors, radii, spacing, elevation } = useTheme();
+  const { colors, radii, spacing, elevation, resolvedMode } = useTheme();
   const radius = borderRadius ?? radii.md;
   const shadow = elevation.card;
+  // Keep the premium tint/elevation on every device, but avoid costly live blur on Android 10/11.
+  const supportsBackdropBlur = Platform.OS !== 'android' || Number(Platform.Version) >= 31;
 
   return (
     <View
@@ -34,22 +37,26 @@ export default function GlassCard({
           borderRadius: radius,
           backgroundColor: colors.surface,
           shadowColor: colors.shadow,
-          shadowOpacity: shadow.shadowOpacity,
-          shadowRadius: shadow.shadowRadius,
+          shadowOpacity: glow ? 0.32 : shadow.shadowOpacity,
+          shadowRadius: glow ? 22 : shadow.shadowRadius,
           shadowOffset: { width: 0, height: shadow.shadowOffsetY },
-          elevation: shadow.android,
+          elevation: glow ? shadow.android + 2 : shadow.android,
         },
       ]}
     >
       <View style={[styles.wrap, { borderRadius: radius, borderColor: hexToRgba(colors.textPrimary, 0.1) }, style]}>
-        <BlurView
-          intensity={intensity}
-          tint="dark"
-          style={StyleSheet.absoluteFill}
-          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
-        />
+        {supportsBackdropBlur ? (
+          <BlurView
+            intensity={intensity}
+            tint={resolvedMode}
+            style={StyleSheet.absoluteFill}
+            experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+          />
+        ) : null}
         <View style={[StyleSheet.absoluteFill, { backgroundColor: hexToRgba(colors.surface, tintAlpha) }]} />
         <View style={[!noPadding && { padding: spacing.md }, contentStyle]}>{children}</View>
+        <View pointerEvents="none" style={[styles.specularTop, { backgroundColor: hexToRgba('#FFFFFF', glow ? 0.24 : 0.13), borderTopLeftRadius: radius, borderTopRightRadius: radius }]} />
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.innerEdge, { borderRadius: radius, borderColor: hexToRgba(colors.textPrimary, glow ? 0.16 : 0.08) }]} />
       </View>
     </View>
   );
@@ -64,4 +71,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
   },
+  specularTop: { position: 'absolute', top: 0, left: 18, right: 18, height: 1 },
+  innerEdge: { borderWidth: 1 },
 });

@@ -167,7 +167,7 @@ export default function PrivacySecurityScreen({ navigation }) {
               <View key={entry.userId} style={[styles.blockRow, { marginBottom: spacing.sm }]}>
                 <Avatar
                   name={entry.profile?.name || 'Unknown'}
-                  color={entry.profile?.avatar_color || entry.profile?.avatarColor || '#6C5CE7'}
+                  color={entry.profile?.avatar_color || entry.profile?.avatarColor || colors.primary}
                   imageUrl={entry.profile?.avatar_url || entry.profile?.avatarUrl}
                   size={36}
                 />
@@ -228,7 +228,7 @@ export default function PrivacySecurityScreen({ navigation }) {
             accessibilityState={{ disabled: savingPassword || !SUPABASE_ENABLED, busy: savingPassword }}
             style={[styles.passwordButton, { backgroundColor: colors.primary, opacity: savingPassword || !SUPABASE_ENABLED ? 0.55 : 1 }]}
           >
-            <Text style={[typography.bodyStrong, { color: '#FFFFFF' }]}>{savingPassword ? 'Updating…' : 'Update password'}</Text>
+            <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>{savingPassword ? 'Updating…' : 'Update password'}</Text>
           </TouchableOpacity>
         </GlassCard>
 
@@ -298,10 +298,10 @@ export default function PrivacySecurityScreen({ navigation }) {
           </Text>
         </GlassCard>
 
-        <GlassCard style={{ marginTop: spacing.md, borderColor: '#D64545', borderWidth: 1 }}>
+        <GlassCard style={{ marginTop: spacing.md, borderColor: colors.danger, borderWidth: 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm }}>
-            <Ionicons name="warning-outline" size={18} color="#D64545" />
-            <Text style={[typography.heading, { color: '#D64545', marginLeft: spacing.sm }]}>Delete account</Text>
+            <Ionicons name="warning-outline" size={18} color={colors.danger} />
+            <Text style={[typography.heading, { color: colors.danger, marginLeft: spacing.sm }]}>Delete account</Text>
           </View>
           <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 20, marginBottom: spacing.md }]}>
             This permanently removes your account and profile, deletes direct conversations and your messages, and removes your group memberships. Other group members keep their conversations. This cannot be undone. You must verify your current password.
@@ -334,9 +334,9 @@ export default function PrivacySecurityScreen({ navigation }) {
             accessibilityRole="button"
             accessibilityLabel="Permanently delete ZannyChat account"
             accessibilityState={{ disabled: deletingAccount || !SUPABASE_ENABLED || !BACKEND_ENABLED, busy: deletingAccount }}
-            style={[styles.passwordButton, { backgroundColor: '#B4232C', opacity: deletingAccount || !SUPABASE_ENABLED || !BACKEND_ENABLED ? 0.55 : 1 }]}
+            style={[styles.passwordButton, { backgroundColor: colors.danger, opacity: deletingAccount || !SUPABASE_ENABLED || !BACKEND_ENABLED ? 0.55 : 1 }]}
           >
-            <Text style={[typography.bodyStrong, { color: '#FFFFFF' }]}>{deletingAccount ? 'Deleting account…' : 'Delete my account permanently'}</Text>
+            <Text style={[typography.bodyStrong, { color: colors.onDanger }]}>{deletingAccount ? 'Deleting account…' : 'Delete my account permanently'}</Text>
           </TouchableOpacity>
         </GlassCard>
       </ScrollView>
