@@ -17,6 +17,7 @@ import {
   Modal,
   Image,
   Linking,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -112,6 +113,9 @@ export default function ChatScreen({ route, navigation }) {
   const { conversation } = route.params;
   const targetMessageId = route.params?.targetMessageId ? String(route.params.targetMessageId) : null;
   const { colors, spacing, radii, typography } = useTheme();
+  const { width: windowWidth } = useWindowDimensions();
+  const compactHeader = windowWidth < 430;
+  const ultraCompactHeader = windowWidth < 360;
   const [messages, setMessages] = useState([]);
   const [chatCanvasKey, setChatCanvasKey] = useState('theme');
   const [hasMore, setHasMore] = useState(false);
@@ -1102,6 +1106,13 @@ export default function ChatScreen({ route, navigation }) {
   ];
 
   const overflowOptions = [
+    ...(compactHeader ? [
+      { key: 'audio-call', label: display.isGroup ? 'Start group audio call' : 'Start audio call', icon: 'call-outline', onPress: () => { setActiveSheet(null); display.isGroup ? handleStartGroupCall('audio') : handleStartCall('audio'); } },
+      { key: 'video-call', label: display.isGroup ? 'Start group video call' : 'Start video call', icon: 'videocam-outline', onPress: () => { setActiveSheet(null); display.isGroup ? handleStartGroupCall('video') : handleStartCall('video'); } },
+      { key: 'search-messages', label: searchOpen ? 'Close message search' : 'Search messages', icon: 'search-outline', onPress: () => { setActiveSheet(null); toggleSearch(); } },
+      { key: 'summarize-chat', label: 'Summarize conversation', icon: 'sparkles-outline', onPress: () => { setActiveSheet(null); handleSummarize(); } },
+      ...(display.isGroup ? [{ key: 'manage-group', label: 'Manage group members', icon: 'people-outline', onPress: () => { setActiveSheet(null); navigation.navigate('GroupManagement', { conversation: display }); } }] : []),
+    ] : []),
     { key: 'scheduled-messages', label: 'Schedule message', icon: 'time-outline', onPress: () => { setActiveSheet(null); navigation.navigate('ScheduledMessages', { conversation: display }); } },
     { key: 'polls', label: 'Polls', icon: 'bar-chart-outline', onPress: () => { setActiveSheet(null); navigation.navigate('Polls', { conversation: display }); } },
     { key: 'events', label: 'Events', icon: 'calendar-outline', onPress: () => { setActiveSheet(null); navigation.navigate('Events', { conversation: display }); } },
@@ -1259,7 +1270,7 @@ export default function ChatScreen({ route, navigation }) {
         onBack={() => navigation.goBack()}
         right={
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            {!display.isGroup && display.participant?.id ? (
+            {!ultraCompactHeader && !display.isGroup && display.participant?.id ? (
               <>
                 <TouchableOpacity style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]} onPress={() => handleStartCall('audio')} accessibilityLabel="Start audio call" accessibilityRole="button">
                   <Ionicons name="call-outline" size={20} color={colors.textPrimary} />
@@ -1269,7 +1280,7 @@ export default function ChatScreen({ route, navigation }) {
                 </TouchableOpacity>
               </>
             ) : null}
-            {display.isGroup ? (
+            {!ultraCompactHeader && display.isGroup ? (
               <>
                 <TouchableOpacity style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]} onPress={() => handleStartGroupCall('audio')} accessibilityLabel="Start group audio call" accessibilityRole="button">
                   <Ionicons name="call-outline" size={20} color={colors.textPrimary} />
@@ -1279,15 +1290,15 @@ export default function ChatScreen({ route, navigation }) {
                 </TouchableOpacity>
               </>
             ) : null}
-            <TouchableOpacity
+            {!compactHeader && <TouchableOpacity
               style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]}
               onPress={toggleSearch}
               accessibilityLabel={searchOpen ? 'Close message search' : 'Search messages in this conversation'}
               accessibilityRole="button"
             >
               <Ionicons name={searchOpen ? 'close' : 'search-outline'} size={20} color={colors.textPrimary} />
-            </TouchableOpacity>
-            <TouchableOpacity
+            </TouchableOpacity>}
+            {!compactHeader && <TouchableOpacity
               style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]}
               onPress={handleSummarize}
               disabled={summarizing}
@@ -1299,8 +1310,8 @@ export default function ChatScreen({ route, navigation }) {
               ) : (
                 <Ionicons name="sparkles-outline" size={20} color={colors.textPrimary} />
               )}
-            </TouchableOpacity>
-            {display.isGroup ? (
+            </TouchableOpacity>}
+            {!compactHeader && display.isGroup ? (
               <TouchableOpacity
                 style={[styles.headerAction, { marginRight: spacing.xxs, backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: hexToRgba(colors.textPrimary, 0.12), shadowColor: colors.primary }]}
                 onPress={() => navigation.navigate('GroupManagement', { conversation: display })}
