@@ -207,7 +207,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{status}</Text>
     </View>
     {!!error && <Text accessibilityRole="alert" style={{ color: colors.danger, paddingHorizontal: 14, paddingBottom: 8 }}>{error}</Text>}
-    <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 20 }}>
       <View style={{ minHeight: 260, marginHorizontal: 12, borderRadius: 18, overflow: 'hidden', backgroundColor: '#050509' }}>
         {publisherMode && <View ref={localRef} collapsable={false} style={{ width: '100%', minHeight: 260 }} />}
         <View ref={remoteRef} collapsable={false} style={{ width: '100%', minHeight: 260 }} />

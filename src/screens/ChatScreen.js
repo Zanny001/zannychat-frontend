@@ -1374,7 +1374,7 @@ export default function ChatScreen({ route, navigation }) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={90}
       >
-        <FlatList
+        <FlatList keyboardShouldPersistTaps="handled"
           ref={listRef}
           data={listItems}
           keyExtractor={(item) => item.id}

@@ -86,7 +86,7 @@ export default function NotificationsScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Notifications" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg }}>
         <GlassCard style={{ marginBottom: spacing.md }}>
           <PrefRow
             icon="notifications-outline"

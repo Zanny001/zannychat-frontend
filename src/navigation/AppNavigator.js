@@ -409,7 +409,7 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
   };
 
   return (
-    <NavigationContainer ref={navigationRef} onReady={() => { if (pendingIncomingRef.current) { const pending = pendingIncomingRef.current; pendingIncomingRef.current = null; navigationRef.navigate('IncomingCall', pending); } }} theme={navTheme} linking={{ prefixes: ['zannychat://'], config: { screens: { PasswordReset: 'reset-password', JoinGroup: 'join-group' } } }}>
+    <NavigationContainer ref={navigationRef} onReady={() => { if (pendingIncomingRef.current) { const pending = pendingIncomingRef.current; pendingIncomingRef.current = null; navigationRef.navigate('IncomingCall', pending); } }} theme={navTheme} linking={{ prefixes: ['zannychat://'], config: { screens: { PasswordReset: 'reset-password', JoinGroup: 'join-group', QRContact: 'contact/:userId' } } }}>
       <RootStack.Navigator screenOptions={{ headerShown: false }} initialRouteName={initialRouteName}>
         {(!SUPABASE_ENABLED || !isAuthenticated) && <RootStack.Group navigationKey="guest">
           <RootStack.Screen name="Onboarding" component={OnboardingScreen} />
