@@ -233,3 +233,19 @@ test('channels, status publishing and chat recovery actions expose accessible la
   assert.match(chat, /accessibilityLabel="Dismiss message error"/);
   assert.match(chat, /accessibilityLabel="Send selected media"/);
 });
+
+test('danger and accent action foregrounds meet WCAG AA contrast across every built-in palette', () => {
+  for (const mood of Object.values(MOODS)) {
+    for (const mode of ['dark', 'light']) {
+      const colors = resolveMoodColors(mood, mode);
+      assert.ok(
+        contrastRatio(colors.onDanger, colors.danger) >= 4.5,
+        mood.key + ' ' + mode + ' danger-action contrast was ' + contrastRatio(colors.onDanger, colors.danger).toFixed(2) + ':1',
+      );
+      assert.ok(
+        contrastRatio(colors.onAccent, colors.accent) >= 4.5,
+        mood.key + ' ' + mode + ' accent-action contrast was ' + contrastRatio(colors.onAccent, colors.accent).toFixed(2) + ':1',
+      );
+    }
+  }
+});
