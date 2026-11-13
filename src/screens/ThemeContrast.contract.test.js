@@ -277,3 +277,61 @@ test('contact discovery, group management, settings and verification actions exp
   assert.match(newChat, /accessibilityLabel=\{option\.label\}/);
   assert.match(newChat, /accessibilityLabel="Retry loading contacts"/);
 });
+
+function interactiveOpeningTags(source) {
+  const tags = [];
+  const componentNames = ['TouchableOpacity', 'TouchableHighlight', 'Pressable', 'Button'];
+  for (const name of componentNames) {
+    let cursor = 0;
+    while ((cursor = source.indexOf('<' + name, cursor)) !== -1) {
+      const next = source[cursor + name.length + 1];
+      if (next && !/[\\s/>]/.test(next)) {
+        cursor += name.length + 1;
+        continue;
+      }
+      const start = cursor;
+      let index = cursor + name.length + 1;
+      let quote = null;
+      let braceDepth = 0;
+      for (; index < source.length; index += 1) {
+        const character = source[index];
+        if (quote) {
+          if (character === quote && source[index - 1] !== '\\\\') quote = null;
+          continue;
+        }
+        if (character === "'" || character === '"' || character === '`') {
+          quote = character;
+          continue;
+        }
+        if (character === '{') { braceDepth += 1; continue; }
+        if (character === '}') { braceDepth -= 1; continue; }
+        if (character === '>' && braceDepth === 0) {
+          tags.push(source.slice(start, index + 1));
+          cursor = index + 1;
+          break;
+        }
+      }
+      if (index >= source.length) break;
+    }
+  }
+  return tags;
+}
+
+test('every interactive control in every screen file has an explicit accessible name and role', () => {
+  const screenFiles = readdirSync(screenDirectory).filter((name) => name.endsWith('Screen.js') || name.endsWith('Screen.web.js'));
+  assert.equal(screenFiles.length, 46, 'The audited screen inventory changed; review the screen count before updating this contract.');
+  const violations = [];
+  let totalControls = 0;
+  for (const file of screenFiles) {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    const controls = interactiveOpeningTags(source);
+    totalControls += controls.length;
+    for (const tag of controls) {
+      if (!/\\baccessibilityLabel\\s*=/.test(tag) || !/\\baccessibilityRole\\s*=/.test(tag)) {
+        violations.push(file + ': ' + tag.replace(/\\s+/g, ' ').slice(0, 180));
+      }
+    }
+  }
+  assert.ok(totalControls >= 300, 'Expected to audit at least 300 interactive controls, found ' + totalControls);
+  assert.deepEqual(violations, [], 'Interactive controls missing an accessibility label or role:\\n' + violations.join('\\n'));
+});
