@@ -62,5 +62,5 @@ const styles = StyleSheet.create({
   hero: { alignItems: 'center', marginTop: 40, paddingHorizontal: 24 },
   featureIcon: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   primaryBtn: { paddingVertical: 16, alignItems: 'center' },
-  primaryBtnText: { color: '#fff', fontFamily: 'Manrope_700Bold', fontSize: 16 },
+  primaryBtnText: { fontFamily: 'Manrope_700Bold', fontSize: 16 },
 });

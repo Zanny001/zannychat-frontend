@@ -92,4 +92,4 @@ export default function PasswordResetScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({ button: { paddingVertical: 16, alignItems: 'center', marginTop: 8 }, buttonText: { color: '#fff', fontFamily: 'Manrope_700Bold', fontSize: 16 } });
+const styles = StyleSheet.create({ button: { paddingVertical: 16, alignItems: 'center', marginTop: 8 }, buttonText: { fontFamily: 'Manrope_700Bold', fontSize: 16 } });

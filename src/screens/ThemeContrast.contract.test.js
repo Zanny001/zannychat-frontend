@@ -74,6 +74,16 @@ test('high-impact feedback and call actions use semantic theme colours', () => {
     ['ChatScreen.js', /avatarColor: colors\.primary/],
     ['ChatScreen.js', /color: colors\.danger/],
     ['GroupManagementScreen.js', /color: colors\.onPrimary/],
+    ['IncomingCallScreen.js', /avatarColor = avatarColorParam \|\| colors\.primary/],
+    ['OutgoingCallScreen.js', /avatarColor = avatarColorParam \|\| colors\.primary/],
+    ['LiveStreamScreen.js', /borderTopColor: colors\.border/],
+    ['LiveStreamScreen.js', /color=\{colors\.accent\}/],
+    ['JoinGroupScreen.js', /color: colors\.danger/],
+    ['PrivacySecurityScreen.js', /entry\.profile\?\.avatarColor \|\| colors\.primary/],
+    ['LoginScreen.js', /color: colors\.onPrimary/],
+    ['OnboardingScreen.js', /color: colors\.onPrimary/],
+    ['PasswordRecoveryScreen.js', /color: colors\.onPrimary/],
+    ['PasswordResetScreen.js', /color: colors\.onPrimary/],
   ];
   for (const [file, pattern] of contracts) {
     assert.match(readFileSync(new URL(file, import.meta.url), 'utf8'), pattern, `${file} must use its semantic theme token`);
