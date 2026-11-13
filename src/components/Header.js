@@ -51,9 +51,8 @@ export default function Header({ title, onBack, right, subtitle, brand = false, 
           ) : (
             <Pressable
               disabled={!onTitlePress}
-              style={styles.titleContent}
               onPress={onTitlePress}
-              style={({ pressed }) => pressed && onTitlePress ? styles.titlePressed : undefined}
+              style={({ pressed }) => [styles.titleContent, pressed && onTitlePress ? styles.titlePressed : undefined]}
               accessibilityRole={onTitlePress ? 'button' : undefined}
               accessibilityLabel={onTitlePress ? `View ${title} profile` : undefined}
             >
