@@ -19,14 +19,26 @@ import VoIPPushRegistrar from './src/components/VoIPPushRegistrar';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+// Keep startup recoverable when auth storage or its initialisation stalls.
+const SESSION_RESTORE_TIMEOUT_MS = 12000;
+
 function ThemedStatusBar() {
   const { resolvedMode } = useTheme();
   return <StatusBar style={getStatusBarStyle(resolvedMode)} />;
 }
 
 export default function App() {
-  const [fontsLoaded] = useAppFonts();
+  const [fontsLoaded, fontError] = useAppFonts();
   const [initialRoute, setInitialRoute] = useState(null);
+
+  useEffect(() => {
+    if (fontError) {
+      console.error(
+        'App fonts failed to load; continuing with system font fallbacks:',
+        fontError
+      );
+    }
+  }, [fontError]);
 
   useEffect(() => {
     let mounted = true;
@@ -77,8 +89,24 @@ export default function App() {
       authSubscription = authListener?.subscription;
 
       // Supabase restores and processes the OAuth callback automatically on web.
-      const { data, error: sessionError } =
-        await supabase.auth.getSession();
+      let sessionRestoreTimeout;
+      let sessionResult;
+      try {
+        sessionResult = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise((_, reject) => {
+            sessionRestoreTimeout = setTimeout(() => {
+              reject(new Error(
+                `Supabase session restoration timed out after ${SESSION_RESTORE_TIMEOUT_MS}ms`
+              ));
+            }, SESSION_RESTORE_TIMEOUT_MS);
+          }),
+        ]);
+      } finally {
+        clearTimeout(sessionRestoreTimeout);
+      }
+
+      const { data, error: sessionError } = sessionResult;
 
       if (sessionError) {
         console.error(
@@ -139,7 +167,7 @@ export default function App() {
     return () => subscription.remove();
   }, []);
 
-  const appReady = fontsLoaded && initialRoute !== null;
+  const appReady = (fontsLoaded || !!fontError) && initialRoute !== null;
 
   const onLayoutRootView = useCallback(async () => {
     if (appReady) {
