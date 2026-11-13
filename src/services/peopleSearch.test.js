@@ -48,4 +48,5 @@ test('profile editing requires a valid normalized username', () => {
   assert.match(editProfile, /normalizeUsername\(username\)/);
   assert.match(editProfile, /isValidUsername\(normalizedUsername\)/);
   assert.match(editProfile, /Username required/);
+  assert.match(api, /That username is already taken/);
 });
