@@ -23,6 +23,7 @@ import { startPresence, subscribePresence } from '../services/presence';
 import { startCall } from '../services/calls';
 import {
   fetchContacts,
+  searchPeople,
   createConversation,
   sendAttachment,
   getCurrentUser,
@@ -38,6 +39,9 @@ export default function NewChatScreen({ navigation, route }) {
   const [openingChatId, setOpeningChatId] = useState(null);
   const [sendingId, setSendingId] = useState(null);
   const [memberSearch, setMemberSearch] = useState('');
+  const [peopleSearchResults, setPeopleSearchResults] = useState([]);
+  const [peopleSearchLoading, setPeopleSearchLoading] = useState(false);
+  const [peopleSearchError, setPeopleSearchError] = useState('');
   const [onlineOnly, setOnlineOnly] = useState(false);
   const initialDirectoryFilter = ['all', 'online', 'favorites'].includes(route?.params?.directoryFilter) ? route.params.directoryFilter : 'all';
   const [directoryFilter, setDirectoryFilter] = useState(initialDirectoryFilter);
@@ -57,7 +61,13 @@ export default function NewChatScreen({ navigation, route }) {
   const isShareMode = Boolean(shareToConversationId);
   const presenceAwareContacts = contacts.map((contact) => ({ ...contact, online: onlineIds.has(contact.id) }));
   const activeFilter = onlineOnly ? 'online' : directoryFilter;
-  const visibleContacts = useMemo(() => filterMemberDirectory(presenceAwareContacts, memberSearch, activeFilter, favoriteIds), [contacts, onlineIds, memberSearch, activeFilter, favoriteIds]);
+  const hasPeopleSearch = memberSearch.trim().length >= 2;
+  const visibleContacts = useMemo(
+    () => hasPeopleSearch
+      ? peopleSearchResults
+      : filterMemberDirectory(presenceAwareContacts, memberSearch, activeFilter, favoriteIds),
+    [hasPeopleSearch, peopleSearchResults, presenceAwareContacts, memberSearch, activeFilter, favoriteIds],
+  );
 
   useEffect(() => {
     let active = true;
@@ -119,6 +129,38 @@ export default function NewChatScreen({ navigation, route }) {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    const query = memberSearch.trim();
+    if (query.length < 2) {
+      setPeopleSearchResults([]);
+      setPeopleSearchError('');
+      setPeopleSearchLoading(false);
+      return undefined;
+    }
+
+    let active = true;
+    const timer = setTimeout(async () => {
+      setPeopleSearchLoading(true);
+      setPeopleSearchError('');
+      try {
+        const results = await searchPeople(query, 20);
+        if (active) setPeopleSearchResults(Array.isArray(results) ? results : []);
+      } catch (error) {
+        if (active) {
+          setPeopleSearchResults([]);
+          setPeopleSearchError(error?.message || 'People search is temporarily unavailable.');
+        }
+      } finally {
+        if (active) setPeopleSearchLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [memberSearch]);
 
   async function startChat(contact) {
     if (openingChatId !== null) return;
@@ -232,12 +274,12 @@ export default function NewChatScreen({ navigation, route }) {
           <GlassCard noPadding glow intensity={26} tintAlpha={0.42}>
             <View style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md }}>
               <Ionicons name="search-outline" size={19} color={colors.textSecondary} />
-              <TextInput value={memberSearch} onChangeText={setMemberSearch} placeholder="Search names or status…" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search ZannyChat members" returnKeyType="search" autoCapitalize="none" style={[typography.body, { flex: 1, marginLeft: spacing.sm, color: colors.textPrimary, minHeight: 46 }]} />
+              <TextInput value={memberSearch} onChangeText={setMemberSearch} placeholder="Search names or @username…" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search ZannyChat members" returnKeyType="search" autoCapitalize="none" style={[typography.body, { flex: 1, marginLeft: spacing.sm, color: colors.textPrimary, minHeight: 46 }]} />
               {memberSearch ? <TouchableOpacity onPress={() => setMemberSearch('')} accessibilityRole="button" accessibilityLabel="Clear member search" style={{ minWidth: 40, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={20} color={colors.textSecondary} /></TouchableOpacity> : null}
             </View>
           </GlassCard>
           <View style={{ gap: spacing.sm }}>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>{loadingContacts ? 'Finding members…' : `${visibleContacts.length} of ${contacts.length} member${contacts.length === 1 ? '' : 's'}${favoriteIds.length ? ` · ${favoriteIds.length} saved` : ''}`}</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>{hasPeopleSearch ? (peopleSearchLoading ? 'Searching ZannyChat…' : `${visibleContacts.length} discoverable result${visibleContacts.length === 1 ? '' : 's'}`) : loadingContacts ? 'Finding members…' : `${visibleContacts.length} of ${contacts.length} member${contacts.length === 1 ? '' : 's'}${favoriteIds.length ? ` · ${favoriteIds.length} saved` : ''}`}</Text>
             <View style={{ flexDirection: 'row', gap: spacing.xs, flexWrap: 'wrap' }}>
               {[{ id: 'all', label: 'All members', icon: 'people-outline' }, { id: 'online', label: 'Online', icon: 'radio-button-on-outline' }, { id: 'favorites', label: 'Favorites', icon: 'star-outline' }].map((option) => {
                 const selected = activeFilter === option.id;
@@ -268,6 +310,12 @@ export default function NewChatScreen({ navigation, route }) {
           ]}
         >
           <Text style={styles.errorText}>{chatError}</Text>
+        </View>
+      )}
+
+      {Boolean(peopleSearchError) && (
+        <View style={[styles.errorBox, { marginHorizontal: spacing.md, marginBottom: spacing.sm, backgroundColor: colors.surface, borderColor: colors.danger }]}>
+          <Text style={styles.errorText}>{peopleSearchError}</Text>
         </View>
       )}
 
@@ -304,7 +352,7 @@ export default function NewChatScreen({ navigation, route }) {
         </View>
       )}
 
-      {loadingContacts ? (
+      {(hasPeopleSearch ? peopleSearchLoading : loadingContacts) ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={colors.accent} />
           <Text
@@ -337,7 +385,7 @@ export default function NewChatScreen({ navigation, route }) {
                     { color: colors.textSecondary, textAlign: 'center' },
                   ]}
                 >
-                  {contacts.length === 0 ? 'No ZannyChat members found yet.' : activeFilter === 'favorites' && !memberSearch.trim() ? 'No favorites saved yet. Tap the star beside a member to keep them close.' : activeFilter === 'online' ? 'Nobody is online right now. Try All members to see everyone.' : `No members match “${memberSearch.trim()}”. Try another name or status.`}
+                  {hasPeopleSearch ? `No discoverable members match “${memberSearch.trim()}”. Try their full or partial @username or display name.` : contacts.length === 0 ? 'No ZannyChat members found yet.' : activeFilter === 'favorites' && !memberSearch.trim() ? 'No favorites saved yet. Tap the star beside a member to keep them close.' : activeFilter === 'online' ? 'Nobody is online right now. Try All members to see everyone.' : `No members match “${memberSearch.trim()}”. Try another name or @username.`}
                 </Text>
               </View>
             ) : null
@@ -374,18 +422,16 @@ export default function NewChatScreen({ navigation, route }) {
                     online={item.online}
                   />
 
-                  <Text
-                    style={[
-                      typography.body,
-                      {
-                        color: colors.textPrimary,
-                        marginLeft: spacing.sm,
-                        flex: 1,
-                      },
-                    ]}
-                  >
-                    {item.name}
-                  </Text>
+                  <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                    <Text style={[typography.body, { color: colors.textPrimary }]} numberOfLines={1}>
+                      {item.name}
+                    </Text>
+                    {item.username ? (
+                      <Text style={[typography.caption, { color: colors.textSecondary }]} numberOfLines={1}>
+                        @{item.username}
+                      </Text>
+                    ) : null}
+                  </View>
 
                   {!isShareMode && <TouchableOpacity onPress={() => toggleFavorite(item.id)} accessibilityRole="button" accessibilityLabel={favoriteIds.includes(item.id) ? `Remove ${item.name} from favorites` : `Add ${item.name} to favorites`} accessibilityState={{ selected: favoriteIds.includes(item.id) }} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name={favoriteIds.includes(item.id) ? 'star' : 'star-outline'} size={20} color={favoriteIds.includes(item.id) ? colors.gold : colors.textSecondary} /></TouchableOpacity>}
 
