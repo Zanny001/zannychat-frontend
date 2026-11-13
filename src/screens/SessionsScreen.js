@@ -74,7 +74,7 @@ export default function SessionsScreen({ navigation }) {
         <GlassCard style={{ marginBottom: spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <View style={[styles.deviceIcon, { backgroundColor: hexToRgba(mood.thread, 0.12) }]}><Ionicons name="phone-portrait" size={23} color={mood.thread} /></View>
-            <View style={{ flex: 1, marginLeft: 12 }}>
+            <View style={{ flex: 1, minWidth: 0, marginLeft: 12 }}>
               <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{deviceName}</Text>
               <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>{platform || 'Mobile device'}{Constants.expoConfig?.version ? ` · ZannyChat ${Constants.expoConfig.version}` : ''}</Text>
             </View>
@@ -99,7 +99,7 @@ export default function SessionsScreen({ navigation }) {
         <GlassCard style={{ marginBottom: spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
             <Ionicons name="information-circle-outline" size={20} color={mood.signal} style={{ marginTop: 1 }} />
-            <View style={{ flex: 1, marginLeft: 10 }}>
+            <View style={{ flex: 1, minWidth: 0, marginLeft: 10 }}>
               <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>About other devices</Text>
               <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 21, marginTop: 5 }]}>This app's current authentication integration cannot safely enumerate a list of every signed-in device. Rather than show a fake device list, use “Sign out everywhere” to request revocation of other sessions too. Token expiry and server validation affect how quickly access is cut off.</Text>
             </View>
