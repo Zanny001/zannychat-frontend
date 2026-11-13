@@ -611,11 +611,11 @@ export default function ChatListScreen({ navigation }) {
                   paddingVertical: spacing.sm,
                   paddingHorizontal: spacing.md,
                   borderRadius: 10,
-                  backgroundColor: deleting ? colors.border : '#dc2626',
+                  backgroundColor: deleting ? colors.border : colors.danger,
                   opacity: deleting ? 0.7 : 1,
                 }}
               >
-                <Text style={{ color: '#ffffff', fontWeight: '600' }}>
+                <Text style={{ color: colors.onDanger, fontWeight: '600' }}>
                   {deleting ? 'Deleting…' : 'Delete chat'}
                 </Text>
               </TouchableOpacity>
