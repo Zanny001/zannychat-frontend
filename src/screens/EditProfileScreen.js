@@ -97,12 +97,16 @@ export default function EditProfileScreen({ navigation }) {
 
   async function handleSave() {
     if (!name.trim()) return Alert.alert('Name required', 'Enter a display name before saving.');
-    if (username.trim() && !/^[a-zA-Z0-9_]{3,24}$/.test(username.trim())) {
+    const normalizedUsername = username.trim().replace(/^@/, '').toLowerCase();
+    if (!normalizedUsername) {
+      return Alert.alert('Username required', 'Your ZannyChat username helps other people find you.');
+    }
+    if (!/^[a-z0-9_]{3,24}$/.test(normalizedUsername)) {
       return Alert.alert('Invalid username', 'Use 3–24 letters, numbers or underscores.');
     }
     setSaving(true);
     try {
-      await updateProfile({ name: name.trim(), status: status.trim(), username: username.trim().toLowerCase() });
+      await updateProfile({ name: name.trim(), status: status.trim(), username: normalizedUsername });
       await updateMyProfileDetails({ ...details, birthday: details.birthday || null });
       navigation.goBack();
     } catch (err) {
