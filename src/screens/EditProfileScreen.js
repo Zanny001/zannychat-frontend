@@ -9,6 +9,7 @@ import { useTheme } from '../theme/ThemeContext';
 import Header from '../components/Header';
 import Avatar from '../components/Avatar';
 import GlassInput from '../components/GlassInput';
+import { isValidUsername, normalizeUsername } from '../utils/username';
 import {
   getCurrentUser, updateProfile, uploadAvatar, getMyProfileDetails,
   updateMyProfileDetails, uploadProfileCover,
@@ -97,12 +98,13 @@ export default function EditProfileScreen({ navigation }) {
 
   async function handleSave() {
     if (!name.trim()) return Alert.alert('Name required', 'Enter a display name before saving.');
-    if (username.trim() && !/^[a-zA-Z0-9_]{3,24}$/.test(username.trim())) {
-      return Alert.alert('Invalid username', 'Use 3–24 letters, numbers or underscores.');
+    const normalizedUsername = normalizeUsername(username);
+    if (!isValidUsername(normalizedUsername)) {
+      return Alert.alert('Username required', 'Choose a unique username using 3–24 letters, numbers or underscores.');
     }
     setSaving(true);
     try {
-      await updateProfile({ name: name.trim(), status: status.trim(), username: username.trim().toLowerCase() });
+      await updateProfile({ name: name.trim(), status: status.trim(), username: normalizedUsername });
       await updateMyProfileDetails({ ...details, birthday: details.birthday || null });
       navigation.goBack();
     } catch (err) {
@@ -173,6 +175,7 @@ export default function EditProfileScreen({ navigation }) {
             {mediaError ? <Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger, marginBottom: spacing.sm }]}>{mediaError}</Text> : null}
             <Field label="Display name" value={name} onChangeText={setName} placeholder="Your name" />
             <Field label="Username" value={username} onChangeText={setUsername} placeholder="your_username" />
+            <Text style={[typography.caption, { color: colors.textSecondary, marginTop: -spacing.sm, marginBottom: spacing.md }]}>Your unique @username helps other people find you. Use 3–24 letters, numbers or underscores.</Text>
             <Field label="About / status" value={status} onChangeText={setStatus} placeholder="Hey there, I'm using ZannyChat" />
             <Field label="About details" value={details.about} onChangeText={(v) => setDetail('about', v)} placeholder="Tell people a little about yourself" multiline />
             <View style={{ marginTop: 4, marginBottom: spacing.md }}>

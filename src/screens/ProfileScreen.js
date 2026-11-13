@@ -39,6 +39,7 @@ export default function ProfileScreen({ navigation }) {
             <View style={{ flex: 1, marginLeft: 16 }}>
               <Text style={[typography.small, { color: mood.thread, letterSpacing: 1.2 }]}>YOUR SPACE</Text>
               <Text style={[typography.title, { color: colors.textPrimary, marginTop: 4 }]} numberOfLines={2}>{user?.name || 'You'}</Text>
+              {user?.username ? <Text style={[typography.caption, { color: mood.thread, marginTop: 3 }]} numberOfLines={1}>@{user.username}</Text> : null}
               <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 5 }]} numberOfLines={2}>{user?.status || 'Hey there, I’m using ZannyChat'}</Text>
             </View>
           </View>

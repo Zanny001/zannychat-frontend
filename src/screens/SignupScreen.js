@@ -151,7 +151,7 @@ export default function SignupScreen({ navigation }) {
               },
             ]}
           >
-            Join ZannyChat in under a minute.
+            Join ZannyChat in under a minute. A unique @username is created automatically so people can find you.
           </Text>
 
           <TouchableOpacity

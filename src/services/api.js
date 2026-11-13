@@ -1,4 +1,5 @@
 import { normalizeEmail, parseRecoveryCallback } from '../utils/authValidation';
+import { isValidUsername, normalizeUsername } from '../utils/username';
 import { Platform } from 'react-native';
 import { getPasswordRecoveryRedirectUrl } from '../utils/oauthRedirect';
 import { getSafeMessageSendError } from '../utils/safeMessagingError';
@@ -36,7 +37,7 @@ import {
 //     previews (see zannychat-backend's README for why).
 //
 // Actual Supabase schema (see zannychat-backend/supabase/migrations):
-//   profiles(id, name, avatar_color, avatar_url, status, online)
+//   profile fields are merged from get_conversation_profile_directory()
 //   conversations(id, created_at, name, is_group)
 //   conversation_participants(conversation_id, user_id)
 //   messages(id, conversation_id, sender_id, text, created_at, reply_to_id,
@@ -269,13 +270,10 @@ export async function getCurrentUser() {
   const { data: authData } = await supabase.auth.getUser();
   if (!authData?.user) return null;
 
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', authData.user.id)
-    .single();
-
+  const { data, error } = await supabase.rpc('get_my_profile');
   if (error) throw error;
+  const profile = Array.isArray(data) ? data[0] : data;
+  if (!profile) throw new Error('Your profile is still being set up. Please try again.');
   return normalizeProfile(profile);
 }
 
@@ -283,23 +281,31 @@ export async function getCurrentUser() {
 // don't survive an app restart — same honesty tradeoff as everything
 // else that's mock-backed.
 export async function updateProfile({ name, status, username }) {
+  const normalizedUsername = username === undefined ? undefined : normalizeUsername(username);
+  if (username !== undefined && !isValidUsername(normalizedUsername)) {
+    throw new Error('Use a username with 3–24 lowercase letters, numbers or underscores.');
+  }
   if (!SUPABASE_ENABLED) {
     if (name !== undefined) mockUser.name = name;
     if (status !== undefined) mockUser.status = status;
-    if (username !== undefined) mockUser.username = username;
+    if (normalizedUsername !== undefined) mockUser.username = normalizedUsername;
     return mockUser;
   }
 
-  const { data: authData } = await supabase.auth.getUser();
-  const { data, error } = await supabase
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError) throw authError;
+  const userId = authData?.user?.id;
+  if (!userId) throw new Error('Sign in to update your profile.');
+  const { error } = await supabase
     .from('profiles')
-    .update({ ...(name !== undefined && { name }), ...(status !== undefined && { status }), ...(username !== undefined && { username: username || null }) })
-    .eq('id', authData?.user?.id)
-    .select()
-    .single();
+    .update({ ...(name !== undefined && { name }), ...(status !== undefined && { status }), ...(normalizedUsername !== undefined && { username: normalizedUsername }) })
+    .eq('id', userId);
 
+  if (error?.code === '23505') {
+    throw new Error('That username is already taken. Try another one.');
+  }
   if (error) throw error;
-  return normalizeProfile(data);
+  return getCurrentUser();
 }
 
 const PROFILE_DETAIL_DEFAULTS = Object.freeze({
@@ -700,6 +706,29 @@ export async function fetchContacts() {
   return (Array.isArray(data) ? data : []).map(normalizeProfile);
 }
 
+// Searches discoverable ZannyChat members on the server. The RPC enforces
+// profile visibility, bidirectional blocks, a bounded result set, and rate limits.
+export async function searchPeople(query, limit = 20) {
+  const cleanQuery = typeof query === 'string' ? query.trim().replace(/^@/, '') : '';
+  if (cleanQuery.length < 2 || cleanQuery.length > 40) return [];
+  const boundedLimit = Math.max(1, Math.min(Number.isInteger(limit) ? limit : 20, 25));
+
+  if (!SUPABASE_ENABLED) {
+    const needle = cleanQuery.toLowerCase();
+    return MOCK_CONTACTS.filter((profile) =>
+      String(profile?.name || '').toLowerCase().startsWith(needle)
+      || String(profile?.username || '').toLowerCase().startsWith(needle)
+    ).slice(0, boundedLimit).map(normalizeProfile);
+  }
+
+  const { data, error } = await supabase.rpc('search_people', {
+    p_query: cleanQuery,
+    p_limit: boundedLimit,
+  });
+  if (error) throw error;
+  return (Array.isArray(data) ? data : []).map(normalizeProfile);
+}
+
 // Paginated since the Oct 2026 audit ("no pagination anywhere"): the
 // conversation list pages by created_at desc, and each conversation's
 // nested messages are capped at the 30 most recent — enough for the
@@ -740,7 +769,7 @@ export async function fetchConversations({ limit = 50, offset = 0 } = {}) {
     .from('conversations')
     .select(
       `id, created_at, name, is_group,
-       conversation_participants(user_id, profiles(id, name, avatar_color, avatar_url, status, online), is_favorite, is_muted, is_archived),
+       conversation_participants(user_id, is_favorite, is_muted, is_archived),
        messages!messages_conversation_id_fkey(sender_id, text, created_at, media_type)`
     )
     .order('created_at', { ascending: false, referencedTable: 'messages' })
@@ -749,6 +778,26 @@ export async function fetchConversations({ limit = 50, offset = 0 } = {}) {
     .range(offset, offset + limit - 1);
 
   if (error) throw error;
+
+  const participantIds = [...new Set(
+    (data || []).flatMap((row) => (row.conversation_participants || []).map((participant) => participant.user_id)).filter(Boolean),
+  )];
+  const participantProfiles = [];
+  for (let start = 0; start < participantIds.length; start += 500) {
+    const { data: batchProfiles, error: participantProfilesError } = await supabase.rpc(
+      'get_conversation_profile_directory',
+      { p_user_ids: participantIds.slice(start, start + 500) },
+    );
+    if (participantProfilesError) throw participantProfilesError;
+    participantProfiles.push(...(batchProfiles || []));
+  }
+  const profilesById = new Map(participantProfiles.map((profile) => [profile.id, profile]));
+  for (const row of data || []) {
+    row.conversation_participants = (row.conversation_participants || []).map((participant) => ({
+      ...participant,
+      profiles: profilesById.get(participant.user_id) || null,
+    }));
+  }
 
   let readCursors;
   const { data: rpcReadCursors, error: readCursorError } = await supabase.rpc('get_my_read_cursors');
