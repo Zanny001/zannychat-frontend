@@ -109,7 +109,10 @@ export default function GroupCallScreenWeb({ route, navigation }) {
           body: JSON.stringify({ conversationId, callType }),
         });
       }
-      if (!active) return;
+      if (!active) {
+        if (result?.room?.id) await backendFetch(`/group-calls/${result.room.id}/leave`, { method: 'POST' }).catch(() => {});
+        return;
+      }
       const connected = { ...result, roomId: result.room.id, callType: result.room.call_type || callType };
       joinedRoomIdRef.current = connected.roomId;
       setConnection(connected);
