@@ -498,7 +498,7 @@ export default function CallScreenWeb({ route, navigation }) {
             const activeCall = callRef.current || call;
             const result = await backendFetch(`/group-calls/upgrade/${activeCall.id}`, {
               method: 'POST',
-              body: JSON.stringify({ userIds: [person.id] }),
+              body: JSON.stringify({ userIds: [person.id], callType: activeCallType }),
             });
             if (!result?.room?.id) throw new Error('Could not upgrade this call to a conference.');
             await navigateToConference(result.room, result);
