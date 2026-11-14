@@ -51,7 +51,8 @@ export default function GroupCallScreenWeb({ route, navigation }) {
   const remoteAudioRef = useRef(null);
   const activeRef = useRef(false);
   const endedRef = useRef(false);
-  const isVideo = callType === 'video';
+  const requestedVideo = callType === 'video';
+  const isVideo = (connection?.callType || callType) === 'video';
   const canInviteNow = canInvite && status === 'Connected';
 
   useEffect(() => {
@@ -119,9 +120,10 @@ export default function GroupCallScreenWeb({ route, navigation }) {
       await room.connect(connected.livekitUrl, connected.token);
       if (!active) return;
       await room.localParticipant.setMicrophoneEnabled(true);
-      if (isVideo) {
+      if (connected.callType === 'video') {
         try {
           await room.localParticipant.setCameraEnabled(true);
+          setCameraOff(false);
         } catch (_) {
           setCameraOff(true);
           setErrorText('Camera access is unavailable. You can continue with audio.');
@@ -146,7 +148,7 @@ export default function GroupCallScreenWeb({ route, navigation }) {
       if (!endedRef.current && activeRoomId) backendFetch(`/group-calls/${activeRoomId}/leave`, { method: 'POST' }).catch(() => {});
       roomRef.current = null;
     };
-  }, [roomId, isVideo, initialConnection, conversationId, callType]);
+  }, [roomId, requestedVideo, initialConnection, conversationId, callType]);
 
   useEffect(() => {
     if (!connection?.room) return undefined;
