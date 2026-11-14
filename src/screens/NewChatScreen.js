@@ -27,6 +27,7 @@ import {
   sendAttachment,
   getCurrentUser,
   searchPublicProfiles,
+  fetchContactById,
 } from '../services/api';
 
 export default function NewChatScreen({ navigation, route }) {
@@ -219,14 +220,22 @@ export default function NewChatScreen({ navigation, route }) {
     if (loadingContacts || !targetUserId || !['audio', 'video'].includes(requestedCallType)) return;
     const key = targetUserId + ':' + requestedCallType;
     if (autoStartedCallRef.current === key) return;
-    const target = contacts.find((contact) => contact.id === targetUserId);
-    if (!target) {
-      setChatError('This previous call contact is not available in your chat directory.');
-      return;
-    }
     autoStartedCallRef.current = key;
-    startChat(target);
-  }, [loadingContacts, contacts, targetUserId, requestedCallType, startChat]);
+    let active = true;
+    const startRedial = async () => {
+      try {
+        // Call history can contain people who are not in the legacy shared-chat
+        // contact list. Resolve the peer by ID through the privacy-aware profile RPC.
+        const target = contacts.find((contact) => contact.id === targetUserId)
+          || await fetchContactById(targetUserId);
+        if (active) await startChat(target);
+      } catch (error) {
+        if (active) setChatError(error?.message || 'This previous call contact is unavailable.');
+      }
+    };
+    startRedial();
+    return () => { active = false; };
+  }, [loadingContacts, contacts, targetUserId, requestedCallType]);
 
   async function shareContact(contact) {
     if (sendingId !== null) return;
