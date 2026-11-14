@@ -23,8 +23,9 @@ test('call history supports per-user deletion without deleting shared call rows'
 });
 
 test('past direct calls can be redialed as audio or video from the saved participant', () => {
-  assert.match(callHistory, /redialCall\(item, userId, 'audio'\)/);
-  assert.match(callHistory, /redialCall\(item, userId, 'video'\)/);
+  assert.match(callHistory, /peerUserId = item\.direction === 'incoming' \? item\.caller_id : item\.callee_id/);
+  assert.match(callHistory, /redialCall\(item, peerUserId, 'audio'\)/);
+  assert.match(callHistory, /redialCall\(item, peerUserId, 'video'\)/);
   assert.match(callHistory, /navigation\.navigate\('GroupCall'/);
   assert.match(newChat, /targetUserId/);
   assert.match(newChat, /autoStartedCallRef/);
