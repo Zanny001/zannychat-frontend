@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
@@ -57,6 +57,8 @@ export default function NewChatScreen({ navigation, route }) {
   const [onlineIds, setOnlineIds] = useState(new Set());
 
   const requestedCallType = route?.params?.callType;
+  const targetUserId = route?.params?.targetUserId;
+  const autoStartedCallRef = useRef('');
   const shareToConversationId = route?.params?.shareToConversationId;
   const isShareMode = Boolean(shareToConversationId);
   const normalizedMemberSearch = memberSearch.trim().replace(/^@/, '');
@@ -212,6 +214,19 @@ export default function NewChatScreen({ navigation, route }) {
       setOpeningChatId(null);
     }
   }
+
+  useEffect(() => {
+    if (loadingContacts || !targetUserId || !['audio', 'video'].includes(requestedCallType)) return;
+    const key = targetUserId + ':' + requestedCallType;
+    if (autoStartedCallRef.current === key) return;
+    const target = contacts.find((contact) => contact.id === targetUserId);
+    if (!target) {
+      setChatError('This previous call contact is not available in your chat directory.');
+      return;
+    }
+    autoStartedCallRef.current = key;
+    startChat(target);
+  }, [loadingContacts, contacts, targetUserId, requestedCallType]);
 
   async function shareContact(contact) {
     if (sendingId !== null) return;
