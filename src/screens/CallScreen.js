@@ -19,7 +19,9 @@ const FALLBACK_ICE_SERVERS = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stu
 export default function CallScreen({ route, navigation }) {
   const { colors, typography, resolvedMode } = useTheme();
   const { call: initialCall, callId, conversationId, callType = 'audio', isCaller = false, participantName = 'ZannyChat contact', avatarColor, nativeCallId = null, nativeRequestId = null } = route.params || {};
-  const immersiveVideo = callType === 'video';
+  const [activeCallType, setActiveCallType] = useState(initialCall?.call_type || callType);
+  const [remoteVideoActive, setRemoteVideoActive] = useState(false);
+  const immersiveVideo = activeCallType === 'video' || remoteVideoActive;
   const foreground = immersiveVideo ? '#FFFFFF' : colors.textPrimary;
   const secondaryForeground = immersiveVideo ? '#C4C2D2' : colors.textSecondary;
   const [call, setCall] = useState(initialCall || { id: callId, conversation_id: conversationId, call_type: callType, status: isCaller ? 'ringing' : 'accepted' });
@@ -208,7 +210,11 @@ export default function CallScreen({ route, navigation }) {
         seenSignals.current.add(signal.id);
         if (signal.sender_id === (isCaller ? call?.caller_id : call?.callee_id)) return;
         try {
-          if (signal.signal_type === 'offer' && !isCaller) {
+          if (signal.signal_type === 'offer') {
+            if (pc.signalingState !== 'stable') {
+              if (isCaller) return;
+              await pc.setLocalDescription({ type: 'rollback' });
+            }
             await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
             remoteDescriptionReady.current = true;
             for (const candidate of queuedIce.current.splice(0)) await pc.addIceCandidate(new RTCIceCandidate(candidate));
@@ -216,7 +222,7 @@ export default function CallScreen({ route, navigation }) {
             await pc.setLocalDescription(answer);
             await sendCallSignal({ call: callRef.current, type: 'answer', payload: { type: answer.type, sdp: answer.sdp } });
             if (activeRef.current) setPhase('Connecting…');
-          } else if (signal.signal_type === 'answer' && isCaller) {
+          } else if (signal.signal_type === 'answer' && pc.signalingState === 'have-local-offer') {
             await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
             remoteDescriptionReady.current = true;
             for (const candidate of queuedIce.current.splice(0)) await pc.addIceCandidate(new RTCIceCandidate(candidate));
@@ -369,10 +375,51 @@ export default function CallScreen({ route, navigation }) {
     return () => subscription.remove();
   }, [nativeCallId]);
 
-  const toggleCamera = () => {
+  const toggleCamera = async () => {
     const next = !cameraOff;
-    localRef.current?.getVideoTracks?.().forEach((track) => { track.enabled = !next; });
-    setCameraOff(next);
+    const pc = pcRef.current;
+    const stream = localRef.current;
+    if (!pc || !stream || !activeRef.current) return;
+    try {
+      if (next) {
+        const track = stream.getVideoTracks?.()[0];
+        if (track) {
+          const sender = pc.getSenders().find((item) => item.track?.id === track.id);
+          if (sender) pc.removeTrack(sender);
+          stream.removeTrack(track);
+          track.stop();
+        }
+        setCameraOff(true);
+        setActiveCallType('audio');
+      } else {
+        let track = stream.getVideoTracks?.()[0];
+        if (!track) {
+          const cameraStream = await mediaDevices.getUserMedia({ audio: false, video: { facingMode: 'user', width: 960, height: 540, frameRate: 24 } });
+          track = cameraStream.getVideoTracks?.()[0];
+          if (!track) throw new Error('No camera track was provided by this device.');
+          stream.addTrack(track);
+          pc.addTrack(track, stream);
+        } else {
+          track.enabled = true;
+        }
+        setLocalStream(stream);
+        setCameraOff(false);
+        setActiveCallType('video');
+      }
+      if (pc.signalingState !== 'stable') throw new Error('The call is already updating. Please try the camera switch again.');
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      await sendCallSignal({ call: callRef.current, type: 'offer', payload: { type: offer.type, sdp: offer.sdp } });
+    } catch (error) {
+      setErrorText(error?.message || 'Could not switch call video. Your audio call is still active.');
+      if (next) {
+        setCameraOff(false);
+        setActiveCallType('video');
+      } else {
+        setCameraOff(true);
+        setActiveCallType('audio');
+      }
+    }
   };
   const switchCamera = () => {
     const track = localRef.current?.getVideoTracks?.()[0];
@@ -389,8 +436,8 @@ export default function CallScreen({ route, navigation }) {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: immersiveVideo ? '#11101A' : colors.background }]}>
       <StatusBar barStyle={!immersiveVideo && resolvedMode === 'light' ? 'dark-content' : 'light-content'} />
-      {callType === 'video' && remoteStream ? <RTCView streamURL={remoteStream.toURL()} objectFit="cover" style={StyleSheet.absoluteFill} /> : null}
-      {callType === 'video' && localStream && !cameraOff ? <RTCView streamURL={localStream.toURL()} mirror objectFit="cover" style={styles.localVideo} /> : null}
+      {remoteVideoActive && remoteStream ? <RTCView streamURL={remoteStream.toURL()} objectFit="cover" style={StyleSheet.absoluteFill} /> : null}
+      {activeCallType === 'video' && localStream && !cameraOff ? <RTCView streamURL={localStream.toURL()} mirror objectFit="cover" style={styles.localVideo} /> : null}
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => endCall(isCaller && call?.status === 'ringing' ? 'cancelled' : 'ended')} accessibilityRole="button" accessibilityLabel="Close call"><Ionicons name="chevron-down" size={26} color={foreground} /></TouchableOpacity>
         <View style={[styles.encryption, { backgroundColor: immersiveVideo ? 'rgba(255,255,255,0.08)' : hexToRgba(colors.surface, 0.78), borderColor: colors.border, borderWidth: immersiveVideo ? 0 : 1 }]}><Ionicons name="lock-closed" size={12} color={colors.accent} /><Text style={[typography.small, styles.encryptionText, { color: secondaryForeground }]}>Encrypted media transport</Text></View>
@@ -399,7 +446,7 @@ export default function CallScreen({ route, navigation }) {
           : <View style={{ width: 26 }} />}
       </View>
       <View style={styles.identity}>
-        {!(callType === 'video' && remoteStream) ? <Avatar name={participantName} color={avatarColor || colors.primary} size={108} /> : null}
+        {!remoteVideoActive ? <Avatar name={participantName} color={avatarColor || colors.primary} size={108} /> : null}
         <Text numberOfLines={2} style={[typography.display, styles.name, { color: foreground, maxWidth: '100%', paddingHorizontal: 8 }]}>{participantName}</Text>
         <Text style={[typography.body, styles.phase, { color: secondaryForeground }]}>{phase === 'Connected' ? formatTime(seconds) : phase}</Text>
         {networkNotice ? <Text style={[typography.small, styles.networkNotice, { color: immersiveVideo ? '#F2D28B' : colors.warning }]}>{networkNotice}</Text> : null}
@@ -411,8 +458,8 @@ export default function CallScreen({ route, navigation }) {
         <View style={styles.controlsRow}>
           {iconButton(speakerOn ? 'volume-high' : 'volume-low', speakerOn ? 'Speaker' : 'Earpiece', toggleSpeaker, speakerOn)}
           {iconButton(muted ? 'mic-off' : 'mic', muted ? 'Unmute' : 'Mute', toggleMute, muted)}
-          {callType === 'video' ? iconButton(cameraOff ? 'videocam-off' : 'videocam', cameraOff ? 'Camera on' : 'Camera off', toggleCamera, cameraOff) : null}
-          {callType === 'video' ? iconButton('camera-reverse', 'Flip', switchCamera) : null}
+          {iconButton(cameraOff ? 'videocam-off' : 'videocam', cameraOff ? 'Switch to video' : 'Switch to audio', toggleCamera, cameraOff)}
+          {activeCallType === 'video' ? iconButton('camera-reverse', 'Flip', switchCamera) : null}
         </View>
         <TouchableOpacity onPress={() => endCall(isCaller && call?.status === 'ringing' ? 'cancelled' : 'ended')} accessibilityRole="button" accessibilityLabel="End call" style={[styles.endButton, { backgroundColor: colors.danger, shadowColor: colors.danger }]}>
           <Ionicons name="call" size={27} color={colors.onDanger} style={{ transform: [{ rotate: '135deg' }] }} />
