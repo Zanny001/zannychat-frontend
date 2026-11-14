@@ -49,3 +49,11 @@ test('web LIVE renders each remote publisher in a labelled multi-participant sta
   assert.ok(web.includes('remoteVideoTracks.map((track) => <RemoteVideoTile'));
   assert.ok(web.includes('track.participant.name || track.participant.identity'));
 });
+
+test('web LIVE animates recent reaction events over the video stage', () => {
+  assert.ok(web.includes('Animated.timing(progress'));
+  assert.ok(web.includes('result?.reactions'));
+  assert.ok(web.includes('floatingReactions.map'));
+  assert.ok(web.includes('onPress={() => react(reaction)}'));
+  assert.ok(web.includes('seenReactionIds.current.has(item.id)'));
+});
