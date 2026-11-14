@@ -328,7 +328,7 @@ export default function CallScreenWeb({ route, navigation }) {
       </View>
       <View style={styles.identity}>
         {!(activeCallType === 'video' && remoteStream) ? <Avatar name={participantName} color={avatarColor || colors.primary} size={108} /> : null}
-        <Text style={[typography.display, styles.name, { color: foreground }]}>{participantName}</Text>
+        <Text numberOfLines={2} style={[typography.display, styles.name, { color: foreground, maxWidth: '100%', paddingHorizontal: 8 }]}>{participantName}</Text>
         <Text style={[typography.body, styles.phase, { color: secondaryForeground }]}>{phase === 'Connected' ? formatCallDuration(seconds) : phase}</Text>
         {networkNotice ? <Text style={[typography.small, styles.networkNotice, { color: immersiveVideo ? '#F2D28B' : colors.warning }]}>{networkNotice}</Text> : null}
         {errorText ? <Text style={[typography.small, styles.error, { color: immersiveVideo ? '#FFB8C0' : colors.danger }]}>{errorText}</Text> : null}
