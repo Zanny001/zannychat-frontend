@@ -7,7 +7,7 @@ import { backendFetch } from '../services/backendClient';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 
-function LiveMedia({ creatorMode, moderatorMode, canManageGuests, canRequestGuest, guestApproved, guestRequestStatus, guestRequests, showGuestRequests, title, comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, onRequestGuest, onJoinGuest, onToggleGuestRequests, onReviewGuestRequest, busy }) {
+function LiveMedia({ creatorMode, publisherMode, cameraEnabled, microphoneEnabled, onToggleCamera, onToggleMicrophone, moderatorMode, canManageGuests, canRequestGuest, guestApproved, guestRequestStatus, guestRequests, showGuestRequests, title, comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, onRequestGuest, onJoinGuest, onToggleGuestRequests, onReviewGuestRequest, busy }) {
   const { colors, typography } = useTheme();
   const tracks = useTracks([Track.Source.Camera]);
   const videos = tracks.filter(isTrackReference);
@@ -24,11 +24,37 @@ function LiveMedia({ creatorMode, moderatorMode, canManageGuests, canRequestGues
         </View>
         <View style={{ flex: 1, justifyContent: 'center' }}>
           {videos.length ? (
-            <FlatList keyboardShouldPersistTaps="handled" data={videos} keyExtractor={(item) => item.participant.identity} renderItem={({ item }) => <VideoTrack trackRef={item} style={{ height: 340, margin: 4, borderRadius: 18 }} />} />
+            <FlatList
+              key={videos.length > 1 ? 'live-stage-grid' : 'live-stage-single'}
+              keyboardShouldPersistTaps="handled"
+              data={videos}
+              numColumns={videos.length > 1 ? 2 : 1}
+              keyExtractor={(item) => item.participant.identity}
+              renderItem={({ item }) => (
+                <View style={{ flex: 1, minWidth: 0, margin: 4, borderRadius: 18, overflow: 'hidden', backgroundColor: '#211F2B' }}>
+                  <VideoTrack trackRef={item} style={{ height: videos.length > 1 ? 220 : 340, borderRadius: 18 }} />
+                  <View style={{ position: 'absolute', left: 10, bottom: 10, maxWidth: '85%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.62)' }}>
+                    <Text numberOfLines={1} style={[typography.caption, { color: '#FFFFFF' }]}>{item.participant.name || item.participant.identity}</Text>
+                  </View>
+                </View>
+              )}
+            />
           ) : (
             <View style={{ alignItems: 'center', padding: 24 }}><Ionicons name="videocam-outline" size={44} color={colors.accent} /><Text style={[typography.heading, { color: '#FFFFFF', marginTop: 14 }]}>{creatorMode ? 'Your LIVE is starting' : 'Waiting for the creator video'}</Text><Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: 8 }]}>Keep this screen open while you are live.</Text></View>
           )}
         </View>
+        {publisherMode && (
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
+            <TouchableOpacity onPress={onToggleCamera} accessibilityRole="button" accessibilityLabel={cameraEnabled ? 'Turn camera off and keep audio live' : 'Turn camera on'} style={{ minHeight: 44, minWidth: 132, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 12, borderRadius: 14, backgroundColor: cameraEnabled ? hexToRgba(colors.accent, 0.2) : hexToRgba(colors.surface, 0.9), borderWidth: 1, borderColor: colors.border }}>
+              <Ionicons name={cameraEnabled ? 'videocam' : 'videocam-off'} size={18} color={colors.textPrimary} />
+              <Text style={[typography.small, { color: colors.textPrimary }]}>{cameraEnabled ? 'Camera on' : 'Camera off'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onToggleMicrophone} accessibilityRole="button" accessibilityLabel={microphoneEnabled ? 'Mute microphone' : 'Unmute microphone'} style={{ minHeight: 44, minWidth: 132, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 12, borderRadius: 14, backgroundColor: microphoneEnabled ? hexToRgba(colors.accent, 0.2) : hexToRgba(colors.danger, 0.16), borderWidth: 1, borderColor: colors.border }}>
+              <Ionicons name={microphoneEnabled ? 'mic' : 'mic-off'} size={18} color={colors.textPrimary} />
+              <Text style={[typography.small, { color: colors.textPrimary }]}>{microphoneEnabled ? 'Mic on' : 'Mic muted'}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         <View style={{ maxHeight: 230, paddingHorizontal: 14 }}>
           <FlatList keyboardShouldPersistTaps="handled" data={comments} keyExtractor={(item) => item.id} renderItem={({ item }) => (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 }}>
@@ -108,10 +134,22 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [showGuestRequests, setShowGuestRequests] = useState(false);
   const [guestApproved, setGuestApproved] = useState(false);
   const [guestRequestStatus, setGuestRequestStatus] = useState('none');
+  const [cameraEnabled, setCameraEnabled] = useState(publisherMode);
+  const [microphoneEnabled, setMicrophoneEnabled] = useState(publisherMode);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const endedRef = useRef(false);
+
+  useEffect(() => {
+    if (publisherMode) {
+      setCameraEnabled(true);
+      setMicrophoneEnabled(true);
+    }
+  }, [publisherMode]);
+
+  const toggleCamera = () => setCameraEnabled((value) => !value);
+  const toggleMicrophone = () => setMicrophoneEnabled((value) => !value);
 
   const refreshComments = useCallback(async () => {
     if (!stream?.id) return;
@@ -277,8 +315,8 @@ export default function LiveStreamScreen({ route, navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#100F18' }}>
       <StatusBar barStyle="light-content" />
       {error ? <Text accessibilityRole="alert" style={{ color: colors.danger, paddingHorizontal: 12, paddingTop: 4 }}>{error}</Text> : null}
-      <LiveKitRoom key={connection.token} serverUrl={connection.livekitUrl} token={connection.token} connect={true} audio={publisherMode} video={publisherMode} options={{ adaptiveStream: true, dynacast: true }}>
-        <LiveMedia creatorMode={creatorMode} publisherMode={publisherMode} moderatorMode={moderatorMode} canManageGuests={Boolean(stream.allow_guests)} canRequestGuest={canRequestGuest} guestRequests={guestRequests} showGuestRequests={showGuestRequests} title={stream.title} comments={comments} reports={reports} showReports={showReports} participants={participants} showParticipants={showParticipants} draft={draft} setDraft={setDraft} onComment={sendComment} onReact={react} onReport={report} onHide={hideComment} onEnd={leave} onRequestGuest={requestGuest} guestApproved={guestApproved} guestRequestStatus={guestRequestStatus} onJoinGuest={joinAsGuest} onToggleGuestRequests={() => { setShowReports(false); setShowParticipants(false); showGuestRequests ? setShowGuestRequests(false) : loadGuestRequests(); }} onReviewGuestRequest={reviewGuestRequest} onToggleReports={() => { setShowParticipants(false); setShowGuestRequests(false); showReports ? setShowReports(false) : loadReports(); }} onReviewReport={reviewReport} onToggleParticipants={() => { setShowReports(false); setShowGuestRequests(false); showParticipants ? setShowParticipants(false) : loadParticipants(); }} onSetModerator={setModerator} busy={busy} />
+      <LiveKitRoom key={connection.token} serverUrl={connection.livekitUrl} token={connection.token} connect={true} audio={publisherMode && microphoneEnabled} video={publisherMode && cameraEnabled} options={{ adaptiveStream: true, dynacast: true }}>
+        <LiveMedia creatorMode={creatorMode} publisherMode={publisherMode} cameraEnabled={cameraEnabled} microphoneEnabled={microphoneEnabled} onToggleCamera={toggleCamera} onToggleMicrophone={toggleMicrophone} moderatorMode={moderatorMode} canManageGuests={Boolean(stream.allow_guests)} canRequestGuest={canRequestGuest} guestRequests={guestRequests} showGuestRequests={showGuestRequests} title={stream.title} comments={comments} reports={reports} showReports={showReports} participants={participants} showParticipants={showParticipants} draft={draft} setDraft={setDraft} onComment={sendComment} onReact={react} onReport={report} onHide={hideComment} onEnd={leave} onRequestGuest={requestGuest} guestApproved={guestApproved} guestRequestStatus={guestRequestStatus} onJoinGuest={joinAsGuest} onToggleGuestRequests={() => { setShowReports(false); setShowParticipants(false); showGuestRequests ? setShowGuestRequests(false) : loadGuestRequests(); }} onReviewGuestRequest={reviewGuestRequest} onToggleReports={() => { setShowParticipants(false); setShowGuestRequests(false); showReports ? setShowReports(false) : loadReports(); }} onReviewReport={reviewReport} onToggleParticipants={() => { setShowReports(false); setShowGuestRequests(false); showParticipants ? setShowParticipants(false) : loadParticipants(); }} onSetModerator={setModerator} busy={busy} />
       </LiveKitRoom>
       {busy && <View style={{ position: 'absolute', top: '50%', alignSelf: 'center' }}><ActivityIndicator color={colors.accent} /></View>}
     </SafeAreaView>
