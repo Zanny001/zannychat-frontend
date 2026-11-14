@@ -8,7 +8,7 @@ const nativeBridge = fs.readFileSync(new URL('../services/nativeCallSystem.nativ
 const webBridge = fs.readFileSync(new URL('../services/nativeCallSystem.web.js', import.meta.url), 'utf8');
 
 test('native call screen declares a stable speaker state for every render', () => {
-  assert.match(nativeScreen, /const \[speakerOn, setSpeakerOn\] = useState\(callType === 'video'\)/);
+  assert.match(nativeScreen, /const \\[speakerOn, setSpeakerOn\\] = useState\\(\\(initialCall\\?\\.call_type \\|\\| callType\\) === 'video'\\)/);
   assert.match(nativeScreen, /setAudioSessionPortOverride\(next\)/);
   assert.match(nativeScreen, /AudioSession\.selectAudioOutput\(next \? 'force_speaker' : 'default'\)/);
 });
