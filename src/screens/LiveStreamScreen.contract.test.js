@@ -7,9 +7,11 @@ const screen = fs.readFileSync(new URL('./LiveStreamScreen.js', import.meta.url)
 test('LIVE creator and approved guest publishing roles receive media publishing controls', () => {
   assert.ok(screen.includes('connection?.canModerate'));
   assert.ok(screen.includes('moderatorMode &&'));
-  assert.ok(screen.includes('video={publisherMode && cameraEnabled}'));
+  assert.ok(screen.includes('video={publisherMode}'));
+  assert.ok(screen.includes('room.localParticipant.setCameraEnabled(nextEnabled)'));
   assert.ok(screen.includes('onToggleCamera={toggleCamera}'));
-  assert.ok(screen.includes('audio={publisherMode && microphoneEnabled}'));
+  assert.ok(screen.includes('audio={publisherMode}'));
+  assert.ok(screen.includes('room.localParticipant.setMicrophoneEnabled(nextEnabled)'));
   assert.ok(screen.includes('onToggleMicrophone={toggleMicrophone}'));
   assert.ok(screen.includes("connection?.role === 'guest'"));
 });
