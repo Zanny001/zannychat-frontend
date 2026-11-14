@@ -61,6 +61,7 @@ function LiveMedia({ creatorMode, publisherMode, cameraEnabled, microphoneEnable
   const videoIdentities = new Set(videos.map((track) => track.participant.identity));
   const audioOnlyParticipants = audioTracks.filter(isTrackReference)
     .filter((track) => !track.participant.isLocal && !videoIdentities.has(track.participant.identity));
+  const hasLocalAudioOnly = publisherMode && microphoneEnabled && !cameraEnabled;
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={{ flex: 1, backgroundColor: '#100F18' }}>
