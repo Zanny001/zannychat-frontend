@@ -12,24 +12,25 @@ const hub = fs.readFileSync(new URL('./LiveHubScreen.js', import.meta.url), 'utf
 
 test('native and web 1:1 calls can acquire and publish camera media after an audio call has connected', () => {
   for (const source of [native, web]) {
-    assert.match(source, /Switch to video/);
-    assert.match(source, /Switch to audio/);
-    assert.match(source, /cameraSwitchInProgressRef/);
-    assert.match(source, /pc\\.signalingState !== 'stable'/);
-    assert.match(source, /createOffer\\(\\)/);
-    assert.match(source, /setLocalDescription\\(offer\\)/);
-    assert.match(source, /type: 'offer'/);
-    assert.match(source, /removeTrack\\(/);
-    assert.match(source, /setLocalDescription\\(\\{ type: 'rollback' \\}\\)/);
+    assert.ok(source.includes('Switch to video'));
+    assert.ok(source.includes('Switch to audio'));
+    assert.ok(source.includes('cameraSwitchInProgressRef'));
+    assert.ok(source.includes("pc.signalingState !== 'stable'"));
+    assert.ok(source.includes('createOffer()'));
+    assert.ok(source.includes('setLocalDescription(offer)'));
+    assert.ok(source.includes("type: 'offer'"));
+    assert.ok(source.includes('removeTrack('));
+    assert.ok(source.includes("setLocalDescription({ type: 'rollback' })"));
   }
 });
 
 test('native and web remote video tracks activate and release the video stage', () => {
-  assert.match(native, /event\\.track\\.onunmute = refreshRemoteVideoState/);
-  assert.match(native, /event\\.track\\.onended = refreshRemoteVideoState/);
-  assert.match(web, /event\\.track\\.onunmute/);
-  assert.match(web, /const immersiveVideo = activeCallType === 'video' \\|\\| remoteVideoActive/);
+  assert.ok(native.includes('event.track.onunmute = refreshRemoteVideoState'));
+  assert.ok(native.includes('event.track.onended = refreshRemoteVideoState'));
+  assert.ok(web.includes('event.track.onunmute'));
+  assert.ok(web.includes("const immersiveVideo = activeCallType === 'video' || remoteVideoActive"));
 });
+
 test('native and web 1:1 call signaling accepts renegotiation offers and answers from either participant', () => {
   for (const source of [native, web]) {
     assert.match(source, /if \(signal\.signal_type === 'offer'\)/);
