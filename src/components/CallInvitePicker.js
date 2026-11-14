@@ -113,7 +113,7 @@ export default function CallInvitePicker({
           <View style={[styles.searchRow, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
             <TextInput
               value={query}
-              onChangeText={(value) => { setQuery(value); setSuccessText(''); }}
+              onChangeText={(value) => { setQuery(value); setResults([]); setErrorText(''); setSuccessText(''); }}
               onSubmitEditing={searchPeople}
               returnKeyType="search"
               autoCapitalize="none"
