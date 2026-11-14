@@ -36,9 +36,29 @@ test('native release CI protects main and compiles Android native code', () => {
   assert.match(workflow, /repository: Zanny001\/zannychat-backend/);
   assert.match(workflow, /path: zannychat-back-github/);
   assert.match(workflow, /Create non-production Firebase config for compile-only CI/);
+  assert.match(workflow, /zannychat-android-compile-only-not-for-install/);
+  assert.match(workflow, /not installable for QA/i);
+  assert.doesNotMatch(workflow, /Upload Android debug APK for physical-device QA/);
   assert.match(workflow, /CI_ONLY_NOT_A_REAL_FIREBASE_KEY/);
   assert.match(workflow, /:app:compileDebugKotlin/);
   assert.match(workflow, /expo export --platform web/);
   assert.match(workflow, /expo export --platform android/);
   assert.match(workflow, /npm run audit:contract/);
+});
+
+test('Android release has an explicit positive version code', () => {
+  assert.equal(app.expo.android.package, 'com.zannychat.app');
+  assert.equal(app.expo.android.versionCode, 243);
+});
+
+test('production Android build is manual, credential-gated and never auto-submits', () => {
+  const releaseWorkflow = fs.readFileSync(path.join(root, '.github/workflows/android-production-build.yml'), 'utf8');
+  assert.match(releaseWorkflow, /workflow_dispatch/);
+  assert.match(releaseWorkflow, /secrets\\.EXPO_TOKEN/);
+  assert.match(releaseWorkflow, /secrets\\.GOOGLE_SERVICES_JSON_BASE64/);
+  assert.match(releaseWorkflow, /Firebase config is not a valid production config/);
+  assert.match(releaseWorkflow, /eas-cli@27\\.9\\.0/);
+  assert.match(releaseWorkflow, /--profile production/);
+  assert.doesNotMatch(releaseWorkflow, /--auto-submit|build:submit|submit --platform/i);
+  assert.match(releaseWorkflow, /confirm_release/);
 });
