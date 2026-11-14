@@ -85,7 +85,8 @@
           ]
         }
       ],
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "versionCode": 243
     },
     "web": {
       "bundler": "metro"
