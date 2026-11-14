@@ -1,8 +1,27 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Animated, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Room, RoomEvent, Track } from 'livekit-client';
 import { backendFetch } from '../services/backendClient';
 import { useTheme } from '../theme/ThemeContext';
+
+const LIVE_REACTION_EMOJI = Object.freeze({ heart: '❤️', clap: '👏', laugh: '😂', wow: '😮', fire: '🔥' });
+
+function FloatingReaction({ item, index, onComplete }) {
+  const progress = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const animation = Animated.timing(progress, { toValue: 1, duration: 1800, useNativeDriver: true });
+    animation.start(({ finished }) => { if (finished) onComplete(item.id); });
+    return () => animation.stop();
+  }, [item.id, onComplete, progress]);
+  const translateY = progress.interpolate({ inputRange: [0, 1], outputRange: [0, -210] });
+  const opacity = progress.interpolate({ inputRange: [0, 0.15, 0.8, 1], outputRange: [0, 1, 1, 0] });
+  const scale = progress.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0.65, 1.2, 1] });
+  return (
+    <Animated.Text style={{ position: 'absolute', bottom: 26, left: (15 + (index * 17) % 70) + '%', opacity, transform: [{ translateY }, { scale }], fontSize: 32 }}>
+      {LIVE_REACTION_EMOJI[item.reaction] || LIVE_REACTION_EMOJI.heart}
+    </Animated.Text>
+  );
+}
 
 function RemoteVideoTile({ track, colors }) {
   const containerRef = useRef(null);
@@ -55,6 +74,8 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [mic, setMic] = useState(publisherMode);
   const [audioBlocked, setAudioBlocked] = useState(false);
   const [comments, setComments] = useState([]);
+  const [floatingReactions, setFloatingReactions] = useState([]);
+  const seenReactionIds = useRef(new Set());
   const [draft, setDraft] = useState('');
   const [guestStatus, setGuestStatus] = useState('none');
   const [guestApproved, setGuestApproved] = useState(false);
@@ -145,6 +166,12 @@ export default function LiveStreamScreen({ route, navigation }) {
     try {
       const result = await backendFetch(`/live/${stream.id}/comments`);
       setComments(Array.isArray(result?.comments) ? result.comments : []);
+      const incomingReactions = (Array.isArray(result?.reactions) ? result.reactions : [])
+        .filter((item) => item?.id && !seenReactionIds.current.has(item.id));
+      incomingReactions.forEach((item) => seenReactionIds.current.add(item.id));
+      if (incomingReactions.length) {
+        setFloatingReactions((current) => [...current, ...incomingReactions].slice(-16));
+      }
     } catch (err) { setError((current) => current || err?.message || 'Comments unavailable.'); }
   }, [stream?.id]);
 
@@ -194,10 +221,13 @@ export default function LiveStreamScreen({ route, navigation }) {
     } catch (err) { setError(err?.message || 'Comment not sent.'); }
     finally { setBusy(false); }
   };
-  const react = async () => {
-    try { await backendFetch(`/live/${stream.id}/react`, { method: 'POST', body: JSON.stringify({ reaction: 'heart' }) }); }
+  const react = async (reaction = 'heart') => {
+    try { await backendFetch(`/live/${stream.id}/react`, { method: 'POST', body: JSON.stringify({ reaction }) }); }
     catch (err) { setError(err?.message || 'Reaction not sent.'); }
   };
+  const removeFloatingReaction = useCallback((reactionId) => {
+    setFloatingReactions((current) => current.filter((item) => item.id !== reactionId));
+  }, []);
   const report = async () => {
     const reason = typeof window !== 'undefined' ? window.prompt('Report reason: harassment, hate, spam, or other') : null;
     if (!reason) return;
@@ -245,7 +275,7 @@ export default function LiveStreamScreen({ route, navigation }) {
     </View>
     {!!error && <Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger, paddingHorizontal: 14, paddingBottom: 8 }]}>{error}</Text>}
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 20 }}>
-      <View style={{ minHeight: 220, marginHorizontal: 12, borderRadius: 18, overflow: 'hidden', backgroundColor: '#050509' }}>
+      <View style={{ minHeight: 220, marginHorizontal: 12, borderRadius: 18, overflow: 'hidden', backgroundColor: '#050509', position: 'relative' }}>
         {publisherMode && <View ref={localRef} collapsable={false} style={{ width: '100%', minHeight: 220 }} />}
         {!remoteVideoTracks.length && !publisherMode && <Text style={{ color: colors.textSecondary, textAlign: 'center', padding: 12 }}>If the creator is not on screen yet, their video will appear here.</Text>}
         {!!remoteVideoTracks.length && (
@@ -254,6 +284,11 @@ export default function LiveStreamScreen({ route, navigation }) {
           </View>
         )}
         <View ref={remoteAudioRef} collapsable={false} style={{ width: 1, height: 1, opacity: 0 }} />
+        <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+          {floatingReactions.map((item, index) => (
+            <FloatingReaction key={item.id} item={item} index={index} onComplete={removeFloatingReaction} />
+          ))}
+        </View>
       </View>
       {audioBlocked && <View style={{ padding: 12 }}><Action colors={colors} label="Enable LIVE audio" onPress={() => roomRef.current?.startAudio().then(() => setAudioBlocked(false)).catch((err) => setError(err?.message || 'Audio playback is blocked.'))} /></View>}
       {publisherMode && <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, padding: 12 }}>
@@ -285,7 +320,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 }}>
         <TextInput value={draft} onChangeText={(v) => setDraft(v.slice(0, 500))} maxLength={500} placeholder="Say something kind…" placeholderTextColor={colors.textSecondary} accessibilityLabel="LIVE chat message" style={{ flex: 1, color: colors.textPrimary, backgroundColor: colors.surface, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 }} />
-        <Action colors={colors} label="Send" disabled={busy || !draft.trim()} onPress={sendComment} /><Action colors={colors} label="♥" accessibilityLabel="Send heart reaction" onPress={react} />
+        <Action colors={colors} label="Send" disabled={busy || !draft.trim()} onPress={sendComment} />{Object.entries(LIVE_REACTION_EMOJI).map(([reaction, emoji]) => <Action key={reaction} colors={colors} label={emoji} accessibilityLabel={'Send ' + reaction + ' reaction'} onPress={() => react(reaction)} />)}
         {!creatorMode && <Action colors={colors} label="Report" onPress={report} />}
       </View>
     </ScrollView>
