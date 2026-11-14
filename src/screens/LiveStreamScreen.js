@@ -511,7 +511,7 @@ export default function LiveStreamScreen({ route, navigation }) {
 
   const removeGuest = (userId) => {
     const guest = participants.find((item) => item.userId === userId);
-    Alert.alert('Remove guest from stage?', `${guest?.name || 'This guest'} will be disconnected and returned to the audience.`, [
+    Alert.alert('Remove guest from stage?', `${guest?.name || 'This guest'} will lose stage publishing access and remain watching as a viewer.`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Remove guest', style: 'destructive', onPress: async () => {
         try {
