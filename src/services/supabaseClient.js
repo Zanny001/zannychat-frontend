@@ -10,18 +10,37 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // gotcha). Plain localStorage doesn't have that lifecycle problem and
 // is more than adequate for a session token, so web gets that instead;
 // native keeps AsyncStorage, which is the only real option there.
-// Browsers can disable localStorage (private mode, embedded/sandboxed views,
-// or enterprise policy). Never let a storage SecurityError crash auth startup;
-// use a tab-memory fallback for the current runtime when persistence is blocked.
+// Prefer durable local storage, then reload-safe tab storage, then memory.
 const memoryWebStorage = new Map();
 function readLocalStorage(key) {
-  try { return typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem(key) : null; }
-  catch (_) { return memoryWebStorage.has(key) ? memoryWebStorage.get(key) : null; }
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const value = window.localStorage.getItem(key);
+      if (value !== null) return value;
+    }
+  } catch (_) { /* Try session storage and then memory. */ }
+  try {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      const value = window.sessionStorage.getItem(key);
+      if (value !== null) return value;
+    }
+  } catch (_) { /* Fall through to tab-memory storage. */ }
+  return memoryWebStorage.has(key) ? memoryWebStorage.get(key) : null;
 }
 function writeLocalStorage(key, value) {
   try {
     if (typeof window !== 'undefined' && window.localStorage) {
       window.localStorage.setItem(key, value);
+      try { window.sessionStorage?.removeItem(key); } catch (_) {}
+      memoryWebStorage.delete(key);
+      return;
+    }
+  } catch (_) {
+    try { window.localStorage?.removeItem(key); } catch (_) {}
+  }
+  try {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      window.sessionStorage.setItem(key, value);
       memoryWebStorage.delete(key);
       return;
     }
@@ -30,7 +49,9 @@ function writeLocalStorage(key, value) {
 }
 function removeLocalStorage(key) {
   try { if (typeof window !== 'undefined' && window.localStorage) window.localStorage.removeItem(key); }
-  catch (_) { /* The fallback still needs to be cleared. */ }
+  catch (_) { /* Continue clearing fallback stores. */ }
+  try { if (typeof window !== 'undefined' && window.sessionStorage) window.sessionStorage.removeItem(key); }
+  catch (_) { /* Continue clearing fallback stores. */ }
   memoryWebStorage.delete(key);
 }
 const webStorage = {

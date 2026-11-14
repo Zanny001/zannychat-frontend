@@ -21,6 +21,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // Keep startup recoverable when auth storage or its initialisation stalls.
 const SESSION_RESTORE_TIMEOUT_MS = 12000;
+const FONT_LOAD_FALLBACK_MS = 8000;
 
 function ThemedStatusBar() {
   const { resolvedMode } = useTheme();
@@ -29,7 +30,18 @@ function ThemedStatusBar() {
 
 export default function App() {
   const [fontsLoaded, fontError] = useAppFonts();
+  const [fontFallbackReady, setFontFallbackReady] = useState(false);
   const [initialRoute, setInitialRoute] = useState(null);
+
+  // Keep the web app renderable if the browser's font runtime stalls.
+  useEffect(() => {
+    if (fontsLoaded || fontError) return undefined;
+    const timeout = setTimeout(() => {
+      console.warn(`App font loading exceeded ${FONT_LOAD_FALLBACK_MS}ms; continuing with system font fallbacks.`);
+      setFontFallbackReady(true);
+    }, FONT_LOAD_FALLBACK_MS);
+    return () => clearTimeout(timeout);
+  }, [fontsLoaded, fontError]);
 
   useEffect(() => {
     if (fontError) {
@@ -167,7 +179,7 @@ export default function App() {
     return () => subscription.remove();
   }, []);
 
-  const appReady = (fontsLoaded || !!fontError) && initialRoute !== null;
+  const appReady = (fontsLoaded || !!fontError || fontFallbackReady) && initialRoute !== null;
 
   const onLayoutRootView = useCallback(async () => {
     if (appReady) {

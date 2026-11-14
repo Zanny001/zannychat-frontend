@@ -48,8 +48,12 @@ class GoogleOAuthNavigationRegressionTests(unittest.TestCase):
     def test_web_auth_storage_falls_back_when_browser_storage_is_restricted(self):
         source = (ROOT / 'src/services/supabaseClient.js').read_text()
         self.assertIn('const memoryWebStorage = new Map()', source)
-        self.assertIn('catch (_) { return memoryWebStorage.has(key)', source)
+        self.assertIn('window.localStorage.getItem(key)', source)
+        self.assertIn('window.sessionStorage.getItem(key)', source)
+        self.assertIn('window.sessionStorage.setItem(key, value)', source)
+        self.assertIn('return memoryWebStorage.has(key) ? memoryWebStorage.get(key) : null', source)
         self.assertIn('window.localStorage.setItem(key, value)', source)
+        self.assertIn('memoryWebStorage.set(key, value)', source)
 
 
     def test_password_recovery_has_web_and_native_redirects(self):
