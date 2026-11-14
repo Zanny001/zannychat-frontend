@@ -20,14 +20,13 @@ import GlassCard from '../components/GlassCard';
 import { debugLog } from '../utils/diagnostics';
 import { filterMemberDirectory, memberFavoritesStorageKey, toggleMemberFavorite } from '../utils/memberFavorites';
 import { startPresence, subscribePresence } from '../services/presence';
-import { startCall } from '../services/calls';
+import { startCall, getCallParticipantName } from '../services/calls';
 import {
   fetchContacts,
   createConversation,
   sendAttachment,
   getCurrentUser,
   searchPublicProfiles,
-  fetchContactById,
 } from '../services/api';
 
 export default function NewChatScreen({ navigation, route }) {
@@ -223,10 +222,11 @@ export default function NewChatScreen({ navigation, route }) {
     autoStartedCallRef.current = key;
     const startRedial = async () => {
       try {
-        // Call history can contain people who are not in the legacy shared-chat
-        // contact list. Resolve the peer by ID through the privacy-aware profile RPC.
+        // Call history is itself an established relationship. The peer may
+        // not be in the legacy shared-chat directory (or may not be discoverable),
+        // so never block a redial on directory membership or public-profile visibility.
         const target = contacts.find((contact) => contact.id === targetUserId)
-          || await fetchContactById(targetUserId);
+          || { id: targetUserId, name: await getCallParticipantName(targetUserId) };
         await startChat(target);
       } catch (error) {
         setChatError(error?.message || 'This previous call contact is unavailable.');
