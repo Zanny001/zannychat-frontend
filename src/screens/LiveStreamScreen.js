@@ -1,16 +1,42 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { AudioSession, LiveKitRoom, VideoTrack, isTrackReference, useTracks } from '@livekit/react-native';
+import { AudioSession, LiveKitRoom, VideoTrack, isTrackReference, useLocalParticipant, useTracks } from '@livekit/react-native';
 import { Track } from 'livekit-client';
 import { backendFetch } from '../services/backendClient';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 
-function LiveMedia({ creatorMode, moderatorMode, canManageGuests, canRequestGuest, guestApproved, guestRequestStatus, guestRequests, showGuestRequests, title, comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, onRequestGuest, onJoinGuest, onToggleGuestRequests, onReviewGuestRequest, busy }) {
+function LiveMedia({ creatorMode, publisherMode, moderatorMode, canManageGuests, canRequestGuest, guestApproved, guestRequestStatus, guestRequests, showGuestRequests, title, comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, onRequestGuest, onJoinGuest, onToggleGuestRequests, onReviewGuestRequest, busy }) {
   const { colors, typography } = useTheme();
   const tracks = useTracks([Track.Source.Camera]);
   const videos = tracks.filter(isTrackReference);
+  const { localParticipant, isCameraEnabled, isMicrophoneEnabled } = useLocalParticipant();
+  const [mediaBusy, setMediaBusy] = useState(false);
+
+  const toggleCamera = async () => {
+    if (!publisherMode || mediaBusy) return;
+    setMediaBusy(true);
+    try {
+      await localParticipant.setCameraEnabled(!isCameraEnabled);
+    } catch (e) {
+      Alert.alert('Camera unavailable', e?.message || 'Could not change your camera setting.');
+    } finally {
+      setMediaBusy(false);
+    }
+  };
+
+  const toggleMicrophone = async () => {
+    if (!publisherMode || mediaBusy) return;
+    setMediaBusy(true);
+    try {
+      await localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled);
+    } catch (e) {
+      Alert.alert('Microphone unavailable', e?.message || 'Could not change your microphone setting.');
+    } finally {
+      setMediaBusy(false);
+    }
+  };
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={{ flex: 1, backgroundColor: '#100F18' }}>
@@ -24,7 +50,22 @@ function LiveMedia({ creatorMode, moderatorMode, canManageGuests, canRequestGues
         </View>
         <View style={{ flex: 1, justifyContent: 'center' }}>
           {videos.length ? (
-            <FlatList keyboardShouldPersistTaps="handled" data={videos} keyExtractor={(item) => item.participant.identity} renderItem={({ item }) => <VideoTrack trackRef={item} style={{ height: 340, margin: 4, borderRadius: 18 }} />} />
+            <FlatList
+              key={videos.length > 1 ? 'live-stage-grid' : 'live-stage-single'}
+              keyboardShouldPersistTaps="handled"
+              data={videos}
+              numColumns={videos.length > 1 ? 2 : 1}
+              keyExtractor={(item) => item.publication?.trackSid || item.participant.sid || item.participant.identity}
+              contentContainerStyle={{ paddingHorizontal: 6, paddingTop: 54, paddingBottom: 8 }}
+              renderItem={({ item }) => (
+                <View style={{ flex: 1, minWidth: 0, padding: 4 }}>
+                  <VideoTrack trackRef={item} style={{ height: videos.length > 1 ? 220 : 360, borderRadius: 18 }} />
+                  <Text numberOfLines={1} style={[typography.caption, { color: '#FFFFFF', marginTop: 4, textAlign: 'center' }]}>
+                    {item.participant.name || item.participant.identity}
+                  </Text>
+                </View>
+              )}
+            />
           ) : (
             <View style={{ alignItems: 'center', padding: 24 }}><Ionicons name="videocam-outline" size={44} color={colors.accent} /><Text style={[typography.heading, { color: '#FFFFFF', marginTop: 14 }]}>{creatorMode ? 'Your LIVE is starting' : 'Waiting for the creator video'}</Text><Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: 8 }]}>Keep this screen open while you are live.</Text></View>
           )}
@@ -82,6 +123,8 @@ function LiveMedia({ creatorMode, moderatorMode, canManageGuests, canRequestGues
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, paddingBottom: 18 }}>
           <TextInput value={draft} onChangeText={(v) => setDraft(v.slice(0, 500))} maxLength={500} placeholder="Say something kind…" placeholderTextColor={colors.textSecondary} style={{ flex: 1, minWidth: 0, backgroundColor: colors.surfaceAlt, color: colors.textPrimary, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 11 }} />
           <TouchableOpacity disabled={busy || !draft.trim()} onPress={onComment} accessibilityRole="button" accessibilityLabel="Send LIVE comment" style={{ backgroundColor: colors.primary, padding: 12, borderRadius: 14 }}><Ionicons name="send" size={19} color={colors.onPrimary} /></TouchableOpacity>
+          {publisherMode && <TouchableOpacity disabled={busy || mediaBusy} onPress={toggleMicrophone} accessibilityRole="button" accessibilityLabel={isMicrophoneEnabled ? 'Mute microphone' : 'Unmute microphone'} style={{ backgroundColor: isMicrophoneEnabled ? colors.surfaceAlt : hexToRgba(colors.danger, 0.2), padding: 12, borderRadius: 14 }}><Ionicons name={isMicrophoneEnabled ? 'mic' : 'mic-off'} size={19} color={isMicrophoneEnabled ? colors.textPrimary : colors.danger} /></TouchableOpacity>}
+          {publisherMode && <TouchableOpacity disabled={busy || mediaBusy} onPress={toggleCamera} accessibilityRole="button" accessibilityLabel={isCameraEnabled ? 'Turn camera off and keep audio on' : 'Turn camera on'} style={{ backgroundColor: isCameraEnabled ? colors.surfaceAlt : hexToRgba(colors.danger, 0.2), padding: 12, borderRadius: 14 }}><Ionicons name={isCameraEnabled ? 'videocam' : 'videocam-off'} size={19} color={isCameraEnabled ? colors.textPrimary : colors.danger} /></TouchableOpacity>}
           <TouchableOpacity disabled={busy} onPress={onReact} accessibilityRole="button" accessibilityLabel="Send heart reaction" style={{ backgroundColor: hexToRgba(colors.danger, 0.16), padding: 12, borderRadius: 14 }}><Ionicons name="heart" size={20} color={colors.danger} /></TouchableOpacity>
           {!creatorMode && canRequestGuest && <TouchableOpacity disabled={busy || (guestRequestStatus === 'requested' && !guestApproved)} onPress={guestApproved ? onJoinGuest : onRequestGuest} accessibilityRole="button" accessibilityLabel={guestApproved ? 'Join LIVE as guest' : guestRequestStatus === 'requested' ? 'Guest request pending' : 'Request to join LIVE on stage'} style={{ backgroundColor: hexToRgba(colors.primary, 0.24), padding: 12, borderRadius: 14 }}><Ionicons name={guestApproved ? 'checkmark-circle-outline' : 'person-add-outline'} size={19} color={colors.onPrimary} /></TouchableOpacity>}
           {!creatorMode && <TouchableOpacity disabled={busy} onPress={onReport} accessibilityRole="button" accessibilityLabel="Report LIVE stream" style={{ backgroundColor: colors.surfaceAlt, padding: 12, borderRadius: 14 }}><Ionicons name="flag-outline" size={19} color={colors.textPrimary} /></TouchableOpacity>}
