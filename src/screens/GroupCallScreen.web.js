@@ -199,6 +199,7 @@ export default function GroupCallScreenWeb({ route, navigation }) {
   const endCall = useCallback(async () => {
     try {
       const activeRoomId = connection?.roomId || joinedRoomIdRef.current || roomId;
+      if (!activeRoomId) { navigation.goBack(); return; }
       await backendFetch(`/group-calls/${activeRoomId}/${canEnd ? 'end' : 'leave'}`, { method: 'POST' });
       endedRef.current = true;
       roomRef.current?.disconnect();
