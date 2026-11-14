@@ -62,7 +62,7 @@ export default function LiveCreatorProfileScreen({ navigation }) {
         </View>
 
         {loading && !summary ? <View style={{ padding: 40, alignItems: 'center' }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary, marginTop: 10 }]}>Loading your creator studio…</Text></View> : null}
-        {!!error ? <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text style={[typography.body, { color: colors.danger }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button"><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
+        {!!error ? <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text style={[typography.body, { color: colors.danger }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading creator profile"><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
 
         <GlassCard glow contentStyle={{ padding: spacing.lg, gap: spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
@@ -77,7 +77,7 @@ export default function LiveCreatorProfileScreen({ navigation }) {
           </View>
           <View style={{ height: 1, backgroundColor: colors.border }} />
           <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>A dedicated home for your broadcasts, community impact, audience growth and replay library. Your personal profile settings remain unchanged.</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Main', { screen: 'LIVE' })} accessibilityRole="button" style={{ minHeight: 46, borderRadius: radii.md, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
+          <TouchableOpacity onPress={() => navigation.navigate('Main', { screen: 'LIVE' })} accessibilityRole="button" accessibilityLabel="Open LIVE Hub" style={{ minHeight: 46, borderRadius: radii.md, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Open LIVE Hub</Text>
           </TouchableOpacity>
         </GlassCard>
