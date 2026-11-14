@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { DeviceEventEmitter, ActivityIndicator, Alert, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { RTCView, mediaDevices, RTCPeerConnection, RTCSessionDescription, RTCIceCandidate } from '@livekit/react-native-webrtc';
+import { RTCView, mediaDevices, RTCPeerConnection, RTCSessionDescription, RTCIceCandidate, MediaStream } from '@livekit/react-native-webrtc';
+import { AudioSession } from '@livekit/react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 import Avatar from '../components/Avatar';
 import { sendCallSignal, subscribeToCallSession, subscribeToCallSignals, updateCallStatus } from '../services/calls';
 import { backendFetch } from '../services/backendClient';
-import { endNativeCall, failNativeIncomingConnected, fulfillNativeIncomingConnected, reportNativeCallEnded, reportNativeOutgoingConnected, setAudioSessionPortOverride, setNativeMuted, setRTCAudioSessionConfiguration } from '../services/nativeCallSystem';
+import { endNativeCall, failNativeIncomingConnected, fulfillNativeIncomingConnected, isNativeCallUiAvailable, prepareAudioSessionForCall, reportNativeCallEnded, reportNativeOutgoingConnected, restoreAudioSession, setAudioSessionPortOverride, setNativeMuted, setRTCAudioSessionConfiguration } from '../services/nativeCallSystem';
 import { supabase } from '../services/supabaseClient';
 import { formatCallDuration, getCallEndStatus, isTerminalCallStatus } from '../utils/callPolicy';
 import { getIceNetworkNotice } from '../utils/callNetworkStatus';
@@ -23,6 +24,7 @@ export default function CallScreen({ route, navigation }) {
   const [call, setCall] = useState(initialCall || { id: callId, conversation_id: conversationId, call_type: callType, status: isCaller ? 'ringing' : 'accepted' });
   const [phase, setPhase] = useState(isCaller ? 'Calling…' : 'Connecting…');
   const [muted, setMuted] = useState(false);
+  const [speakerOn, setSpeakerOn] = useState(callType === 'video');
   const [cameraOff, setCameraOff] = useState(callType !== 'video');
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
@@ -32,6 +34,7 @@ export default function CallScreen({ route, navigation }) {
   const [networkNotice, setNetworkNotice] = useState('');
   const pcRef = useRef(null);
   const localRef = useRef(null);
+  const remoteRef = useRef(null);
   const remoteDescriptionReady = useRef(false);
   const queuedIce = useRef([]);
   const seenSignals = useRef(new Set());
@@ -66,6 +69,12 @@ export default function CallScreen({ route, navigation }) {
     let signalingReady = false;
     let currentStatus = call?.status;
     let maybeStartOffer = async () => {};
+    let releaseAudioSession = () => {};
+    const releaseCallAudioSession = async () => {
+      const release = releaseAudioSession;
+      releaseAudioSession = () => {};
+      try { await release(); } catch (_) {}
+    };
 
     const run = async () => {
       if (Platform.OS === 'web') throw new Error('Calling is currently supported in the native Android/iOS app build, not the web preview.');
@@ -76,6 +85,20 @@ export default function CallScreen({ route, navigation }) {
       callRef.current = liveCall;
       if (activeRef.current) setCall(liveCall);
       setRTCAudioSessionConfiguration(callTypeRef.current === 'video');
+      // Native Telecom prepares audio automatically for OS-managed calls. For
+      // in-app fallback calls, prepare the same communication session explicitly.
+      if (!nativeCallId && !nativeRequestId) {
+        if (isNativeCallUiAvailable) {
+          prepareAudioSessionForCall(callTypeRef.current === 'video');
+          releaseAudioSession = restoreAudioSession;
+        } else {
+          await AudioSession.startAudioSession();
+          releaseAudioSession = () => AudioSession.stopAudioSession();
+          if (callTypeRef.current === 'video' && typeof AudioSession.selectAudioOutput === 'function') {
+            await AudioSession.selectAudioOutput('force_speaker').catch(() => {});
+          }
+        }
+      }
       const stream = await mediaDevices.getUserMedia({ audio: true, video: callTypeRef.current === 'video' ? { facingMode: 'user', width: 960, height: 540, frameRate: 24 } : false });
       mountedStream = stream;
       localRef.current = stream;
@@ -94,7 +117,15 @@ export default function CallScreen({ route, navigation }) {
       pcRef.current = pc;
       stream.getTracks().forEach((track) => pc.addTrack(track, stream));
       pc.ontrack = (event) => {
-        const next = event.streams?.[0];
+        let next = event.streams?.[0];
+        if (next) remoteRef.current = next;
+        else if (event.track) {
+          if (!remoteRef.current) remoteRef.current = new MediaStream();
+          if (!remoteRef.current.getTracks().some((track) => track.id === event.track.id)) {
+            remoteRef.current.addTrack(event.track);
+          }
+          next = remoteRef.current;
+        }
         if (next && activeRef.current) setRemoteStream(next);
       };
       pc.onicecandidate = (event) => {
@@ -216,6 +247,7 @@ export default function CallScreen({ route, navigation }) {
     };
 
     run().catch(async (error) => {
+      await releaseCallAudioSession();
       // If the call was already accepted, a media permission/device/setup error
       // must not strand an accepted session and block future calls for both users.
       const current = callRef.current || call;
@@ -237,6 +269,8 @@ export default function CallScreen({ route, navigation }) {
       try { mountedStream?.getTracks?.().forEach((track) => track.stop()); } catch (_) {}
       pcRef.current = null;
       localRef.current = null;
+      remoteRef.current = null;
+      releaseCallAudioSession();
     };
   }, []);
 
@@ -277,10 +311,19 @@ export default function CallScreen({ route, navigation }) {
     if (nativeCallId) setNativeMuted(nativeCallId, next).catch(() => {});
     setMuted(next);
   };
-  const toggleSpeaker = () => {
+  const toggleSpeaker = async () => {
     const next = !speakerOn;
-    setAudioSessionPortOverride(next);
-    setSpeakerOn(next);
+    try {
+      if (isNativeCallUiAvailable) setAudioSessionPortOverride(next);
+      else if (typeof AudioSession.selectAudioOutput === 'function') {
+        await AudioSession.selectAudioOutput(next ? 'force_speaker' : 'default');
+      } else {
+        throw new Error('Audio output switching is unavailable on this device.');
+      }
+      setSpeakerOn(next);
+    } catch (_) {
+      Alert.alert('Audio route unavailable', 'ZannyChat could not change the audio output. Check your connected audio devices and try again.');
+    }
   };
   useEffect(() => {
     if (!nativeCallId) return undefined;
