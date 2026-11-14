@@ -28,6 +28,7 @@ export default function LiveHubScreen({ navigation, route }) {
   const [streams, setStreams] = useState([]);
   const [invitations, setInvitations] = useState([]);
   const [replays, setReplays] = useState([]);
+  const pendingReplayPollStartedAt = useRef(0);
   const [followingIds, setFollowingIds] = useState([]);
   const [followingCreators, setFollowingCreators] = useState([]);
   const [title, setTitle] = useState('');
@@ -101,12 +102,25 @@ export default function LiveHubScreen({ navigation, route }) {
     }
   }, []);
 
-  useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
+  useFocusEffect(useCallback(() => {
+    pendingReplayPollStartedAt.current = Date.now();
+    refresh();
+  }, [refresh]));
 
   const hasPendingReplays = replays.some((item) => ['starting', 'recording', 'processing'].includes(item.status));
   useEffect(() => {
-    if (!hasPendingReplays) return undefined;
-    const interval = setInterval(refreshPendingReplays, 5000);
+    if (!hasPendingReplays) {
+      pendingReplayPollStartedAt.current = 0;
+      return undefined;
+    }
+    if (!pendingReplayPollStartedAt.current) pendingReplayPollStartedAt.current = Date.now();
+    const interval = setInterval(() => {
+      if (Date.now() - pendingReplayPollStartedAt.current >= 5 * 60 * 1000) {
+        clearInterval(interval);
+        return;
+      }
+      refreshPendingReplays();
+    }, 15000);
     return () => clearInterval(interval);
   }, [hasPendingReplays, refreshPendingReplays]);
 
