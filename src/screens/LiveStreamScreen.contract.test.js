@@ -64,6 +64,10 @@ test('LIVE publishers can independently disable camera while keeping microphone 
   assert.ok(screen.includes('Turn camera off and keep audio live'));
   assert.ok(screen.includes('onToggleCamera'));
   assert.ok(screen.includes('onToggleMicrophone'));
+  assert.ok(screen.includes('useRoomContext'));
+  assert.ok(screen.includes('room.localParticipant.setCameraEnabled(nextEnabled)'));
+  assert.ok(screen.includes('room.localParticipant.setMicrophoneEnabled(nextEnabled)'));
+  assert.ok(screen.includes('audio={publisherMode} video={publisherMode}'));
 });
 
 test('LIVE stage supports multiple named video tiles in a responsive two-column grid', () => {
