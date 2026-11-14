@@ -9,6 +9,8 @@ test('incoming and outgoing call screens use the active premium typography scale
     const source = screen(name);
     assert.match(source, /const \{ colors, typography, resolvedMode \} = useTheme\(\)/, name);
     assert.match(source, /typography\.display/, `${name} participant name`);
+    assert.match(source, /numberOfLines=\{2\}/, `${name} long participant name wrapping`);
+    assert.match(source, /maxWidth: '100%'/, `${name} participant name container`);
     assert.match(source, /typography\.heading/, `${name} brand title`);
     assert.match(source, /typography\.body/, `${name} call description`);
     assert.match(source, /typography\.small/, `${name} status and helper text`);
