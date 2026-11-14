@@ -586,11 +586,11 @@ export default function LiveStreamScreen({ route, navigation }) {
 
   const confirmStartReplay = () => {
     if (Platform.OS === 'web') {
-      if (typeof window !== 'undefined' && !window.confirm('Record this LIVE for up to five minutes? Replay access follows the stream's audience settings.')) return;
+      if (typeof window !== 'undefined' && !window.confirm("Record this LIVE for up to five minutes? Replay access follows the stream's audience settings.")) return;
       startReplay();
       return;
     }
-    Alert.alert('Record this LIVE?', 'A secure replay will be saved for up to seven days; access follows this LIVE's audience settings. Monthly free-tier limits apply.', [
+    Alert.alert("Record this LIVE?", "A secure replay will be saved for up to seven days; access follows this LIVE's audience settings. Monthly free-tier limits apply.", [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Start recording', onPress: startReplay },
     ]);
