@@ -460,6 +460,8 @@ export default function LiveStreamScreen({ route, navigation }) {
       if (nextConnection?.role !== 'guest' || !nextConnection?.canPublish) {
         throw new Error('Guest access has not been approved yet.');
       }
+      setDemotedToViewer(false);
+      setStageNotice('');
       navigation.setParams({ connection: nextConnection, creatorMode: false });
       setGuestApproved(false);
       setGuestRequestStatus('accepted');

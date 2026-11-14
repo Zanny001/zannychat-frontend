@@ -93,6 +93,8 @@ export default function LiveStreamScreen({ route, navigation }) {
   const publisherMode = Boolean(creatorMode || (connection?.role === 'guest' && connection?.canPublish && !demotedToViewer));
   const moderatorMode = Boolean(creatorMode || connection?.canModerate);
   const roomRef = useRef(null);
+  const publisherModeRef = useRef(publisherMode);
+  publisherModeRef.current = publisherMode;
   const localRef = useRef(null);
   const remoteAudioRef = useRef(null);
   const [remoteVideoTracks, setRemoteVideoTracks] = useState([]);
@@ -186,7 +188,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       try {
         await room.connect(connection.livekitUrl, connection.token);
         if (!active) return;
-        if (publisherMode) {
+        if (publisherModeRef.current) {
           setStatus('Starting camera and microphone…');
           await room.localParticipant.enableCameraAndMicrophone();
           if (!active) return;
@@ -213,7 +215,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       setRemoteAudioParticipants([]);
       roomRef.current = null;
     };
-  }, [stream?.id, connection?.livekitUrl, connection?.token, creatorMode, publisherMode]);
+  }, [stream?.id, connection?.livekitUrl, connection?.token, creatorMode]);
 
   const refreshComments = useCallback(async () => {
     if (!stream?.id) return;
@@ -303,6 +305,8 @@ export default function LiveStreamScreen({ route, navigation }) {
     try {
       const next = await backendFetch(`/live/${stream.id}/join`, { method: 'POST' });
       if (next?.role !== 'guest' || !next?.canPublish) throw new Error('Guest access has not been approved.');
+      setDemotedToViewer(false);
+      setStageNotice('');
       navigation.setParams({ connection: next, creatorMode: false });
     } catch (err) { setError(err?.message || 'Could not join as guest.'); }
   };
