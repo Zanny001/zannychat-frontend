@@ -27,6 +27,7 @@ export default function LiveHubScreen({ navigation, route }) {
   const { colors, spacing, radii, typography } = useTheme();
   const [streams, setStreams] = useState([]);
   const [invitations, setInvitations] = useState([]);
+  const [replays, setReplays] = useState([]);
   const [followingIds, setFollowingIds] = useState([]);
   const [followingCreators, setFollowingCreators] = useState([]);
   const [title, setTitle] = useState('');
@@ -49,20 +50,31 @@ export default function LiveHubScreen({ navigation, route }) {
     return true;
   });
 
+  const refreshReplays = useCallback(async () => {
+    try {
+      const result = await backendFetch('/live/replays');
+      setReplays(Array.isArray(result?.replays) ? result.replays : []);
+    } catch (_) {
+      setReplays([]);
+    }
+  }, []);
+
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const [publicResult, followedResult, followResult, inviteResult] = await Promise.all([
+      const [publicResult, followedResult, followResult, inviteResult, replayResult] = await Promise.all([
         backendFetch('/live'),
         backendFetch('/live/following/streams').catch(() => ({ streams: [] })),
         backendFetch('/live/following').catch(() => ({ following: [] })),
         backendFetch('/live/invitations').catch(() => ({ invitations: [] })),
+        backendFetch('/live/replays').catch(() => ({ replays: [] })),
       ]);
       const allStreams = [...(publicResult?.streams || []), ...(followedResult?.streams || [])];
       setStreams([...new Map(allStreams.map((item) => [item.id, item])).values()]);
       setFollowingCreators(followResult?.following || []);
       setFollowingIds((followResult?.following || []).map((item) => item.creator_id));
       setInvitations((inviteResult?.invitations || []).filter((item) => item.stream));
+      setReplays(Array.isArray(replayResult?.replays) ? replayResult.replays : []);
       setError('');
     } catch (e) {
       setError(e?.message || 'LIVE discovery is unavailable.');
@@ -72,6 +84,15 @@ export default function LiveHubScreen({ navigation, route }) {
   }, []);
 
   useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
+
+  const hasPendingReplays = replays.some((item) => ['starting', 'recording', 'processing'].includes(item.status));
+  useEffect(() => {
+    if (!hasPendingReplays) return undefined;
+    const interval = setInterval(refreshReplays, 5000);
+    return () => clearInterval(interval);
+  }, [hasPendingReplays, refreshReplays]);
+
+  const openReplay = (item) => navigation.navigate('LiveReplay', { replay: item });
 
   const loadInviteCandidates = async () => {
     setLoadingCandidates(true);
@@ -349,6 +370,43 @@ export default function LiveHubScreen({ navigation, route }) {
                         <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>Unfollow</Text>
                       </TouchableOpacity>
                     </View>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {replays.length > 0 && (
+              <View style={{ marginBottom: spacing.md, gap: spacing.sm }}>
+                <View style={{ paddingHorizontal: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                  <Ionicons name="play-circle" size={19} color={colors.primary} />
+                  <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>LIVE replays</Text>
+                  <View style={{ flex: 1 }} />
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>{replays.length}</Text>
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.md, gap: spacing.sm }}>
+                  {replays.map((item) => (
+                    <GlassCard key={item.id} style={{ width: 232 }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                        <View style={{ width: 40, height: 40, borderRadius: 13, backgroundColor: colors.primary + '18', alignItems: 'center', justifyContent: 'center' }}>
+                          <Ionicons name="film-outline" size={20} color={colors.primary} />
+                        </View>
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <Text numberOfLines={2} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.streamTitle || 'LIVE replay'}</Text>
+                          <Text numberOfLines={1} style={[typography.caption, { color: colors.textSecondary }]}>{item.visibility === 'private' ? 'Private' : item.visibility === 'followers' ? 'Followers' : 'Public'} replay</Text>
+                        </View>
+                      </View>
+                      {item.status === 'ready' ? (
+                        <TouchableOpacity onPress={() => openReplay(item)} accessibilityRole="button" accessibilityLabel={'Watch replay: ' + (item.streamTitle || 'LIVE replay')} style={{ minHeight: 42, borderRadius: radii.md, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.xs }}>
+                          <Ionicons name="play" size={16} color={colors.background} />
+                          <Text style={[typography.small, { color: colors.background, fontWeight: '900' }]}>Watch replay</Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <View style={{ minHeight: 42, borderRadius: radii.md, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.xs }}>
+                          {item.status === 'processing' || item.status === 'starting' ? <ActivityIndicator size="small" color={colors.primary} /> : <Ionicons name={item.status === 'recording' ? 'radio-button-on' : 'alert-circle-outline'} size={16} color={item.status === 'recording' ? colors.danger : colors.textSecondary} />}
+                          <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800' }]}>{item.status === 'processing' ? 'Preparing replay…' : item.status === 'starting' ? 'Starting recording…' : item.status === 'recording' ? 'Recording · auto-stops' : 'Replay unavailable'}</Text>
+                        </View>
+                      )}
+                    </GlassCard>
                   ))}
                 </ScrollView>
               </View>
