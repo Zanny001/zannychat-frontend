@@ -73,11 +73,12 @@ export default function CallScreenWeb({ route, navigation }) {
     }
   }, [localStream, cameraOff]);
 
-  const navigateToConference = useCallback(async (room) => {
+  const navigateToConference = useCallback(async (room, connectionResult = null) => {
     if (!room?.id || upgradeNavigatedRef.current) return;
     upgradeNavigatedRef.current = true;
     navigation.replace('GroupCall', {
       roomId: room.id,
+      connection: connectionResult,
       conversationId: room.conversation_id || conversationId,
       conversationName: 'Group call',
       callType: room.call_type || activeCallType,
@@ -416,7 +417,7 @@ export default function CallScreenWeb({ route, navigation }) {
               body: JSON.stringify({ userIds: [person.id] }),
             });
             if (!result?.room?.id) throw new Error('Could not upgrade this call to a conference.');
-            await navigateToConference(result.room);
+            await navigateToConference(result.room, result);
           }}
         />
       ) : null}
