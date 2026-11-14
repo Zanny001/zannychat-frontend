@@ -12,12 +12,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import { supabase } from '../services/supabaseClient';
+import { backendFetch } from '../services/backendClient';
 
 export default function CallInvitePicker({
   visible,
   onClose,
   onInvite,
   conversationId,
+  roomId,
   filterToConversationMembers = false,
   excludeIds = [],
   title = 'Add people to call',
@@ -68,7 +70,12 @@ export default function CallInvitePicker({
         people = people.filter((person) => memberIds.has(String(person.id)));
       }
 
-      const excluded = new Set((excludeIds || []).filter(Boolean).map(String));
+      let activeParticipantIds = [];
+      if (roomId) {
+        const roster = await backendFetch(`/group-calls/${roomId}/participants`);
+        activeParticipantIds = Array.isArray(roster?.participantIds) ? roster.participantIds : [];
+      }
+      const excluded = new Set([...(excludeIds || []), ...activeParticipantIds].filter(Boolean).map(String));
       people = people.filter((person) => person?.id && !excluded.has(String(person.id)));
       setResults(people);
       if (!people.length) setSuccessText('No eligible people found. Try another name or username.');
