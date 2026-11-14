@@ -16,6 +16,7 @@ function GroupRoomContent({ callType, onEnd, onAddPeople, canInvite, onParticipa
   const participants = useParticipants();
   const [muted, setMuted] = useState(false);
   const [cameraOff, setCameraOff] = useState(callType !== 'video');
+  const [isVideo, setIsVideo] = useState(callType === 'video');
   const [connectionState, setConnectionState] = useState('Connecting…');
   const canInviteNow = canInvite && connectionState === 'Connected';
 
@@ -53,6 +54,7 @@ function GroupRoomContent({ callType, onEnd, onAddPeople, canInvite, onParticipa
     try {
       await room.localParticipant.setCameraEnabled(cameraOff);
       setCameraOff(!cameraOff);
+      setIsVideo(cameraOff);
     } catch (_) {
       Alert.alert('Camera unavailable', 'Check camera permission and try again.');
     }
@@ -73,7 +75,7 @@ function GroupRoomContent({ callType, onEnd, onAddPeople, canInvite, onParticipa
         <Text style={[styles.connectionText, { color: colors.textSecondary }]}>· {participants.length} connected</Text>
       </View>
 
-      {callType === 'video' ? (
+      {(isVideo || tracks.length > 0) ? (
         <FlatList
           data={tracks}
           keyExtractor={(track) => track.participant.identity}
@@ -126,7 +128,7 @@ function GroupRoomContent({ callType, onEnd, onAddPeople, canInvite, onParticipa
           <Ionicons name={muted ? 'mic-off' : 'mic'} size={23} color={muted ? colors.onPrimary : colors.textPrimary} />
           <Text style={[styles.controlLabel, typography.small, { color: muted ? colors.onPrimary : colors.textPrimary }]}>{muted ? 'Unmute' : 'Mute'}</Text>
         </Pressable>
-        {callType === 'video' && (
+        {(isVideo || tracks.length > 0) && (
           <Pressable
             onPress={toggleCamera}
             accessibilityRole="button"
@@ -272,7 +274,7 @@ export default function GroupCallScreen({ route, navigation }) {
         <Text style={[styles.brand, typography.small, { color: colors.primary }]}>ZannyChat</Text>
         <Text style={[styles.title, typography.title, { color: colors.textPrimary }]} numberOfLines={1}>{conversationName}</Text>
         <Text style={[styles.subtitle, typography.caption, { color: colors.textSecondary }]}>
-          {connection?.callType === 'video' || callType === 'video' ? 'Group video call' : 'Group audio call'}
+          {isVideo ? 'Group video call' : 'Group audio call'}
         </Text>
       </View>
       {busy ? (
