@@ -114,10 +114,10 @@ test('web LIVE actions expose labels, disabled state and accessible touch target
 
 test('web group-call screen exposes accessible live media and recovery controls', () => {
   const screen = readFileSync(new URL('GroupCallScreen.web.js', import.meta.url), 'utf8');
-  assert.match(screen, /new Room\\(/);
+  assert.match(screen, /new Room\(/);
   assert.match(screen, /accessibilityLabel="Enable call audio"/);
-  assert.match(screen, /accessibilityLabel=\\{muted \\? 'Unmute microphone' : 'Mute microphone'\\}/);
-  assert.match(screen, /accessibilityLabel=\\{canEnd \\? 'End call' : 'Leave call'\\}/);
+  assert.match(screen, /accessibilityLabel=\{muted \? 'Unmute microphone' : 'Mute microphone'\}/);
+  assert.match(screen, /accessibilityLabel=\{canEnd \? 'End call' : 'Leave call'\}/);
 });
 
 test('create-group screen exposes accessible selection controls and complete contact states', () => {
