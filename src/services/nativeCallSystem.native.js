@@ -173,6 +173,28 @@ export function setRTCAudioSessionConfiguration(hasVideo) {
 export function setAudioSessionPortOverride(useSpeaker) {
   if (api) api.setAudioSessionPortOverride(Boolean(useSpeaker));
 }
+
+export function prepareAudioSessionForCall(hasVideo) {
+  if (!api) return false;
+  try {
+    api.prepareAudioSessionForCall(Boolean(hasVideo));
+    return true;
+  } catch (error) {
+    console.warn('[calls] audio session preparation failed:', error?.message || error);
+    return false;
+  }
+}
+
+export function restoreAudioSession() {
+  if (!api) return false;
+  try {
+    api.restoreAudioSession();
+    return true;
+  } catch (error) {
+    console.warn('[calls] audio session restoration failed:', error?.message || error);
+    return false;
+  }
+}
 export async function getActiveNativeCallSession() {
   return api ? api.getActiveCallSession() : null;
 }
