@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, SafeAreaView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, SafeAreaView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { backendFetch } from '../services/backendClient';
@@ -35,7 +35,7 @@ export default function LiveReplayScreen({ route, navigation }) {
         await player.replaceAsync({ uri: result.url });
         if (!active) return;
         setPlaybackUrl(result.url);
-        player.play();
+        if (Platform.OS !== 'web') player.play();
       } catch (e) {
         if (active) {
           setPlaybackUrl(null);
