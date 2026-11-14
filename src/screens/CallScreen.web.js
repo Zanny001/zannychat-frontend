@@ -122,6 +122,7 @@ export default function CallScreenWeb({ route, navigation }) {
             if (isCaller) return;
             await pc.setLocalDescription({ type: 'rollback' });
           }
+          remoteDescriptionReady.current = false;
           await pc.setRemoteDescription(new window.RTCSessionDescription(signal.payload));
           remoteDescriptionReady.current = true;
           for (const candidate of queuedIce.current.splice(0)) await pc.addIceCandidate(new window.RTCIceCandidate(candidate));
@@ -400,6 +401,7 @@ export default function CallScreenWeb({ route, navigation }) {
         setActiveCallType('video');
       }
       if (pc.signalingState !== 'stable') throw new Error('The call is already updating. Please try the camera switch again.');
+      remoteDescriptionReady.current = false;
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       await sendCallSignal({ call: callRef.current, type: 'offer', payload: { type: offer.type, sdp: offer.sdp } });
