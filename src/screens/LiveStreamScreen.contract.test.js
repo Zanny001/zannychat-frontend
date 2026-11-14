@@ -26,3 +26,12 @@ test('stage panel shows the enforced guest capacity and retains moderator manage
   assert.ok(source.includes('up to 5 guests'));
   assert.ok(source.includes('onSetModerator'));
 });
+
+test('web LIVE creator stage manager has parity with native guest controls', () => {
+  const webSource = fs.readFileSync(path.join(here, 'LiveStreamScreen.web.js'), 'utf8');
+  assert.ok(webSource.includes('/guests/invite'));
+  assert.ok(webSource.includes('/mute'));
+  assert.ok(webSource.includes('Manage LIVE stage'));
+  assert.ok(webSource.includes('Remove guest'));
+  assert.ok(webSource.includes('up to 5 guests'));
+});

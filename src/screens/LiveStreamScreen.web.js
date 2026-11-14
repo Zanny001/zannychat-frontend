@@ -110,6 +110,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [guestStatus, setGuestStatus] = useState('none');
   const [guestApproved, setGuestApproved] = useState(false);
   const [reports, setReports] = useState([]);
+  const [participants, setParticipants] = useState([]);
   const [panel, setPanel] = useState('');
 
   useEffect(() => {
@@ -309,6 +310,34 @@ export default function LiveStreamScreen({ route, navigation }) {
     } catch (err) { setError(err?.message || 'Could not update report.'); }
   };
 
+  const loadParticipants = async () => {
+    try {
+      const result = await backendFetch(`/live/${stream.id}/participants`);
+      setParticipants(Array.isArray(result?.participants) ? result.participants : []);
+      setPanel(panel === 'stage' ? '' : 'stage');
+    } catch (err) { setError(err?.message || 'Could not load LIVE stage participants.'); }
+  };
+  const inviteGuest = async (userId) => {
+    try {
+      await backendFetch(`/live/${stream.id}/guests/invite`, { method: 'POST', body: JSON.stringify({ userId }) });
+      setParticipants((items) => items.map((item) => item.userId === userId ? { ...item, guestInvited: true } : item));
+    } catch (err) { setError(err?.message || 'Could not invite guest.'); }
+  };
+  const muteGuest = async (userId, muted) => {
+    try {
+      const result = await backendFetch(`/live/${stream.id}/guests/${userId}/mute`, { method: 'PATCH', body: JSON.stringify({ muted }) });
+      setParticipants((items) => items.map((item) => item.userId === userId ? { ...item, microphoneMuted: result.microphoneMuted } : item));
+    } catch (err) { setError(err?.message || 'Could not update guest microphone.'); }
+  };
+  const removeGuest = async (userId) => {
+    const guest = participants.find((item) => item.userId === userId);
+    if (typeof window !== 'undefined' && !window.confirm(`Remove ${guest?.name || 'this guest'} from the LIVE stage?`)) return;
+    try {
+      await backendFetch(`/live/${stream.id}/guests/${userId}`, { method: 'DELETE' });
+      await loadParticipants();
+    } catch (err) { setError(err?.message || 'Could not remove guest.'); }
+  };
+
   if (!stream || !connection) return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}><Text style={[typography.body, { color: colors.textPrimary }]}>This LIVE room is unavailable.</Text><Action colors={colors} label="Go back" onPress={() => navigation.goBack()} /></SafeAreaView>;
 
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -353,7 +382,18 @@ export default function LiveStreamScreen({ route, navigation }) {
         <Action colors={colors} label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={toggleCamera} />
         <Action colors={colors} label={mic ? 'Mute mic' : 'Unmute mic'} onPress={toggleMic} />
       </View>}
+      {creatorMode && stream.allow_guests && <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}><Action colors={colors} label={panel === 'stage' ? 'Close stage manager' : 'Manage LIVE stage'} onPress={loadParticipants} /></View>}
       {moderatorMode && <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}><Action colors={colors} label={panel === 'reports' ? 'Close safety reports' : 'Safety reports'} onPress={loadReports} /></View>}
+      {panel === 'stage' && creatorMode && <View style={{ margin: 12, padding: 12, borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+        <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 8 }}>LIVE stage manager · up to 5 guests</Text>
+        {participants.map((item) => <View key={item.userId} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border }}>
+          <Text style={{ color: colors.textPrimary, flex: 1, minWidth: 100 }}>{item.name}{item.stage ? ' · On stage' : !item.joined ? ' · offline' : ''}</Text>
+          {stream.allow_guests && item.joined && item.role === 'viewer' && <Action colors={colors} label={item.guestInvited ? 'Invited' : 'Invite to stage'} disabled={busy || item.guestInvited} onPress={() => inviteGuest(item.userId)} />}
+          {item.stage && <Action colors={colors} label={item.microphoneMuted ? 'Unmute mic' : 'Mute mic'} onPress={() => muteGuest(item.userId, !item.microphoneMuted)} />}
+          {item.stage && <Action colors={colors} label="Remove guest" danger onPress={() => removeGuest(item.userId)} />}
+        </View>)}
+        {!participants.length && <Text style={{ color: colors.textSecondary }}>No connected viewers or guests yet.</Text>}
+      </View>}
       {panel === 'reports' && <View style={{ margin: 12, padding: 12, borderRadius: 14, backgroundColor: colors.surface }}>
         <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 8 }}>LIVE safety reports</Text>
         {reports.map((item) => <View key={item.id} style={{ paddingVertical: 7 }}>
