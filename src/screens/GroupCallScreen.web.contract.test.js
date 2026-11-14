@@ -10,7 +10,7 @@ test('web group calls use the LiveKit JS media engine and publish local micropho
   assert.match(source, /new Room\(/);
   assert.match(source, /backendFetch\('\/group-calls'/);
   assert.match(source, /joinedRoomIdRef/);
-  assert.match(source, /room\.connect\(result\.livekitUrl, result\.token\)/);
+  assert.match(source, /room\.connect\(connected\.livekitUrl, connected\.token\)/);
   assert.match(source, /setMicrophoneEnabled\(true\)/);
   assert.match(source, /setCameraEnabled\(true\)/);
 });
