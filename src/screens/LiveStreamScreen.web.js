@@ -66,6 +66,8 @@ export default function LiveStreamScreen({ route, navigation }) {
   const localRef = useRef(null);
   const remoteAudioRef = useRef(null);
   const [remoteVideoTracks, setRemoteVideoTracks] = useState([]);
+  const [remoteAudioParticipants, setRemoteAudioParticipants] = useState([]);
+  const audioOnlyParticipants = remoteAudioParticipants.filter((participant) => !remoteVideoTracks.some((track) => track.participant.identity === participant.identity));
   const endedRef = useRef(false);
   const [status, setStatus] = useState('Connecting…');
   const [error, setError] = useState('');
@@ -109,11 +111,19 @@ export default function LiveStreamScreen({ route, navigation }) {
         setRemoteVideoTracks((current) => current.some((item) => item.sid === track.sid) ? current : [...current, track]);
       } else if (track.kind === Track.Kind.Audio) {
         attach(track, remoteAudioRef.current);
+        if (!track.participant.isLocal) {
+          setRemoteAudioParticipants((current) => current.some((item) => item.identity === track.participant.identity)
+            ? current
+            : [...current, { identity: track.participant.identity, name: track.participant.name || track.participant.identity }]);
+        }
       }
     };
     const onUnsubscribed = (track) => {
       if (track.kind === Track.Kind.Video) {
         setRemoteVideoTracks((current) => current.filter((item) => item.sid !== track.sid));
+      }
+      if (track.kind === Track.Kind.Audio && !track.participant.isLocal) {
+        setRemoteAudioParticipants((current) => current.filter((item) => item.identity !== track.participant.identity));
       }
       track.detach();
     };
@@ -157,6 +167,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       if (localRef.current) localRef.current.replaceChildren();
       if (remoteAudioRef.current) remoteAudioRef.current.replaceChildren();
       setRemoteVideoTracks([]);
+      setRemoteAudioParticipants([]);
       roomRef.current = null;
     };
   }, [stream?.id, connection?.livekitUrl, connection?.token, creatorMode, publisherMode]);
@@ -282,10 +293,23 @@ export default function LiveStreamScreen({ route, navigation }) {
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 20 }}>
       <View style={{ minHeight: 220, marginHorizontal: 12, borderRadius: 18, overflow: 'hidden', backgroundColor: '#050509', position: 'relative' }}>
         {publisherMode && <View ref={localRef} collapsable={false} style={{ width: '100%', minHeight: 220 }} />}
-        {!remoteVideoTracks.length && !publisherMode && <Text style={{ color: colors.textSecondary, textAlign: 'center', padding: 12 }}>If the creator is not on screen yet, their video will appear here.</Text>}
+        {!remoteVideoTracks.length && !publisherMode && !audioOnlyParticipants.length && <Text style={{ color: colors.textSecondary, textAlign: 'center', padding: 12 }}>If the creator is not on screen yet, their video will appear here.</Text>}
+        {!remoteVideoTracks.length && !!audioOnlyParticipants.length && (
+          <View style={{ alignItems: 'center', padding: 18 }}>
+            <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 17 }}>LIVE audio is on</Text>
+            <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 6 }}>The stage is continuing with microphones while cameras are off.</Text>
+          </View>
+        )}
         {!!remoteVideoTracks.length && (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'stretch', gap: 8, padding: 8 }}>
             {remoteVideoTracks.map((track) => <RemoteVideoTile key={track.sid} track={track} colors={colors} />)}
+          </View>
+        )}
+        {!!audioOnlyParticipants.length && (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, padding: 8 }}>
+            {audioOnlyParticipants.map((participant) => <View key={participant.identity} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+              <Text style={{ color: colors.textPrimary, fontSize: 12 }}>{participant.name} · Audio only</Text>
+            </View>)}
           </View>
         )}
         <View ref={remoteAudioRef} collapsable={false} style={{ width: 1, height: 1, opacity: 0 }} />
