@@ -2,17 +2,7 @@ import { Platform } from 'react-native';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { parseGoogleOAuthCallback } from '../utils/googleOAuthCallback';
-
-function getWebRedirect() {
-  if (typeof window !== 'undefined' && window.location?.origin) {
-    return window.location.origin;
-  }
-
-  const configured = process.env.EXPO_PUBLIC_WEB_REDIRECT_URL;
-  if (configured) return configured.replace(/\/$/, '');
-
-  throw new Error('Web OAuth redirect URL is unavailable.');
-}
+import { getOAuthRedirectUrl } from '../utils/oauthRedirect';
 
 const callbackExchanges = new Map();
 
@@ -39,7 +29,7 @@ export async function startGoogleOAuth(supabase) {
   if (Platform.OS === 'web') {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: getWebRedirect() },
+      options: { redirectTo: getOAuthRedirectUrl() },
     });
     if (error) throw error;
     return { started: true };
