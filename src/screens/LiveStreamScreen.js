@@ -179,7 +179,7 @@ function LiveMedia({ creatorMode, publisherMode, cameraEnabled, microphoneEnable
                 {item.stage && <TouchableOpacity onPress={() => onRemoveGuest(item.userId)} disabled={busy} accessibilityRole="button" accessibilityLabel="Remove guest from LIVE stage">
                   <Text style={{ color: colors.danger, fontWeight: '800', fontSize: 10 }}>Remove guest</Text>
                 </TouchableOpacity>}
-                {(item.moderator || item.joined) && <TouchableOpacity onPress={() => onSetModerator(item.userId, !item.moderator)} accessibilityRole="button" accessibilityLabel={item.moderator ? 'Remove LIVE moderator' : 'Make LIVE moderator'}>
+                {(item.moderator || item.joined) && <TouchableOpacity onPress={() => onSetModerator(item.userId, !item.moderator)} accessibilityRole="button" accessibilityLabel={item.moderator ? `Remove ${item.name} as LIVE moderator` : `Make ${item.name} a LIVE moderator`}>
                   <Text style={{ color: item.moderator ? colors.danger : colors.accent, fontWeight: '800', fontSize: 10 }}>{item.moderator ? 'Remove moderator' : 'Make moderator'}</Text>
                 </TouchableOpacity>}
               </View>
