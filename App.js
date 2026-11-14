@@ -69,6 +69,18 @@ export default function App() {
     }
 
     async function resolveInitialRoute() {
+      // Canonicalize the retired production hostname before Supabase restores
+      // sessions or starts PKCE flows. This preserves path/query/hash while
+      // ensuring the PKCE verifier is created and consumed on the same origin.
+      if (Platform.OS === 'web' && typeof window !== 'undefined'
+        && window.location?.origin === 'https://zannychat-app.netlify.app') {
+        const destination = new URL(window.location.href);
+        destination.protocol = 'https:';
+        destination.hostname = 'zannychat.netlify.app';
+        destination.port = '';
+        window.location.replace(destination.toString());
+        return;
+      }
       const isWebRecoveryCallback = Platform.OS === 'web' && typeof window !== 'undefined'
         && new URL(window.location.href).searchParams.get('reset-password') === '1';
       if (!SUPABASE_ENABLED || !supabase) {
