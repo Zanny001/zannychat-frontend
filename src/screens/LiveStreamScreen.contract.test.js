@@ -172,3 +172,13 @@ test('native and web LIVE guests only activate publisher media when the server g
   assert.ok(screen.includes("connection?.role === 'guest' && connection?.canPublish === true && !demotedToViewer"));
   assert.ok(webSource.includes("connection?.role === 'guest' && connection?.canPublish && !demotedToViewer"));
 });
+
+test('LIVE video tiles use a responsive moderate 16:9 frame instead of oversized fixed heights', () => {
+  const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(screen.includes('aspectRatio: 16 / 9'));
+  assert.ok(screen.includes('maxHeight: 315'));
+  assert.ok(screen.includes('maxHeight: stageGridVideos.length === 1 ? 315 : 180'));
+  assert.ok(webSource.includes('aspectRatio: 16 / 9'));
+  assert.ok(webSource.includes('maxWidth: spotlight ? 560 : 520'));
+  assert.ok(!webSource.includes('minHeight: spotlight ? 310 : 190'));
+});
