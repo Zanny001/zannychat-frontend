@@ -39,3 +39,13 @@ test('outgoing call cancellation remains an accessible, generously sized action'
   assert.match(source, /accessibilityLabel="Cancel outgoing call"/);
   assert.match(source, /width: 72, height: 72/);
 });
+
+test('active call screens share the premium type scale on native and web', () => {
+  for (const name of ['CallScreen.js', 'CallScreen.web.js']) {
+    const source = screen(name);
+    assert.match(source, /const \{ colors, typography, resolvedMode \} = useTheme\(\)/, name);
+    assert.match(source, /typography\.display/, `${name} participant name`);
+    assert.match(source, /typography\.body/, `${name} call phase`);
+    assert.match(source, /typography\.small/, `${name} status and control labels`);
+  }
+});
