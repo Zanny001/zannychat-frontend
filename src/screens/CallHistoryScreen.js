@@ -147,6 +147,7 @@ export default function CallHistoryScreen({ navigation }) {
           {calls.map((item) => {
             const missed = item.status === 'missed' || (item.status === 'ringing' && Date.parse(item.expires_at) <= Date.now());
             const userId = item.direction === 'incoming' ? item.callee_id : item.caller_id;
+            const peerUserId = item.direction === 'incoming' ? item.caller_id : item.callee_id;
             const label = getCallHistoryLabel(item, userId);
             const isVideo = item.call_type === 'video';
             const kind = isVideo ? 'Video call' : 'Audio call';
@@ -164,10 +165,10 @@ export default function CallHistoryScreen({ navigation }) {
                     <Text style={[typography.small, { color: colors.textSecondary }]} numberOfLines={1}>{formatDate(item.created_at)}{item.durationSeconds ? ` · ${formatDuration(item.durationSeconds)}` : ''}</Text>
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <TouchableOpacity onPress={() => redialCall(item, userId, 'audio')} accessibilityRole="button" accessibilityLabel={'Call ' + (item.participantName || 'contact') + ' again'} style={{ width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.13) }}>
+                    <TouchableOpacity onPress={() => redialCall(item, peerUserId, 'audio')} accessibilityRole="button" accessibilityLabel={'Call ' + (item.participantName || 'contact') + ' again'} style={{ width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.13) }}>
                       <Ionicons name="call" size={17} color={colors.primary} />
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => redialCall(item, userId, 'video')} accessibilityRole="button" accessibilityLabel={'Video call ' + (item.participantName || 'contact') + ' again'} style={{ width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.accent || colors.primary, 0.13) }}>
+                    <TouchableOpacity onPress={() => redialCall(item, peerUserId, 'video')} accessibilityRole="button" accessibilityLabel={'Video call ' + (item.participantName || 'contact') + ' again'} style={{ width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.accent || colors.primary, 0.13) }}>
                       <Ionicons name="videocam" size={17} color={colors.accent || colors.primary} />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => removeCall(item)} disabled={deletingCallId === item.id} accessibilityRole="button" accessibilityLabel={'Delete call record with ' + (item.participantName || 'contact')} accessibilityState={{ disabled: deletingCallId === item.id }} style={{ width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.danger, 0.12) }}>
