@@ -6,6 +6,8 @@ const native = fs.readFileSync(new URL('./CallScreen.js', import.meta.url), 'utf
 const web = fs.readFileSync(new URL('./CallScreen.web.js', import.meta.url), 'utf8');
 
 test('native one-to-one calls can be promoted to a multi-party LiveKit room', () => {
+  assert.match(native, /navigateToConference\(result\.room, result\)/);
+  assert.match(web, /navigateToConference\(result\.room, result\)/);
   assert.match(native, /CallInvitePicker/);
   assert.match(native, /\/group-calls\/upgrade\//);
   assert.match(native, /group_room_id/);
