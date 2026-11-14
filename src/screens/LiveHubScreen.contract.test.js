@@ -59,3 +59,10 @@ test('Go LIVE validates the server connection before opening the broadcast studi
   assert.ok(screen.includes("!connection?.stream?.id || !connection?.livekitUrl || !connection?.token"));
   assert.ok(screen.includes("navigation.navigate('LiveStream', { connection, creatorMode: true })"));
 });
+
+test('LIVE hub receives direct guest-stage invitations and opens the stage for invitees', () => {
+  assert.ok(screen.includes("'live_guest_invitation'"));
+  assert.ok(screen.includes("item.invitation_type === 'guest' ? 'Invited to join the LIVE stage'"));
+  assert.ok(screen.includes("item.invitation_type === 'guest' ? 'Join stage' : 'Join'"));
+  assert.ok(screen.includes("item.invitation_type === 'guest' ? 'mic' : 'lock-closed'"));
+});
