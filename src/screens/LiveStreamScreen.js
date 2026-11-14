@@ -219,7 +219,12 @@ export default function LiveStreamScreen({ route, navigation }) {
       setComments(Array.isArray(result?.comments) ? result.comments : []);
       const incomingReactions = (Array.isArray(result?.reactions) ? result.reactions : [])
         .filter((item) => item?.id && !seenReactionIds.current.has(item.id));
-      incomingReactions.forEach((item) => seenReactionIds.current.add(item.id));
+      incomingReactions.forEach((item) => {
+        seenReactionIds.current.add(item.id);
+        if (seenReactionIds.current.size > 500) {
+          seenReactionIds.current.delete(seenReactionIds.current.values().next().value);
+        }
+      });
       if (incomingReactions.length) {
         setFloatingReactions((current) => [...current, ...incomingReactions].slice(-16));
       }
