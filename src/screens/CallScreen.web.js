@@ -21,6 +21,8 @@ export default function CallScreenWeb({ route, navigation }) {
   const [phase, setPhase] = useState('Connecting…');
   const [muted, setMuted] = useState(false);
   const [cameraOff, setCameraOff] = useState((initial.call_type || callType) !== 'video');
+  const [activeCallType, setActiveCallType] = useState(initial.call_type || callType);
+  const [remoteVideoActive, setRemoteVideoActive] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [errorText, setErrorText] = useState('');
   const [networkNotice, setNetworkNotice] = useState('');
@@ -44,7 +46,6 @@ export default function CallScreenWeb({ route, navigation }) {
   const iceRestartInProgressRef = useRef(false);
   const upgradeNavigatedRef = useRef(false);
 
-  const activeCallType = call?.call_type || callType;
   const immersiveVideo = activeCallType === 'video';
   const foreground = immersiveVideo ? '#FFFFFF' : colors.textPrimary;
   const secondaryForeground = immersiveVideo ? '#C4C2D2' : colors.textSecondary;
@@ -109,7 +110,11 @@ export default function CallScreenWeb({ route, navigation }) {
       const expectedRemoteId = isCaller ? callRef.current?.callee_id : callRef.current?.caller_id;
       if (signal.sender_id !== expectedRemoteId) return;
       try {
-        if (signal.signal_type === 'offer' && !isCaller) {
+        if (signal.signal_type === 'offer') {
+          if (pc.signalingState !== 'stable') {
+            if (isCaller) return;
+            await pc.setLocalDescription({ type: 'rollback' });
+          }
           await pc.setRemoteDescription(new window.RTCSessionDescription(signal.payload));
           remoteDescriptionReady.current = true;
           for (const candidate of queuedIce.current.splice(0)) await pc.addIceCandidate(new window.RTCIceCandidate(candidate));
@@ -117,7 +122,7 @@ export default function CallScreenWeb({ route, navigation }) {
           await pc.setLocalDescription(answer);
           await sendCallSignal({ call: callRef.current, type: 'answer', payload: { type: answer.type, sdp: answer.sdp } });
           setPhase('Connecting…');
-        } else if (signal.signal_type === 'answer' && isCaller) {
+        } else if (signal.signal_type === 'answer' && pc.signalingState === 'have-local-offer') {
           await pc.setRemoteDescription(new window.RTCSessionDescription(signal.payload));
           remoteDescriptionReady.current = true;
           for (const candidate of queuedIce.current.splice(0)) await pc.addIceCandidate(new window.RTCIceCandidate(candidate));
@@ -176,6 +181,12 @@ export default function CallScreenWeb({ route, navigation }) {
       pc.ontrack = (event) => {
         let nextStream = event.streams?.[0];
         if (nextStream) remoteStreamRef.current = nextStream;
+        if (event.track?.kind === 'video') {
+          event.track.onunmute = () => { if (activeRef.current) setRemoteVideoActive(true); };
+          event.track.onmute = () => { if (activeRef.current) setRemoteVideoActive(false); };
+          event.track.onended = () => { if (activeRef.current) setRemoteVideoActive(false); };
+          if (!event.track.muted && activeRef.current) setRemoteVideoActive(true);
+        }
         else if (event.track) {
           if (!remoteStreamRef.current) remoteStreamRef.current = new window.MediaStream();
           if (!remoteStreamRef.current.getTracks().some((track) => track.id === event.track.id)) {
@@ -347,10 +358,49 @@ export default function CallScreenWeb({ route, navigation }) {
     localStreamRef.current?.getAudioTracks?.().forEach((track) => { track.enabled = !next; });
     setMuted(next);
   };
-  const toggleCamera = () => {
+  const toggleCamera = async () => {
     const next = !cameraOff;
-    localStreamRef.current?.getVideoTracks?.().forEach((track) => { track.enabled = !next; });
-    setCameraOff(next);
+    const pc = pcRef.current;
+    const stream = localStreamRef.current;
+    if (!pc || !stream || !activeRef.current) return;
+    try {
+      if (next) {
+        const track = stream.getVideoTracks?.()[0];
+        if (track) {
+          const sender = pc.getSenders().find((item) => item.track?.id === track.id);
+          if (sender) pc.removeTrack(sender);
+          stream.removeTrack(track);
+          track.stop();
+        }
+        setCameraOff(true);
+        setActiveCallType('audio');
+      } else {
+        let track = stream.getVideoTracks?.()[0];
+        if (!track) {
+          const cameraStream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: { facingMode: 'user', width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: 24 } },
+          });
+          track = cameraStream.getVideoTracks?.()[0];
+          if (!track) throw new Error('No camera track was provided by this device.');
+          stream.addTrack(track);
+          pc.addTrack(track, stream);
+        } else {
+          track.enabled = true;
+        }
+        setLocalStream(stream);
+        setCameraOff(false);
+        setActiveCallType('video');
+      }
+      if (pc.signalingState !== 'stable') throw new Error('The call is already updating. Please try the camera switch again.');
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      await sendCallSignal({ call: callRef.current, type: 'offer', payload: { type: offer.type, sdp: offer.sdp } });
+    } catch (error) {
+      setErrorText(error?.message || 'Could not switch call video. Your audio call is still active.');
+      setCameraOff(!next);
+      setActiveCallType(next ? 'video' : 'audio');
+    }
   };
   const control = (icon, label, action, active = false, danger = false) => (
     <TouchableOpacity key={label} onPress={action} accessibilityRole="button" accessibilityLabel={label}
@@ -367,7 +417,7 @@ export default function CallScreenWeb({ route, navigation }) {
         ref: remoteAudioRef, autoPlay: true, playsInline: true,
         style: { display: 'none' },
       }) : null}
-      {activeCallType === 'video' && remoteStream ? React.createElement('video', {
+      {remoteVideoActive && remoteStream ? React.createElement('video', {
         ref: remoteVideoRef, autoPlay: true, playsInline: true,
         style: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', backgroundColor: '#11101A' },
       }) : null}
@@ -385,7 +435,7 @@ export default function CallScreenWeb({ route, navigation }) {
           : <View style={{ width: 26 }} />}
       </View>
       <View style={styles.identity}>
-        {!(activeCallType === 'video' && remoteStream) ? <Avatar name={participantName} color={avatarColor || colors.primary} size={108} /> : null}
+        {!remoteVideoActive ? <Avatar name={participantName} color={avatarColor || colors.primary} size={108} /> : null}
         <Text numberOfLines={2} style={[typography.display, styles.name, { color: foreground, maxWidth: '100%', paddingHorizontal: 8 }]}>{participantName}</Text>
         <Text style={[typography.body, styles.phase, { color: secondaryForeground }]}>{phase === 'Connected' ? formatCallDuration(seconds) : phase}</Text>
         {networkNotice ? <Text style={[typography.small, styles.networkNotice, { color: immersiveVideo ? '#F2D28B' : colors.warning }]}>{networkNotice}</Text> : null}
@@ -396,7 +446,7 @@ export default function CallScreenWeb({ route, navigation }) {
       <View style={styles.bottom}>
         <View style={styles.controlsRow}>
           {control(muted ? 'mic-off' : 'mic', muted ? 'Unmute' : 'Mute', toggleMute, muted)}
-          {activeCallType === 'video' ? control(cameraOff ? 'videocam-off' : 'videocam', cameraOff ? 'Camera on' : 'Camera off', toggleCamera, cameraOff) : null}
+          {control(cameraOff ? 'videocam-off' : 'videocam', cameraOff ? 'Switch to video' : 'Switch to audio', toggleCamera, cameraOff)}
         </View>
         <TouchableOpacity onPress={() => endCall('ended')} accessibilityRole="button" accessibilityLabel="End call" style={[styles.endButton, { backgroundColor: colors.danger }]}>
           <Ionicons name="call" size={27} color={colors.onDanger} style={{ transform: [{ rotate: '135deg' }] }} />
