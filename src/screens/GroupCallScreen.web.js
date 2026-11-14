@@ -261,12 +261,10 @@ export default function GroupCallScreenWeb({ route, navigation }) {
           <Ionicons name={muted ? 'mic-off' : 'mic'} size={21} color={muted ? colors.onPrimary : colors.textPrimary} />
           <Text style={[typography.small, { color: muted ? colors.onPrimary : colors.textPrimary }]}>{muted ? 'Unmute' : 'Mute'}</Text>
         </TouchableOpacity>
-        {(isVideoMode || localCameraTrack || remoteVideoTracksView.length > 0) ? (
-          <TouchableOpacity onPress={toggleCamera} accessibilityRole="button" accessibilityLabel={cameraOff ? 'Turn camera on' : 'Turn camera off'} style={[styles.control, { backgroundColor: cameraOff ? colors.primary : colors.surface, borderColor: colors.border }]}>
+        <TouchableOpacity onPress={toggleCamera accessibilityRole="button" accessibilityLabel={cameraOff ? 'Turn camera on' : 'Turn camera off'} style={[styles.control, { backgroundColor: cameraOff ? colors.primary : colors.surface, borderColor: colors.border }]}>
             <Ionicons name={cameraOff ? 'videocam-off' : 'videocam'} size={21} color={cameraOff ? colors.onPrimary : colors.textPrimary} />
             <Text style={[typography.small, { color: cameraOff ? colors.onPrimary : colors.textPrimary }]}>{cameraOff ? 'Camera on' : 'Camera off'}</Text>
-          </TouchableOpacity>
-        ) : null}
+        </TouchableOpacity>
         {canInviteNow ? (
           <TouchableOpacity onPress={() => setInvitePickerVisible(true)} accessibilityRole="button" accessibilityLabel="Add people to call" style={[styles.control, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Ionicons name="person-add" size={21} color={colors.textPrimary} />
