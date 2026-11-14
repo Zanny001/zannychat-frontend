@@ -177,7 +177,8 @@ test('LIVE video tiles use a responsive moderate 16:9 frame instead of oversized
   const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.ok(screen.includes('aspectRatio: 16 / 9'));
   assert.ok(screen.includes('maxHeight: 315'));
-  assert.ok(screen.includes('maxHeight: stageGridVideos.length === 1 ? 315 : 180'));
+  assert.ok(screen.includes('maxHeight: stageGridVideos.length === 1 && !spotlightVideo ? 315 : 180'));
+  assert.ok(screen.includes("numColumns={stageGridVideos.length === 1 && !spotlightVideo ? 1 : 2}"));
   assert.ok(webSource.includes('aspectRatio: 16 / 9'));
   assert.ok(webSource.includes('maxWidth: spotlight || single ? 560 : 520'));
   assert.ok(webSource.includes('single={remoteVideoTracks.length === 1}'));
