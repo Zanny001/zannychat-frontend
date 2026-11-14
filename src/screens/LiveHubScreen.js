@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, FlatList, Platform, SafeAreaView, ScrollView,
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
+import { getCurrentUser } from '../services/api';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 import GlassCard from '../components/GlassCard';
@@ -28,6 +29,7 @@ export default function LiveHubScreen({ navigation, route }) {
   const [streams, setStreams] = useState([]);
   const [invitations, setInvitations] = useState([]);
   const [replays, setReplays] = useState([]);
+  const [currentUserId, setCurrentUserId] = useState(null);
   const pendingReplayPollStartedAt = useRef(0);
   const [followingIds, setFollowingIds] = useState([]);
   const [followingCreators, setFollowingCreators] = useState([]);
@@ -81,12 +83,13 @@ export default function LiveHubScreen({ navigation, route }) {
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const [publicResult, followedResult, followResult, inviteResult, replayResult] = await Promise.all([
+      const [publicResult, followedResult, followResult, inviteResult, replayResult, currentUser] = await Promise.all([
         backendFetch('/live'),
         backendFetch('/live/following/streams').catch(() => ({ streams: [] })),
         backendFetch('/live/following').catch(() => ({ following: [] })),
         backendFetch('/live/invitations').catch(() => ({ invitations: [] })),
         backendFetch('/live/replays').catch(() => ({ replays: [] })),
+        getCurrentUser().catch(() => null),
       ]);
       const allStreams = [...(publicResult?.streams || []), ...(followedResult?.streams || [])];
       setStreams([...new Map(allStreams.map((item) => [item.id, item])).values()]);
@@ -94,6 +97,7 @@ export default function LiveHubScreen({ navigation, route }) {
       setFollowingIds((followResult?.following || []).map((item) => item.creator_id));
       setInvitations((inviteResult?.invitations || []).filter((item) => item.stream));
       setReplays(Array.isArray(replayResult?.replays) ? replayResult.replays : []);
+      setCurrentUserId(currentUser?.id || null);
       setError('');
     } catch (e) {
       setError(e?.message || 'LIVE discovery is unavailable.');
@@ -125,6 +129,20 @@ export default function LiveHubScreen({ navigation, route }) {
   }, [hasPendingReplays, refreshPendingReplays]);
 
   const openReplay = (item) => navigation.navigate('LiveReplay', { replay: item });
+
+  const deleteReplay = (item) => {
+    Alert.alert('Delete LIVE replay?', 'The saved video file will be permanently deleted. This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: async () => {
+        try {
+          await backendFetch('/live/replays/' + encodeURIComponent(item.id), { method: 'DELETE' });
+          setReplays((current) => current.filter((replay) => replay.id !== item.id));
+        } catch (e) {
+          Alert.alert('Could not delete replay', e?.message || 'Please try again.');
+        }
+      } },
+    ]);
+  };
 
   const loadInviteCandidates = async () => {
     setLoadingCandidates(true);
@@ -432,6 +450,12 @@ export default function LiveHubScreen({ navigation, route }) {
                           <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800' }]}>{item.status === 'processing' ? 'Preparing replay…' : item.status === 'starting' ? 'Starting recording…' : item.status === 'recording' ? 'Recording · auto-stops' : 'Replay unavailable'}</Text>
                         </View>
                       )}
+                    {item.creatorId === currentUserId && !['starting', 'recording', 'processing'].includes(item.status) ? (
+                        <TouchableOpacity onPress={() => deleteReplay(item)} accessibilityRole="button" accessibilityLabel={'Delete replay: ' + (item.streamTitle || 'LIVE replay')} style={{ minHeight: 38, borderRadius: radii.md, borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.32), alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.xs }}>
+                          <Ionicons name="trash-outline" size={15} color={colors.danger} />
+                          <Text style={[typography.caption, { color: colors.danger, fontWeight: '800' }]}>Delete replay</Text>
+                        </TouchableOpacity>
+                      ) : null}
                     </GlassCard>
                   ))}
                 </ScrollView>
