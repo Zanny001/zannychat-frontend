@@ -112,12 +112,12 @@ test('web LIVE actions expose labels, disabled state and accessible touch target
   assert.match(liveScreen, /heart: '❤️'/);
 });
 
-test('web group-call fallback provides an accessible native-app explanation and back action', () => {
-  const fallback = readFileSync(new URL('GroupCallScreen.web.js', import.meta.url), 'utf8');
-  assert.match(fallback, /Group calling needs the native app/);
-  assert.match(fallback, /accessibilityRole="button"/);
-  assert.match(fallback, /accessibilityLabel="Go back"/);
-  assert.match(fallback, /minHeight: 44/);
+test('web group-call screen exposes accessible live media and recovery controls', () => {
+  const screen = readFileSync(new URL('GroupCallScreen.web.js', import.meta.url), 'utf8');
+  assert.match(screen, /new Room\(/);
+  assert.match(screen, /accessibilityLabel="Enable call audio"/);
+  assert.match(screen, /accessibilityLabel=\{muted \? 'Unmute microphone' : 'Mute microphone'\}/);
+  assert.match(screen, /accessibilityLabel=\{canEnd \? 'End call' : 'Leave call'\}/);
 });
 
 test('create-group screen exposes accessible selection controls and complete contact states', () => {
@@ -320,7 +320,7 @@ function interactiveOpeningTags(source) {
 
 test('every interactive control in every screen file has an explicit accessible name and role', () => {
   const screenFiles = readdirSync(screenDirectory).filter((name) => name.endsWith('Screen.js') || name.endsWith('Screen.web.js'));
-  assert.equal(screenFiles.length, 47, 'The audited screen inventory changed; review the screen count before updating this contract.');
+  assert.equal(screenFiles.length, 48, 'The audited screen inventory changed; review the screen count before updating this contract.');
   const violations = [];
   let totalControls = 0;
   for (const file of screenFiles) {

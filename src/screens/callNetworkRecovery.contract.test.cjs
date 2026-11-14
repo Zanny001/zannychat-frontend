@@ -10,7 +10,8 @@ for (const [platform, source] of [['native', nativeSource], ['web', webSource]])
     assert.match(source, /oniceconnectionstatechange/);
     assert.match(source, /restartIce/);
     assert.match(source, /createOffer\(\{ iceRestart: true \}\)/);
-    assert.match(source, /signal\.signal_type === 'answer' && isCaller/);
-    assert.match(source, /signal\.signal_type === 'offer' && !isCaller/);
+    assert.match(source, /signal\.signal_type === 'answer' && pc\.signalingState === 'have-local-offer'/);
+    assert.match(source, /if \(signal\.signal_type === 'offer'\)/);
+    assert.match(source, /setLocalDescription\(\{ type: 'rollback' \}\)/);
   });
 }

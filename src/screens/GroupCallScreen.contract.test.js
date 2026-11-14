@@ -15,9 +15,10 @@ test('group call cleanup releases an established participant unless explicit lea
   assert.ok(screen.includes('endingRef.current = true'));
 });
 
-test('group call end action ends host rooms and leaves non-host rooms', () => {
-  assert.ok(screen.includes('connection.room?.host_user_id === data?.user?.id'));
-  assert.ok(screen.includes("isHost ? 'end' : 'leave'"));
+test('group call end action lets direct-conference participants and group managers end the room', () => {
+  assert.ok(screen.includes('connection.room.source_call_id'));
+  assert.ok(screen.includes('setCanEnd(true)'));
+  assert.ok(screen.includes("canEnd ? 'end' : 'leave'"));
 });
 
 
