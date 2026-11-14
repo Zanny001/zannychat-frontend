@@ -50,14 +50,32 @@ export default function LiveHubScreen({ navigation, route }) {
     return true;
   });
 
-  const refreshReplays = useCallback(async () => {
-    try {
-      const result = await backendFetch('/live/replays');
-      setReplays(Array.isArray(result?.replays) ? result.replays : []);
-    } catch (_) {
-      setReplays([]);
+  const refreshPendingReplays = useCallback(async () => {
+    const pending = replays.filter((item) => ['starting', 'recording', 'processing'].includes(item.status));
+    if (!pending.length) return;
+    const results = await Promise.all(pending.map(async (item) => {
+      try {
+        const result = await backendFetch(`/live/${item.streamId}/replays`);
+        const updated = (result?.replays || []).find((row) => row.id === item.id);
+        return updated ? [item.id, updated] : null;
+      } catch (_) {
+        return null;
+      }
+    }));
+    const updates = new Map(results.filter(Boolean));
+    if (updates.size) {
+      setReplays((current) => {
+        let changed = false;
+        const next = current.map((item) => {
+          const update = updates.get(item.id);
+          if (!update || (item.status === update.status && item.durationSeconds === update.duration_seconds)) return item;
+          changed = true;
+          return { ...item, status: update.status, durationSeconds: update.duration_seconds, fileSizeBytes: update.file_size_bytes, completedAt: update.completed_at };
+        });
+        return changed ? next : current;
+      });
     }
-  }, []);
+  }, [replays]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -88,9 +106,9 @@ export default function LiveHubScreen({ navigation, route }) {
   const hasPendingReplays = replays.some((item) => ['starting', 'recording', 'processing'].includes(item.status));
   useEffect(() => {
     if (!hasPendingReplays) return undefined;
-    const interval = setInterval(refreshReplays, 5000);
+    const interval = setInterval(refreshPendingReplays, 5000);
     return () => clearInterval(interval);
-  }, [hasPendingReplays, refreshReplays]);
+  }, [hasPendingReplays, refreshPendingReplays]);
 
   const openReplay = (item) => navigation.navigate('LiveReplay', { replay: item });
 
