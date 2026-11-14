@@ -179,6 +179,7 @@ test('LIVE video tiles use a responsive moderate 16:9 frame instead of oversized
   assert.ok(screen.includes('maxHeight: 315'));
   assert.ok(screen.includes('maxHeight: stageGridVideos.length === 1 ? 315 : 180'));
   assert.ok(webSource.includes('aspectRatio: 16 / 9'));
-  assert.ok(webSource.includes('maxWidth: spotlight ? 560 : 520'));
+  assert.ok(webSource.includes('maxWidth: spotlight || single ? 560 : 520'));
+  assert.ok(webSource.includes('single={remoteVideoTracks.length === 1}'));
   assert.ok(!webSource.includes('minHeight: spotlight ? 310 : 190'));
 });
