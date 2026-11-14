@@ -146,3 +146,23 @@ test('removed native guests are demoted to audience mode without disconnecting',
   assert.ok(screen.includes('demotedToViewer'));
   assert.ok(screen.includes('You can keep watching the LIVE.'));
 });
+
+test('LIVE creator replay controls remain hidden unless the server enables replay', () => {
+  assert.ok(screen.includes("backendFetch('/live/replays/config')"));
+  assert.ok(screen.includes("`/live/${stream.id}/replays/start`"));
+  assert.ok(screen.includes("`/live/${stream.id}/replays/${replay.id}/stop`"));
+  assert.ok(screen.includes('creatorMode && replayEnabled'));
+  assert.ok(screen.includes("replayStatus === 'recording'"));
+  assert.ok(screen.includes("navigation.navigate('LiveReplay'"));
+  assert.ok(screen.includes('five minutes'));
+});
+
+test('web LIVE creator exposes the same server-gated replay lifecycle and private player entry', () => {
+  const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(web.includes("backendFetch('/live/replays/config')"));
+  assert.ok(web.includes("`/live/${stream.id}/replays/start`"));
+  assert.ok(web.includes("`/live/${stream.id}/replays/${replay.id}/stop`"));
+  assert.ok(web.includes('creatorMode && replayEnabled'));
+  assert.ok(web.includes('Watch saved LIVE replay'));
+  assert.ok(web.includes("navigation.navigate('LiveReplay'"));
+});

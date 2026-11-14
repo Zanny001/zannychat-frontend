@@ -66,3 +66,28 @@ test('LIVE hub receives direct guest-stage invitations and opens the stage for i
   assert.ok(screen.includes("item.invitation_type === 'guest' ? 'Join stage' : 'Join'"));
   assert.ok(screen.includes("item.invitation_type === 'guest' ? 'mic' : 'lock-closed'"));
 });
+
+test('LIVE hub discovers replay cards and polls pending processing with a bounded window', () => {
+  assert.ok(screen.includes("backendFetch('/live/replays')"));
+  assert.ok(screen.includes('LIVE replays'));
+  assert.ok(screen.includes("item.status === 'ready'"));
+  assert.ok(screen.includes('Watch replay'));
+  assert.ok(screen.includes('Preparing replay…'));
+  assert.ok(screen.includes('hasPendingReplays'));
+  assert.ok(screen.includes('refreshPendingReplays'));
+  assert.ok(screen.includes('5 * 60 * 1000'));
+  assert.ok(screen.includes('15000'));
+  assert.ok(screen.includes("navigation.navigate('LiveReplay'"));
+});
+
+test('replay-ready notifications open the private in-app player', () => {
+  assert.ok(screen.includes("type === 'live_replay_ready'"));
+  assert.ok(screen.includes('notification.replayId'));
+  assert.ok(screen.includes("navigation.navigate('LiveReplay'"));
+});
+
+test('Go LIVE primary button uses its semantic foreground color for all palette themes', () => {
+  assert.ok(screen.includes('<ActivityIndicator color={colors.onPrimary} />'));
+  assert.ok(screen.includes('name="radio" size={20} color={colors.onPrimary}'));
+  assert.ok(screen.includes("{ color: colors.onPrimary }]}>{busy ? 'Connecting…' : 'Go LIVE'}"));
+});

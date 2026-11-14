@@ -27,6 +27,8 @@ export default function LiveHubScreen({ navigation, route }) {
   const { colors, spacing, radii, typography } = useTheme();
   const [streams, setStreams] = useState([]);
   const [invitations, setInvitations] = useState([]);
+  const [replays, setReplays] = useState([]);
+  const pendingReplayPollStartedAt = useRef(0);
   const [followingIds, setFollowingIds] = useState([]);
   const [followingCreators, setFollowingCreators] = useState([]);
   const [title, setTitle] = useState('');
@@ -43,6 +45,33 @@ export default function LiveHubScreen({ navigation, route }) {
   const [activeFilter, setActiveFilter] = useState('all');
   const handledLiveNotificationRef = useRef(null);
 
+  const refreshPendingReplays = useCallback(async () => {
+    const pending = replays.filter((item) => ['starting', 'recording', 'processing'].includes(item.status));
+    if (!pending.length) return;
+    const results = await Promise.all(pending.map(async (item) => {
+      try {
+        const result = await backendFetch(`/live/${item.streamId}/replays`);
+        const updated = (result?.replays || []).find((row) => row.id === item.id);
+        return updated ? [item.id, updated] : null;
+      } catch (_) {
+        return null;
+      }
+    }));
+    const updates = new Map(results.filter(Boolean));
+    if (updates.size) {
+      setReplays((current) => {
+        let changed = false;
+        const next = current.map((item) => {
+          const update = updates.get(item.id);
+          if (!update || (item.status === update.status && item.durationSeconds === update.duration_seconds)) return item;
+          changed = true;
+          return { ...item, status: update.status, durationSeconds: update.duration_seconds, fileSizeBytes: update.file_size_bytes, completedAt: update.completed_at };
+        });
+        return changed ? next : current;
+      });
+    }
+  }, [replays]);
+
   const visibleStreams = streams.filter((item) => {
     if (activeFilter === 'following') return followingIds.includes(item.creator_id);
     if (activeFilter === 'public') return item.visibility === 'public';
@@ -52,17 +81,19 @@ export default function LiveHubScreen({ navigation, route }) {
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const [publicResult, followedResult, followResult, inviteResult] = await Promise.all([
+      const [publicResult, followedResult, followResult, inviteResult, replayResult] = await Promise.all([
         backendFetch('/live'),
         backendFetch('/live/following/streams').catch(() => ({ streams: [] })),
         backendFetch('/live/following').catch(() => ({ following: [] })),
         backendFetch('/live/invitations').catch(() => ({ invitations: [] })),
+        backendFetch('/live/replays').catch(() => ({ replays: [] })),
       ]);
       const allStreams = [...(publicResult?.streams || []), ...(followedResult?.streams || [])];
       setStreams([...new Map(allStreams.map((item) => [item.id, item])).values()]);
       setFollowingCreators(followResult?.following || []);
       setFollowingIds((followResult?.following || []).map((item) => item.creator_id));
       setInvitations((inviteResult?.invitations || []).filter((item) => item.stream));
+      setReplays(Array.isArray(replayResult?.replays) ? replayResult.replays : []);
       setError('');
     } catch (e) {
       setError(e?.message || 'LIVE discovery is unavailable.');
@@ -71,7 +102,29 @@ export default function LiveHubScreen({ navigation, route }) {
     }
   }, []);
 
-  useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
+  useFocusEffect(useCallback(() => {
+    pendingReplayPollStartedAt.current = Date.now();
+    refresh();
+  }, [refresh]));
+
+  const hasPendingReplays = replays.some((item) => ['starting', 'recording', 'processing'].includes(item.status));
+  useEffect(() => {
+    if (!hasPendingReplays) {
+      pendingReplayPollStartedAt.current = 0;
+      return undefined;
+    }
+    if (!pendingReplayPollStartedAt.current) pendingReplayPollStartedAt.current = Date.now();
+    const interval = setInterval(() => {
+      if (Date.now() - pendingReplayPollStartedAt.current >= 5 * 60 * 1000) {
+        clearInterval(interval);
+        return;
+      }
+      refreshPendingReplays();
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [hasPendingReplays, refreshPendingReplays]);
+
+  const openReplay = (item) => navigation.navigate('LiveReplay', { replay: item });
 
   const loadInviteCandidates = async () => {
     setLoadingCandidates(true);
@@ -178,10 +231,16 @@ export default function LiveHubScreen({ navigation, route }) {
     const type = notification?.type;
     if (!type || !type.startsWith('live_')) return;
     const streamId = typeof notification.streamId === 'string' ? notification.streamId : null;
-    const key = type + ':' + (streamId || notification.creatorId || notification.followerId || 'hub');
+    const key = type + ':' + (notification.replayId || streamId || notification.creatorId || notification.followerId || 'hub');
     if (handledLiveNotificationRef.current === key) return;
     handledLiveNotificationRef.current = key;
     navigation.setParams?.({ liveNotification: undefined });
+
+    if (type === 'live_replay_ready' && typeof notification.replayId === 'string') {
+      refresh();
+      navigation.navigate('LiveReplay', { replay: { id: notification.replayId, streamTitle: 'LIVE replay' } });
+      return;
+    }
 
     const shouldJoin = streamId && (
       ['live_stream_started', 'live_invitation', 'live_guest_request', 'live_guest_invitation'].includes(type)
@@ -305,8 +364,8 @@ export default function LiveHubScreen({ navigation, route }) {
               </TouchableOpacity>
 
               <TouchableOpacity disabled={busy} onPress={startLive} accessibilityRole="button" accessibilityLabel="Go LIVE" accessibilityState={{ disabled: busy, busy }} style={{ backgroundColor: busy ? colors.border : colors.primary, borderRadius: radii.md, minHeight: 52, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.sm }}>
-                {busy ? <ActivityIndicator color={colors.background} /> : <Ionicons name="radio" size={20} color={colors.background} />}
-                <Text style={[typography.bodyStrong, { color: colors.background }]}>{busy ? 'Connecting…' : 'Go LIVE'}</Text>
+                {busy ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name="radio" size={20} color={colors.onPrimary} />}
+                <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>{busy ? 'Connecting…' : 'Go LIVE'}</Text>
               </TouchableOpacity>
               {!!startStage && <Text accessibilityRole="status" style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>{startStage}</Text>}
             </GlassCard>
@@ -335,6 +394,43 @@ export default function LiveHubScreen({ navigation, route }) {
                     </View>
                   </GlassCard>
                 ))}
+              </View>
+            )}
+
+            {replays.length > 0 && (
+              <View style={{ paddingHorizontal: spacing.md, marginBottom: spacing.md, gap: spacing.sm }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                  <Ionicons name="play-circle" size={19} color={colors.primary} />
+                  <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>LIVE replays</Text>
+                  <View style={{ flex: 1 }} />
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>{replays.length}</Text>
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
+                  {replays.map((item) => (
+                    <GlassCard key={item.id} style={{ width: 232 }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                        <View style={{ width: 40, height: 40, borderRadius: 13, backgroundColor: hexToRgba(colors.primary, 0.12), alignItems: 'center', justifyContent: 'center' }}>
+                          <Ionicons name="film-outline" size={20} color={colors.primary} />
+                        </View>
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <Text numberOfLines={2} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.streamTitle || 'LIVE replay'}</Text>
+                          <Text numberOfLines={1} style={[typography.caption, { color: colors.textSecondary }]}>{item.visibility === 'private' ? 'Private' : item.visibility === 'followers' ? 'Followers' : 'Public'} replay</Text>
+                        </View>
+                      </View>
+                      {item.status === 'ready' ? (
+                        <TouchableOpacity onPress={() => openReplay(item)} accessibilityRole="button" accessibilityLabel={'Watch replay: ' + (item.streamTitle || 'LIVE replay')} style={{ minHeight: 42, borderRadius: radii.md, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.xs }}>
+                          <Ionicons name="play" size={16} color={colors.onPrimary} />
+                          <Text style={[typography.small, { color: colors.onPrimary, fontWeight: '900' }]}>Watch replay</Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <View style={{ minHeight: 42, borderRadius: radii.md, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.xs }}>
+                          {item.status === 'processing' || item.status === 'starting' ? <ActivityIndicator size="small" color={colors.primary} /> : <Ionicons name={item.status === 'recording' ? 'radio-button-on' : 'alert-circle-outline'} size={16} color={item.status === 'recording' ? colors.danger : colors.textSecondary} />}
+                          <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800' }]}>{item.status === 'processing' ? 'Preparing replay…' : item.status === 'starting' ? 'Starting recording…' : item.status === 'recording' ? 'Recording · auto-stops' : 'Replay unavailable'}</Text>
+                        </View>
+                      )}
+                    </GlassCard>
+                  ))}
+                </ScrollView>
               </View>
             )}
 

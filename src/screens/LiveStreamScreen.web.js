@@ -105,6 +105,9 @@ export default function LiveStreamScreen({ route, navigation }) {
   useEffect(() => { setDemotedToViewer(false); setStageNotice(''); }, [connection?.token]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [replayEnabled, setReplayEnabled] = useState(false);
+  const [replay, setReplay] = useState(null);
+  const [replayBusy, setReplayBusy] = useState(false);
   const [camera, setCamera] = useState(publisherMode);
   const [mic, setMic] = useState(publisherMode);
   const localAudioOnly = publisherMode && mic && !camera;
@@ -118,6 +121,38 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [reports, setReports] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [panel, setPanel] = useState('');
+
+  const refreshReplay = useCallback(async () => {
+    if (!stream?.id || !creatorMode || !replayEnabled) return;
+    try {
+      const result = await backendFetch(`/live/${stream.id}/replays`);
+      const rows = Array.isArray(result?.replays) ? result.replays : [];
+      setReplay(rows.find((item) => ['starting', 'recording', 'processing', 'ready', 'failed'].includes(item.status)) || null);
+    } catch (_) {}
+  }, [stream?.id, creatorMode, replayEnabled]);
+
+  useEffect(() => {
+    if (!creatorMode) {
+      setReplayEnabled(false);
+      return undefined;
+    }
+    let active = true;
+    backendFetch('/live/replays/config')
+      .then((result) => { if (active) setReplayEnabled(Boolean(result?.enabled)); })
+      .catch(() => { if (active) setReplayEnabled(false); });
+    return () => { active = false; };
+  }, [creatorMode]);
+
+  useEffect(() => {
+    if (!creatorMode || !replayEnabled || !stream?.id) return undefined;
+    refreshReplay();
+  }, [creatorMode, replayEnabled, stream?.id, refreshReplay]);
+
+  useEffect(() => {
+    if (!creatorMode || !replayEnabled || !stream?.id || !['starting', 'recording', 'processing'].includes(replay?.status)) return undefined;
+    const interval = setInterval(refreshReplay, 5000);
+    return () => clearInterval(interval);
+  }, [creatorMode, replayEnabled, stream?.id, replay?.status, refreshReplay]);
 
   useEffect(() => {
     if (!stream?.id || !connection?.livekitUrl || !connection?.token) {
@@ -365,6 +400,41 @@ export default function LiveStreamScreen({ route, navigation }) {
     } catch (err) { setError(err?.message || 'Could not update LIVE spotlight.'); }
   };
 
+  const startReplay = async () => {
+    if (!stream?.id || replayBusy) return;
+    setReplayBusy(true);
+    try {
+      const result = await backendFetch(`/live/${stream.id}/replays/start`, { method: 'POST' });
+      setReplay(result?.replay || null);
+      setStatus('Replay recording started · auto-stops after five minutes');
+    } catch (err) {
+      setError(err?.message || 'Could not start replay recording.');
+    } finally {
+      setReplayBusy(false);
+    }
+  };
+  const confirmStartReplay = () => {
+    if (typeof window !== 'undefined' && !window.confirm("Record this LIVE for up to five minutes? Replay access follows the stream's audience settings.")) return;
+    startReplay();
+  };
+  const stopReplay = async () => {
+    if (!stream?.id || !replay?.id || replayBusy) return;
+    setReplayBusy(true);
+    try {
+      const result = await backendFetch(`/live/${stream.id}/replays/${replay.id}/stop`, { method: 'POST' });
+      setReplay((current) => ({ ...current, ...(result?.replay || {}), status: result?.replay?.status || 'processing' }));
+      setStatus('Preparing LIVE replay…');
+      refreshReplay();
+    } catch (err) {
+      setError(err?.message || 'Could not stop replay recording.');
+    } finally {
+      setReplayBusy(false);
+    }
+  };
+  const viewReplay = () => {
+    if (replay?.id) navigation.navigate('LiveReplay', { replay: { ...replay, streamTitle: stream?.title || 'LIVE replay' } });
+  };
+
   if (!stream || !connection) return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}><Text style={[typography.body, { color: colors.textPrimary }]}>This LIVE room is unavailable.</Text><Action colors={colors} label="Go back" onPress={() => navigation.goBack()} /></SafeAreaView>;
 
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -411,6 +481,7 @@ export default function LiveStreamScreen({ route, navigation }) {
         <Action colors={colors} label={mic ? 'Mute mic' : 'Unmute mic'} onPress={toggleMic} />
       </View>}
       {creatorMode && stream.allow_guests && <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}><Action colors={colors} label={panel === 'stage' ? 'Close stage manager' : 'Manage LIVE stage'} onPress={loadParticipants} /></View>}
+      {creatorMode && replayEnabled && <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}><Action colors={colors} label={replayBusy ? 'Updating replay…' : replay?.status === 'ready' ? 'Watch saved LIVE replay' : replay?.status === 'recording' ? 'Stop LIVE replay' : replay?.status === 'processing' || replay?.status === 'starting' ? 'Preparing replay…' : 'Start LIVE replay'} disabled={replayBusy || ['starting', 'processing'].includes(replay?.status)} onPress={replay?.status === 'ready' ? viewReplay : replay?.status === 'recording' ? stopReplay : confirmStartReplay} /></View>}
       {moderatorMode && <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}><Action colors={colors} label={panel === 'reports' ? 'Close safety reports' : 'Safety reports'} onPress={loadReports} /></View>}
       {panel === 'stage' && creatorMode && <View style={{ margin: 12, padding: 12, borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
         <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 8 }}>LIVE stage manager · up to 5 guests</Text>
