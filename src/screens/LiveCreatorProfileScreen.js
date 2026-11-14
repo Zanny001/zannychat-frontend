@@ -77,7 +77,7 @@ export default function LiveCreatorProfileScreen({ navigation }) {
           </View>
           <View style={{ height: 1, backgroundColor: colors.border }} />
           <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>A dedicated home for your broadcasts, community impact, audience growth and replay library. Your personal profile settings remain unchanged.</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('LIVE')} accessibilityRole="button" style={{ minHeight: 46, borderRadius: radii.md, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
+          <TouchableOpacity onPress={() => navigation.navigate('Main', { screen: 'LIVE' })} accessibilityRole="button" style={{ minHeight: 46, borderRadius: radii.md, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Open LIVE Hub</Text>
           </TouchableOpacity>
         </GlassCard>
