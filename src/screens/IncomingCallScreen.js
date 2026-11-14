@@ -118,7 +118,7 @@ export default function IncomingCallScreen({ route, navigation }) {
           <Text style={[typography.small, styles.actionText, { color: colors.onPrimary }]}>Answer</Text>
         </TouchableOpacity>
       </View>
-      <Text style={[typography.small, styles.footer, { color: colors.textSecondary }]}Your microphone and camera activate only after you answer.</Text>
+      <Text style={[typography.small, styles.footer, { color: colors.textSecondary }]}>Your microphone and camera activate only after you answer.</Text>
     </SafeAreaView>
   );
 }
