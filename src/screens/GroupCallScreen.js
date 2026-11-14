@@ -128,9 +128,8 @@ function GroupRoomContent({ callType, onEnd, onAddPeople, canInvite, onParticipa
           <Ionicons name={muted ? 'mic-off' : 'mic'} size={23} color={muted ? colors.onPrimary : colors.textPrimary} />
           <Text style={[styles.controlLabel, typography.small, { color: muted ? colors.onPrimary : colors.textPrimary }]}>{muted ? 'Unmute' : 'Mute'}</Text>
         </Pressable>
-        {(isVideo || tracks.length > 0) && (
-          <Pressable
-            onPress={toggleCamera}
+        <Pressable
+            onPress={toggleCamera
             accessibilityRole="button"
             accessibilityLabel={cameraOff ? 'Turn camera on' : 'Turn camera off'}
             accessibilityState={{ selected: cameraOff }}
@@ -138,8 +137,7 @@ function GroupRoomContent({ callType, onEnd, onAddPeople, canInvite, onParticipa
           >
             <Ionicons name={cameraOff ? 'videocam-off' : 'videocam'} size={23} color={cameraOff ? colors.onPrimary : colors.textPrimary} />
             <Text style={[styles.controlLabel, typography.small, { color: cameraOff ? colors.onPrimary : colors.textPrimary }]}>{cameraOff ? 'Camera on' : 'Camera off'}</Text>
-          </Pressable>
-        )}
+        </Pressable>
         {canInviteNow && (
           <Pressable
             onPress={onAddPeople}
