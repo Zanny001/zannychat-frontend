@@ -1,8 +1,79 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  interpolate,
+  ReduceMotion,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { Room, RoomEvent, Track } from 'livekit-client';
 import { backendFetch } from '../services/backendClient';
 import { useTheme } from '../theme/ThemeContext';
+
+const LIVE_REACTION_EMOJI = Object.freeze({ heart: '❤️', clap: '👏', laugh: '😂', wow: '😮', fire: '🔥' });
+
+function FloatingReaction({ item, index, onComplete }) {
+  const progress = useSharedValue(0);
+  const reducedMotion = useReducedMotion();
+
+  useEffect(() => {
+    progress.set(withTiming(1, {
+      duration: reducedMotion ? 250 : 1800,
+      easing: Easing.linear,
+      reduceMotion: ReduceMotion.System,
+    }, (finished) => {
+      if (finished) scheduleOnRN(onComplete, item.id);
+    }));
+    return () => cancelAnimation(progress);
+  }, [item.id, onComplete, progress, reducedMotion]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    const value = progress.get();
+    return {
+      opacity: interpolate(value, [0, 0.15, 0.8, 1], [0, 1, 1, 0]),
+      transform: [
+        { translateY: interpolate(value, [0, 1], [0, reducedMotion ? 0 : -210]) },
+        { scale: interpolate(value, [0, 0.2, 1], [reducedMotion ? 0.96 : 0.65, 1.2, 1]) },
+      ],
+    };
+  });
+
+  return (
+    <Animated.Text pointerEvents="none" style={[{ position: 'absolute', bottom: 26, left: (15 + (index * 17) % 70) + '%', fontSize: 32 }, animatedStyle]}>
+      {LIVE_REACTION_EMOJI[item.reaction] || LIVE_REACTION_EMOJI.heart}
+    </Animated.Text>
+  );
+}
+
+function RemoteVideoTile({ track, colors }) {
+  const containerRef = useRef(null);
+  useEffect(() => {
+    const element = track.attach();
+    element.autoplay = true;
+    element.playsInline = true;
+    element.style.width = '100%';
+    element.style.height = '100%';
+    element.style.objectFit = 'contain';
+    containerRef.current?.replaceChildren(element);
+    return () => {
+      track.detach(element);
+      containerRef.current?.replaceChildren();
+    };
+  }, [track]);
+  return (
+    <View style={{ width: '48%', minWidth: 140, minHeight: 190, borderRadius: 16, overflow: 'hidden', backgroundColor: '#050509', borderWidth: 1, borderColor: colors.border }}>
+      <View ref={containerRef} collapsable={false} style={{ width: '100%', height: 190 }} />
+      <View style={{ position: 'absolute', left: 8, bottom: 8, maxWidth: '88%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.65)' }}>
+        <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>{track.participant.name || track.participant.identity}</Text>
+      </View>
+    </View>
+  );
+}
 
 function Action({ colors, label, accessibilityLabel, onPress, disabled = false, danger = false }) {
   const { typography } = useTheme();
@@ -20,15 +91,21 @@ export default function LiveStreamScreen({ route, navigation }) {
   const moderatorMode = Boolean(creatorMode || connection?.canModerate);
   const roomRef = useRef(null);
   const localRef = useRef(null);
-  const remoteRef = useRef(null);
+  const remoteAudioRef = useRef(null);
+  const [remoteVideoTracks, setRemoteVideoTracks] = useState([]);
+  const [remoteAudioParticipants, setRemoteAudioParticipants] = useState([]);
+  const audioOnlyParticipants = remoteAudioParticipants.filter((participant) => !remoteVideoTracks.some((track) => track.participant.identity === participant.identity));
   const endedRef = useRef(false);
   const [status, setStatus] = useState('Connecting…');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [camera, setCamera] = useState(publisherMode);
   const [mic, setMic] = useState(publisherMode);
+  const localAudioOnly = publisherMode && mic && !camera;
   const [audioBlocked, setAudioBlocked] = useState(false);
   const [comments, setComments] = useState([]);
+  const [floatingReactions, setFloatingReactions] = useState([]);
+  const seenReactionIds = useRef(new Set());
   const [draft, setDraft] = useState('');
   const [guestStatus, setGuestStatus] = useState('none');
   const [guestApproved, setGuestApproved] = useState(false);
@@ -58,9 +135,26 @@ export default function LiveStreamScreen({ route, navigation }) {
       target.appendChild(element);
     };
     const onSubscribed = (track) => {
-      if (track.kind === Track.Kind.Video || track.kind === Track.Kind.Audio) attach(track, remoteRef.current);
+      if (track.kind === Track.Kind.Video) {
+        setRemoteVideoTracks((current) => current.some((item) => item.sid === track.sid) ? current : [...current, track]);
+      } else if (track.kind === Track.Kind.Audio) {
+        attach(track, remoteAudioRef.current);
+        if (!track.participant.isLocal) {
+          setRemoteAudioParticipants((current) => current.some((item) => item.identity === track.participant.identity)
+            ? current
+            : [...current, { identity: track.participant.identity, name: track.participant.name || track.participant.identity }]);
+        }
+      }
     };
-    const onUnsubscribed = (track) => track.detach();
+    const onUnsubscribed = (track) => {
+      if (track.kind === Track.Kind.Video) {
+        setRemoteVideoTracks((current) => current.filter((item) => item.sid !== track.sid));
+      }
+      if (track.kind === Track.Kind.Audio && !track.participant.isLocal) {
+        setRemoteAudioParticipants((current) => current.filter((item) => item.identity !== track.participant.identity));
+      }
+      track.detach();
+    };
     const onLocalPublished = (publication) => {
       if (publication.source === Track.Source.Camera && publication.videoTrack && localRef.current) {
         localRef.current.replaceChildren();
@@ -99,7 +193,9 @@ export default function LiveStreamScreen({ route, navigation }) {
       room.disconnect();
       if (!endedRef.current) backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' }).catch(() => {});
       if (localRef.current) localRef.current.replaceChildren();
-      if (remoteRef.current) remoteRef.current.replaceChildren();
+      if (remoteAudioRef.current) remoteAudioRef.current.replaceChildren();
+      setRemoteVideoTracks([]);
+      setRemoteAudioParticipants([]);
       roomRef.current = null;
     };
   }, [stream?.id, connection?.livekitUrl, connection?.token, creatorMode, publisherMode]);
@@ -109,6 +205,17 @@ export default function LiveStreamScreen({ route, navigation }) {
     try {
       const result = await backendFetch(`/live/${stream.id}/comments`);
       setComments(Array.isArray(result?.comments) ? result.comments : []);
+      const incomingReactions = (Array.isArray(result?.reactions) ? result.reactions : [])
+        .filter((item) => item?.id && !seenReactionIds.current.has(item.id));
+      incomingReactions.forEach((item) => {
+        seenReactionIds.current.add(item.id);
+        if (seenReactionIds.current.size > 500) {
+          seenReactionIds.current.delete(seenReactionIds.current.values().next().value);
+        }
+      });
+      if (incomingReactions.length) {
+        setFloatingReactions((current) => [...current, ...incomingReactions].slice(-16));
+      }
     } catch (err) { setError((current) => current || err?.message || 'Comments unavailable.'); }
   }, [stream?.id]);
 
@@ -158,10 +265,13 @@ export default function LiveStreamScreen({ route, navigation }) {
     } catch (err) { setError(err?.message || 'Comment not sent.'); }
     finally { setBusy(false); }
   };
-  const react = async () => {
-    try { await backendFetch(`/live/${stream.id}/react`, { method: 'POST', body: JSON.stringify({ reaction: 'heart' }) }); }
+  const react = async (reaction = 'heart') => {
+    try { await backendFetch(`/live/${stream.id}/react`, { method: 'POST', body: JSON.stringify({ reaction }) }); }
     catch (err) { setError(err?.message || 'Reaction not sent.'); }
   };
+  const removeFloatingReaction = useCallback((reactionId) => {
+    setFloatingReactions((current) => current.filter((item) => item.id !== reactionId));
+  }, []);
   const report = async () => {
     const reason = typeof window !== 'undefined' ? window.prompt('Report reason: harassment, hate, spam, or other') : null;
     if (!reason) return;
@@ -209,10 +319,34 @@ export default function LiveStreamScreen({ route, navigation }) {
     </View>
     {!!error && <Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger, paddingHorizontal: 14, paddingBottom: 8 }]}>{error}</Text>}
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 20 }}>
-      <View style={{ minHeight: 260, marginHorizontal: 12, borderRadius: 18, overflow: 'hidden', backgroundColor: '#050509' }}>
-        {publisherMode && <View ref={localRef} collapsable={false} style={{ width: '100%', minHeight: 260 }} />}
-        <View ref={remoteRef} collapsable={false} style={{ width: '100%', minHeight: 260 }} />
-        {!publisherMode && <Text style={{ color: colors.textSecondary, textAlign: 'center', padding: 12 }}>If the creator is not on screen yet, their video will appear here.</Text>}
+      <View style={{ minHeight: 220, marginHorizontal: 12, borderRadius: 18, overflow: 'hidden', backgroundColor: '#050509', position: 'relative' }}>
+        {publisherMode && <View ref={localRef} collapsable={false} style={{ width: '100%', minHeight: 220 }} />}
+        {!remoteVideoTracks.length && !publisherMode && !audioOnlyParticipants.length && <Text style={{ color: colors.textSecondary, textAlign: 'center', padding: 12 }}>If the creator is not on screen yet, their video will appear here.</Text>}
+        {!remoteVideoTracks.length && (audioOnlyParticipants.length > 0 || localAudioOnly) && (
+          <View style={{ alignItems: 'center', padding: 18 }}>
+            <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 17 }}>LIVE audio is on</Text>
+            <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 6 }}>The stage is continuing with microphones while cameras are off.</Text>
+          </View>
+        )}
+        {!!remoteVideoTracks.length && (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'stretch', gap: 8, padding: 8 }}>
+            {remoteVideoTracks.map((track) => <RemoteVideoTile key={track.sid} track={track} colors={colors} />)}
+          </View>
+        )}
+        {(audioOnlyParticipants.length > 0 || localAudioOnly) && (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, padding: 8 }}>
+            {audioOnlyParticipants.map((participant) => <View key={participant.identity} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+              <Text style={{ color: colors.textPrimary, fontSize: 12 }}>{participant.name} · Audio only</Text>
+            </View>)}
+            {localAudioOnly && <View style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}><Text style={{ color: colors.textPrimary, fontSize: 12 }}>You · Audio only</Text></View>}
+          </View>
+        )}
+        <View ref={remoteAudioRef} collapsable={false} style={{ width: 1, height: 1, opacity: 0 }} />
+        <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+          {floatingReactions.map((item, index) => (
+            <FloatingReaction key={item.id} item={item} index={index} onComplete={removeFloatingReaction} />
+          ))}
+        </View>
       </View>
       {audioBlocked && <View style={{ padding: 12 }}><Action colors={colors} label="Enable LIVE audio" onPress={() => roomRef.current?.startAudio().then(() => setAudioBlocked(false)).catch((err) => setError(err?.message || 'Audio playback is blocked.'))} /></View>}
       {publisherMode && <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, padding: 12 }}>
@@ -242,9 +376,12 @@ export default function LiveStreamScreen({ route, navigation }) {
         </View>)}
         {!comments.length && <Text style={{ color: colors.textSecondary, paddingVertical: 8 }}>Be the first to say hello.</Text>}
       </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 9, paddingHorizontal: 12, paddingTop: 6 }}>
+        {Object.entries(LIVE_REACTION_EMOJI).map(([reaction, emoji]) => <Action key={reaction} colors={colors} label={emoji} accessibilityLabel={'Send ' + reaction + ' reaction'} onPress={() => react(reaction)} />)}
+      </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 }}>
         <TextInput value={draft} onChangeText={(v) => setDraft(v.slice(0, 500))} maxLength={500} placeholder="Say something kind…" placeholderTextColor={colors.textSecondary} accessibilityLabel="LIVE chat message" style={{ flex: 1, color: colors.textPrimary, backgroundColor: colors.surface, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 }} />
-        <Action colors={colors} label="Send" disabled={busy || !draft.trim()} onPress={sendComment} /><Action colors={colors} label="♥" accessibilityLabel="Send heart reaction" onPress={react} />
+        <Action colors={colors} label="Send" disabled={busy || !draft.trim()} onPress={sendComment} />
         {!creatorMode && <Action colors={colors} label="Report" onPress={report} />}
       </View>
     </ScrollView>

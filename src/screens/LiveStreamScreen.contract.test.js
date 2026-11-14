@@ -7,8 +7,10 @@ const screen = fs.readFileSync(new URL('./LiveStreamScreen.js', import.meta.url)
 test('LIVE creator and approved guest publishing roles receive media publishing controls', () => {
   assert.ok(screen.includes('connection?.canModerate'));
   assert.ok(screen.includes('moderatorMode &&'));
-  assert.ok(screen.includes('video={publisherMode}'));
-  assert.ok(screen.includes('audio={publisherMode}'));
+  assert.ok(screen.includes('video={publisherMode && cameraEnabled}'));
+  assert.ok(screen.includes('onToggleCamera={toggleCamera}'));
+  assert.ok(screen.includes('audio={publisherMode && microphoneEnabled}'));
+  assert.ok(screen.includes('onToggleMicrophone={toggleMicrophone}'));
   assert.ok(screen.includes("connection?.role === 'guest'"));
 });
 
@@ -34,8 +36,8 @@ test('LIVE creator can appoint and remove moderators from currently joined viewe
 
 test('LIVE approved guests receive publishing permissions and can rejoin after creator approval', () => {
   assert.ok(screen.includes("connection?.role === 'guest'"));
-  assert.ok(screen.includes('audio={publisherMode}'));
-  assert.ok(screen.includes('video={publisherMode}'));
+  assert.ok(screen.includes('audio={publisherMode && microphoneEnabled}'));
+  assert.ok(screen.includes('video={publisherMode && cameraEnabled}'));
   assert.ok(screen.includes("`/live/${stream.id}/guest-status`"));
   assert.ok(screen.includes("nextConnection?.role !== 'guest'"));
   assert.ok(screen.includes("guestRequestStatus === 'requested'"));
@@ -54,4 +56,34 @@ test('LIVE viewers can request guest access and creators can approve or decline 
 test('LIVE chat displays profile names rather than truncated account identifiers', () => {
   assert.ok(screen.includes("item.user_name || 'ZannyChat user'"));
   assert.equal(screen.includes('String(item.user_id).slice(0, 7)'), false);
+});
+
+test('LIVE publishers can independently disable camera while keeping microphone audio live', () => {
+  assert.ok(screen.includes('const [cameraEnabled, setCameraEnabled] = useState(publisherMode)'));
+  assert.ok(screen.includes('const [microphoneEnabled, setMicrophoneEnabled] = useState(publisherMode)'));
+  assert.ok(screen.includes('Turn camera off and keep audio live'));
+  assert.ok(screen.includes('onToggleCamera'));
+  assert.ok(screen.includes('onToggleMicrophone'));
+});
+
+test('LIVE stage supports multiple named video tiles in a responsive two-column grid', () => {
+  assert.ok(screen.includes("numColumns={videos.length === 1 ? 1 : 2}"));
+  assert.ok(screen.includes('item.participant.name || item.participant.identity'));
+  assert.ok(screen.includes('Track.Source.Microphone'));
+  assert.ok(screen.includes('Audio only'));
+  assert.ok(screen.includes('LIVE audio is on'));
+});
+
+test('LIVE reactions are animated over the stage and use the shared five-reaction vocabulary', () => {
+  assert.ok(screen.includes('withTiming(1'));
+  assert.ok(screen.includes('useReducedMotion()'));
+  assert.ok(screen.includes('scheduleOnRN(onComplete, item.id)'));
+  assert.ok(screen.includes('ReduceMotion.System'));
+  assert.ok(screen.includes('hasLocalAudioOnly'));
+  assert.ok(screen.includes('LIVE_REACTION_EMOJI'));
+  assert.ok(screen.includes('floatingReactions.map'));
+  assert.ok(screen.includes("reaction: 'heart'") === false);
+  assert.ok(screen.includes('onReact(reaction)'));
+  assert.ok(screen.includes('result?.reactions'));
+  assert.ok(screen.includes('seenReactionIds.current.has(item.id)'));
 });

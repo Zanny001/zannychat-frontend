@@ -40,5 +40,31 @@ test('web LIVE preserves moderation, guest access and safe room cleanup', () => 
 test('native LIVE implementation remains unchanged and continues using the React Native LiveKit SDK', () => {
   assert.ok(native.includes("from '@livekit/react-native'"));
   assert.ok(native.includes('<LiveKitRoom'));
-  assert.ok(native.includes('video={publisherMode}'));
+  assert.ok(native.includes('video={publisherMode && cameraEnabled}'));
+});
+
+test('web LIVE renders each remote publisher in a labelled multi-participant stage grid', () => {
+  assert.ok(web.includes('const [remoteVideoTracks, setRemoteVideoTracks] = useState([])'));
+  assert.ok(web.includes('setRemoteVideoTracks((current) => current.some((item) => item.sid === track.sid)'));
+  assert.ok(web.includes('remoteVideoTracks.map((track) => <RemoteVideoTile'));
+  assert.ok(web.includes('track.participant.name || track.participant.identity'));
+});
+
+test('web LIVE animates recent reaction events over the video stage', () => {
+  assert.ok(web.includes('withTiming(1'));
+  assert.ok(web.includes('useReducedMotion()'));
+  assert.ok(web.includes('scheduleOnRN(onComplete, item.id)'));
+  assert.ok(web.includes('ReduceMotion.System'));
+  assert.ok(web.includes('localAudioOnly'));
+  assert.ok(web.includes('result?.reactions'));
+  assert.ok(web.includes('floatingReactions.map'));
+  assert.ok(web.includes('onPress={() => react(reaction)}'));
+  assert.ok(web.includes('seenReactionIds.current.has(item.id)'));
+});
+
+test('web LIVE identifies audio-only guests when their camera is disabled', () => {
+  assert.ok(web.includes('remoteAudioParticipants'));
+  assert.ok(web.includes('audioOnlyParticipants'));
+  assert.ok(web.includes('LIVE audio is on'));
+  assert.ok(web.includes('Audio only'));
 });

@@ -59,7 +59,8 @@ jobs:
       # The APK uses placeholder Firebase config for visual QA; it is not a production release.
       - run: cd android && ./gradlew :app:compileDebugKotlin
       - name: Assemble Android debug APK for physical-device QA
-        run: cd android && ./gradlew :app:assembleDebug
+        timeout-minutes: 20
+        run: cd android && ./gradlew :app:assembleDebug --no-daemon --max-workers=2
       - name: Verify and checksum Android debug APK
         run: |
           APK=android/app/build/outputs/apk/debug/app-debug.apk
