@@ -23,3 +23,10 @@ test('chat header icon controls meet the 44-point touch target guideline', () =>
   const chat = source('./ChatScreen.js');
   assert.match(chat, /headerAction: \{ width: 44, height: 44, borderRadius: 22/);
 });
+
+test('chat message bubbles constrain long text and wrap delivery metadata without overflow', () => {
+  const bubble = source('../components/ChatBubble.js');
+  assert.match(bubble, /maxWidth: '76%', minWidth: 0/);
+  assert.match(bubble, /metaRow: \{[^}]*flexWrap: 'wrap'/);
+  assert.match(bubble, /fileRow: \{[^}]*minWidth: 0,[^}]*maxWidth: '100%'/);
+});
