@@ -52,6 +52,7 @@ import CallHistoryScreen from '../screens/CallHistoryScreen';
 import GroupCallScreen from '../screens/GroupCallScreen';
 import LiveHubScreen from '../screens/LiveHubScreen';
 import LiveStreamScreen from '../screens/LiveStreamScreen';
+import LiveReplayScreen from '../screens/LiveReplayScreen';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { getCallParticipantName, getCallSessionById, subscribeToIncomingCalls, updateCallStatus } from '../services/calls';
 import { clearNativeCallMapping, getNativeCallMapping, initializeNativeCallSystem, reportIncomingCallIfNeeded, reportNativeCallEnded } from '../services/nativeCallSystem';
@@ -429,6 +430,7 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
           <RootStack.Screen name="GroupCall" component={GroupCallScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
           <RootStack.Screen name="LiveHub" component={LiveHubScreen} options={{ animation: 'fade' }} />
           <RootStack.Screen name="LiveStream" component={LiveStreamScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
+          <RootStack.Screen name="LiveReplay" component={LiveReplayScreen} options={{ animation: 'fade' }} />
           <RootStack.Screen name="PeerProfile" component={PeerProfileScreen} />
           <RootStack.Screen name="NewChat" component={NewChatScreen} options={{ presentation: 'modal' }} />
           <RootStack.Screen name="QRContact" component={QRContactScreen} options={{ presentation: 'modal' }} />
