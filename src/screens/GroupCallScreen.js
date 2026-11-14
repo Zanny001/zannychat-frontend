@@ -10,7 +10,7 @@ import { hexToRgba } from '../utils/color';
 
 function GroupRoomContent({ callType, onEnd }) {
   const room = useRoomContext();
-  const { colors } = useTheme();
+  const { colors, typography } = useTheme();
   const cameraTracks = useTracks([Track.Source.Camera]);
   const participants = useParticipants();
   const [muted, setMuted] = useState(false);
@@ -59,7 +59,7 @@ function GroupRoomContent({ callType, onEnd }) {
     <View style={[styles.room, { backgroundColor: colors.background }]}>
       <View style={styles.connectionRow} accessibilityLiveRegion="polite">
         <View style={[styles.connectionDot, { backgroundColor: connectionState === 'Connected' ? colors.online : colors.warning || colors.gold }]} />
-        <Text style={[styles.connectionText, { color: colors.textSecondary }]}>{connectionState}</Text>
+        <Text style={[styles.connectionText, typography.small, { color: colors.textSecondary }]}>{connectionState}</Text>
         <Text style={[styles.connectionText, { color: colors.textSecondary }]}>· {participants.length} connected</Text>
       </View>
 
@@ -73,14 +73,14 @@ function GroupRoomContent({ callType, onEnd }) {
             <View style={[styles.tile, { backgroundColor: colors.surfaceAlt }]}>
               <VideoTrack trackRef={item} style={styles.video} />
               <View style={styles.tileCaption}>
-                <Text style={styles.tileName} numberOfLines={1}>{item.participant.name || item.participant.identity}</Text>
+                <Text style={[styles.tileName, typography.small]} numberOfLines={1}>{item.participant.name || item.participant.identity}</Text>
               </View>
             </View>
           )}
           ListEmptyComponent={
             <View style={styles.videoEmpty}>
               <Ionicons name="videocam-off-outline" size={30} color={colors.textSecondary} />
-              <Text style={[styles.empty, { color: colors.textSecondary }]}>Waiting for participants to turn on video…</Text>
+              <Text style={[styles.empty, typography.body, { color: colors.textSecondary }]}>Waiting for participants to turn on video…</Text>
             </View>
           }
         />
@@ -89,13 +89,13 @@ function GroupRoomContent({ callType, onEnd }) {
           <View style={[styles.audioOrb, { backgroundColor: colors.primary, shadowColor: colors.primary, borderColor: hexToRgba(colors.onPrimary, 0.28) }]}>
             <Ionicons name="people" size={46} color={colors.onPrimary || '#FFFFFF'} />
           </View>
-          <Text style={[styles.audioTitle, { color: colors.textPrimary }]}>Group audio call</Text>
-          <Text style={[styles.audioHint, { color: colors.textSecondary }]}>Everyone in the room can hear you when your microphone is on.</Text>
+          <Text style={[styles.audioTitle, typography.title, { color: colors.textPrimary }]}>Group audio call</Text>
+          <Text style={[styles.audioHint, typography.body, { color: colors.textSecondary }]}>Everyone in the room can hear you when your microphone is on.</Text>
           <View style={styles.participantList}>
             {participants.map((participant) => (
               <View key={participant.identity} style={[styles.participantChip, { backgroundColor: colors.surfaceAlt, borderColor: colors.border || colors.surfaceAlt }]}>
                 <Ionicons name="person-circle-outline" size={18} color={colors.primary} />
-                <Text style={[styles.participantName, { color: colors.textPrimary }]} numberOfLines={1}>
+                <Text style={[styles.participantName, typography.small, { color: colors.textPrimary }]} numberOfLines={1}>
                   {participant.name || participant.identity}
                   {participant.isLocal ? ' (you)' : ''}
                 </Text>
@@ -114,7 +114,7 @@ function GroupRoomContent({ callType, onEnd }) {
           style={({ pressed }) => controlStyle(pressed, muted)}
         >
           <Ionicons name={muted ? 'mic-off' : 'mic'} size={23} color={muted ? colors.onPrimary : colors.textPrimary} />
-          <Text style={[styles.controlLabel, { color: muted ? colors.onPrimary : colors.textPrimary }]}>{muted ? 'Unmute' : 'Mute'}</Text>
+          <Text style={[styles.controlLabel, typography.small, { color: muted ? colors.onPrimary : colors.textPrimary }]}>{muted ? 'Unmute' : 'Mute'}</Text>
         </Pressable>
         {callType === 'video' && (
           <Pressable
@@ -125,7 +125,7 @@ function GroupRoomContent({ callType, onEnd }) {
             style={({ pressed }) => controlStyle(pressed, cameraOff)}
           >
             <Ionicons name={cameraOff ? 'videocam-off' : 'videocam'} size={23} color={cameraOff ? colors.onPrimary : colors.textPrimary} />
-            <Text style={[styles.controlLabel, { color: cameraOff ? colors.onPrimary : colors.textPrimary }]}>{cameraOff ? 'Camera on' : 'Camera off'}</Text>
+            <Text style={[styles.controlLabel, typography.small, { color: cameraOff ? colors.onPrimary : colors.textPrimary }]}>{cameraOff ? 'Camera on' : 'Camera off'}</Text>
           </Pressable>
         )}
         <Pressable
@@ -135,7 +135,7 @@ function GroupRoomContent({ callType, onEnd }) {
           style={({ pressed }) => controlStyle(pressed, false, true)}
         >
           <Ionicons name="call" size={23} color={colors.onDanger} style={{ transform: [{ rotate: '135deg' }] }} />
-          <Text style={[styles.controlLabel, { color: colors.onDanger }]}>Leave</Text>
+          <Text style={[styles.controlLabel, typography.small, { color: colors.onDanger }]}>Leave</Text>
         </Pressable>
       </View>
     </View>
@@ -144,7 +144,7 @@ function GroupRoomContent({ callType, onEnd }) {
 
 export default function GroupCallScreen({ route, navigation }) {
   const { conversationId, conversationName = 'Group', callType = 'audio', roomId = null } = route.params || {};
-  const { colors, resolvedMode } = useTheme();
+  const { colors, resolvedMode, typography } = useTheme();
   const [connection, setConnection] = useState(null);
   const [errorText, setErrorText] = useState('');
   const [busy, setBusy] = useState(true);
@@ -208,9 +208,9 @@ export default function GroupCallScreen({ route, navigation }) {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={resolvedMode === 'light' ? 'dark-content' : 'light-content'} />
       <View style={styles.header}>
-        <Text style={[styles.brand, { color: colors.primary }]}>ZannyChat</Text>
-        <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={1}>{conversationName}</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+        <Text style={[styles.brand, typography.small, { color: colors.primary }]}>ZannyChat</Text>
+        <Text style={[styles.title, typography.title, { color: colors.textPrimary }]} numberOfLines={1}>{conversationName}</Text>
+        <Text style={[styles.subtitle, typography.caption, { color: colors.textSecondary }]}>
           {connection?.callType === 'video' || callType === 'video' ? 'Group video call' : 'Group audio call'}
         </Text>
       </View>
@@ -222,10 +222,10 @@ export default function GroupCallScreen({ route, navigation }) {
       ) : errorText ? (
         <View style={styles.center}>
           <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
-          <Text style={[styles.error, { color: colors.textPrimary }]}>{errorText}</Text>
+          <Text style={[styles.error, typography.bodyStrong, { color: colors.textPrimary }]}>{errorText}</Text>
           <Text style={[styles.empty, { color: colors.textSecondary }]}>Group media requires a configured LiveKit SFU and server credentials.</Text>
           <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [styles.back, { backgroundColor: colors.primary }, pressed && { opacity: 0.8 }]} accessibilityRole="button" accessibilityLabel="Go back">
-            <Text style={[styles.backText, { color: colors.onPrimary }]}>Go back</Text>
+            <Text style={[styles.backText, typography.small, { color: colors.onPrimary }]}>Go back</Text>
           </Pressable>
         </View>
       ) : connection ? (
