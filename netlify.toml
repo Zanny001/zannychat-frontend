@@ -1,4 +1,5 @@
 [build]
+  command = "npx expo export --platform web"
   publish = "dist"
 
 # Expo web uses client-side navigation. Serve the app shell for deep links
