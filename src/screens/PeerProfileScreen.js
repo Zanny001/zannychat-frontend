@@ -10,6 +10,8 @@ import { getSafeProfilePhotoUrl } from '../utils/profilePhoto';
 import { getProfilePresence } from '../utils/profilePresence';
 import { getProfileDetails } from '../utils/profileDetails';
 import { getPublicProfileDetails, getPrivateProfileCoverUrl } from '../services/api';
+import { backendFetch } from '../services/backendClient';
+import LiveImpactCard from '../components/LiveImpactCard';
 
 function DetailRow({ icon, label, value, last = false }) {
   const { colors, spacing, typography, radii } = useTheme();
@@ -45,6 +47,7 @@ export default function PeerProfileScreen({ route, navigation }) {
   const [photoViewerVisible, setPhotoViewerVisible] = useState(false);
   const [sharedDetails, setSharedDetails] = useState({});
   const [coverUrl, setCoverUrl] = useState(null);
+  const [liveImpact, setLiveImpact] = useState(null);
   useEffect(() => {
     const userId = participant.id || participant.user_id;
     if (!userId) return undefined;
@@ -64,6 +67,19 @@ export default function PeerProfileScreen({ route, navigation }) {
         }
       }
     }).catch(() => {});
+    return () => { active = false; };
+  }, [participant.id, participant.user_id]);
+  useEffect(() => {
+    const userId = participant.id || participant.user_id;
+    if (!userId) {
+      setLiveImpact(null);
+      return undefined;
+    }
+    let active = true;
+    setLiveImpact(null);
+    backendFetch(`/live/creators/${userId}/impact`)
+      .then((result) => { if (active) setLiveImpact(result?.impact || null); })
+      .catch(() => { if (active) setLiveImpact(null); });
     return () => { active = false; };
   }, [participant.id, participant.user_id]);
   const conversation = route.params?.conversation;
@@ -112,6 +128,8 @@ export default function PeerProfileScreen({ route, navigation }) {
           {conversation ? <QuickAction icon="images-outline" label="Shared media" onPress={() => navigation.navigate('SharedMedia', { conversation })} /> : null}
         </View>
       </GlassCard>
+
+      <LiveImpactCard impact={liveImpact} />
 
       <SectionHeading title="CONTACT DETAILS" detail="Visible to you" />
       <GlassCard contentStyle={{ paddingHorizontal: spacing.md, paddingVertical: 0 }} intensity={32}>
