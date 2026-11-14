@@ -146,13 +146,25 @@ export async function listCallHistory(limit = 100) {
   try {
     const groupResult = await backendFetch(`/group-calls/history?limit=${Math.max(1, Math.min(Number(limit) || 100, 200))}`);
     const groupCalls = Array.isArray(groupResult?.calls) ? groupResult.calls : [];
-    return [...directCalls, ...groupCalls]
+    const hidden = await backendFetch('/calls/history/hidden').catch(() => null);
+    const hiddenDirect = new Set(Array.isArray(hidden?.hiddenCallIds) ? hidden.hiddenCallIds : []);
+    const hiddenGroup = new Set(Array.isArray(hidden?.hiddenGroupCallIds) ? hidden.hiddenGroupCallIds : []);
+    return [
+      ...directCalls.filter((call) => !hiddenDirect.has(call.id)),
+      ...groupCalls.filter((call) => !hiddenGroup.has(call.id)),
+    ]
       .sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0))
       .slice(0, Math.max(1, Math.min(Number(limit) || 100, 200)));
   } catch (error) {
     console.warn('[calls] group call history unavailable:', error?.message || error);
     return directCalls;
   }
+}
+
+export async function hideCallHistory(call) {
+  if (!call?.id) throw new Error('Invalid call history record.');
+  const kind = call.isGroupCall ? 'group' : 'direct';
+  return backendFetch('/calls/history/' + kind + '/' + encodeURIComponent(call.id), { method: 'DELETE' });
 }
 
 export async function sendCallSignal({ call, type, payload }) {
