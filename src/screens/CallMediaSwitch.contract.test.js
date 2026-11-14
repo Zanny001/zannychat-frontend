@@ -40,6 +40,11 @@ test('native and web 1:1 call signaling validates the remote participant and acc
   }
 });
 
+test('upgrading an active call passes the current media mode to the conference backend', () => {
+  assert.ok(native.includes('callType: activeCallType'));
+  assert.ok(web.includes('callType: activeCallType'));
+});
+
 test('native and web group calls expose camera controls during audio calls', () => {
   assert.match(nativeGroup, /onPress=\{toggleCamera\}/);
   assert.match(webGroup, /onPress=\{toggleCamera\}/);
