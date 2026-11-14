@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
@@ -9,6 +9,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { hideCallHistory, listCallHistory } from '../services/calls';
 import { getCallHistoryLabel } from '../utils/callHistory';
 import { hexToRgba } from '../utils/color';
+import { confirmAction, showAppAlert } from '../utils/appDialogs';
 
 function formatDate(value) {
   const date = new Date(value);
@@ -37,21 +38,22 @@ export default function CallHistoryScreen({ navigation }) {
   useFocusEffect(useCallback(() => { load(); return undefined; }, [load]));
 
 
-  const removeCall = (item) => {
-    Alert.alert('Delete call record?', 'This removes the record from your call history only. The other participant keeps their copy.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: async () => {
-        setDeletingCallId(item.id);
-        try {
-          await hideCallHistory(item);
-          setCalls((current) => current.filter((call) => !(call.id === item.id && Boolean(call.isGroupCall) === Boolean(item.isGroupCall))));
-        } catch (e) {
-          Alert.alert('Could not delete call record', e?.message || 'Please try again.');
-        } finally {
-          setDeletingCallId(null);
-        }
-      } },
-    ]);
+  const removeCall = async (item) => {
+    const confirmed = await confirmAction({
+      title: 'Delete call record?',
+      message: 'This removes the record from your call history only. The other participant keeps their copy.',
+      confirmText: 'Delete',
+    });
+    if (!confirmed) return;
+    setDeletingCallId(item.id);
+    try {
+      await hideCallHistory(item);
+      setCalls((current) => current.filter((call) => !(call.id === item.id && Boolean(call.isGroupCall) === Boolean(item.isGroupCall))));
+    } catch (e) {
+      showAppAlert('Could not delete call record', e?.message || 'Please try again.');
+    } finally {
+      setDeletingCallId(null);
+    }
   };
 
   const redialCall = (item, peerId, callType) => {

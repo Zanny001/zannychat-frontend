@@ -6,6 +6,7 @@ import { backendFetch } from '../services/backendClient';
 import { getCurrentUser } from '../services/api';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
+import { confirmAction, showAppAlert } from '../utils/appDialogs';
 import GlassCard from '../components/GlassCard';
 
 const VISIBILITIES = [
@@ -130,18 +131,19 @@ export default function LiveHubScreen({ navigation, route }) {
 
   const openReplay = (item) => navigation.navigate('LiveReplay', { replay: item });
 
-  const deleteReplay = (item) => {
-    Alert.alert('Delete LIVE replay?', 'The saved video file will be permanently deleted. This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: async () => {
-        try {
-          await backendFetch('/live/replays/' + encodeURIComponent(item.id), { method: 'DELETE' });
-          setReplays((current) => current.filter((replay) => replay.id !== item.id));
-        } catch (e) {
-          Alert.alert('Could not delete replay', e?.message || 'Please try again.');
-        }
-      } },
-    ]);
+  const deleteReplay = async (item) => {
+    const confirmed = await confirmAction({
+      title: 'Delete LIVE replay?',
+      message: 'The saved video file will be permanently deleted. This cannot be undone.',
+      confirmText: 'Delete',
+    });
+    if (!confirmed) return;
+    try {
+      await backendFetch('/live/replays/' + encodeURIComponent(item.id), { method: 'DELETE' });
+      setReplays((current) => current.filter((replay) => replay.id !== item.id));
+    } catch (e) {
+      showAppAlert('Could not delete replay', e?.message || 'Please try again.');
+    }
   };
 
   const loadInviteCandidates = async () => {

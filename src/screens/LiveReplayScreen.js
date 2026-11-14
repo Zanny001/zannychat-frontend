@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, SafeAreaView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, SafeAreaView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { backendFetch } from '../services/backendClient';
 import { useTheme } from '../theme/ThemeContext';
+import { confirmAction, showAppAlert } from '../utils/appDialogs';
 
 export default function LiveReplayScreen({ route, navigation }) {
   const { colors, typography, resolvedMode } = useTheme();
@@ -64,17 +65,16 @@ export default function LiveReplayScreen({ route, navigation }) {
           <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>Secure replay · audience access rules apply · seven-day expiry</Text>
         </View>
         {replay?.creatorId ? (
-          <TouchableOpacity onPress={() => Alert.alert('Delete LIVE replay?', 'This permanently deletes the saved video.', [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Delete', style: 'destructive', onPress: async () => {
-              try {
-                await backendFetch('/live/replays/' + encodeURIComponent(replayId), { method: 'DELETE' });
-                navigation.goBack();
-              } catch (e) {
-                Alert.alert('Could not delete replay', e?.message || 'Please try again.');
-              }
-            } },
-          ])} accessibilityRole="button" accessibilityLabel="Delete this LIVE replay" style={{ width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.danger + '55' }}>
+          <TouchableOpacity onPress={async () => {
+            const confirmed = await confirmAction({ title: 'Delete LIVE replay?', message: 'This permanently deletes the saved video.', confirmText: 'Delete' });
+            if (!confirmed) return;
+            try {
+              await backendFetch('/live/replays/' + encodeURIComponent(replayId), { method: 'DELETE' });
+              navigation.goBack();
+            } catch (e) {
+              showAppAlert('Could not delete replay', e?.message || 'Please try again.');
+            }
+          }} accessibilityRole="button" accessibilityLabel="Delete this LIVE replay" style={{ width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.danger + '55' }}>
             <Ionicons name="trash-outline" size={19} color={colors.danger} />
           </TouchableOpacity>
         ) : null}
