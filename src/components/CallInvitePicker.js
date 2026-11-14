@@ -50,7 +50,7 @@ export default function CallInvitePicker({
     setErrorText('');
     setSuccessText('');
     try {
-      const { data, error } = await supabase.rpc('search_people', {
+      const { data, error } = await supabase.rpc('search_public_profiles', {
         p_query: term,
         p_limit: 25,
       });
