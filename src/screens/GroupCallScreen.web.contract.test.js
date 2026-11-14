@@ -5,6 +5,7 @@ import fs from 'node:fs';
 const source = fs.readFileSync(new URL('./GroupCallScreen.web.js', import.meta.url), 'utf8');
 
 test('web group calls use the LiveKit JS media engine and publish local microphone/camera', () => {
+  assert.match(source, /initialConnection\?\.room\?\.id/);
   assert.match(source, /from 'livekit-client'/);
   assert.match(source, /new Room\(/);
   assert.match(source, /room\.connect\(result\.livekitUrl, result\.token\)/);
