@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
@@ -44,6 +44,42 @@ export default function LiveCreatorProfileScreen({ navigation }) {
   const impact = summary?.impact || {};
   const streams = summary?.streams || {};
   const replays = summary?.replays || {};
+
+  const deleteBroadcast = (item) => {
+    Alert.alert('Delete past LIVE broadcast?', 'This permanently removes the broadcast from your creator history and deletes its saved replay files. This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: async () => {
+        try {
+          await backendFetch('/live/' + encodeURIComponent(item.id), { method: 'DELETE' });
+          setSummary((current) => current ? ({
+            ...current,
+            streams: { ...current.streams, total: Math.max(0, Number(current.streams?.total || 0) - 1), recent: (current.streams?.recent || []).filter((row) => row.id !== item.id) },
+            replays: { ...current.replays, total: Math.max(0, Number(current.replays?.total || 0) - (current.replays?.recent || []).filter((row) => row.stream_id === item.id).length), recent: (current.replays?.recent || []).filter((row) => row.stream_id !== item.id) },
+          }) : current);
+        } catch (e) {
+          Alert.alert('Could not delete broadcast', e?.message || 'Please try again.');
+        }
+      } },
+    ]);
+  };
+
+  const deleteReplay = (item) => {
+    Alert.alert('Delete LIVE replay?', 'The saved video file will be permanently deleted. This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: async () => {
+        try {
+          await backendFetch('/live/replays/' + encodeURIComponent(item.id), { method: 'DELETE' });
+          setSummary((current) => current ? ({
+            ...current,
+            replays: { ...current.replays, total: Math.max(0, Number(current.replays?.total || 0) - 1), ready: Math.max(0, Number(current.replays?.ready || 0) - (item.status === 'ready' ? 1 : 0)), recent: (current.replays?.recent || []).filter((row) => row.id !== item.id) },
+          }) : current);
+        } catch (e) {
+          Alert.alert('Could not delete replay', e?.message || 'Please try again.');
+        }
+      } },
+    ]);
+  };
+
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -111,6 +147,7 @@ export default function LiveCreatorProfileScreen({ navigation }) {
             <View key={item.id} style={{ paddingVertical: 9, borderTopWidth: 1, borderTopColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
               <Ionicons name={item.status === 'live' ? 'radio' : 'videocam-outline'} size={18} color={item.status === 'live' ? colors.danger : colors.primary} />
               <View style={{ flex: 1 }}><Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.title || 'LIVE broadcast'}</Text><Text style={[typography.caption, { color: colors.textSecondary }]}>{item.status === 'live' ? 'Currently live' : item.status}</Text></View>
+              {item.status === 'ended' ? <TouchableOpacity onPress={() => deleteBroadcast(item)} accessibilityRole="button" accessibilityLabel={'Delete past broadcast ' + (item.title || '')} style={{ width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.danger + '18' }}><Ionicons name="trash-outline" size={17} color={colors.danger} /></TouchableOpacity> : null}
             </View>
           )) : <Text style={[typography.caption, { color: colors.textSecondary }]}>Your broadcasts will appear here after your first LIVE session.</Text>}
         </GlassCard>
@@ -121,11 +158,14 @@ export default function LiveCreatorProfileScreen({ navigation }) {
             <Text style={[typography.caption, { color: colors.textSecondary }]}>{replays.total || 0} total</Text>
           </View>
           {(replays.recent || []).length ? replays.recent.map((item) => (
-            <TouchableOpacity key={item.id} onPress={() => navigation.navigate('LiveReplay', { replay: { ...item, streamId: item.stream_id, status: item.status } })} accessibilityRole="button" accessibilityLabel="Open LIVE replay" style={{ paddingVertical: 9, borderTopWidth: 1, borderTopColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              <Ionicons name="play-circle" size={22} color={colors.primary} />
-              <View style={{ flex: 1 }}><Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>LIVE replay</Text><Text style={[typography.caption, { color: colors.textSecondary }]}>{item.status === 'ready' ? 'Ready to watch' : item.status}</Text></View>
-              <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
+            <View key={item.id} style={{ paddingVertical: 9, borderTopWidth: 1, borderTopColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              <TouchableOpacity onPress={() => navigation.navigate('LiveReplay', { replay: { ...item, streamId: item.stream_id, creatorId: profile.id, status: item.status } })} accessibilityRole="button" accessibilityLabel="Open LIVE replay" style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                <Ionicons name="play-circle" size={22} color={colors.primary} />
+                <View style={{ flex: 1 }}><Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>LIVE replay</Text><Text style={[typography.caption, { color: colors.textSecondary }]}>{item.status === 'ready' ? 'Ready to watch' : item.status}</Text></View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
+              {!['starting', 'recording', 'processing'].includes(item.status) ? <TouchableOpacity onPress={() => deleteReplay(item)} accessibilityRole="button" accessibilityLabel="Delete LIVE replay" style={{ width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.danger + '18' }}><Ionicons name="trash-outline" size={17} color={colors.danger} /></TouchableOpacity> : null}
+            </View>
           )) : <Text style={[typography.caption, { color: colors.textSecondary }]}>Your saved replay collection will appear here.</Text>}
         </GlassCard>
       </ScrollView>
