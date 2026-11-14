@@ -150,7 +150,7 @@ export function subscribeToNotificationTaps(navigationRef) {
     const key = callId ? `call:${callId}:${actionIdentifier}`
       : groupCallId ? `group-call:${groupCallId}`
         : conversationId ? `chat:${conversationId}`
-          : liveType ? `live:${liveType}:${liveStreamId || data.creatorId || data.followerId || 'hub'}`
+          : liveType ? `live:${liveType}:${data.replayId || liveStreamId || data.creatorId || data.followerId || 'hub'}`
             : null;
     if (!key || handled.has(key)) return;
     if (!navigationRef.isReady()) { pending = response; return; }
