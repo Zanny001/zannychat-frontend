@@ -1,5 +1,16 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  interpolate,
+  ReduceMotion,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { Room, RoomEvent, Track } from 'livekit-client';
 import { backendFetch } from '../services/backendClient';
 import { useTheme } from '../theme/ThemeContext';
@@ -7,17 +18,33 @@ import { useTheme } from '../theme/ThemeContext';
 const LIVE_REACTION_EMOJI = Object.freeze({ heart: '❤️', clap: '👏', laugh: '😂', wow: '😮', fire: '🔥' });
 
 function FloatingReaction({ item, index, onComplete }) {
-  const progress = useRef(new Animated.Value(0)).current;
+  const progress = useSharedValue(0);
+  const reducedMotion = useReducedMotion();
+
   useEffect(() => {
-    const animation = Animated.timing(progress, { toValue: 1, duration: 1800, useNativeDriver: false });
-    animation.start(({ finished }) => { if (finished) onComplete(item.id); });
-    return () => animation.stop();
-  }, [item.id, onComplete, progress]);
-  const translateY = progress.interpolate({ inputRange: [0, 1], outputRange: [0, -210] });
-  const opacity = progress.interpolate({ inputRange: [0, 0.15, 0.8, 1], outputRange: [0, 1, 1, 0] });
-  const scale = progress.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0.65, 1.2, 1] });
+    progress.set(withTiming(1, {
+      duration: reducedMotion ? 250 : 1800,
+      easing: Easing.linear,
+      reduceMotion: ReduceMotion.System,
+    }, (finished) => {
+      if (finished) scheduleOnRN(onComplete, item.id);
+    }));
+    return () => cancelAnimation(progress);
+  }, [item.id, onComplete, progress, reducedMotion]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    const value = progress.get();
+    return {
+      opacity: interpolate(value, [0, 0.15, 0.8, 1], [0, 1, 1, 0]),
+      transform: [
+        { translateY: interpolate(value, [0, 1], [0, reducedMotion ? 0 : -210]) },
+        { scale: interpolate(value, [0, 0.2, 1], [reducedMotion ? 0.96 : 0.65, 1.2, 1]) },
+      ],
+    };
+  });
+
   return (
-    <Animated.Text style={{ position: 'absolute', bottom: 26, left: (15 + (index * 17) % 70) + '%', opacity, transform: [{ translateY }, { scale }], fontSize: 32 }}>
+    <Animated.Text pointerEvents="none" style={[{ position: 'absolute', bottom: 26, left: (15 + (index * 17) % 70) + '%', fontSize: 32 }, animatedStyle]}>
       {LIVE_REACTION_EMOJI[item.reaction] || LIVE_REACTION_EMOJI.heart}
     </Animated.Text>
   );
@@ -74,6 +101,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [busy, setBusy] = useState(false);
   const [camera, setCamera] = useState(publisherMode);
   const [mic, setMic] = useState(publisherMode);
+  const localAudioOnly = publisherMode && mic && !camera;
   const [audioBlocked, setAudioBlocked] = useState(false);
   const [comments, setComments] = useState([]);
   const [floatingReactions, setFloatingReactions] = useState([]);
@@ -294,7 +322,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       <View style={{ minHeight: 220, marginHorizontal: 12, borderRadius: 18, overflow: 'hidden', backgroundColor: '#050509', position: 'relative' }}>
         {publisherMode && <View ref={localRef} collapsable={false} style={{ width: '100%', minHeight: 220 }} />}
         {!remoteVideoTracks.length && !publisherMode && !audioOnlyParticipants.length && <Text style={{ color: colors.textSecondary, textAlign: 'center', padding: 12 }}>If the creator is not on screen yet, their video will appear here.</Text>}
-        {!remoteVideoTracks.length && !!audioOnlyParticipants.length && (
+        {!remoteVideoTracks.length && (audioOnlyParticipants.length > 0 || localAudioOnly) && (
           <View style={{ alignItems: 'center', padding: 18 }}>
             <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 17 }}>LIVE audio is on</Text>
             <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 6 }}>The stage is continuing with microphones while cameras are off.</Text>
@@ -305,11 +333,12 @@ export default function LiveStreamScreen({ route, navigation }) {
             {remoteVideoTracks.map((track) => <RemoteVideoTile key={track.sid} track={track} colors={colors} />)}
           </View>
         )}
-        {!!audioOnlyParticipants.length && (
+        {(audioOnlyParticipants.length > 0 || localAudioOnly) && (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, padding: 8 }}>
             {audioOnlyParticipants.map((participant) => <View key={participant.identity} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
               <Text style={{ color: colors.textPrimary, fontSize: 12 }}>{participant.name} · Audio only</Text>
             </View>)}
+            {localAudioOnly && <View style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}><Text style={{ color: colors.textPrimary, fontSize: 12 }}>You · Audio only</Text></View>}
           </View>
         )}
         <View ref={remoteAudioRef} collapsable={false} style={{ width: 1, height: 1, opacity: 0 }} />
