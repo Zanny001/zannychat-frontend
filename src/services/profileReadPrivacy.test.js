@@ -29,7 +29,7 @@ test('conversation participant profile details are fetched through the relations
   const end = api.indexOf('// Removes the current user', start);
   const body = api.slice(start, end);
   assert.doesNotMatch(body, /profiles\(id, name/);
-  assert.match(body, /rpc\('get_conversation_profile_directory'/);
+  assert.match(body, /rpc\(\s*'get_conversation_profile_directory'/);
 });
 
 test('personal data export reads the full profile through the owner-only RPC', () => {
