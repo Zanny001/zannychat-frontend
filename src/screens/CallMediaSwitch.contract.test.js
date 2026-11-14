@@ -31,8 +31,9 @@ test('native and web remote video tracks activate and release the video stage', 
   assert.ok(web.includes("const immersiveVideo = activeCallType === 'video' || remoteVideoActive"));
 });
 
-test('native and web 1:1 call signaling accepts renegotiation offers and answers from either participant', () => {
+test('native and web 1:1 call signaling validates the remote participant and accepts renegotiation', () => {
   for (const source of [native, web]) {
+    assert.match(source, /expectedRemoteId = isCaller \? callRef\.current\?\.callee_id : callRef\.current\?\.caller_id/);
     assert.match(source, /if \(signal\.signal_type === 'offer'\)/);
     assert.match(source, /signal\.signal_type === 'answer' && pc\.signalingState === 'have-local-offer'/);
     assert.match(source, /setLocalDescription\(\{ type: 'rollback' \}\)/);
