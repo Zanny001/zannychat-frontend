@@ -50,13 +50,15 @@ test('web LIVE renders each remote publisher in a labelled multi-participant sta
   assert.ok(web.includes('track.participant.name || track.participant.identity'));
 });
 
-test('web LIVE animates recent reaction events over the video stage', () => {
+test('web LIVE exposes all seven supported floating reaction choices', () => {
   assert.ok(web.includes('withTiming(1'));
   assert.ok(web.includes('useReducedMotion()'));
   assert.ok(web.includes('scheduleOnRN(onComplete, item.id)'));
   assert.ok(web.includes('ReduceMotion.System'));
   assert.ok(web.includes('localAudioOnly'));
   assert.ok(web.includes('result?.reactions'));
+  assert.ok(web.includes("idea: '💡'"));
+  assert.ok(web.includes("support: '🙌'"));
   assert.ok(web.includes('floatingReactions.map'));
   assert.ok(web.includes('onPress={() => react(reaction)}'));
   assert.ok(web.includes('seenReactionIds.current.has(item.id)'));
