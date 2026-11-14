@@ -33,7 +33,7 @@ function MediaTile({ track, name, local, colors }) {
 }
 
 export default function GroupCallScreenWeb({ route, navigation }) {
-  const { roomId, conversationId, conversationName = 'Group call', callType = 'audio' } = route.params || {};
+  const { roomId, conversationId, conversationName = 'Group call', callType = 'audio', connection: initialConnection = null } = route.params || {};
   const { colors, typography } = useTheme();
   const [connection, setConnection] = useState(null);
   const [status, setStatus] = useState('Connecting…');
@@ -97,7 +97,9 @@ export default function GroupCallScreenWeb({ route, navigation }) {
     room.on(RoomEvent.Disconnected, () => { if (active && !endedRef.current) setStatus('Disconnected'); });
 
     (async () => {
-      const result = await backendFetch(`/group-calls/${roomId}/join`, { method: 'POST' });
+      const result = initialConnection?.room?.id === roomId && initialConnection?.token && initialConnection?.livekitUrl
+        ? initialConnection
+        : await backendFetch(`/group-calls/${roomId}/join`, { method: 'POST' });
       if (!active) return;
       setConnection(result);
       await room.connect(result.livekitUrl, result.token);
@@ -129,7 +131,7 @@ export default function GroupCallScreenWeb({ route, navigation }) {
       if (!endedRef.current) backendFetch(`/group-calls/${roomId}/leave`, { method: 'POST' }).catch(() => {});
       roomRef.current = null;
     };
-  }, [roomId, isVideo]);
+  }, [roomId, isVideo, initialConnection]);
 
   useEffect(() => {
     if (!connection?.room) return undefined;
