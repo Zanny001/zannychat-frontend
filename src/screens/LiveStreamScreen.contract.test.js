@@ -73,3 +73,13 @@ test('LIVE stage supports multiple named video tiles in a responsive two-column 
   assert.ok(screen.includes('Audio only'));
   assert.ok(screen.includes('LIVE audio is on'));
 });
+
+test('LIVE reactions are animated over the stage and use the shared five-reaction vocabulary', () => {
+  assert.ok(screen.includes('Animated.timing(progress'));
+  assert.ok(screen.includes('LIVE_REACTION_EMOJI'));
+  assert.ok(screen.includes('floatingReactions.map'));
+  assert.ok(screen.includes("reaction: 'heart'") === false);
+  assert.ok(screen.includes('onReact(reaction)'));
+  assert.ok(screen.includes('result?.reactions'));
+  assert.ok(screen.includes('seenReactionIds.current.has(item.id)'));
+});
