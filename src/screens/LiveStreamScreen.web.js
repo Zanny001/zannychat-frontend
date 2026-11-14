@@ -88,7 +88,9 @@ export default function LiveStreamScreen({ route, navigation }) {
   const connection = route.params?.connection;
   const stream = connection?.stream;
   const creatorMode = Boolean(route.params?.creatorMode || connection?.role === 'creator');
-  const publisherMode = Boolean(creatorMode || (connection?.role === 'guest' && connection?.canPublish));
+  const [demotedToViewer, setDemotedToViewer] = useState(false);
+  const [stageNotice, setStageNotice] = useState('');
+  const publisherMode = Boolean(creatorMode || (connection?.role === 'guest' && connection?.canPublish && !demotedToViewer));
   const moderatorMode = Boolean(creatorMode || connection?.canModerate);
   const roomRef = useRef(null);
   const localRef = useRef(null);
@@ -98,6 +100,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const audioOnlyParticipants = remoteAudioParticipants.filter((participant) => !remoteVideoTracks.some((track) => track.participant.identity === participant.identity));
   const endedRef = useRef(false);
   const [status, setStatus] = useState('Connecting…');
+  useEffect(() => { setDemotedToViewer(false); setStageNotice(''); }, [connection?.token]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [camera, setCamera] = useState(publisherMode);
@@ -168,6 +171,15 @@ export default function LiveStreamScreen({ route, navigation }) {
     room.on(RoomEvent.TrackUnsubscribed, onUnsubscribed);
     room.on(RoomEvent.ParticipantAttributesChanged, () => setRemoteVideoTracks((current) => [...current]));
     room.on(RoomEvent.LocalTrackPublished, onLocalPublished);
+    room.on(RoomEvent.ParticipantPermissionsChanged, (_previousPermissions, participant) => {
+      if (participant.identity === room.localParticipant.identity && participant.permissions?.canPublish === false) {
+        setDemotedToViewer(true);
+        setCamera(false);
+        setMic(false);
+        setStageNotice('The creator moved you to the audience. You can keep watching the LIVE.');
+        setStatus('Watching as viewer');
+      }
+    });
     room.on(RoomEvent.AudioPlaybackStatusChanged, () => active && setAudioBlocked(!room.canPlaybackAudio));
     room.on(RoomEvent.Disconnected, () => active && setStatus('Disconnected'));
     (async () => {
@@ -358,6 +370,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       <Text style={[typography.caption, { color: colors.textSecondary }]}>{status}</Text>
     </View>
     {!!error && <Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger, paddingHorizontal: 14, paddingBottom: 8 }]}>{error}</Text>}
+    {!!stageNotice && <Text accessibilityRole="status" style={[typography.caption, { color: colors.accent, paddingHorizontal: 14, paddingBottom: 8 }]}>{stageNotice}</Text>}
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 20 }}>
       <View style={{ minHeight: 220, marginHorizontal: 12, borderRadius: 18, overflow: 'hidden', backgroundColor: '#050509', position: 'relative' }}>
         {publisherMode && <View ref={localRef} collapsable={false} style={{ width: '100%', minHeight: 220 }} />}

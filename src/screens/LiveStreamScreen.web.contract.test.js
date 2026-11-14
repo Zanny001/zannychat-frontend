@@ -74,3 +74,10 @@ test('web LIVE identifies audio-only guests when their camera is disabled', () =
   assert.ok(web.includes('LIVE audio is on'));
   assert.ok(web.includes('Audio only'));
 });
+
+test('removed web guests remain viewers after LiveKit publishing permission is revoked', () => {
+  assert.ok(web.includes('RoomEvent.ParticipantPermissionsChanged'));
+  assert.ok(web.includes('setDemotedToViewer(true)'));
+  assert.ok(web.includes('Watching as viewer'));
+  assert.ok(web.includes('You can keep watching the LIVE.'));
+});

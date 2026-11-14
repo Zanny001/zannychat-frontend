@@ -139,3 +139,10 @@ test('native and web LIVE screens synchronize the creator spotlight across parti
   assert.ok(webSource.includes('spotlightGuest'));
   assert.ok(webSource.includes('spotlight={track.participant.attributes?.zannychat_spotlight'));
 });
+
+test('removed native guests are demoted to audience mode without disconnecting', () => {
+  assert.ok(screen.includes('RoomEvent.ParticipantPermissionsChanged'));
+  assert.ok(screen.includes('onDemoteToViewer'));
+  assert.ok(screen.includes('demotedToViewer'));
+  assert.ok(screen.includes('You can keep watching the LIVE.'));
+});
