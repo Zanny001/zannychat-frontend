@@ -158,6 +158,7 @@ test('LIVE creator replay controls remain hidden unless the server enables repla
 });
 
 test('web LIVE creator exposes the same server-gated replay lifecycle and private player entry', () => {
+  const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.ok(web.includes("backendFetch('/live/replays/config')"));
   assert.ok(web.includes("`/live/${stream.id}/replays/start`"));
   assert.ok(web.includes("`/live/${stream.id}/replays/${replay.id}/stop`"));
