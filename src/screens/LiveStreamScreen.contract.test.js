@@ -70,3 +70,10 @@ test('LIVE stage renders multiple camera publishers in a responsive two-column g
   assert.ok(screen.includes("key={videos.length > 1 ? 'live-stage-grid' : 'live-stage-single'}"));
   assert.ok(screen.includes('item.participant.name || item.participant.identity'));
 });
+
+
+test('LIVE camera and microphone controls use a separate toolbar above the composer', () => {
+  const mediaControls = screen.indexOf('justifyContent: \'center\'', screen.indexOf('publisherMode && ('));
+  const composer = screen.indexOf('paddingBottom: 18');
+  assert.ok(mediaControls >= 0 && composer > mediaControls);
+});
