@@ -50,7 +50,7 @@ function FloatingReaction({ item, index, onComplete }) {
   );
 }
 
-function RemoteVideoTile({ track, colors }) {
+function RemoteVideoTile({ track, colors, spotlight = false }) {
   const containerRef = useRef(null);
   useEffect(() => {
     const element = track.attach();
@@ -66,8 +66,9 @@ function RemoteVideoTile({ track, colors }) {
     };
   }, [track]);
   return (
-    <View style={{ width: '48%', minWidth: 140, minHeight: 190, borderRadius: 16, overflow: 'hidden', backgroundColor: '#050509', borderWidth: 1, borderColor: colors.border }}>
-      <View ref={containerRef} collapsable={false} style={{ width: '100%', height: 190 }} />
+    <View style={{ width: spotlight ? '100%' : '48%', minWidth: spotlight ? 260 : 140, minHeight: spotlight ? 310 : 190, borderRadius: 16, overflow: 'hidden', backgroundColor: '#050509', borderWidth: spotlight ? 2 : 1, borderColor: spotlight ? colors.accent : colors.border }}>
+      <View ref={containerRef} collapsable={false} style={{ width: '100%', height: spotlight ? 310 : 190 }} />
+      {spotlight && <View style={{ position: 'absolute', top: 8, left: 8, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: colors.accent }}><Text style={{ color: colors.onAccent, fontWeight: '900', fontSize: 10 }}>SPOTLIGHT</Text></View>}
       <View style={{ position: 'absolute', left: 8, bottom: 8, maxWidth: '88%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.65)' }}>
         <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>{track.participant.name || track.participant.identity}</Text>
       </View>
@@ -165,6 +166,7 @@ export default function LiveStreamScreen({ route, navigation }) {
 
     room.on(RoomEvent.TrackSubscribed, onSubscribed);
     room.on(RoomEvent.TrackUnsubscribed, onUnsubscribed);
+    room.on(RoomEvent.ParticipantAttributesChanged, () => setRemoteVideoTracks((current) => [...current]));
     room.on(RoomEvent.LocalTrackPublished, onLocalPublished);
     room.on(RoomEvent.AudioPlaybackStatusChanged, () => active && setAudioBlocked(!room.canPlaybackAudio));
     room.on(RoomEvent.Disconnected, () => active && setStatus('Disconnected'));
@@ -338,6 +340,15 @@ export default function LiveStreamScreen({ route, navigation }) {
     } catch (err) { setError(err?.message || 'Could not remove guest.'); }
   };
 
+  const spotlightGuest = async (userId, spotlighted) => {
+    try {
+      await backendFetch(`/live/${stream.id}/guests/${userId}/spotlight`, {
+        method: 'PATCH', body: JSON.stringify({ spotlighted }),
+      });
+      setParticipants((items) => items.map((item) => ({ ...item, spotlighted: spotlighted && item.userId === userId })));
+    } catch (err) { setError(err?.message || 'Could not update LIVE spotlight.'); }
+  };
+
   if (!stream || !connection) return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}><Text style={[typography.body, { color: colors.textPrimary }]}>This LIVE room is unavailable.</Text><Action colors={colors} label="Go back" onPress={() => navigation.goBack()} /></SafeAreaView>;
 
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -359,7 +370,7 @@ export default function LiveStreamScreen({ route, navigation }) {
         )}
         {!!remoteVideoTracks.length && (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'stretch', gap: 8, padding: 8 }}>
-            {remoteVideoTracks.map((track) => <RemoteVideoTile key={track.sid} track={track} colors={colors} />)}
+            {[...remoteVideoTracks].sort((a, b) => Number(b.participant.attributes?.zannychat_spotlight === 'true') - Number(a.participant.attributes?.zannychat_spotlight === 'true')).map((track) => <RemoteVideoTile key={track.sid} track={track} colors={colors} spotlight={track.participant.attributes?.zannychat_spotlight === 'true'} />)}
           </View>
         )}
         {(audioOnlyParticipants.length > 0 || localAudioOnly) && (
@@ -390,6 +401,7 @@ export default function LiveStreamScreen({ route, navigation }) {
           <Text style={{ color: colors.textPrimary, flex: 1, minWidth: 100 }}>{item.name}{item.stage ? ' · On stage' : !item.joined ? ' · offline' : ''}</Text>
           {stream.allow_guests && item.joined && item.role === 'viewer' && <Action colors={colors} label={item.guestInvited ? 'Invited' : 'Invite to stage'} disabled={busy || item.guestInvited} onPress={() => inviteGuest(item.userId)} />}
           {item.stage && <Action colors={colors} label={item.microphoneMuted ? 'Unmute mic' : 'Mute mic'} onPress={() => muteGuest(item.userId, !item.microphoneMuted)} />}
+          {item.stage && <Action colors={colors} label={item.spotlighted ? 'Unspotlight' : 'Spotlight'} onPress={() => spotlightGuest(item.userId, !item.spotlighted)} />}
           {item.stage && <Action colors={colors} label="Remove guest" danger onPress={() => removeGuest(item.userId)} />}
         </View>)}
         {!participants.length && <Text style={{ color: colors.textSecondary }}>No connected viewers or guests yet.</Text>}

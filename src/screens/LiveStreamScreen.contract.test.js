@@ -127,3 +127,15 @@ test('web LIVE creator stage manager has parity with native guest controls', () 
   assert.ok(webSource.includes('Remove guest'));
   assert.ok(webSource.includes('up to 5 guests'));
 });
+
+test('native and web LIVE screens synchronize the creator spotlight across participants', () => {
+  assert.ok(screen.includes("RoomEvent.ParticipantAttributesChanged"));
+  assert.ok(screen.includes('/spotlight'));
+  assert.ok(screen.includes('spotlightUserId'));
+  assert.ok(screen.includes('SPOTLIGHT'));
+  const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(webSource.includes("RoomEvent.ParticipantAttributesChanged"));
+  assert.ok(webSource.includes('/spotlight'));
+  assert.ok(webSource.includes('spotlightGuest'));
+  assert.ok(webSource.includes('spotlight={track.participant.attributes?.zannychat_spotlight'));
+});
