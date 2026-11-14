@@ -85,7 +85,7 @@ export default function CallInvitePicker({
     } finally {
       setSearching(false);
     }
-  }, [conversationId, excludeIds, filterToConversationMembers, query]);
+  }, [conversationId, excludeIds, filterToConversationMembers, query, roomId]);
 
   const invitePerson = async (person) => {
     if (!onInvite || invitingId) return;
