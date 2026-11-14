@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
-import { supabase } from '../services/supabase';
+import { supabase } from '../services/supabaseClient';
 
 export default function CallInvitePicker({
   visible,
