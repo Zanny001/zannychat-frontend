@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { VideoView, useVideoPlayer } from 'expo-video';
@@ -6,7 +6,7 @@ import { backendFetch } from '../services/backendClient';
 import { useTheme } from '../theme/ThemeContext';
 
 export default function LiveReplayScreen({ route, navigation }) {
-  const { colors, typography } = useTheme();
+  const { colors, typography, resolvedMode } = useTheme();
   const replay = route.params?.replay;
   const replayId = replay?.id || route.params?.replayId;
   const [playbackUrl, setPlaybackUrl] = useState(null);
@@ -18,38 +18,42 @@ export default function LiveReplayScreen({ route, navigation }) {
     instance.muted = false;
   });
 
-  const loadPlayback = useCallback(async () => {
-    if (!replayId) {
-      setError('This replay is unavailable.');
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError('');
-    try {
-      const result = await backendFetch(`/live/replays/${replayId}/playback`);
-      if (!result?.url) throw new Error('The replay link could not be created.');
-      await player.replaceAsync({ uri: result.url });
-      setPlaybackUrl(result.url);
-      player.play();
-    } catch (e) {
-      setPlaybackUrl(null);
-      setError(e?.message || 'The replay could not be loaded.');
-    } finally {
-      setLoading(false);
-    }
-  }, [replayId, player]);
-
   useEffect(() => {
+    let active = true;
+    const loadPlayback = async () => {
+      if (!replayId) {
+        setError('This replay is unavailable.');
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      setError('');
+      try {
+        const result = await backendFetch(`/live/replays/${replayId}/playback`);
+        if (!result?.url) throw new Error('The replay link could not be created.');
+        await player.replaceAsync({ uri: result.url });
+        if (!active) return;
+        setPlaybackUrl(result.url);
+        player.play();
+      } catch (e) {
+        if (active) {
+          setPlaybackUrl(null);
+          setError(e?.message || 'The replay could not be loaded.');
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
     loadPlayback();
     return () => {
+      active = false;
       player.pause();
     };
-  }, [loadPlayback, attempt, player]);
+  }, [replayId, attempt, player]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <StatusBar barStyle={colors.isDark ? 'light-content' : 'dark-content'} />
+      <StatusBar barStyle={resolvedMode === 'dark' ? 'light-content' : 'dark-content'} />
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 12 }}>
         <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Go back from LIVE replay" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
           <Ionicons name="arrow-back" size={21} color={colors.textPrimary} />
