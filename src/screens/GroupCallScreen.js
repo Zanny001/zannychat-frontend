@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, SafeAreaView, StatusBar, StyleSheet, Text, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AudioSession, LiveKitRoom, VideoTrack, isTrackReference, useRoomContext, useTracks, useParticipants } from '@livekit/react-native';
@@ -7,24 +7,35 @@ import { backendFetch } from '../services/backendClient';
 import { supabase } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
+import CallInvitePicker from '../components/CallInvitePicker';
 
-function GroupRoomContent({ callType, onEnd }) {
+function GroupRoomContent({ callType, onEnd, onAddPeople, canInvite, onParticipantsChange, endLabel }) {
   const room = useRoomContext();
   const { colors, typography } = useTheme();
   const cameraTracks = useTracks([Track.Source.Camera]);
   const participants = useParticipants();
   const [muted, setMuted] = useState(false);
   const [cameraOff, setCameraOff] = useState(callType !== 'video');
-  const [connectionState, setConnectionState] = useState('Connected');
+  const [isVideo, setIsVideo] = useState(callType === 'video');
+  const [connectionState, setConnectionState] = useState('Connecting…');
+  const canInviteNow = canInvite && connectionState === 'Connected';
 
   useEffect(() => {
+    onParticipantsChange?.(participants.map((participant) => participant.identity));
+  }, [participants, onParticipantsChange]);
+
+  useEffect(() => {
+    const onConnected = () => setConnectionState('Connected');
     const onReconnecting = () => setConnectionState('Reconnecting…');
     const onReconnected = () => setConnectionState('Connected');
     const onDisconnected = () => setConnectionState('Disconnected');
+    room.on(RoomEvent.Connected, onConnected);
+    if (room.state === 'connected') setConnectionState('Connected');
     room.on(RoomEvent.Reconnecting, onReconnecting);
     room.on(RoomEvent.Reconnected, onReconnected);
     room.on(RoomEvent.Disconnected, onDisconnected);
     return () => {
+      room.off(RoomEvent.Connected, onConnected);
       room.off(RoomEvent.Reconnecting, onReconnecting);
       room.off(RoomEvent.Reconnected, onReconnected);
       room.off(RoomEvent.Disconnected, onDisconnected);
@@ -43,6 +54,7 @@ function GroupRoomContent({ callType, onEnd }) {
     try {
       await room.localParticipant.setCameraEnabled(cameraOff);
       setCameraOff(!cameraOff);
+      setIsVideo(cameraOff);
     } catch (_) {
       Alert.alert('Camera unavailable', 'Check camera permission and try again.');
     }
@@ -63,7 +75,7 @@ function GroupRoomContent({ callType, onEnd }) {
         <Text style={[styles.connectionText, { color: colors.textSecondary }]}>· {participants.length} connected</Text>
       </View>
 
-      {callType === 'video' ? (
+      {(isVideo || tracks.length > 0) ? (
         <FlatList
           data={tracks}
           keyExtractor={(track) => track.participant.identity}
@@ -116,8 +128,7 @@ function GroupRoomContent({ callType, onEnd }) {
           <Ionicons name={muted ? 'mic-off' : 'mic'} size={23} color={muted ? colors.onPrimary : colors.textPrimary} />
           <Text style={[styles.controlLabel, typography.small, { color: muted ? colors.onPrimary : colors.textPrimary }]}>{muted ? 'Unmute' : 'Mute'}</Text>
         </Pressable>
-        {callType === 'video' && (
-          <Pressable
+        <Pressable
             onPress={toggleCamera}
             accessibilityRole="button"
             accessibilityLabel={cameraOff ? 'Turn camera on' : 'Turn camera off'}
@@ -125,17 +136,27 @@ function GroupRoomContent({ callType, onEnd }) {
             style={({ pressed }) => controlStyle(pressed, cameraOff)}
           >
             <Ionicons name={cameraOff ? 'videocam-off' : 'videocam'} size={23} color={cameraOff ? colors.onPrimary : colors.textPrimary} />
-            <Text style={[styles.controlLabel, typography.small, { color: cameraOff ? colors.onPrimary : colors.textPrimary }]}>{cameraOff ? 'Camera on' : 'Camera off'}</Text>
+            <Text style={[styles.controlLabel, typography.small, { color: cameraOff ? colors.onPrimary : colors.textPrimary }]}>{cameraOff ? 'Switch to video' : 'Switch to audio'}</Text>
+        </Pressable>
+        {canInviteNow && (
+          <Pressable
+            onPress={onAddPeople}
+            accessibilityRole="button"
+            accessibilityLabel="Add people to call"
+            style={({ pressed }) => controlStyle(pressed, false)}
+          >
+            <Ionicons name="person-add" size={22} color={colors.textPrimary} />
+            <Text style={[styles.controlLabel, typography.small, { color: colors.textPrimary }]}>Add people</Text>
           </Pressable>
         )}
         <Pressable
           onPress={onEnd}
           accessibilityRole="button"
-          accessibilityLabel="Leave group call"
+          accessibilityLabel={endLabel === 'End call' ? 'End call' : 'Leave group call'}
           style={({ pressed }) => controlStyle(pressed, false, true)}
         >
           <Ionicons name="call" size={23} color={colors.onDanger} style={{ transform: [{ rotate: '135deg' }] }} />
-          <Text style={[styles.controlLabel, typography.small, { color: colors.onDanger }]}>Leave</Text>
+          <Text style={[styles.controlLabel, typography.small, { color: colors.onDanger }]}>{endLabel || 'Leave'}</Text>
         </Pressable>
       </View>
     </View>
@@ -143,13 +164,18 @@ function GroupRoomContent({ callType, onEnd }) {
 }
 
 export default function GroupCallScreen({ route, navigation }) {
-  const { conversationId, conversationName = 'Group', callType = 'audio', roomId = null } = route.params || {};
+  const { conversationId, conversationName = 'Group', callType = 'audio', roomId = null, connection: initialConnection = null } = route.params || {};
   const { colors, resolvedMode, typography } = useTheme();
   const [connection, setConnection] = useState(null);
   const [errorText, setErrorText] = useState('');
   const [busy, setBusy] = useState(true);
+  const [invitePickerVisible, setInvitePickerVisible] = useState(false);
+  const [canInvite, setCanInvite] = useState(false);
+  const [canEnd, setCanEnd] = useState(false);
+  const [participantIds, setParticipantIds] = useState([]);
   const endingRef = useRef(false);
   const connectionRef = useRef(null);
+  const handleParticipantsChange = useCallback((ids) => setParticipantIds(ids), []);
 
   useEffect(() => {
     let active = true;
@@ -158,7 +184,9 @@ export default function GroupCallScreen({ route, navigation }) {
       try {
         let result;
         if (roomId) {
-          result = await backendFetch(`/group-calls/${roomId}/join`, { method: 'POST' });
+          result = initialConnection?.room?.id === roomId && initialConnection?.token && initialConnection?.livekitUrl
+            ? initialConnection
+            : await backendFetch(`/group-calls/${roomId}/join`, { method: 'POST' });
         } else {
           if (!conversationId) throw new Error('This group conversation is missing.');
           result = await backendFetch('/group-calls', {
@@ -188,17 +216,50 @@ export default function GroupCallScreen({ route, navigation }) {
         backendFetch(`/group-calls/${current.roomId}/leave`, { method: 'POST' }).catch(() => {});
       }
     };
-  }, [conversationId, roomId]);
+  }, [conversationId, roomId, initialConnection]);
+
+  useEffect(() => {
+    if (!connection?.room) return undefined;
+    let active = true;
+    (async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      const userId = auth?.user?.id;
+      if (!active || !userId) return;
+      if (connection.room.source_call_id) {
+        setCanInvite(connection.room.host_user_id === userId);
+        setCanEnd(true);
+        return;
+      }
+      const { data: membership } = await supabase.from('conversation_participants')
+        .select('is_admin')
+        .eq('conversation_id', connection.room.conversation_id || conversationId)
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (!active) return;
+      const manager = connection.room.host_user_id === userId || membership?.is_admin === true;
+      setCanInvite(manager);
+      setCanEnd(manager);
+    })().catch(() => {});
+    return () => { active = false; };
+  }, [connection?.room?.id, conversationId]);
+
+  const invitePerson = async (person) => {
+    await backendFetch(`/group-calls/${connection.roomId}/invite`, {
+      method: 'POST',
+      body: JSON.stringify({ userIds: [person.id] }),
+    });
+  };
 
   const endCall = async () => {
-    if (!connection || endingRef.current) return;
+    if (endingRef.current) return;
+    if (!connection) { navigation.goBack(); return; }
     endingRef.current = true;
     try {
-      const { data } = await supabase.auth.getUser();
-      const isHost = connection.room?.host_user_id === data?.user?.id;
-      await backendFetch(`/group-calls/${connection.roomId}/${isHost ? 'end' : 'leave'}`, { method: 'POST' });
-    } catch (_) {
-      // Leaving the media room still takes priority if the backend is offline.
+      await backendFetch(`/group-calls/${connection.roomId}/${canEnd ? 'end' : 'leave'}`, { method: 'POST' });
+    } catch (error) {
+      // Let unmount cleanup retry the participant leave if the end request fails.
+      endingRef.current = false;
+      setErrorText(error?.message || 'The call could not be ended on the server. Leaving this device now.');
     } finally {
       navigation.goBack();
     }
@@ -211,7 +272,7 @@ export default function GroupCallScreen({ route, navigation }) {
         <Text style={[styles.brand, typography.small, { color: colors.primary }]}>ZannyChat</Text>
         <Text style={[styles.title, typography.title, { color: colors.textPrimary }]} numberOfLines={1}>{conversationName}</Text>
         <Text style={[styles.subtitle, typography.caption, { color: colors.textSecondary }]}>
-          {connection?.callType === 'video' || callType === 'video' ? 'Group video call' : 'Group audio call'}
+          {isVideo || tracks.length > 0 ? 'Group video call' : 'Group audio call'}
         </Text>
       </View>
       {busy ? (
@@ -230,8 +291,20 @@ export default function GroupCallScreen({ route, navigation }) {
         </View>
       ) : connection ? (
         <LiveKitRoom serverUrl={connection.livekitUrl} token={connection.token} connect={true} audio={true} video={connection.callType === 'video'} options={{ adaptiveStream: true, dynacast: true }}>
-          <GroupRoomContent callType={connection.callType} onEnd={endCall} />
+          <GroupRoomContent callType={connection.callType} onEnd={endCall} onAddPeople={() => setInvitePickerVisible(true)} canInvite={canInvite} onParticipantsChange={handleParticipantsChange} endLabel={canEnd ? 'End call' : 'Leave'} />
         </LiveKitRoom>
+      ) : null}
+      {connection?.room ? (
+        <CallInvitePicker
+          visible={invitePickerVisible}
+          onClose={() => setInvitePickerVisible(false)}
+          onInvite={invitePerson}
+          conversationId={connection.room.conversation_id || conversationId}
+          roomId={connection.roomId}
+          filterToConversationMembers={!connection.room.source_call_id}
+          excludeIds={participantIds}
+          title="Add people to call"
+        />
       ) : null}
     </SafeAreaView>
   );

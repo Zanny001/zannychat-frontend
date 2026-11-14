@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Avatar from '../components/Avatar';
+import CallInvitePicker from '../components/CallInvitePicker';
 import { useTheme } from '../theme/ThemeContext';
 import { sendCallSignal, subscribeToCallSession, subscribeToCallSignals, updateCallStatus } from '../services/calls';
 import { backendFetch } from '../services/backendClient';
@@ -20,9 +21,12 @@ export default function CallScreenWeb({ route, navigation }) {
   const [phase, setPhase] = useState('Connecting…');
   const [muted, setMuted] = useState(false);
   const [cameraOff, setCameraOff] = useState((initial.call_type || callType) !== 'video');
+  const [activeCallType, setActiveCallType] = useState(initial.call_type || callType);
+  const [remoteVideoActive, setRemoteVideoActive] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [errorText, setErrorText] = useState('');
   const [networkNotice, setNetworkNotice] = useState('');
+  const [invitePickerVisible, setInvitePickerVisible] = useState(false);
   const [remoteStream, setRemoteStream] = useState(null);
   const [localStream, setLocalStream] = useState(null);
   const [audioPlaybackBlocked, setAudioPlaybackBlocked] = useState(false);
@@ -40,14 +44,14 @@ export default function CallScreenWeb({ route, navigation }) {
   const connectedAtRef = useRef(null);
   const offerStartedRef = useRef(false);
   const iceRestartInProgressRef = useRef(false);
+  const upgradeNavigatedRef = useRef(false);
 
-  const activeCallType = call?.call_type || callType;
   const immersiveVideo = activeCallType === 'video';
   const foreground = immersiveVideo ? '#FFFFFF' : colors.textPrimary;
   const secondaryForeground = immersiveVideo ? '#C4C2D2' : colors.textSecondary;
 
   const playRemoteMedia = useCallback(async () => {
-    const element = activeCallType === 'video' ? remoteVideoRef.current : remoteAudioRef.current;
+    const element = remoteAudioRef.current;
     if (!element || !remoteStream) return;
     if (element.srcObject !== remoteStream) element.srcObject = remoteStream;
     try {
@@ -57,18 +61,37 @@ export default function CallScreenWeb({ route, navigation }) {
       // Browsers may block autoplay until the user taps an explicit control.
       setAudioPlaybackBlocked(true);
     }
-  }, [activeCallType, remoteStream]);
+  }, [remoteStream]);
 
   useEffect(() => {
     playRemoteMedia();
   }, [playRemoteMedia]);
 
   useEffect(() => {
+    if (remoteVideoRef.current && remoteStream) {
+      remoteVideoRef.current.srcObject = remoteStream;
+      remoteVideoRef.current.play?.().catch(() => {});
+    }
+  }, [remoteStream, remoteVideoActive]);
+
+  useEffect(() => {
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream;
       localVideoRef.current.play?.().catch(() => {});
     }
-  }, [localStream, cameraOff]);
+  }, [localStream, cameraOff, activeCallType]);
+
+  const navigateToConference = useCallback(async (room, connectionResult = null) => {
+    if (!room?.id || upgradeNavigatedRef.current) return;
+    upgradeNavigatedRef.current = true;
+    navigation.replace('GroupCall', {
+      roomId: room.id,
+      connection: connectionResult,
+      conversationId: room.conversation_id || conversationId,
+      conversationName: 'Group call',
+      callType: room.call_type || activeCallType,
+    });
+  }, [activeCallType, conversationId, navigation]);
 
   const endCall = useCallback(async (reason = 'ended') => {
     const current = callRef.current;
@@ -94,7 +117,12 @@ export default function CallScreenWeb({ route, navigation }) {
       const expectedRemoteId = isCaller ? callRef.current?.callee_id : callRef.current?.caller_id;
       if (signal.sender_id !== expectedRemoteId) return;
       try {
-        if (signal.signal_type === 'offer' && !isCaller) {
+        if (signal.signal_type === 'offer') {
+          if (pc.signalingState !== 'stable') {
+            if (isCaller) return;
+            await pc.setLocalDescription({ type: 'rollback' });
+          }
+          remoteDescriptionReady.current = false;
           await pc.setRemoteDescription(new window.RTCSessionDescription(signal.payload));
           remoteDescriptionReady.current = true;
           for (const candidate of queuedIce.current.splice(0)) await pc.addIceCandidate(new window.RTCIceCandidate(candidate));
@@ -102,7 +130,7 @@ export default function CallScreenWeb({ route, navigation }) {
           await pc.setLocalDescription(answer);
           await sendCallSignal({ call: callRef.current, type: 'answer', payload: { type: answer.type, sdp: answer.sdp } });
           setPhase('Connecting…');
-        } else if (signal.signal_type === 'answer' && isCaller) {
+        } else if (signal.signal_type === 'answer' && pc.signalingState === 'have-local-offer') {
           await pc.setRemoteDescription(new window.RTCSessionDescription(signal.payload));
           remoteDescriptionReady.current = true;
           for (const candidate of queuedIce.current.splice(0)) await pc.addIceCandidate(new window.RTCIceCandidate(candidate));
@@ -122,9 +150,16 @@ export default function CallScreenWeb({ route, navigation }) {
         throw new Error('This browser does not support audio/video calling. Try the latest Chrome, Edge, Firefox, or Safari over HTTPS.');
       }
       const { data: liveCall, error: liveCallError } = await supabase.from('call_sessions')
-        .select('id,conversation_id,caller_id,callee_id,call_type,status,created_at,accepted_at,ended_at,expires_at')
+        .select('id,conversation_id,caller_id,callee_id,call_type,status,created_at,accepted_at,ended_at,expires_at,group_room_id')
         .eq('id', callRef.current.id).maybeSingle();
-      if (liveCallError || !liveCall || (isCaller ? !['ringing', 'accepted'].includes(liveCall.status) : liveCall.status !== 'accepted')) {
+      if (liveCallError) throw liveCallError;
+      if (liveCall?.group_room_id) {
+        callRef.current = liveCall;
+        if (activeRef.current) setCall(liveCall);
+        await navigateToConference({ id: liveCall.group_room_id, conversation_id: liveCall.conversation_id, call_type: liveCall.call_type });
+        return;
+      }
+      if (!liveCall || (isCaller ? !['ringing', 'accepted'].includes(liveCall.status) : liveCall.status !== 'accepted')) {
         throw new Error('This call is no longer available. Please start or answer the call again.');
       }
       callRef.current = liveCall;
@@ -154,6 +189,12 @@ export default function CallScreenWeb({ route, navigation }) {
       pc.ontrack = (event) => {
         let nextStream = event.streams?.[0];
         if (nextStream) remoteStreamRef.current = nextStream;
+        if (event.track?.kind === 'video') {
+          event.track.onunmute = () => { if (activeRef.current) setRemoteVideoActive(true); };
+          event.track.onmute = () => { if (activeRef.current) setRemoteVideoActive(false); };
+          event.track.onended = () => { if (activeRef.current) setRemoteVideoActive(false); };
+          if (!event.track.muted && activeRef.current) setRemoteVideoActive(true);
+        }
         else if (event.track) {
           if (!remoteStreamRef.current) remoteStreamRef.current = new window.MediaStream();
           if (!remoteStreamRef.current.getTracks().some((track) => track.id === event.track.id)) {
@@ -244,6 +285,10 @@ export default function CallScreenWeb({ route, navigation }) {
         currentStatus = next.status;
         callRef.current = next;
         setCall(next);
+        if (next.group_room_id) {
+          navigateToConference({ id: next.group_room_id, conversation_id: next.conversation_id, call_type: next.call_type }).catch(() => {});
+          return;
+        }
         if (next.status === 'accepted') {
           setPhase('Connecting…');
           maybeStartOffer();
@@ -254,12 +299,16 @@ export default function CallScreenWeb({ route, navigation }) {
       }, async () => {
         if (!supabase || !activeRef.current) return;
         const { data } = await supabase.from('call_sessions')
-          .select('id,conversation_id,caller_id,callee_id,call_type,status,created_at,accepted_at,ended_at,expires_at')
+          .select('id,conversation_id,caller_id,callee_id,call_type,status,created_at,accepted_at,ended_at,expires_at,group_room_id')
           .eq('id', liveCall.id).maybeSingle();
         if (data && activeRef.current) {
           currentStatus = data.status;
           callRef.current = data;
           setCall(data);
+          if (data.group_room_id) {
+            navigateToConference({ id: data.group_room_id, conversation_id: data.conversation_id, call_type: data.call_type }).catch(() => {});
+            return;
+          }
           if (isTerminalCallStatus(data.status)) {
             setPhase(data.status === 'declined' ? 'Call declined' : 'Call ended');
             navigation.goBack();
@@ -317,10 +366,50 @@ export default function CallScreenWeb({ route, navigation }) {
     localStreamRef.current?.getAudioTracks?.().forEach((track) => { track.enabled = !next; });
     setMuted(next);
   };
-  const toggleCamera = () => {
+  const toggleCamera = async () => {
     const next = !cameraOff;
-    localStreamRef.current?.getVideoTracks?.().forEach((track) => { track.enabled = !next; });
-    setCameraOff(next);
+    const pc = pcRef.current;
+    const stream = localStreamRef.current;
+    if (!pc || !stream || !activeRef.current) return;
+    try {
+      if (next) {
+        const track = stream.getVideoTracks?.()[0];
+        if (track) {
+          const sender = pc.getSenders().find((item) => item.track?.id === track.id);
+          if (sender) pc.removeTrack(sender);
+          stream.removeTrack(track);
+          track.stop();
+        }
+        setCameraOff(true);
+        setActiveCallType('audio');
+      } else {
+        let track = stream.getVideoTracks?.()[0];
+        if (!track) {
+          const cameraStream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: { facingMode: 'user', width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: 24 } },
+          });
+          track = cameraStream.getVideoTracks?.()[0];
+          if (!track) throw new Error('No camera track was provided by this device.');
+          stream.addTrack(track);
+          pc.addTrack(track, stream);
+        } else {
+          track.enabled = true;
+        }
+        setLocalStream(stream);
+        setCameraOff(false);
+        setActiveCallType('video');
+      }
+      if (pc.signalingState !== 'stable') throw new Error('The call is already updating. Please try the camera switch again.');
+      remoteDescriptionReady.current = false;
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      await sendCallSignal({ call: callRef.current, type: 'offer', payload: { type: offer.type, sdp: offer.sdp } });
+    } catch (error) {
+      setErrorText(error?.message || 'Could not switch call video. Your audio call is still active.');
+      setCameraOff(!next);
+      setActiveCallType(next ? 'video' : 'audio');
+    }
   };
   const control = (icon, label, action, active = false, danger = false) => (
     <TouchableOpacity key={label} onPress={action} accessibilityRole="button" accessibilityLabel={label}
@@ -333,12 +422,12 @@ export default function CallScreenWeb({ route, navigation }) {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: immersiveVideo ? '#11101A' : colors.background }]}>
       <StatusBar barStyle={!immersiveVideo && resolvedMode === 'light' ? 'dark-content' : 'light-content'} />
-      {activeCallType !== 'video' ? React.createElement('audio', {
+      {React.createElement('audio', {
         ref: remoteAudioRef, autoPlay: true, playsInline: true,
         style: { display: 'none' },
-      }) : null}
-      {activeCallType === 'video' && remoteStream ? React.createElement('video', {
-        ref: remoteVideoRef, autoPlay: true, playsInline: true,
+      })}
+      {remoteVideoActive && remoteStream ? React.createElement('video', {
+        ref: remoteVideoRef, autoPlay: true, playsInline: true, muted: true,
         style: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', backgroundColor: '#11101A' },
       }) : null}
       {activeCallType === 'video' && localStream && !cameraOff ? React.createElement('video', {
@@ -350,10 +439,12 @@ export default function CallScreenWeb({ route, navigation }) {
           <Ionicons name="chevron-down" size={26} color={foreground} />
         </TouchableOpacity>
         <View style={[styles.encryption, { backgroundColor: immersiveVideo ? 'rgba(255,255,255,0.08)' : colors.surface, borderColor: colors.border, borderWidth: 1 }]}><Ionicons name="lock-closed" size={12} color={colors.accent} /><Text style={[typography.small, styles.encryptionText, { color: secondaryForeground }]}>Encrypted media transport</Text></View>
-        <View style={{ width: 26 }} />
+        {phase === 'Connected' && call?.status === 'accepted'
+          ? <TouchableOpacity onPress={() => setInvitePickerVisible(true)} accessibilityRole="button" accessibilityLabel="Add people to call" style={styles.addPeopleButton}><Ionicons name="person-add" size={21} color={foreground} /></TouchableOpacity>
+          : <View style={{ width: 26 }} />}
       </View>
       <View style={styles.identity}>
-        {!(activeCallType === 'video' && remoteStream) ? <Avatar name={participantName} color={avatarColor || colors.primary} size={108} /> : null}
+        {!remoteVideoActive ? <Avatar name={participantName} color={avatarColor || colors.primary} size={108} /> : null}
         <Text numberOfLines={2} style={[typography.display, styles.name, { color: foreground, maxWidth: '100%', paddingHorizontal: 8 }]}>{participantName}</Text>
         <Text style={[typography.body, styles.phase, { color: secondaryForeground }]}>{phase === 'Connected' ? formatCallDuration(seconds) : phase}</Text>
         {networkNotice ? <Text style={[typography.small, styles.networkNotice, { color: immersiveVideo ? '#F2D28B' : colors.warning }]}>{networkNotice}</Text> : null}
@@ -364,12 +455,31 @@ export default function CallScreenWeb({ route, navigation }) {
       <View style={styles.bottom}>
         <View style={styles.controlsRow}>
           {control(muted ? 'mic-off' : 'mic', muted ? 'Unmute' : 'Mute', toggleMute, muted)}
-          {activeCallType === 'video' ? control(cameraOff ? 'videocam-off' : 'videocam', cameraOff ? 'Camera on' : 'Camera off', toggleCamera, cameraOff) : null}
+          {control(cameraOff ? 'videocam-off' : 'videocam', cameraOff ? 'Switch to video' : 'Switch to audio', toggleCamera, cameraOff)}
         </View>
         <TouchableOpacity onPress={() => endCall('ended')} accessibilityRole="button" accessibilityLabel="End call" style={[styles.endButton, { backgroundColor: colors.danger }]}>
           <Ionicons name="call" size={27} color={colors.onDanger} style={{ transform: [{ rotate: '135deg' }] }} />
         </TouchableOpacity>
       </View>
+      {call?.id ? (
+        <CallInvitePicker
+          visible={invitePickerVisible}
+          onClose={() => setInvitePickerVisible(false)}
+          title="Add people to call"
+          conversationId={call.conversation_id || conversationId}
+          filterToConversationMembers={false}
+          excludeIds={[call.caller_id, call.callee_id]}
+          onInvite={async (person) => {
+            const activeCall = callRef.current || call;
+            const result = await backendFetch(`/group-calls/upgrade/${activeCall.id}`, {
+              method: 'POST',
+              body: JSON.stringify({ userIds: [person.id] }),
+            });
+            if (!result?.room?.id) throw new Error('Could not upgrade this call to a conference.');
+            await navigateToConference(result.room, result);
+          }}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -377,6 +487,7 @@ export default function CallScreenWeb({ route, navigation }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#11101A' },
   topBar: { paddingHorizontal: 22, paddingTop: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  addPeopleButton: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   encryption: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 18, paddingVertical: 7, paddingHorizontal: 11, backgroundColor: 'rgba(255,255,255,0.08)' },
   encryptionText: {},
   identity: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28 },
