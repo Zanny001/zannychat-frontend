@@ -7,7 +7,7 @@ import { backendFetch } from '../services/backendClient';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 
-function LiveMedia({ creatorMode, moderatorMode, canManageGuests, canRequestGuest, guestApproved, guestRequestStatus, guestRequests, showGuestRequests, title, comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, onRequestGuest, onJoinGuest, onToggleGuestRequests, onReviewGuestRequest, busy }) {
+function LiveMedia({ creatorMode, moderatorMode, canManageGuests, canRequestGuest, guestApproved, guestRequestStatus, guestRequests, showGuestRequests, title, comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, onRequestGuest, onJoinGuest, onToggleGuestRequests, onReviewGuestRequest, replayEnabled, replayStatus, replayBusy, onStartReplay, onStopReplay, onViewReplay, busy }) {
   const { colors, typography } = useTheme();
   const tracks = useTracks([Track.Source.Camera]);
   const videos = tracks.filter(isTrackReference);
@@ -85,6 +85,19 @@ function LiveMedia({ creatorMode, moderatorMode, canManageGuests, canRequestGues
           <TouchableOpacity disabled={busy} onPress={onReact} accessibilityRole="button" accessibilityLabel="Send heart reaction" style={{ backgroundColor: hexToRgba(colors.danger, 0.16), padding: 12, borderRadius: 14 }}><Ionicons name="heart" size={20} color={colors.danger} /></TouchableOpacity>
           {!creatorMode && canRequestGuest && <TouchableOpacity disabled={busy || (guestRequestStatus === 'requested' && !guestApproved)} onPress={guestApproved ? onJoinGuest : onRequestGuest} accessibilityRole="button" accessibilityLabel={guestApproved ? 'Join LIVE as guest' : guestRequestStatus === 'requested' ? 'Guest request pending' : 'Request to join LIVE on stage'} style={{ backgroundColor: hexToRgba(colors.primary, 0.24), padding: 12, borderRadius: 14 }}><Ionicons name={guestApproved ? 'checkmark-circle-outline' : 'person-add-outline'} size={19} color={colors.onPrimary} /></TouchableOpacity>}
           {!creatorMode && <TouchableOpacity disabled={busy} onPress={onReport} accessibilityRole="button" accessibilityLabel="Report LIVE stream" style={{ backgroundColor: colors.surfaceAlt, padding: 12, borderRadius: 14 }}><Ionicons name="flag-outline" size={19} color={colors.textPrimary} /></TouchableOpacity>}
+          {creatorMode && replayEnabled && (
+            <TouchableOpacity
+              disabled={replayBusy || ['starting', 'processing'].includes(replayStatus)}
+              onPress={replayStatus === 'ready' ? onViewReplay : replayStatus === 'recording' ? onStopReplay : onStartReplay}
+              accessibilityRole="button"
+              accessibilityLabel={replayStatus === 'ready' ? 'Watch saved LIVE replay' : replayStatus === 'recording' ? 'Stop LIVE replay recording' : replayStatus === 'processing' ? 'Replay is processing' : 'Start LIVE replay recording'}
+              style={{ backgroundColor: replayStatus === 'recording' ? hexToRgba(colors.danger, 0.22) : hexToRgba(colors.accent, 0.2), borderWidth: 1, borderColor: replayStatus === 'recording' ? colors.danger : colors.border, padding: 12, borderRadius: 14, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
+            >
+              {replayBusy || ['starting', 'processing'].includes(replayStatus)
+                ? <ActivityIndicator size="small" color={colors.accent} />
+                : <Ionicons name={replayStatus === 'ready' ? 'play-circle-outline' : replayStatus === 'recording' ? 'stop-circle-outline' : replayStatus === 'failed' ? 'refresh-circle-outline' : 'radio-button-on-outline'} size={20} color={replayStatus === 'recording' ? colors.danger : colors.accent} />}
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -110,8 +123,21 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [guestRequestStatus, setGuestRequestStatus] = useState('none');
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
+  const [replayEnabled, setReplayEnabled] = useState(false);
+  const [replay, setReplay] = useState(null);
+  const [replayBusy, setReplayBusy] = useState(false);
   const [error, setError] = useState('');
   const endedRef = useRef(false);
+
+  const refreshReplay = useCallback(async () => {
+    if (!stream?.id || !creatorMode || !replayEnabled) return;
+    try {
+      const result = await backendFetch(`/live/${stream.id}/replays`);
+      const rows = Array.isArray(result?.replays) ? result.replays : [];
+      const latest = rows.find((item) => ['starting', 'recording', 'processing', 'ready', 'failed'].includes(item.status));
+      setReplay(latest || null);
+    } catch (_) {}
+  }, [stream?.id, creatorMode, replayEnabled]);
 
   const refreshComments = useCallback(async () => {
     if (!stream?.id) return;
@@ -137,6 +163,22 @@ export default function LiveStreamScreen({ route, navigation }) {
   }, [stream?.id, creatorMode, refreshComments]);
 
   useEffect(() => {
+    if (!creatorMode) return undefined;
+    let active = true;
+    backendFetch('/live/replays/config')
+      .then((result) => { if (active) setReplayEnabled(Boolean(result?.enabled)); })
+      .catch(() => { if (active) setReplayEnabled(false); });
+    return () => { active = false; };
+  }, [creatorMode]);
+
+  useEffect(() => {
+    if (!creatorMode || !replayEnabled || !stream?.id) return undefined;
+    refreshReplay();
+    const interval = setInterval(refreshReplay, 5000);
+    return () => clearInterval(interval);
+  }, [creatorMode, replayEnabled, stream?.id, refreshReplay]);
+
+  useEffect(() => {
     if (!stream?.id || creatorMode || publisherMode || !stream.allow_guests) return undefined;
     let active = true;
     const checkApproval = async () => {
@@ -159,6 +201,53 @@ export default function LiveStreamScreen({ route, navigation }) {
     } catch (_) {}
     setBusy(false);
     navigation.goBack();
+  };
+
+  const startReplay = async () => {
+    if (!stream?.id || replayBusy) return;
+    setReplayBusy(true);
+    try {
+      const result = await backendFetch(`/live/${stream.id}/replays/start`, { method: 'POST' });
+      setReplay(result?.replay || null);
+      Alert.alert('Replay recording started', 'ZannyChat will stop this recording automatically after five minutes.');
+    } catch (e) {
+      Alert.alert('Could not start replay', e?.message || 'Check your connection and try again.');
+    } finally {
+      setReplayBusy(false);
+    }
+  };
+
+  const confirmStartReplay = () => {
+    if (Platform.OS === 'web') {
+      startReplay();
+      return;
+    }
+    Alert.alert(
+      'Record this LIVE?',
+      'A private 360p replay will be saved for up to seven days. Monthly free-tier limits apply.',
+      [{ text: 'Cancel', style: 'cancel' }, { text: 'Start recording', onPress: startReplay }],
+    );
+  };
+
+  const stopReplay = async () => {
+    if (!stream?.id || !replay?.id || replayBusy) return;
+    setReplayBusy(true);
+    try {
+      const result = await backendFetch(`/live/${stream.id}/replays/${replay.id}/stop`, { method: 'POST' });
+      setReplay((current) => ({ ...current, ...(result?.replay || {}), status: result?.replay?.status || 'processing' }));
+      refreshReplay();
+    } catch (e) {
+      Alert.alert('Could not stop replay', e?.message || 'The automatic five-minute stop remains active.');
+    } finally {
+      setReplayBusy(false);
+    }
+  };
+
+  const viewReplay = () => {
+    if (!replay?.id) return;
+    navigation.navigate('LiveReplay', {
+      replay: { ...replay, streamTitle: stream?.title || 'LIVE replay' },
+    });
   };
 
   const sendComment = async () => {
@@ -278,7 +367,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       <StatusBar barStyle="light-content" />
       {error ? <Text accessibilityRole="alert" style={{ color: colors.danger, paddingHorizontal: 12, paddingTop: 4 }}>{error}</Text> : null}
       <LiveKitRoom key={connection.token} serverUrl={connection.livekitUrl} token={connection.token} connect={true} audio={publisherMode} video={publisherMode} options={{ adaptiveStream: true, dynacast: true }}>
-        <LiveMedia creatorMode={creatorMode} publisherMode={publisherMode} moderatorMode={moderatorMode} canManageGuests={Boolean(stream.allow_guests)} canRequestGuest={canRequestGuest} guestRequests={guestRequests} showGuestRequests={showGuestRequests} title={stream.title} comments={comments} reports={reports} showReports={showReports} participants={participants} showParticipants={showParticipants} draft={draft} setDraft={setDraft} onComment={sendComment} onReact={react} onReport={report} onHide={hideComment} onEnd={leave} onRequestGuest={requestGuest} guestApproved={guestApproved} guestRequestStatus={guestRequestStatus} onJoinGuest={joinAsGuest} onToggleGuestRequests={() => { setShowReports(false); setShowParticipants(false); showGuestRequests ? setShowGuestRequests(false) : loadGuestRequests(); }} onReviewGuestRequest={reviewGuestRequest} onToggleReports={() => { setShowParticipants(false); setShowGuestRequests(false); showReports ? setShowReports(false) : loadReports(); }} onReviewReport={reviewReport} onToggleParticipants={() => { setShowReports(false); setShowGuestRequests(false); showParticipants ? setShowParticipants(false) : loadParticipants(); }} onSetModerator={setModerator} busy={busy} />
+        <LiveMedia creatorMode={creatorMode} publisherMode={publisherMode} moderatorMode={moderatorMode} canManageGuests={Boolean(stream.allow_guests)} canRequestGuest={canRequestGuest} guestRequests={guestRequests} showGuestRequests={showGuestRequests} title={stream.title} comments={comments} reports={reports} showReports={showReports} participants={participants} showParticipants={showParticipants} draft={draft} setDraft={setDraft} onComment={sendComment} onReact={react} onReport={report} onHide={hideComment} onEnd={leave} onRequestGuest={requestGuest} guestApproved={guestApproved} guestRequestStatus={guestRequestStatus} onJoinGuest={joinAsGuest} onToggleGuestRequests={() => { setShowReports(false); setShowParticipants(false); showGuestRequests ? setShowGuestRequests(false) : loadGuestRequests(); }} onReviewGuestRequest={reviewGuestRequest} onToggleReports={() => { setShowParticipants(false); setShowGuestRequests(false); showReports ? setShowReports(false) : loadReports(); }} onReviewReport={reviewReport} onToggleParticipants={() => { setShowReports(false); setShowGuestRequests(false); showParticipants ? setShowParticipants(false) : loadParticipants(); }} onSetModerator={setModerator} replayEnabled={replayEnabled} replayStatus={replay?.status || 'none'} replayBusy={replayBusy} onStartReplay={confirmStartReplay} onStopReplay={stopReplay} onViewReplay={viewReplay} busy={busy} />
       </LiveKitRoom>
       {busy && <View style={{ position: 'absolute', top: '50%', alignSelf: 'center' }}><ActivityIndicator color={colors.accent} /></View>}
     </SafeAreaView>
