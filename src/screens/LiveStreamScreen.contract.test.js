@@ -38,8 +38,9 @@ test('LIVE creator can appoint and remove moderators from currently joined viewe
 
 test('LIVE approved guests receive publishing permissions and can rejoin after creator approval', () => {
   assert.ok(screen.includes("connection?.role === 'guest'"));
-  assert.ok(screen.includes('audio={publisherMode && microphoneEnabled}'));
-  assert.ok(screen.includes('video={publisherMode && cameraEnabled}'));
+  assert.ok(screen.includes('audio={publisherMode} video={publisherMode}'));
+  assert.ok(screen.includes('room.localParticipant.setCameraEnabled(nextEnabled)'));
+  assert.ok(screen.includes('room.localParticipant.setMicrophoneEnabled(nextEnabled)'));
   assert.ok(screen.includes("`/live/${stream.id}/guest-status`"));
   assert.ok(screen.includes("nextConnection?.role !== 'guest'"));
   assert.ok(screen.includes("guestRequestStatus === 'requested'"));
