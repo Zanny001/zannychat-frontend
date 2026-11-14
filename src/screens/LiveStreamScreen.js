@@ -51,8 +51,8 @@ function LiveMedia({ creatorMode, publisherMode, moderatorMode, canManageGuests,
         <View style={{ flex: 1, justifyContent: 'center' }}>
           {videos.length ? (
             <FlatList
-              key={videos.length > 1 ? 'live-stage-grid' : 'live-stage-single'}
               keyboardShouldPersistTaps="handled"
+              key={videos.length > 1 ? 'live-stage-grid' : 'live-stage-single'}
               data={videos}
               numColumns={videos.length > 1 ? 2 : 1}
               keyExtractor={(item) => item.publication?.trackSid || item.participant.sid || item.participant.identity}
