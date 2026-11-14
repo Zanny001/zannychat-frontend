@@ -47,6 +47,7 @@ export default function GroupCallScreenWeb({ route, navigation }) {
   const [canInvite, setCanInvite] = useState(false);
   const [canEnd, setCanEnd] = useState(false);
   const roomRef = useRef(null);
+  const joinedRoomIdRef = useRef(roomId || null);
   const remoteAudioRef = useRef(null);
   const activeRef = useRef(false);
   const endedRef = useRef(false);
@@ -54,9 +55,9 @@ export default function GroupCallScreenWeb({ route, navigation }) {
   const canInviteNow = canInvite && status === 'Connected';
 
   useEffect(() => {
-    if (!roomId) {
+    if (!roomId && !conversationId) {
       setStatus('Unavailable');
-      setErrorText('This call link is missing its room identifier.');
+      setErrorText('This group conversation is missing.');
       return undefined;
     }
     let active = true;
@@ -97,12 +98,22 @@ export default function GroupCallScreenWeb({ route, navigation }) {
     room.on(RoomEvent.Disconnected, () => { if (active && !endedRef.current) setStatus('Disconnected'); });
 
     (async () => {
-      const result = initialConnection?.room?.id === roomId && initialConnection?.token && initialConnection?.livekitUrl
-        ? initialConnection
-        : await backendFetch(`/group-calls/${roomId}/join`, { method: 'POST' });
+      let result;
+      if (roomId) {
+        result = initialConnection?.room?.id === roomId && initialConnection?.token && initialConnection?.livekitUrl
+          ? initialConnection
+          : await backendFetch(`/group-calls/${roomId}/join`, { method: 'POST' });
+      } else {
+        result = await backendFetch('/group-calls', {
+          method: 'POST',
+          body: JSON.stringify({ conversationId, callType }),
+        });
+      }
       if (!active) return;
-      setConnection(result);
-      await room.connect(result.livekitUrl, result.token);
+      const connected = { ...result, roomId: result.room.id, callType: result.room.call_type || callType };
+      joinedRoomIdRef.current = connected.roomId;
+      setConnection(connected);
+      await room.connect(connected.livekitUrl, connected.token);
       if (!active) return;
       await room.localParticipant.setMicrophoneEnabled(true);
       if (isVideo) {
@@ -128,10 +139,11 @@ export default function GroupCallScreenWeb({ route, navigation }) {
       room.removeAllListeners();
       room.disconnect();
       for (const publication of room.localParticipant.trackPublications.values()) publication.track?.stop?.();
-      if (!endedRef.current) backendFetch(`/group-calls/${roomId}/leave`, { method: 'POST' }).catch(() => {});
+      const activeRoomId = joinedRoomIdRef.current;
+      if (!endedRef.current && activeRoomId) backendFetch(`/group-calls/${activeRoomId}/leave`, { method: 'POST' }).catch(() => {});
       roomRef.current = null;
     };
-  }, [roomId, isVideo, initialConnection]);
+  }, [roomId, isVideo, initialConnection, conversationId, callType]);
 
   useEffect(() => {
     if (!connection?.room) return undefined;
@@ -183,19 +195,20 @@ export default function GroupCallScreenWeb({ route, navigation }) {
 
   const endCall = useCallback(async () => {
     try {
-      await backendFetch(`/group-calls/${roomId}/${canEnd ? 'end' : 'leave'}`, { method: 'POST' });
+      const activeRoomId = connection?.roomId || joinedRoomIdRef.current || roomId;
+      await backendFetch(`/group-calls/${activeRoomId}/${canEnd ? 'end' : 'leave'}`, { method: 'POST' });
       endedRef.current = true;
       roomRef.current?.disconnect();
       navigation.goBack();
     } catch (error) { setErrorText(error?.message || 'Could not leave this call.'); }
-  }, [canEnd, navigation, roomId]);
+  }, [canEnd, connection?.roomId, navigation, roomId]);
 
   const invitePerson = useCallback(async (person) => {
-    await backendFetch(`/group-calls/${roomId}/invite`, {
+    await backendFetch(`/group-calls/${connection.roomId}/invite`, {
       method: 'POST',
       body: JSON.stringify({ userIds: [person.id] }),
     });
-  }, [roomId]);
+  }, [connection?.roomId]);
 
   const localCameraTrack = roomRef.current?.localParticipant.getTrackPublication(Track.Source.Camera)?.videoTrack;
   const remoteVideoTracksView = remoteVideoTracks;
