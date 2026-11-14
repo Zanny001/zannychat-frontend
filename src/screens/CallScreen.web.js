@@ -51,7 +51,7 @@ export default function CallScreenWeb({ route, navigation }) {
   const secondaryForeground = immersiveVideo ? '#C4C2D2' : colors.textSecondary;
 
   const playRemoteMedia = useCallback(async () => {
-    const element = activeCallType === 'video' ? remoteVideoRef.current : remoteAudioRef.current;
+    const element = remoteAudioRef.current;
     if (!element || !remoteStream) return;
     if (element.srcObject !== remoteStream) element.srcObject = remoteStream;
     try {
@@ -61,18 +61,25 @@ export default function CallScreenWeb({ route, navigation }) {
       // Browsers may block autoplay until the user taps an explicit control.
       setAudioPlaybackBlocked(true);
     }
-  }, [activeCallType, remoteStream]);
+  }, [remoteStream]);
 
   useEffect(() => {
     playRemoteMedia();
   }, [playRemoteMedia]);
 
   useEffect(() => {
+    if (remoteVideoRef.current && remoteStream) {
+      remoteVideoRef.current.srcObject = remoteStream;
+      remoteVideoRef.current.play?.().catch(() => {});
+    }
+  }, [remoteStream, remoteVideoActive]);
+
+  useEffect(() => {
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream;
       localVideoRef.current.play?.().catch(() => {});
     }
-  }, [localStream, cameraOff]);
+  }, [localStream, cameraOff, activeCallType]);
 
   const navigateToConference = useCallback(async (room, connectionResult = null) => {
     if (!room?.id || upgradeNavigatedRef.current) return;
@@ -413,12 +420,12 @@ export default function CallScreenWeb({ route, navigation }) {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: immersiveVideo ? '#11101A' : colors.background }]}>
       <StatusBar barStyle={!immersiveVideo && resolvedMode === 'light' ? 'dark-content' : 'light-content'} />
-      {activeCallType !== 'video' ? React.createElement('audio', {
+      {React.createElement('audio', {
         ref: remoteAudioRef, autoPlay: true, playsInline: true,
         style: { display: 'none' },
-      }) : null}
+      })}
       {remoteVideoActive && remoteStream ? React.createElement('video', {
-        ref: remoteVideoRef, autoPlay: true, playsInline: true,
+        ref: remoteVideoRef, autoPlay: true, playsInline: true, muted: true,
         style: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', backgroundColor: '#11101A' },
       }) : null}
       {activeCallType === 'video' && localStream && !cameraOff ? React.createElement('video', {
