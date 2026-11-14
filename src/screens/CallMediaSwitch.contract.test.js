@@ -28,6 +28,9 @@ test('native and web remote video tracks activate and release the video stage', 
   assert.ok(native.includes('event.track.onunmute = refreshRemoteVideoState'));
   assert.ok(native.includes('event.track.onended = refreshRemoteVideoState'));
   assert.ok(web.includes('event.track.onunmute'));
+  const webVideoStart = web.indexOf("if (event.track?.kind === 'video')");
+  const webVideoEnd = web.indexOf('else if (event.track)', webVideoStart);
+  assert.ok(web.slice(webVideoStart, webVideoEnd).includes('remoteStreamRef.current.addTrack(event.track)'));
   assert.ok(web.includes("const immersiveVideo = activeCallType === 'video' || remoteVideoActive"));
 });
 
