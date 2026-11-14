@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Room, RoomEvent, Track } from 'livekit-client';
 import { backendFetch } from '../services/backendClient';
@@ -224,9 +224,6 @@ export default function GroupCallScreenWeb({ route, navigation }) {
           <Text style={[typography.title, { color: colors.textPrimary }]}>{conversationName || 'Group call'}</Text>
           <Text style={[typography.small, { color: colors.textSecondary }]}>{status} · {participantIds.length || 1} connected</Text>
         </View>
-        <TouchableOpacity onPress={endCall} accessibilityRole="button" accessibilityLabel={canEnd ? 'End call' : 'Leave call'} style={[styles.headerEnd, { backgroundColor: colors.danger }]}>
-          <Ionicons name="call" size={18} color={colors.onDanger} style={{ transform: [{ rotate: '135deg' }] }} />
-        </TouchableOpacity>
       </View>
 
       {errorText ? <Text style={[typography.small, styles.error, { color: colors.danger }]}>{errorText}</Text> : null}
@@ -298,7 +295,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1, minHeight: '100%' },
   header: { minHeight: 68, paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: StyleSheet.hairlineWidth },
   headerCopy: { flex: 1, gap: 4 },
-  headerEnd: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
   error: { paddingHorizontal: 18, paddingTop: 10 },
   videoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, padding: 14, justifyContent: 'center' },
   videoTile: { width: '47%', minWidth: 145, aspectRatio: 9 / 16, maxHeight: 330, borderRadius: 18, borderWidth: 1, overflow: 'hidden' },
