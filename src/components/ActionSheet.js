@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, Modal, StyleSheet, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 
@@ -12,7 +13,9 @@ import { hexToRgba } from '../utils/color';
 // options: [{ key, label, icon?, destructive?, disabled?, onPress }]
 // reactions (optional): [ { emoji, active?, onPress } ]
 export default function ActionSheet({ visible, title, options = [], reactions, onClose }) {
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, radii, typography, resolvedMode } = useTheme();
+  const insets = useSafeAreaInsets();
+  const supportsBackdropBlur = Platform.OS !== 'android' || Number(Platform.Version) >= 31;
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -25,6 +28,7 @@ export default function ActionSheet({ visible, title, options = [], reactions, o
           style={[
             styles.sheet,
             {
+              paddingBottom: Math.max(28, insets.bottom + 16),
               backgroundColor: hexToRgba(colors.surface, 0.82),
               borderColor: hexToRgba(colors.textPrimary, 0.12),
               borderTopLeftRadius: radii.lg,
@@ -35,12 +39,14 @@ export default function ActionSheet({ visible, title, options = [], reactions, o
           accessible={false}
           accessibilityViewIsModal
         >
-          <BlurView
-            intensity={40}
-            tint="dark"
-            style={StyleSheet.absoluteFill}
-            experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
-          />
+          {supportsBackdropBlur ? (
+            <BlurView
+              intensity={40}
+              tint={resolvedMode}
+              style={StyleSheet.absoluteFill}
+              experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+            />
+          ) : null}
           <View style={[styles.grabber, { backgroundColor: hexToRgba(colors.textPrimary, 0.25) }]} />
 
           {title ? (
