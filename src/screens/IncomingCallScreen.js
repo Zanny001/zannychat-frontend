@@ -11,7 +11,7 @@ import { answerNativeCall, endNativeCall } from '../services/nativeCallSystem';
 
 export default function IncomingCallScreen({ route, navigation }) {
   const { call, participantName = 'ZannyChat contact', avatarColor: avatarColorParam, autoAnswer = false, nativeCallId = null } = route.params || {};
-  const { colors, resolvedMode } = useTheme();
+  const { colors, typography, resolvedMode } = useTheme();
   const avatarColor = avatarColorParam || colors.primary;
   const [busy, setBusy] = useState(false);
   const closingRef = useRef(false);
@@ -99,49 +99,49 @@ export default function IncomingCallScreen({ route, navigation }) {
       <View style={[styles.glow, { backgroundColor: hexToRgba(colors.primary, 0.14) }]} />
       <View style={styles.top}>
         <View style={[styles.brandMark, { backgroundColor: colors.primary, shadowColor: colors.primary }]}><Ionicons name="chatbubbles" size={19} color={colors.onPrimary} /></View>
-        <Text style={[styles.brand, { color: colors.textPrimary }]}>ZannyChat</Text>
-        <Text style={[styles.secure, { color: colors.textSecondary }]}><Ionicons name="lock-closed" size={12} color={colors.accent} />  Private call invitation</Text>
+        <Text style={[typography.heading, styles.brand, { color: colors.textPrimary }]}>ZannyChat</Text>
+        <Text style={[typography.caption, styles.secure, { color: colors.textSecondary }]}><Ionicons name="lock-closed" size={12} color={colors.accent} />  Private call invitation</Text>
       </View>
       <View style={styles.person}>
         <View style={[styles.avatarRing, { borderColor: hexToRgba(colors.primary, 0.42), backgroundColor: hexToRgba(colors.surface, 0.55), shadowColor: colors.primary }]}><Avatar name={participantName} color={avatarColor} size={112} /></View>
-        <Text numberOfLines={2} style={[styles.name, { color: colors.textPrimary, maxWidth: '100%', paddingHorizontal: 8 }]}>{participantName}</Text>
-        <Text style={[styles.callKind, { color: colors.textSecondary }]}>{isVideo ? 'Incoming video call' : 'Incoming audio call'}</Text>
-        <View style={[styles.statusPill, { backgroundColor: hexToRgba(colors.surface, 0.78), borderColor: colors.border }]}><View style={[styles.liveDot, { backgroundColor: colors.online }]} /><Text style={[styles.statusText, { color: colors.textPrimary }]}>{remaining > 0 ? `Ringing · ${remaining}s` : 'Call expired'}</Text></View>
+        <Text numberOfLines={2} style={[typography.display, styles.name, { color: colors.textPrimary, maxWidth: '100%', paddingHorizontal: 8 }]}>{participantName}</Text>
+        <Text style={[typography.body, styles.callKind, { color: colors.textSecondary }]}>{isVideo ? 'Incoming video call' : 'Incoming audio call'}</Text>
+        <View style={[styles.statusPill, { backgroundColor: hexToRgba(colors.surface, 0.78), borderColor: colors.border }]}><View style={[styles.liveDot, { backgroundColor: colors.online }]} /><Text style={[typography.small, styles.statusText, { color: colors.textPrimary }]}>{remaining > 0 ? `Ringing · ${remaining}s` : 'Call expired'}</Text></View>
       </View>
       <View style={styles.actions}>
         <TouchableOpacity onPress={decline} disabled={busy} accessibilityRole="button" accessibilityLabel="Decline call" style={[styles.action, styles.decline, { backgroundColor: colors.danger, shadowColor: colors.danger }]}>
           <Ionicons name="call" size={28} color={colors.onDanger} style={{ transform: [{ rotate: '135deg' }] }} />
-          <Text style={[styles.actionText, { color: colors.onDanger }]}>Decline</Text>
+          <Text style={[typography.small, styles.actionText, { color: colors.onDanger }]}>Decline</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={answer} disabled={busy || remaining <= 0} accessibilityRole="button" accessibilityLabel="Answer call" style={[styles.action, styles.answer, { backgroundColor: colors.primary, shadowColor: colors.primary }, (busy || remaining <= 0) && styles.disabled]}>
           {busy ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name={isVideo ? 'videocam' : 'call'} size={28} color={colors.onPrimary} />}
-          <Text style={[styles.actionText, { color: colors.onPrimary }]}>Answer</Text>
+          <Text style={[typography.small, styles.actionText, { color: colors.onPrimary }]}>Answer</Text>
         </TouchableOpacity>
       </View>
-      <Text style={[styles.footer, { color: colors.textSecondary }]}>Your microphone and camera activate only after you answer.</Text>
+      <Text style={[typography.small, styles.footer, { color: colors.textSecondary }]}Your microphone and camera activate only after you answer.</Text>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#12101B', paddingHorizontal: 26, overflow: 'hidden' },
-  glow: { position: 'absolute', top: 140, left: -90, right: -90, height: 340, borderRadius: 220, backgroundColor: 'rgba(108,92,231,0.13)' },
+  safe: { flex: 1, paddingHorizontal: 26, overflow: 'hidden' },
+  glow: { position: 'absolute', top: 140, left: -90, right: -90, height: 340, borderRadius: 220 },
   top: { alignItems: 'center', paddingTop: 28, gap: 8 },
-  brandMark: { width: 42, height: 42, borderRadius: 15, backgroundColor: '#6C5CE7', alignItems: 'center', justifyContent: 'center' },
-  brand: { color: '#FFFFFF', fontSize: 18, fontWeight: '800', letterSpacing: 0.3 },
-  secure: { color: '#A8A6B8', fontSize: 12, marginTop: 8 },
+  brandMark: { width: 42, height: 42, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  brand: { letterSpacing: 0.3 },
+  secure: { marginTop: 8 },
   person: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   avatarRing: { padding: 8, borderWidth: 1, borderRadius: 72, shadowOpacity: 0.28, shadowRadius: 22, shadowOffset: { width: 0, height: 7 }, elevation: 6 },
-  name: { color: '#FFFFFF', fontSize: 28, fontWeight: '800', marginTop: 28, textAlign: 'center', flexShrink: 1 },
-  callKind: { color: '#C8C5D8', fontSize: 15, marginTop: 9 },
-  statusPill: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 19, paddingVertical: 8, paddingHorizontal: 13, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.07)' },
-  liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#70D9A4' },
-  statusText: { color: '#D9D7E4', fontSize: 12, fontWeight: '600' },
+  name: { marginTop: 28, textAlign: 'center', flexShrink: 1 },
+  callKind: { marginTop: 9 },
+  statusPill: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 19, paddingVertical: 8, paddingHorizontal: 13, borderRadius: 18 },
+  liveDot: { width: 7, height: 7, borderRadius: 4 },
+  statusText: {},
   actions: { flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'center', paddingBottom: 25 },
   action: { width: 84, height: 84, borderRadius: 30, alignItems: 'center', justifyContent: 'center', gap: 6, shadowOpacity: 0.28, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
-  decline: { backgroundColor: '#E4475A' },
-  answer: { backgroundColor: '#24A56A' },
+  decline: {},
+  answer: {},
   disabled: { opacity: 0.5 },
-  actionText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
-  footer: { color: '#8F8C9F', textAlign: 'center', fontSize: 11, paddingBottom: 18, lineHeight: 16 },
+  actionText: {},
+  footer: { textAlign: 'center', paddingBottom: 18 },
 });
