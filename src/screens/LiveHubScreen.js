@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Platform, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,7 +23,7 @@ const STREAM_FILTERS = [
   { value: 'public', label: 'Public' },
 ];
 
-export default function LiveHubScreen({ navigation }) {
+export default function LiveHubScreen({ navigation, route }) {
   const { colors, spacing, radii, typography } = useTheme();
   const [streams, setStreams] = useState([]);
   const [invitations, setInvitations] = useState([]);
@@ -41,6 +41,7 @@ export default function LiveHubScreen({ navigation }) {
   const [error, setError] = useState('');
   const [startStage, setStartStage] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
+  const handledLiveNotificationRef = useRef(null);
 
   const visibleStreams = streams.filter((item) => {
     if (activeFilter === 'following') return followingIds.includes(item.creator_id);
@@ -171,6 +172,27 @@ export default function LiveHubScreen({ navigation }) {
   };
 
   const acceptInvitation = (item) => joinLive(item.stream);
+
+  useEffect(() => {
+    const notification = route?.params?.liveNotification;
+    const type = notification?.type;
+    if (!type || !type.startsWith('live_')) return;
+    const streamId = typeof notification.streamId === 'string' ? notification.streamId : null;
+    const key = type + ':' + (streamId || notification.creatorId || notification.followerId || 'hub');
+    if (handledLiveNotificationRef.current === key) return;
+    handledLiveNotificationRef.current = key;
+    navigation.setParams?.({ liveNotification: undefined });
+
+    const shouldJoin = streamId && (
+      ['live_stream_started', 'live_invitation', 'live_guest_request'].includes(type)
+      || (type === 'live_guest_decision' && notification.status === 'accepted')
+    );
+    if (shouldJoin) {
+      joinLive({ id: streamId });
+    } else {
+      refresh();
+    }
+  }, [route?.params?.liveNotification, navigation, refresh]);
   const fieldStyle = {
     color: colors.textPrimary,
     backgroundColor: colors.surface,
