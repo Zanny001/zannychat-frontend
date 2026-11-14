@@ -220,7 +220,8 @@ export default function CallScreen({ route, navigation }) {
       const processSignal = async (signal) => {
         if (!activeRef.current || !signal?.id || seenSignals.current.has(signal.id)) return;
         seenSignals.current.add(signal.id);
-        if (signal.sender_id === (isCaller ? call?.caller_id : call?.callee_id)) return;
+        const expectedRemoteId = isCaller ? callRef.current?.callee_id : callRef.current?.caller_id;
+        if (signal.sender_id !== expectedRemoteId) return;
         try {
           if (signal.signal_type === 'offer') {
             if (pc.signalingState !== 'stable') {
