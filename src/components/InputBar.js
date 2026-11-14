@@ -42,6 +42,8 @@ export default function InputBar({
   draftKey,
 }) {
   const { colors, spacing, radii, typography, resolvedMode } = useTheme();
+  // Preserve the glass tint without forcing unsupported blur on older Android.
+  const supportsBackdropBlur = Platform.OS !== 'android' || Number(Platform.Version) >= 31;
   const [text, setText] = useState('');
   const [draftReady, setDraftReady] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
@@ -132,12 +134,14 @@ export default function InputBar({
           <Text style={[typography.caption, { color: colors.textSecondary, marginLeft: 5 }]}>Draft saved on this device</Text>
         </View>
       ) : null}
-      <BlurView
-        intensity={28}
-        tint={resolvedMode}
-        style={StyleSheet.absoluteFill}
-        experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
-      />
+      {supportsBackdropBlur ? (
+        <BlurView
+          intensity={28}
+          tint={resolvedMode}
+          style={StyleSheet.absoluteFill}
+          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+        />
+      ) : null}
       <View style={[StyleSheet.absoluteFill, { backgroundColor: hexToRgba(colors.background, 0.7) }]} />
 
       {editing && !isRecording ? (

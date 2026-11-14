@@ -14,15 +14,19 @@ import Knot from './Knot';
 // contact's name would just be noise.
 export default function Header({ title, onBack, right, subtitle, brand = false, onTitlePress }) {
   const { colors, mood, spacing, typography, layout, resolvedMode } = useTheme();
+  // Blur is decorative; keep a crisp tinted fallback on Android 10/11.
+  const supportsBackdropBlur = Platform.OS !== 'android' || Number(Platform.Version) >= 31;
 
   return (
     <View style={[styles.wrap, { borderBottomColor: hexToRgba(colors.textPrimary, 0.08) }]}>
-      <BlurView
-        intensity={28}
-        tint={resolvedMode}
-        style={StyleSheet.absoluteFill}
-        experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
-      />
+      {supportsBackdropBlur ? (
+        <BlurView
+          intensity={28}
+          tint={resolvedMode}
+          style={StyleSheet.absoluteFill}
+          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+        />
+      ) : null}
       <View style={[StyleSheet.absoluteFill, { backgroundColor: hexToRgba(colors.background, 0.62) }]} />
       <View pointerEvents="none" style={[styles.specular, { backgroundColor: hexToRgba('#FFFFFF', 0.12) }]} />
 

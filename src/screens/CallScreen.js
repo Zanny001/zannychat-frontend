@@ -15,7 +15,7 @@ import { getIceNetworkNotice } from '../utils/callNetworkStatus';
 const FALLBACK_ICE_SERVERS = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
 
 export default function CallScreen({ route, navigation }) {
-  const { colors, resolvedMode } = useTheme();
+  const { colors, typography, resolvedMode } = useTheme();
   const { call: initialCall, callId, conversationId, callType = 'audio', isCaller = false, participantName = 'ZannyChat contact', avatarColor, nativeCallId = null, nativeRequestId = null } = route.params || {};
   const immersiveVideo = callType === 'video';
   const foreground = immersiveVideo ? '#FFFFFF' : colors.textPrimary;
@@ -305,7 +305,7 @@ export default function CallScreen({ route, navigation }) {
   const iconButton = (name, label, onPress, active = false, danger = false) => (
     <TouchableOpacity key={label} onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={[styles.control, { backgroundColor: danger ? colors.danger : active ? colors.primary : immersiveVideo ? 'rgba(255,255,255,0.13)' : colors.surface, borderWidth: immersiveVideo ? 0 : 1, borderColor: colors.border, shadowColor: active ? colors.primary : '#000000', shadowOpacity: active ? 0.3 : 0.12, shadowRadius: active ? 12 : 6, elevation: active ? 5 : 2 }]}>
       <Ionicons name={name} size={23} color={danger ? colors.onDanger : active ? colors.onPrimary : foreground} />
-      <Text style={[styles.controlLabel, { color: danger ? colors.onDanger : active ? colors.onPrimary : foreground }]}>{label}</Text>
+      <Text style={[typography.small, styles.controlLabel, { color: danger ? colors.onDanger : active ? colors.onPrimary : foreground }]}>{label}</Text>
     </TouchableOpacity>
   );
 
@@ -316,16 +316,16 @@ export default function CallScreen({ route, navigation }) {
       {callType === 'video' && localStream && !cameraOff ? <RTCView streamURL={localStream.toURL()} mirror objectFit="cover" style={styles.localVideo} /> : null}
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => endCall(isCaller && call?.status === 'ringing' ? 'cancelled' : 'ended')} accessibilityRole="button" accessibilityLabel="Close call"><Ionicons name="chevron-down" size={26} color={foreground} /></TouchableOpacity>
-        <View style={[styles.encryption, { backgroundColor: immersiveVideo ? 'rgba(255,255,255,0.08)' : hexToRgba(colors.surface, 0.78), borderColor: colors.border, borderWidth: immersiveVideo ? 0 : 1 }]}><Ionicons name="lock-closed" size={12} color={colors.accent} /><Text style={[styles.encryptionText, { color: secondaryForeground }]}>Encrypted media transport</Text></View>
+        <View style={[styles.encryption, { backgroundColor: immersiveVideo ? 'rgba(255,255,255,0.08)' : hexToRgba(colors.surface, 0.78), borderColor: colors.border, borderWidth: immersiveVideo ? 0 : 1 }]}><Ionicons name="lock-closed" size={12} color={colors.accent} /><Text style={[typography.small, styles.encryptionText, { color: secondaryForeground }]}>Encrypted media transport</Text></View>
         <View style={{ width: 26 }} />
       </View>
       <View style={styles.identity}>
         {!(callType === 'video' && remoteStream) ? <Avatar name={participantName} color={avatarColor || colors.primary} size={108} /> : null}
-        <Text numberOfLines={2} style={[styles.name, { color: foreground, maxWidth: '100%', paddingHorizontal: 8 }]}>{participantName}</Text>
-        <Text style={[styles.phase, { color: secondaryForeground }]}>{phase === 'Connected' ? formatTime(seconds) : phase}</Text>
-        {networkNotice ? <Text style={[styles.networkNotice, { color: immersiveVideo ? '#F2D28B' : colors.warning }]}>{networkNotice}</Text> : null}
-        {errorText ? <Text style={[styles.error, { color: immersiveVideo ? '#FFB8C0' : colors.danger }]}>{errorText}</Text> : null}
-        {phase === 'Unavailable' ? <TouchableOpacity onPress={() => Alert.alert('Call unavailable', errorText || 'Please try again.')} accessibilityRole="button" accessibilityLabel="Show call connection details" style={[styles.retry, { backgroundColor: immersiveVideo ? 'rgba(255,255,255,0.12)' : colors.primary, borderRadius: 12 }]}><Text style={[styles.retryText, { color: immersiveVideo ? '#FFFFFF' : colors.onPrimary }]}>Call details</Text></TouchableOpacity> : null}
+        <Text numberOfLines={2} style={[typography.display, styles.name, { color: foreground, maxWidth: '100%', paddingHorizontal: 8 }]}>{participantName}</Text>
+        <Text style={[typography.body, styles.phase, { color: secondaryForeground }]}>{phase === 'Connected' ? formatTime(seconds) : phase}</Text>
+        {networkNotice ? <Text style={[typography.small, styles.networkNotice, { color: immersiveVideo ? '#F2D28B' : colors.warning }]}>{networkNotice}</Text> : null}
+        {errorText ? <Text style={[typography.small, styles.error, { color: immersiveVideo ? '#FFB8C0' : colors.danger }]}>{errorText}</Text> : null}
+        {phase === 'Unavailable' ? <TouchableOpacity onPress={() => Alert.alert('Call unavailable', errorText || 'Please try again.')} accessibilityRole="button" accessibilityLabel="Show call connection details" style={[styles.retry, { backgroundColor: immersiveVideo ? 'rgba(255,255,255,0.12)' : colors.primary, borderRadius: 12 }]}><Text style={[typography.small, styles.retryText, { color: immersiveVideo ? '#FFFFFF' : colors.onPrimary }]}>Call details</Text></TouchableOpacity> : null}
         {phase !== 'Connected' && phase !== 'Unavailable' ? <ActivityIndicator style={{ marginTop: 18 }} color={foreground} /> : null}
       </View>
       <View style={styles.bottom}>
@@ -347,18 +347,18 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   topBar: { paddingHorizontal: 22, paddingTop: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   encryption: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 18, paddingVertical: 7, paddingHorizontal: 11, backgroundColor: 'rgba(255,255,255,0.08)' },
-  encryptionText: { color: '#C5C5D1', fontSize: 11, fontWeight: '600' },
+  encryptionText: {},
   identity: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28 },
-  name: { color: '#FFFFFF', fontSize: 27, fontWeight: '700', marginTop: 24, textAlign: 'center', flexShrink: 1 },
-  phase: { color: '#C4C2D2', fontSize: 15, marginTop: 9 },
-  networkNotice: { color: '#F2D28B', fontSize: 12, textAlign: 'center', marginTop: 12, maxWidth: 320, lineHeight: 17 },
-  error: { color: '#FFB8C0', fontSize: 13, textAlign: 'center', marginTop: 16, maxWidth: 290 },
+  name: { marginTop: 24, textAlign: 'center', flexShrink: 1 },
+  phase: { marginTop: 9 },
+  networkNotice: { textAlign: 'center', marginTop: 12, maxWidth: 320 },
+  error: { textAlign: 'center', marginTop: 16, maxWidth: 290 },
   retry: { padding: 10, marginTop: 8 },
-  retryText: { color: '#FFFFFF', fontWeight: '600' },
+  retryText: {},
   localVideo: { position: 'absolute', right: 16, top: 76, width: 112, height: 160, borderRadius: 18, overflow: 'hidden', zIndex: 2 },
   bottom: { paddingHorizontal: 22, paddingBottom: 28, alignItems: 'center' },
   controlsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 28 },
   control: { width: 68, height: 68, borderRadius: 22, alignItems: 'center', justifyContent: 'center', gap: 4 },
-  controlLabel: { color: '#FFFFFF', fontSize: 10, fontWeight: '600' },
+  controlLabel: {},
   endButton: { width: 70, height: 70, borderRadius: 35, alignItems: 'center', justifyContent: 'center', shadowOpacity: 0.36, shadowRadius: 17, shadowOffset: { width: 0, height: 6 }, elevation: 7 },
 });

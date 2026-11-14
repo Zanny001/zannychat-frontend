@@ -5,13 +5,14 @@ import { backendFetch } from '../services/backendClient';
 import { useTheme } from '../theme/ThemeContext';
 
 function Action({ colors, label, accessibilityLabel, onPress, disabled = false, danger = false }) {
+  const { typography } = useTheme();
   return <TouchableOpacity disabled={disabled} onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel || label} accessibilityState={{ disabled }} style={{ minHeight: 44, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 12, backgroundColor: danger ? colors.danger : colors.surfaceAlt, justifyContent: 'center', alignItems: 'center', opacity: disabled ? 0.5 : 1 }}>
-    <Text style={{ color: danger ? colors.onDanger : colors.textPrimary, fontWeight: '800' }}>{label}</Text>
+    <Text style={[typography.small, { color: danger ? colors.onDanger : colors.textPrimary }]}>{label}</Text>
   </TouchableOpacity>;
 }
 
 export default function LiveStreamScreen({ route, navigation }) {
-  const { colors } = useTheme();
+  const { colors, typography } = useTheme();
   const connection = route.params?.connection;
   const stream = connection?.stream;
   const creatorMode = Boolean(route.params?.creatorMode || connection?.role === 'creator');
@@ -198,15 +199,15 @@ export default function LiveStreamScreen({ route, navigation }) {
     } catch (err) { setError(err?.message || 'Could not update report.'); }
   };
 
-  if (!stream || !connection) return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}><Text style={{ color: colors.textPrimary }}>This LIVE room is unavailable.</Text><Action colors={colors} label="Go back" onPress={() => navigation.goBack()} /></SafeAreaView>;
+  if (!stream || !connection) return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}><Text style={[typography.body, { color: colors.textPrimary }]}>This LIVE room is unavailable.</Text><Action colors={colors} label="Go back" onPress={() => navigation.goBack()} /></SafeAreaView>;
 
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
     <View style={{ flexDirection: 'row', alignItems: 'center', padding: 12, gap: 10 }}>
-      <Text style={{ color: colors.danger, fontWeight: '900' }}>● LIVE</Text>
-      <Text numberOfLines={1} style={{ color: colors.textPrimary, flex: 1, fontWeight: '800' }}>{stream.title}</Text>
-      <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{status}</Text>
+      <Text style={[typography.small, { color: colors.danger }]}>● LIVE</Text>
+      <Text numberOfLines={1} style={[typography.heading, { color: colors.textPrimary, flex: 1, minWidth: 0 }]}>{stream.title}</Text>
+      <Text style={[typography.caption, { color: colors.textSecondary }]}>{status}</Text>
     </View>
-    {!!error && <Text accessibilityRole="alert" style={{ color: colors.danger, paddingHorizontal: 14, paddingBottom: 8 }}>{error}</Text>}
+    {!!error && <Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger, paddingHorizontal: 14, paddingBottom: 8 }]}>{error}</Text>}
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 20 }}>
       <View style={{ minHeight: 260, marginHorizontal: 12, borderRadius: 18, overflow: 'hidden', backgroundColor: '#050509' }}>
         {publisherMode && <View ref={localRef} collapsable={false} style={{ width: '100%', minHeight: 260 }} />}
