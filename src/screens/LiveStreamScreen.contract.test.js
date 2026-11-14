@@ -74,7 +74,7 @@ test('LIVE publishers can independently disable camera while keeping microphone 
 });
 
 test('LIVE stage supports multiple named video tiles in a responsive two-column grid', () => {
-  assert.ok(screen.includes("numColumns={stageGridVideos.length === 1 ? 1 : 2}"));
+  assert.ok(screen.includes("numColumns={stageGridVideos.length === 1 && !spotlightVideo ? 1 : 2}"));
   assert.ok(screen.includes('item.participant.name || item.participant.identity'));
   assert.ok(screen.includes('Track.Source.Microphone'));
   assert.ok(screen.includes('Audio only'));
@@ -165,4 +165,22 @@ test('web LIVE creator exposes the same server-gated replay lifecycle and privat
   assert.ok(web.includes('creatorMode && replayEnabled'));
   assert.ok(web.includes('Watch saved LIVE replay'));
   assert.ok(web.includes("navigation.navigate('LiveReplay'"));
+});
+
+test('native and web LIVE guests only activate publisher media when the server grants canPublish', () => {
+  const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(screen.includes("connection?.role === 'guest' && connection?.canPublish === true && !demotedToViewer"));
+  assert.ok(webSource.includes("connection?.role === 'guest' && connection?.canPublish && !demotedToViewer"));
+});
+
+test('LIVE video tiles use a responsive moderate 16:9 frame instead of oversized fixed heights', () => {
+  const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(screen.includes('aspectRatio: 16 / 9'));
+  assert.ok(screen.includes('maxHeight: 315'));
+  assert.ok(screen.includes('maxHeight: stageGridVideos.length === 1 && !spotlightVideo ? 315 : 180'));
+  assert.ok(screen.includes("numColumns={stageGridVideos.length === 1 && !spotlightVideo ? 1 : 2}"));
+  assert.ok(webSource.includes('aspectRatio: 16 / 9'));
+  assert.ok(webSource.includes('maxWidth: spotlight || single ? 560 : 520'));
+  assert.ok(webSource.includes('single={remoteVideoTracks.length === 1}'));
+  assert.ok(!webSource.includes('minHeight: spotlight ? 310 : 190'));
 });

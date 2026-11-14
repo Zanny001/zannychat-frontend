@@ -50,7 +50,7 @@ function FloatingReaction({ item, index, onComplete }) {
   );
 }
 
-function RemoteVideoTile({ track, colors, spotlight = false }) {
+function RemoteVideoTile({ track, colors, spotlight = false, single = false }) {
   const containerRef = useRef(null);
   useEffect(() => {
     const element = track.attach();
@@ -66,8 +66,8 @@ function RemoteVideoTile({ track, colors, spotlight = false }) {
     };
   }, [track]);
   return (
-    <View style={{ width: spotlight ? '100%' : '48%', minWidth: spotlight ? 260 : 140, minHeight: spotlight ? 310 : 190, borderRadius: 16, overflow: 'hidden', backgroundColor: '#050509', borderWidth: spotlight ? 2 : 1, borderColor: spotlight ? colors.accent : colors.border }}>
-      <View ref={containerRef} collapsable={false} style={{ width: '100%', height: spotlight ? 310 : 190 }} />
+    <View style={{ width: spotlight || single ? '100%' : '48%', maxWidth: spotlight || single ? 560 : 520, minWidth: spotlight || single ? 0 : 140, aspectRatio: 16 / 9, borderRadius: 16, overflow: 'hidden', backgroundColor: '#050509', borderWidth: spotlight ? 2 : 1, borderColor: spotlight ? colors.accent : colors.border }}>
+      <View ref={containerRef} collapsable={false} style={{ width: '100%', height: '100%' }} />
       {spotlight && <View style={{ position: 'absolute', top: 8, left: 8, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: colors.accent }}><Text style={{ color: colors.onAccent, fontWeight: '900', fontSize: 10 }}>SPOTLIGHT</Text></View>}
       <View style={{ position: 'absolute', left: 8, bottom: 8, maxWidth: '88%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.65)' }}>
         <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>{track.participant.name || track.participant.identity}</Text>
@@ -457,7 +457,7 @@ export default function LiveStreamScreen({ route, navigation }) {
         )}
         {!!remoteVideoTracks.length && (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'stretch', gap: 8, padding: 8 }}>
-            {[...remoteVideoTracks].sort((a, b) => Number(b.participant.attributes?.zannychat_spotlight === 'true') - Number(a.participant.attributes?.zannychat_spotlight === 'true')).map((track) => <RemoteVideoTile key={track.sid} track={track} colors={colors} spotlight={track.participant.attributes?.zannychat_spotlight === 'true'} />)}
+            {[...remoteVideoTracks].sort((a, b) => Number(b.participant.attributes?.zannychat_spotlight === 'true') - Number(a.participant.attributes?.zannychat_spotlight === 'true')).map((track) => <RemoteVideoTile key={track.sid} track={track} colors={colors} spotlight={track.participant.attributes?.zannychat_spotlight === 'true'} single={remoteVideoTracks.length === 1} />)}
           </View>
         )}
         {(audioOnlyParticipants.length > 0 || localAudioOnly) && (

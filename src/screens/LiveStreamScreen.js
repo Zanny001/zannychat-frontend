@@ -120,7 +120,7 @@ function LiveMedia({ creatorMode, publisherMode, cameraEnabled, microphoneEnable
         <View style={{ flex: 1, justifyContent: 'center', position: 'relative' }}>
           {spotlightVideo && (
             <View style={{ marginHorizontal: 6, marginBottom: 8, borderRadius: 20, overflow: 'hidden', borderWidth: 2, borderColor: colors.accent, backgroundColor: '#211F2B' }}>
-              <VideoTrack trackRef={spotlightVideo} style={{ height: 360, borderRadius: 18 }} />
+              <VideoTrack trackRef={spotlightVideo} style={{ width: "100%", aspectRatio: 16 / 9, maxWidth: 560, maxHeight: 315, borderRadius: 18 }} />
               <View style={{ position: 'absolute', top: 10, left: 10, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, backgroundColor: colors.accent }}>
                 <Text style={{ color: colors.onAccent, fontWeight: '900', fontSize: 10, letterSpacing: 1 }}>SPOTLIGHT</Text>
               </View>
@@ -131,14 +131,14 @@ function LiveMedia({ creatorMode, publisherMode, cameraEnabled, microphoneEnable
           )}
           {stageGridVideos.length ? (
             <FlatList
-              key={stageGridVideos.length === 1 ? 'live-stage-single' : 'live-stage-grid'}
+              key={stageGridVideos.length === 1 && !spotlightVideo ? 'live-stage-single' : 'live-stage-grid'}
               keyboardShouldPersistTaps="handled"
               data={stageGridVideos}
-              numColumns={stageGridVideos.length === 1 ? 1 : 2}
+              numColumns={stageGridVideos.length === 1 && !spotlightVideo ? 1 : 2}
               keyExtractor={(item) => item.participant.identity}
               renderItem={({ item }) => (
                 <View style={{ flex: 1, minWidth: 0, margin: 4, borderRadius: 18, overflow: 'hidden', backgroundColor: '#211F2B' }}>
-                  <VideoTrack trackRef={item} style={{ height: stageGridVideos.length === 1 ? 340 : 220, borderRadius: 18 }} />
+                  <VideoTrack trackRef={item} style={{ width: "100%", aspectRatio: 16 / 9, maxWidth: stageGridVideos.length === 1 && !spotlightVideo ? 560 : undefined, maxHeight: stageGridVideos.length === 1 && !spotlightVideo ? 315 : 180, borderRadius: 18 }} />
                   <View style={{ position: 'absolute', left: 10, bottom: 10, maxWidth: '85%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.62)' }}>
                     <Text numberOfLines={1} style={[typography.caption, { color: '#FFFFFF' }]}>{item.participant.name || item.participant.identity}</Text>
                   </View>
@@ -280,7 +280,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const stream = connection?.stream;
   const [demotedToViewer, setDemotedToViewer] = useState(false);
   const [stageNotice, setStageNotice] = useState('');
-  const publisherMode = Boolean(creatorMode || (connection?.role === 'guest' && !demotedToViewer));
+  const publisherMode = Boolean(creatorMode || (connection?.role === 'guest' && connection?.canPublish === true && !demotedToViewer));
   const canRequestGuest = Boolean(!publisherMode && stream?.allow_guests);
   const [comments, setComments] = useState([]);
   const [reports, setReports] = useState([]);
