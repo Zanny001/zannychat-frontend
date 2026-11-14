@@ -27,8 +27,8 @@ export default function CallScreen({ route, navigation }) {
   const [call, setCall] = useState(initialCall || { id: callId, conversation_id: conversationId, call_type: callType, status: isCaller ? 'ringing' : 'accepted' });
   const [phase, setPhase] = useState(isCaller ? 'Calling…' : 'Connecting…');
   const [muted, setMuted] = useState(false);
-  const [speakerOn, setSpeakerOn] = useState(callType === 'video');
-  const [cameraOff, setCameraOff] = useState(callType !== 'video');
+  const [speakerOn, setSpeakerOn] = useState((initialCall?.call_type || callType) === 'video');
+  const [cameraOff, setCameraOff] = useState((initialCall?.call_type || callType) !== 'video');
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
   const [seconds, setSeconds] = useState(0);
@@ -215,6 +215,7 @@ export default function CallScreen({ route, navigation }) {
               if (isCaller) return;
               await pc.setLocalDescription({ type: 'rollback' });
             }
+            remoteDescriptionReady.current = false;
             await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
             remoteDescriptionReady.current = true;
             for (const candidate of queuedIce.current.splice(0)) await pc.addIceCandidate(new RTCIceCandidate(candidate));
@@ -407,6 +408,7 @@ export default function CallScreen({ route, navigation }) {
         setActiveCallType('video');
       }
       if (pc.signalingState !== 'stable') throw new Error('The call is already updating. Please try the camera switch again.');
+      remoteDescriptionReady.current = false;
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       await sendCallSignal({ call: callRef.current, type: 'offer', payload: { type: offer.type, sdp: offer.sdp } });
