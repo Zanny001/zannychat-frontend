@@ -96,7 +96,7 @@ export default function OutgoingCallScreen({ route, navigation }) {
         </TouchableOpacity>
         <Text style={[typography.small, styles.cancelLabel, { color: colors.textSecondary }]}>Cancel call</Text>
       </View>
-      <Text style={[typography.small, styles.footer, { color: colors.textSecondary }]}Your microphone and camera stay off until the other person answers.</Text>
+      <Text style={[typography.small, styles.footer, { color: colors.textSecondary }]}>Your microphone and camera stay off until the other person answers.</Text>
     </SafeAreaView>
   );
 }
