@@ -320,7 +320,7 @@ function interactiveOpeningTags(source) {
 
 test('every interactive control in every screen file has an explicit accessible name and role', () => {
   const screenFiles = readdirSync(screenDirectory).filter((name) => name.endsWith('Screen.js') || name.endsWith('Screen.web.js'));
-  assert.equal(screenFiles.length, 46, 'The audited screen inventory changed; review the screen count before updating this contract.');
+  assert.equal(screenFiles.length, 47, 'The audited screen inventory changed; review the screen count before updating this contract.');
   const violations = [];
   let totalControls = 0;
   for (const file of screenFiles) {

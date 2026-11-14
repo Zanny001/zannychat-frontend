@@ -18,3 +18,9 @@ test('LIVE replay player is registered in the authenticated navigator', () => {
   assert.ok(navigator.includes("import LiveReplayScreen from '../screens/LiveReplayScreen'"));
   assert.ok(navigator.includes('name="LiveReplay" component={LiveReplayScreen}'));
 });
+
+test('all replay player actions expose explicit accessibility names', () => {
+  assert.ok(screen.includes('accessibilityLabel="Go back from LIVE replay"'));
+  assert.ok(screen.includes('accessibilityLabel="Refresh LIVE replay link"'));
+  assert.ok(screen.includes('accessibilityLabel="Retry LIVE replay playback"'));
+});

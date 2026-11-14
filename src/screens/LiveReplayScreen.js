@@ -80,7 +80,7 @@ export default function LiveReplayScreen({ route, navigation }) {
           <View style={{ alignItems: 'center', justifyContent: 'center', padding: 28, minHeight: 220, borderRadius: 22, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
             {loading ? <ActivityIndicator size="large" color={colors.accent} /> : <Ionicons name="play-circle-outline" size={42} color={colors.accent} />}
             {!!error && <Text accessibilityRole="alert" style={[typography.body, { color: colors.textPrimary, textAlign: 'center', marginTop: 14 }]}>{error}</Text>}
-            {!loading && <TouchableOpacity onPress={() => setAttempt((value) => value + 1)} accessibilityRole="button" style={{ marginTop: 16, paddingHorizontal: 18, paddingVertical: 11, borderRadius: 14, backgroundColor: colors.primary }}>
+            {!loading && <TouchableOpacity onPress={() => setAttempt((value) => value + 1)} accessibilityRole="button" accessibilityLabel="Retry LIVE replay playback" style={{ marginTop: 16, paddingHorizontal: 18, paddingVertical: 11, borderRadius: 14, backgroundColor: colors.primary }}>
               <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Try again</Text>
             </TouchableOpacity>}
           </View>
