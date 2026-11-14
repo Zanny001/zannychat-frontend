@@ -156,3 +156,12 @@ test('LIVE creator replay controls remain hidden unless the server enables repla
   assert.ok(screen.includes("navigation.navigate('LiveReplay'"));
   assert.ok(screen.includes('five minutes'));
 });
+
+test('web LIVE creator exposes the same server-gated replay lifecycle and private player entry', () => {
+  assert.ok(web.includes("backendFetch('/live/replays/config')"));
+  assert.ok(web.includes("`/live/${stream.id}/replays/start`"));
+  assert.ok(web.includes("`/live/${stream.id}/replays/${replay.id}/stop`"));
+  assert.ok(web.includes('creatorMode && replayEnabled'));
+  assert.ok(web.includes('Watch saved LIVE replay'));
+  assert.ok(web.includes("navigation.navigate('LiveReplay'"));
+});
