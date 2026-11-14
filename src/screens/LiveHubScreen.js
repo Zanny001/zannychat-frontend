@@ -199,10 +199,18 @@ export default function LiveHubScreen({ navigation, route }) {
     const type = notification?.type;
     if (!type || !type.startsWith('live_')) return;
     const streamId = typeof notification.streamId === 'string' ? notification.streamId : null;
-    const key = type + ':' + (streamId || notification.creatorId || notification.followerId || 'hub');
+    const key = type + ':' + (notification.replayId || streamId || notification.creatorId || notification.followerId || 'hub');
     if (handledLiveNotificationRef.current === key) return;
     handledLiveNotificationRef.current = key;
     navigation.setParams?.({ liveNotification: undefined });
+
+    if (type === 'live_replay_ready' && typeof notification.replayId === 'string') {
+      refresh();
+      navigation.navigate('LiveReplay', {
+        replay: { id: notification.replayId, streamTitle: 'LIVE replay' },
+      });
+      return;
+    }
 
     const shouldJoin = streamId && (
       ['live_stream_started', 'live_invitation', 'live_guest_request'].includes(type)
