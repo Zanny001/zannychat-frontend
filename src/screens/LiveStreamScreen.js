@@ -131,14 +131,14 @@ function LiveMedia({ creatorMode, publisherMode, cameraEnabled, microphoneEnable
           )}
           {stageGridVideos.length ? (
             <FlatList
-              key={stageGridVideos.length === 1 ? 'live-stage-single' : 'live-stage-grid'}
+              key={stageGridVideos.length === 1 && !spotlightVideo ? 'live-stage-single' : 'live-stage-grid'}
               keyboardShouldPersistTaps="handled"
               data={stageGridVideos}
-              numColumns={stageGridVideos.length === 1 ? 1 : 2}
+              numColumns={stageGridVideos.length === 1 && !spotlightVideo ? 1 : 2}
               keyExtractor={(item) => item.participant.identity}
               renderItem={({ item }) => (
                 <View style={{ flex: 1, minWidth: 0, margin: 4, borderRadius: 18, overflow: 'hidden', backgroundColor: '#211F2B' }}>
-                  <VideoTrack trackRef={item} style={{ width: "100%", aspectRatio: 16 / 9, maxWidth: stageGridVideos.length === 1 ? 560 : undefined, maxHeight: stageGridVideos.length === 1 ? 315 : 180, borderRadius: 18 }} />
+                  <VideoTrack trackRef={item} style={{ width: "100%", aspectRatio: 16 / 9, maxWidth: stageGridVideos.length === 1 && !spotlightVideo ? 560 : undefined, maxHeight: stageGridVideos.length === 1 && !spotlightVideo ? 315 : 180, borderRadius: 18 }} />
                   <View style={{ position: 'absolute', left: 10, bottom: 10, maxWidth: '85%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.62)' }}>
                     <Text numberOfLines={1} style={[typography.caption, { color: '#FFFFFF' }]}>{item.participant.name || item.participant.identity}</Text>
                   </View>
