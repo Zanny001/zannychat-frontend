@@ -62,7 +62,7 @@ export default function CallScreen({ route, navigation }) {
     navigation.replace('GroupCall', {
       roomId: room.id,
       conversationId: room.conversation_id || conversationId,
-      conversationName: participantName || 'Group call',
+      conversationName: 'Group call',
       callType: room.call_type || callType,
     });
   }, [callType, conversationId, navigation, nativeCallId, participantName]);
