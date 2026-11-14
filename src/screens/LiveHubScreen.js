@@ -279,6 +279,10 @@ export default function LiveHubScreen({ navigation, route }) {
                 </View>
                 <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.5 }]}>ZANNYCHAT LIVE</Text>
                 <View style={{ flex: 1 }} />
+                <TouchableOpacity onPress={() => navigation.navigate('LiveCreatorProfile')} accessibilityRole="button" accessibilityLabel="Open LIVE creator profile" style={{ minHeight: 38, paddingHorizontal: 10, borderRadius: 13, borderWidth: 1, borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Ionicons name="person-circle-outline" size={18} color={colors.primary} />
+                  <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: '800' }]}>Creator profile</Text>
+                </TouchableOpacity>
                 <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh LIVE streams" style={{ width: 38, height: 38, borderRadius: 13, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="refresh" size={18} color={colors.textSecondary} />
                 </TouchableOpacity>
