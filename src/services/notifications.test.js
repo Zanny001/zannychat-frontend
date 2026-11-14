@@ -8,7 +8,7 @@ const incoming = fs.readFileSync(new URL('../screens/IncomingCallScreen.js', imp
 test('Creator LIVE push taps open LIVE discovery and carry the stream notification context', () => {
   assert.ok(notifications.includes("data.type.startsWith('live_')"));
   assert.ok(notifications.includes("navigationRef.navigate('LiveHub', { liveNotification: data })"));
-  assert.ok(notifications.includes("live:${liveType}:${liveStreamId || data.creatorId || data.followerId || 'hub'}"));
+  assert.ok(notifications.includes("live:${liveType}:${data.replayId || liveStreamId || data.creatorId || data.followerId || 'hub'}"));
   const liveHub = fs.readFileSync(new URL('../screens/LiveHubScreen.js', import.meta.url), 'utf8');
   assert.ok(liveHub.includes("route?.params?.liveNotification"));
   assert.ok(liveHub.includes("['live_stream_started', 'live_invitation', 'live_guest_request'].includes(type)"));
@@ -31,5 +31,5 @@ test('Answer notification action accepts the call once after loading its screen'
 });
 
 test('replay-ready notification taps deduplicate by replay id', () => {
-  assert.ok(source.includes('data.replayId || liveStreamId'));
+  assert.ok(notifications.includes('data.replayId || liveStreamId'));
 });
