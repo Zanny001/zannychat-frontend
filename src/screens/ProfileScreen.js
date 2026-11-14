@@ -9,10 +9,13 @@ import Header from '../components/Header';
 import GlassCard from '../components/GlassCard';
 import { hexToRgba } from '../utils/color';
 import { getCurrentUser } from '../services/api';
+import { backendFetch } from '../services/backendClient';
+import LiveImpactCard from '../components/LiveImpactCard';
 
 export default function ProfileScreen({ navigation }) {
   const { colors, spacing, typography, mood } = useTheme();
   const [user, setUser] = useState(null);
+  const [liveImpact, setLiveImpact] = useState(null);
   const tabBarHeight = useBottomTabBarHeight();
 
   // Refetches every time this tab regains focus, so coming back from
@@ -20,7 +23,28 @@ export default function ProfileScreen({ navigation }) {
   // from the initial mount.
   useFocusEffect(
     useCallback(() => {
-      getCurrentUser().then(setUser);
+      let active = true;
+      const loadProfileAndImpact = async () => {
+        try {
+          const currentUser = await getCurrentUser();
+          if (!active) return;
+          setUser(currentUser);
+          if (!currentUser?.id) {
+            setLiveImpact(null);
+            return;
+          }
+          try {
+            const result = await backendFetch(`/live/creators/${currentUser.id}/impact`);
+            if (active) setLiveImpact(result?.impact || null);
+          } catch (_) {
+            if (active) setLiveImpact(null);
+          }
+        } catch (_) {
+          if (active) setLiveImpact(null);
+        }
+      };
+      loadProfileAndImpact();
+      return () => { active = false; };
     }, [])
   );
 
@@ -55,6 +79,7 @@ export default function ProfileScreen({ navigation }) {
             </TouchableOpacity>
           </View>
         </GlassCard>
+        <LiveImpactCard impact={liveImpact} showEmpty />
         <Text style={[typography.small, { color: colors.textSecondary, marginBottom: spacing.sm, marginLeft: 4, letterSpacing: 1.1 }]}>PERSONALIZE & PROTECT</Text>
         <MenuRow icon="color-palette-outline" label="Appearance & theme" onPress={() => navigation.navigate('Settings')} />
         <MenuRow icon="shield-checkmark-outline" label="Privacy & security" onPress={() => navigation.navigate('PrivacySecurity')} />
