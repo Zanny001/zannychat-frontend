@@ -30,6 +30,7 @@ export default function LiveReplayScreen({ route, navigation }) {
       setError('');
       try {
         const result = await backendFetch(`/live/replays/${replayId}/playback`);
+        if (!active) return;
         if (!result?.url) throw new Error('The replay link could not be created.');
         await player.replaceAsync({ uri: result.url });
         if (!active) return;
