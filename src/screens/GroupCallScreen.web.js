@@ -53,7 +53,7 @@ export default function GroupCallScreenWeb({ route, navigation }) {
   const activeRef = useRef(false);
   const endedRef = useRef(false);
   const requestedVideo = callType === 'video';
-  const isVideoMode = isVideo || (connection?.callType || callType) === 'video';
+  const isVideoMode = isVideo;
   const canInviteNow = canInvite && status === 'Connected';
 
   useEffect(() => {
@@ -118,6 +118,8 @@ export default function GroupCallScreenWeb({ route, navigation }) {
       const connected = { ...result, roomId: result.room.id, callType: result.room.call_type || callType };
       joinedRoomIdRef.current = connected.roomId;
       setConnection(connected);
+      setIsVideo(connected.callType === 'video');
+      setCameraOff(connected.callType !== 'video');
       await room.connect(connected.livekitUrl, connected.token);
       if (!active) return;
       await room.localParticipant.setMicrophoneEnabled(true);
