@@ -1,6 +1,6 @@
 import { normalizeEmail, parseRecoveryCallback } from '../utils/authValidation';
 import { Platform } from 'react-native';
-import { getPasswordRecoveryRedirectUrl } from '../utils/oauthRedirect';
+import { getOAuthRedirectUrl, getPasswordRecoveryRedirectUrl } from '../utils/oauthRedirect';
 import { getSafeMessageSendError } from '../utils/safeMessagingError';
 import { retryTransient } from '../utils/retry';
 import { clearDraftsForUser } from './drafts';
@@ -481,7 +481,7 @@ export async function signUpWithEmail(email, password, name) {
   const { data, error } = await supabase.auth.signUp({
     email: normalizeEmail(email),
     password,
-    options: { data: { name } },
+    options: { data: { name }, emailRedirectTo: getOAuthRedirectUrl() },
   });
   if (error) throw error;
   return { ...data, requiresEmailConfirmation: Boolean(data?.user && !data?.session) };
@@ -505,7 +505,7 @@ export async function verifySignupEmailOtp(email, token) {
 export async function resendSignupEmailOtp(email) {
   if (!SUPABASE_ENABLED) throw new Error('Email verification requires a configured Supabase project.');
   const normalizedEmail = normalizeEmail(email);
-  const { error } = await supabase.auth.resend({ type: 'signup', email: normalizedEmail });
+  const { error } = await supabase.auth.resend({ type: 'signup', email: normalizedEmail, options: { emailRedirectTo: getOAuthRedirectUrl() } });
   if (error) throw error;
   return { requested: true };
 }
