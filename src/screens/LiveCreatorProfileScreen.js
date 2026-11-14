@@ -51,11 +51,20 @@ export default function LiveCreatorProfileScreen({ navigation }) {
       { text: 'Delete', style: 'destructive', onPress: async () => {
         try {
           await backendFetch('/live/' + encodeURIComponent(item.id), { method: 'DELETE' });
-          setSummary((current) => current ? ({
-            ...current,
-            streams: { ...current.streams, total: Math.max(0, Number(current.streams?.total || 0) - 1), recent: (current.streams?.recent || []).filter((row) => row.id !== item.id) },
-            replays: { ...current.replays, total: Math.max(0, Number(current.replays?.total || 0) - (current.replays?.recent || []).filter((row) => row.stream_id === item.id).length), recent: (current.replays?.recent || []).filter((row) => row.stream_id !== item.id) },
-          }) : current);
+          setSummary((current) => {
+            if (!current) return current;
+            const removedReplays = (current.replays?.recent || []).filter((row) => row.stream_id === item.id);
+            return {
+              ...current,
+              streams: { ...current.streams, total: Math.max(0, Number(current.streams?.total || 0) - 1), recent: (current.streams?.recent || []).filter((row) => row.id !== item.id) },
+              replays: {
+                ...current.replays,
+                total: Math.max(0, Number(current.replays?.total || 0) - removedReplays.length),
+                ready: Math.max(0, Number(current.replays?.ready || 0) - removedReplays.filter((row) => row.status === 'ready').length),
+                recent: (current.replays?.recent || []).filter((row) => row.stream_id !== item.id),
+              },
+            };
+          });
         } catch (e) {
           Alert.alert('Could not delete broadcast', e?.message || 'Please try again.');
         }
