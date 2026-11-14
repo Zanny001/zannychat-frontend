@@ -24,3 +24,10 @@ test('all replay player actions expose explicit accessibility names', () => {
   assert.ok(screen.includes('accessibilityLabel="Refresh LIVE replay link"'));
   assert.ok(screen.includes('accessibilityLabel="Retry LIVE replay playback"'));
 });
+
+test('replay privacy copy reflects the original LIVE audience access rules', () => {
+  assert.ok(screen.includes('Secure replay · audience access rules apply · seven-day expiry'));
+  const liveStream = fs.readFileSync(new URL('./LiveStreamScreen.js', import.meta.url), 'utf8');
+  assert.ok(liveStream.includes("access follows this LIVE's audience settings"));
+  assert.ok(liveStream.includes("access follows the stream's audience settings"));
+});

@@ -61,7 +61,7 @@ export default function LiveReplayScreen({ route, navigation }) {
         </TouchableOpacity>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{replay?.streamTitle || 'LIVE replay'}</Text>
-          <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>Private replay · available for seven days</Text>
+          <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>Secure replay · audience access rules apply · seven-day expiry</Text>
         </View>
         <TouchableOpacity onPress={() => setAttempt((value) => value + 1)} accessibilityRole="button" accessibilityLabel="Refresh LIVE replay link" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
           <Ionicons name="refresh-outline" size={20} color={colors.accent} />
