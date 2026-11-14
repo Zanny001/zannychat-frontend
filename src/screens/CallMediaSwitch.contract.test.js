@@ -43,5 +43,5 @@ test('LIVE creator profile is a separate authenticated dashboard, not the main p
   assert.match(creatorProfile, /Replay collection/);
   assert.match(navigator, /name="LiveCreatorProfile" component=\{LiveCreatorProfileScreen\}/);
   assert.match(hub, /navigation\.navigate\('LiveCreatorProfile'\)/);
-  assert.doesNotMatch(creatorProfile, /import\\s+ProfileScreen/);
+  assert.doesNotMatch(creatorProfile, /import\s+ProfileScreen/);
 });
