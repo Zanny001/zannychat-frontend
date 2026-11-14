@@ -164,7 +164,7 @@ function GroupRoomContent({ callType, onEnd, onAddPeople, canInvite, onParticipa
 }
 
 export default function GroupCallScreen({ route, navigation }) {
-  const { conversationId, conversationName = 'Group', callType = 'audio', roomId = null } = route.params || {};
+  const { conversationId, conversationName = 'Group', callType = 'audio', roomId = null, connection: initialConnection = null } = route.params || {};
   const { colors, resolvedMode, typography } = useTheme();
   const [connection, setConnection] = useState(null);
   const [errorText, setErrorText] = useState('');
@@ -184,7 +184,9 @@ export default function GroupCallScreen({ route, navigation }) {
       try {
         let result;
         if (roomId) {
-          result = await backendFetch(`/group-calls/${roomId}/join`, { method: 'POST' });
+          result = initialConnection?.room?.id === roomId && initialConnection?.token && initialConnection?.livekitUrl
+            ? initialConnection
+            : await backendFetch(`/group-calls/${roomId}/join`, { method: 'POST' });
         } else {
           if (!conversationId) throw new Error('This group conversation is missing.');
           result = await backendFetch('/group-calls', {
@@ -214,7 +216,7 @@ export default function GroupCallScreen({ route, navigation }) {
         backendFetch(`/group-calls/${current.roomId}/leave`, { method: 'POST' }).catch(() => {});
       }
     };
-  }, [conversationId, roomId]);
+  }, [conversationId, roomId, initialConnection]);
 
   useEffect(() => {
     if (!connection?.room) return undefined;
