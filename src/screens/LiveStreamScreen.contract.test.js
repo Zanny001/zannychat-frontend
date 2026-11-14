@@ -166,3 +166,9 @@ test('web LIVE creator exposes the same server-gated replay lifecycle and privat
   assert.ok(web.includes('Watch saved LIVE replay'));
   assert.ok(web.includes("navigation.navigate('LiveReplay'"));
 });
+
+test('native and web LIVE guests only activate publisher media when the server grants canPublish', () => {
+  const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(screen.includes("connection?.role === 'guest' && connection?.canPublish === true && !demotedToViewer"));
+  assert.ok(webSource.includes("connection?.role === 'guest' && connection?.canPublish && !demotedToViewer"));
+});
