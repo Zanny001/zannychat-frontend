@@ -4,6 +4,31 @@ import { Room, RoomEvent, Track } from 'livekit-client';
 import { backendFetch } from '../services/backendClient';
 import { useTheme } from '../theme/ThemeContext';
 
+function RemoteVideoTile({ track, colors }) {
+  const containerRef = useRef(null);
+  useEffect(() => {
+    const element = track.attach();
+    element.autoplay = true;
+    element.playsInline = true;
+    element.style.width = '100%';
+    element.style.height = '100%';
+    element.style.objectFit = 'contain';
+    containerRef.current?.replaceChildren(element);
+    return () => {
+      track.detach(element);
+      containerRef.current?.replaceChildren();
+    };
+  }, [track]);
+  return (
+    <View style={{ width: '48%', minWidth: 140, minHeight: 190, borderRadius: 16, overflow: 'hidden', backgroundColor: '#050509', borderWidth: 1, borderColor: colors.border }}>
+      <View ref={containerRef} collapsable={false} style={{ width: '100%', height: 190 }} />
+      <View style={{ position: 'absolute', left: 8, bottom: 8, maxWidth: '88%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.65)' }}>
+        <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>{track.participant.name || track.participant.identity}</Text>
+      </View>
+    </View>
+  );
+}
+
 function Action({ colors, label, accessibilityLabel, onPress, disabled = false, danger = false }) {
   const { typography } = useTheme();
   return <TouchableOpacity disabled={disabled} onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel || label} accessibilityState={{ disabled }} style={{ minHeight: 44, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 12, backgroundColor: danger ? colors.danger : colors.surfaceAlt, justifyContent: 'center', alignItems: 'center', opacity: disabled ? 0.5 : 1 }}>
@@ -20,7 +45,8 @@ export default function LiveStreamScreen({ route, navigation }) {
   const moderatorMode = Boolean(creatorMode || connection?.canModerate);
   const roomRef = useRef(null);
   const localRef = useRef(null);
-  const remoteRef = useRef(null);
+  const remoteAudioRef = useRef(null);
+  const [remoteVideoTracks, setRemoteVideoTracks] = useState([]);
   const endedRef = useRef(false);
   const [status, setStatus] = useState('Connecting…');
   const [error, setError] = useState('');
@@ -58,9 +84,18 @@ export default function LiveStreamScreen({ route, navigation }) {
       target.appendChild(element);
     };
     const onSubscribed = (track) => {
-      if (track.kind === Track.Kind.Video || track.kind === Track.Kind.Audio) attach(track, remoteRef.current);
+      if (track.kind === Track.Kind.Video) {
+        setRemoteVideoTracks((current) => current.some((item) => item.sid === track.sid) ? current : [...current, track]);
+      } else if (track.kind === Track.Kind.Audio) {
+        attach(track, remoteAudioRef.current);
+      }
     };
-    const onUnsubscribed = (track) => track.detach();
+    const onUnsubscribed = (track) => {
+      if (track.kind === Track.Kind.Video) {
+        setRemoteVideoTracks((current) => current.filter((item) => item.sid !== track.sid));
+      }
+      track.detach();
+    };
     const onLocalPublished = (publication) => {
       if (publication.source === Track.Source.Camera && publication.videoTrack && localRef.current) {
         localRef.current.replaceChildren();
@@ -99,7 +134,8 @@ export default function LiveStreamScreen({ route, navigation }) {
       room.disconnect();
       if (!endedRef.current) backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' }).catch(() => {});
       if (localRef.current) localRef.current.replaceChildren();
-      if (remoteRef.current) remoteRef.current.replaceChildren();
+      if (remoteAudioRef.current) remoteAudioRef.current.replaceChildren();
+      setRemoteVideoTracks([]);
       roomRef.current = null;
     };
   }, [stream?.id, connection?.livekitUrl, connection?.token, creatorMode, publisherMode]);
@@ -209,10 +245,15 @@ export default function LiveStreamScreen({ route, navigation }) {
     </View>
     {!!error && <Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger, paddingHorizontal: 14, paddingBottom: 8 }]}>{error}</Text>}
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 20 }}>
-      <View style={{ minHeight: 260, marginHorizontal: 12, borderRadius: 18, overflow: 'hidden', backgroundColor: '#050509' }}>
-        {publisherMode && <View ref={localRef} collapsable={false} style={{ width: '100%', minHeight: 260 }} />}
-        <View ref={remoteRef} collapsable={false} style={{ width: '100%', minHeight: 260 }} />
-        {!publisherMode && <Text style={{ color: colors.textSecondary, textAlign: 'center', padding: 12 }}>If the creator is not on screen yet, their video will appear here.</Text>}
+      <View style={{ minHeight: 220, marginHorizontal: 12, borderRadius: 18, overflow: 'hidden', backgroundColor: '#050509' }}>
+        {publisherMode && <View ref={localRef} collapsable={false} style={{ width: '100%', minHeight: 220 }} />}
+        {!remoteVideoTracks.length && !publisherMode && <Text style={{ color: colors.textSecondary, textAlign: 'center', padding: 12 }}>If the creator is not on screen yet, their video will appear here.</Text>}
+        {!!remoteVideoTracks.length && (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'stretch', gap: 8, padding: 8 }}>
+            {remoteVideoTracks.map((track) => <RemoteVideoTile key={track.sid} track={track} colors={colors} />)}
+          </View>
+        )}
+        <View ref={remoteAudioRef} collapsable={false} style={{ width: 1, height: 1, opacity: 0 }} />
       </View>
       {audioBlocked && <View style={{ padding: 12 }}><Action colors={colors} label="Enable LIVE audio" onPress={() => roomRef.current?.startAudio().then(() => setAudioBlocked(false)).catch((err) => setError(err?.message || 'Audio playback is blocked.'))} /></View>}
       {publisherMode && <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, padding: 12 }}>
