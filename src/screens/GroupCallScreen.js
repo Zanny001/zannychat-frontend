@@ -272,7 +272,7 @@ export default function GroupCallScreen({ route, navigation }) {
         <Text style={[styles.brand, typography.small, { color: colors.primary }]}>ZannyChat</Text>
         <Text style={[styles.title, typography.title, { color: colors.textPrimary }]} numberOfLines={1}>{conversationName}</Text>
         <Text style={[styles.subtitle, typography.caption, { color: colors.textSecondary }]}>
-          {isVideo ? 'Group video call' : 'Group audio call'}
+          {isVideo || tracks.length > 0 ? 'Group video call' : 'Group audio call'}
         </Text>
       </View>
       {busy ? (
