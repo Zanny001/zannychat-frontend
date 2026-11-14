@@ -18,3 +18,6 @@ export const setNativeMuted = async () => {};
 export const setRTCAudioSessionConfiguration = () => {};
 export const setAudioSessionPortOverride = () => {};
 export const getActiveNativeCallSession = async () => null;
+
+export const prepareAudioSessionForCall = () => false;
+export const restoreAudioSession = () => false;
