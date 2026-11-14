@@ -1,11 +1,12 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
 import { useTheme } from '../theme/ThemeContext';
 import GlassCard from '../components/GlassCard';
 import Avatar from '../components/Avatar';
+import { confirmAction, showAppAlert } from '../utils/appDialogs';
 
 function Metric({ icon, label, value, colors, typography }) {
   return (
@@ -45,48 +46,50 @@ export default function LiveCreatorProfileScreen({ navigation }) {
   const streams = summary?.streams || {};
   const replays = summary?.replays || {};
 
-  const deleteBroadcast = (item) => {
-    Alert.alert('Delete past LIVE broadcast?', 'This permanently removes the broadcast from your creator history and deletes its saved replay files. This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: async () => {
-        try {
-          await backendFetch('/live/' + encodeURIComponent(item.id), { method: 'DELETE' });
-          setSummary((current) => {
-            if (!current) return current;
-            const removedReplays = (current.replays?.recent || []).filter((row) => row.stream_id === item.id);
-            return {
-              ...current,
-              streams: { ...current.streams, total: Math.max(0, Number(current.streams?.total || 0) - 1), recent: (current.streams?.recent || []).filter((row) => row.id !== item.id) },
-              replays: {
-                ...current.replays,
-                total: Math.max(0, Number(current.replays?.total || 0) - removedReplays.length),
-                ready: Math.max(0, Number(current.replays?.ready || 0) - removedReplays.filter((row) => row.status === 'ready').length),
-                recent: (current.replays?.recent || []).filter((row) => row.stream_id !== item.id),
-              },
-            };
-          });
-        } catch (e) {
-          Alert.alert('Could not delete broadcast', e?.message || 'Please try again.');
-        }
-      } },
-    ]);
+  const deleteBroadcast = async (item) => {
+    const confirmed = await confirmAction({
+      title: 'Delete past LIVE broadcast?',
+      message: 'This permanently removes the broadcast from your creator history and deletes its saved replay files. This cannot be undone.',
+      confirmText: 'Delete',
+    });
+    if (!confirmed) return;
+    try {
+      await backendFetch('/live/' + encodeURIComponent(item.id), { method: 'DELETE' });
+      setSummary((current) => {
+        if (!current) return current;
+        const removedReplays = (current.replays?.recent || []).filter((row) => row.stream_id === item.id);
+        return {
+          ...current,
+          streams: { ...current.streams, total: Math.max(0, Number(current.streams?.total || 0) - 1), recent: (current.streams?.recent || []).filter((row) => row.id !== item.id) },
+          replays: {
+            ...current.replays,
+            total: Math.max(0, Number(current.replays?.total || 0) - removedReplays.length),
+            ready: Math.max(0, Number(current.replays?.ready || 0) - removedReplays.filter((row) => row.status === 'ready').length),
+            recent: (current.replays?.recent || []).filter((row) => row.stream_id !== item.id),
+          },
+        };
+      });
+    } catch (e) {
+      showAppAlert('Could not delete broadcast', e?.message || 'Please try again.');
+    }
   };
 
-  const deleteReplay = (item) => {
-    Alert.alert('Delete LIVE replay?', 'The saved video file will be permanently deleted. This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: async () => {
-        try {
-          await backendFetch('/live/replays/' + encodeURIComponent(item.id), { method: 'DELETE' });
-          setSummary((current) => current ? ({
-            ...current,
-            replays: { ...current.replays, total: Math.max(0, Number(current.replays?.total || 0) - 1), ready: Math.max(0, Number(current.replays?.ready || 0) - (item.status === 'ready' ? 1 : 0)), recent: (current.replays?.recent || []).filter((row) => row.id !== item.id) },
-          }) : current);
-        } catch (e) {
-          Alert.alert('Could not delete replay', e?.message || 'Please try again.');
-        }
-      } },
-    ]);
+  const deleteReplay = async (item) => {
+    const confirmed = await confirmAction({
+      title: 'Delete LIVE replay?',
+      message: 'The saved video file will be permanently deleted. This cannot be undone.',
+      confirmText: 'Delete',
+    });
+    if (!confirmed) return;
+    try {
+      await backendFetch('/live/replays/' + encodeURIComponent(item.id), { method: 'DELETE' });
+      setSummary((current) => current ? ({
+        ...current,
+        replays: { ...current.replays, total: Math.max(0, Number(current.replays?.total || 0) - 1), ready: Math.max(0, Number(current.replays?.ready || 0) - (item.status === 'ready' ? 1 : 0)), recent: (current.replays?.recent || []).filter((row) => row.id !== item.id) },
+      }) : current);
+    } catch (e) {
+      showAppAlert('Could not delete replay', e?.message || 'Please try again.');
+    }
   };
 
 
