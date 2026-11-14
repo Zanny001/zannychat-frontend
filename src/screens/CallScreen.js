@@ -37,6 +37,7 @@ export default function CallScreen({ route, navigation }) {
   const [networkNotice, setNetworkNotice] = useState('');
   const [invitePickerVisible, setInvitePickerVisible] = useState(false);
   const pcRef = useRef(null);
+  const cameraSwitchInProgressRef = useRef(false);
   const localRef = useRef(null);
   const remoteRef = useRef(null);
   const remoteDescriptionReady = useRef(false);
@@ -157,6 +158,17 @@ export default function CallScreen({ route, navigation }) {
             remoteRef.current.addTrack(event.track);
           }
           next = remoteRef.current;
+        }
+        if (event.track?.kind === 'video') {
+          const refreshRemoteVideoState = () => {
+            if (!activeRef.current) return;
+            const hasLiveVideo = remoteRef.current?.getVideoTracks?.().some((track) => track.readyState === 'live' && !track.muted);
+            setRemoteVideoActive(Boolean(hasLiveVideo));
+          };
+          event.track.onunmute = refreshRemoteVideoState;
+          event.track.onmute = refreshRemoteVideoState;
+          event.track.onended = refreshRemoteVideoState;
+          if (!event.track.muted && activeRef.current) setRemoteVideoActive(true);
         }
         if (next && activeRef.current) setRemoteStream(next);
       };
@@ -377,50 +389,74 @@ export default function CallScreen({ route, navigation }) {
   }, [nativeCallId]);
 
   const toggleCamera = async () => {
+    if (cameraSwitchInProgressRef.current) return;
     const next = !cameraOff;
     const pc = pcRef.current;
     const stream = localRef.current;
     if (!pc || !stream || !activeRef.current) return;
+    if (pc.signalingState !== 'stable') {
+      setErrorText('The call is already updating. Please try the camera switch again.');
+      return;
+    }
+
+    cameraSwitchInProgressRef.current = true;
+    const previousRemoteDescriptionReady = remoteDescriptionReady.current;
+    const previousTrack = stream.getVideoTracks?.()[0] || null;
+    let removedTrack = null;
+    let addedTrack = null;
     try {
-      if (next) {
-        const track = stream.getVideoTracks?.()[0];
-        if (track) {
-          const sender = pc.getSenders().find((item) => item.track?.id === track.id);
-          if (sender) pc.removeTrack(sender);
-          stream.removeTrack(track);
-          track.stop();
-        }
-        setCameraOff(true);
-        setActiveCallType('audio');
-      } else {
-        let track = stream.getVideoTracks?.()[0];
-        if (!track) {
-          const cameraStream = await mediaDevices.getUserMedia({ audio: false, video: { facingMode: 'user', width: 960, height: 540, frameRate: 24 } });
-          track = cameraStream.getVideoTracks?.()[0];
-          if (!track) throw new Error('No camera track was provided by this device.');
-          stream.addTrack(track);
-          pc.addTrack(track, stream);
-        } else {
-          track.enabled = true;
-        }
-        setLocalStream(stream);
-        setCameraOff(false);
-        setActiveCallType('video');
+      if (next && previousTrack) {
+        removedTrack = previousTrack;
+        const sender = pc.getSenders().find((item) => item.track?.id === previousTrack.id);
+        if (sender) pc.removeTrack(sender);
+        stream.removeTrack(previousTrack);
+      } else if (!next && !previousTrack) {
+        const cameraStream = await mediaDevices.getUserMedia({ audio: false, video: { facingMode: 'user', width: 960, height: 540, frameRate: 24 } });
+        addedTrack = cameraStream.getVideoTracks?.()[0];
+        if (!addedTrack) throw new Error('No camera track was provided by this device.');
+        stream.addTrack(addedTrack);
+        pc.addTrack(addedTrack, stream);
+      } else if (!next && previousTrack) {
+        previousTrack.enabled = true;
       }
+
       if (pc.signalingState !== 'stable') throw new Error('The call is already updating. Please try the camera switch again.');
       remoteDescriptionReady.current = false;
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       await sendCallSignal({ call: callRef.current, type: 'offer', payload: { type: offer.type, sdp: offer.sdp } });
-    } catch (error) {
-      setErrorText(error?.message || 'Could not switch call video. Your audio call is still active.');
-      if (next) {
-        setCameraOff(false);
-        setActiveCallType('video');
-      } else {
-        setCameraOff(true);
-        setActiveCallType('audio');
+
+      if (removedTrack) removedTrack.stop();
+      setLocalStream(stream);
+      setCameraOff(next);
+      setActiveCallType(next ? 'audio' : 'video');
+      callTypeRef.current = next ? 'audio' : 'video';
+      setRTCAudioSessionConfiguration(!next);
+      if (isNativeCallUiAvailable) setAudioSessionPortOverride(!next);
+      else if (typeof AudioSession.selectAudioOutput === 'function') {
+        await AudioSession.selectAudioOutput(next ? 'default' : 'force_speaker').catch(() => {});
       }
+      setSpeakerOn(!next);
+      setErrorText('');
+    } catch (error) {
+      if (pc.signalingState === 'have-local-offer') {
+        await pc.setLocalDescription({ type: 'rollback' }).catch(() => {});
+      }
+      if (addedTrack) {
+        const sender = pc.getSenders().find((item) => item.track?.id === addedTrack.id);
+        if (sender) pc.removeTrack(sender);
+        stream.removeTrack(addedTrack);
+        addedTrack.stop();
+      }
+      if (removedTrack && removedTrack.readyState !== 'ended') {
+        stream.addTrack(removedTrack);
+        pc.addTrack(removedTrack, stream);
+      }
+      remoteDescriptionReady.current = Boolean(pc.remoteDescription) || previousRemoteDescriptionReady;
+      setLocalStream(stream);
+      setErrorText(error?.message || 'Could not switch call video. Your audio call is still active.');
+    } finally {
+      cameraSwitchInProgressRef.current = false;
     }
   };
   const switchCamera = () => {
