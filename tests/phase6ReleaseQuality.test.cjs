@@ -42,3 +42,9 @@ test('native release CI protects main and compiles Android native code', () => {
   assert.match(workflow, /expo export --platform android/);
   assert.match(workflow, /npm run audit:contract/);
 });
+test('release readiness validates the timestamped attachment cleanup claim binding', () => {
+  const source = fs.readFileSync(path.join(root, 'scripts/release_readiness.py'), 'utf8');
+  assert.match(source, /cleanup_claim_migrations/);
+  assert.match(source, /q\\.conversation_id/);
+  assert.match(source, /conversation-prefix collisions/);
+});
