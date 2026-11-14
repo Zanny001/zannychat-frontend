@@ -364,8 +364,8 @@ export default function LiveHubScreen({ navigation, route }) {
               </TouchableOpacity>
 
               <TouchableOpacity disabled={busy} onPress={startLive} accessibilityRole="button" accessibilityLabel="Go LIVE" accessibilityState={{ disabled: busy, busy }} style={{ backgroundColor: busy ? colors.border : colors.primary, borderRadius: radii.md, minHeight: 52, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.sm }}>
-                {busy ? <ActivityIndicator color={colors.background} /> : <Ionicons name="radio" size={20} color={colors.background} />}
-                <Text style={[typography.bodyStrong, { color: colors.background }]}>{busy ? 'Connecting…' : 'Go LIVE'}</Text>
+                {busy ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name="radio" size={20} color={colors.onPrimary} />}
+                <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>{busy ? 'Connecting…' : 'Go LIVE'}</Text>
               </TouchableOpacity>
               {!!startStage && <Text accessibilityRole="status" style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>{startStage}</Text>}
             </GlassCard>

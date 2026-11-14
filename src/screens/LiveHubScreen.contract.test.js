@@ -85,3 +85,9 @@ test('replay-ready notifications open the private in-app player', () => {
   assert.ok(screen.includes('notification.replayId'));
   assert.ok(screen.includes("navigation.navigate('LiveReplay'"));
 });
+
+test('Go LIVE primary button uses its semantic foreground color for all palette themes', () => {
+  assert.ok(screen.includes('<ActivityIndicator color={colors.onPrimary} />'));
+  assert.ok(screen.includes('name="radio" size={20} color={colors.onPrimary}'));
+  assert.ok(screen.includes("{ color: colors.onPrimary }]}>{busy ? 'Connecting…' : 'Go LIVE'}"));
+});
