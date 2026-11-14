@@ -74,7 +74,6 @@ export default function LiveReplayScreen({ route, navigation }) {
             style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 20, overflow: 'hidden', backgroundColor: '#08080C' }}
             nativeControls
             contentFit="contain"
-            allowsFullscreen
             allowsPictureInPicture
           />
         ) : (
