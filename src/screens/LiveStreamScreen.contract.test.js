@@ -79,6 +79,7 @@ test('LIVE reactions are animated over the stage and use the shared seven-reacti
   assert.ok(screen.includes('useReducedMotion()'));
   assert.ok(screen.includes('scheduleOnRN(onComplete, item.id)'));
   assert.ok(screen.includes('ReduceMotion.System'));
+  assert.ok(screen.includes('const hasLocalAudioOnly = publisherMode && microphoneEnabled && !cameraEnabled'));
   assert.ok(screen.includes('hasLocalAudioOnly'));
   assert.ok(screen.includes('LIVE_REACTION_EMOJI'));
   assert.ok(screen.includes("idea: '💡'"));
