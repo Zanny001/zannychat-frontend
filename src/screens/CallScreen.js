@@ -51,7 +51,7 @@ export default function CallScreen({ route, navigation }) {
   const callRef = useRef(initialCall || { id: callId, conversation_id: conversationId, call_type: callType, status: isCaller ? 'ringing' : 'accepted' });
   const callTypeRef = useRef(initialCall?.call_type || callType);
 
-  const navigateToConference = useCallback(async (room) => {
+  const navigateToConference = useCallback(async (room, connectionResult = null) => {
     if (!room?.id || upgradeNavigatedRef.current) return;
     upgradeNavigatedRef.current = true;
     if (nativeCallId && !nativeEndedRef.current) {
@@ -61,6 +61,7 @@ export default function CallScreen({ route, navigation }) {
     await releaseCallAudioSessionRef.current().catch(() => {});
     navigation.replace('GroupCall', {
       roomId: room.id,
+      connection: connectionResult,
       conversationId: room.conversation_id || conversationId,
       conversationName: 'Group call',
       callType: room.call_type || callType,
@@ -432,7 +433,7 @@ export default function CallScreen({ route, navigation }) {
               body: JSON.stringify({ userIds: [person.id] }),
             });
             if (!result?.room?.id) throw new Error('Could not upgrade this call to a conference.');
-            await navigateToConference(result.room);
+            await navigateToConference(result.room, result);
           }}
         />
       ) : null}
