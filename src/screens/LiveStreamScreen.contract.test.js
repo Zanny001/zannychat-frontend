@@ -55,3 +55,18 @@ test('LIVE chat displays profile names rather than truncated account identifiers
   assert.ok(screen.includes("item.user_name || 'ZannyChat user'"));
   assert.equal(screen.includes('String(item.user_id).slice(0, 7)'), false);
 });
+
+
+test('LIVE publishers can disable video independently while keeping microphone audio enabled', () => {
+  assert.ok(screen.includes('useLocalParticipant'));
+  assert.ok(screen.includes('localParticipant.setCameraEnabled(!isCameraEnabled)'));
+  assert.ok(screen.includes('localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled)'));
+  assert.ok(screen.includes("accessibilityLabel={isCameraEnabled ? 'Turn camera off and keep audio on' : 'Turn camera on'}"));
+  assert.ok(screen.includes('audio={publisherMode}'));
+});
+
+test('LIVE stage renders multiple camera publishers in a responsive two-column grid', () => {
+  assert.ok(screen.includes("numColumns={videos.length > 1 ? 2 : 1}"));
+  assert.ok(screen.includes("key={videos.length > 1 ? 'live-stage-grid' : 'live-stage-single'}"));
+  assert.ok(screen.includes('item.participant.name || item.participant.identity'));
+});
