@@ -59,3 +59,20 @@ test('Go LIVE validates the server connection before opening the broadcast studi
   assert.ok(screen.includes("!connection?.stream?.id || !connection?.livekitUrl || !connection?.token"));
   assert.ok(screen.includes("navigation.navigate('LiveStream', { connection, creatorMode: true })"));
 });
+
+test('LIVE hub discovers privacy-filtered replay cards and polls pending processing', () => {
+  assert.ok(screen.includes("backendFetch('/live/replays')"));
+  assert.ok(screen.includes('LIVE replays'));
+  assert.ok(screen.includes("item.status === 'ready'"));
+  assert.ok(screen.includes('Watch replay'));
+  assert.ok(screen.includes('Preparing replay…'));
+  assert.ok(screen.includes('hasPendingReplays'));
+  assert.ok(screen.includes('refreshReplays'));
+  assert.ok(screen.includes("navigation.navigate('LiveReplay'"));
+});
+
+test('replay-ready notifications open the in-app player and refresh discovery', () => {
+  assert.ok(screen.includes("type === 'live_replay_ready'"));
+  assert.ok(screen.includes('notification.replayId'));
+  assert.ok(screen.includes("navigation.navigate('LiveReplay'"));
+});
