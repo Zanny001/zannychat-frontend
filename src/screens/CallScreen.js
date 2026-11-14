@@ -88,8 +88,9 @@ export default function CallScreen({ route, navigation }) {
       // Native Telecom prepares audio automatically for OS-managed calls. For
       // in-app fallback calls, prepare the same communication session explicitly.
       if (!nativeCallId && !nativeRequestId) {
-        if (isNativeCallUiAvailable) {
-          prepareAudioSessionForCall(callTypeRef.current === 'video');
+        const preparedAudioSession = isNativeCallUiAvailable
+          && prepareAudioSessionForCall(callTypeRef.current === 'video');
+        if (preparedAudioSession) {
           releaseAudioSession = restoreAudioSession;
         } else {
           await AudioSession.startAudioSession();
