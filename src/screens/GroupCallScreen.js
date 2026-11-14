@@ -256,8 +256,10 @@ export default function GroupCallScreen({ route, navigation }) {
     endingRef.current = true;
     try {
       await backendFetch(`/group-calls/${connection.roomId}/${canEnd ? 'end' : 'leave'}`, { method: 'POST' });
-    } catch (_) {
-      // Leaving the media room still takes priority if the backend is offline.
+    } catch (error) {
+      // Let unmount cleanup retry the participant leave if the end request fails.
+      endingRef.current = false;
+      setErrorText(error?.message || 'The call could not be ended on the server. Leaving this device now.');
     } finally {
       navigation.goBack();
     }
