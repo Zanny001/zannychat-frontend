@@ -226,7 +226,7 @@ export default function NewChatScreen({ navigation, route }) {
     }
     autoStartedCallRef.current = key;
     startChat(target);
-  }, [loadingContacts, contacts, targetUserId, requestedCallType]);
+  }, [loadingContacts, contacts, targetUserId, requestedCallType, startChat]);
 
   async function shareContact(contact) {
     if (sendingId !== null) return;
