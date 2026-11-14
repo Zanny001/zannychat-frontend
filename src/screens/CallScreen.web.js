@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Avatar from '../components/Avatar';
+import CallInvitePicker from '../components/CallInvitePicker';
 import { useTheme } from '../theme/ThemeContext';
 import { sendCallSignal, subscribeToCallSession, subscribeToCallSignals, updateCallStatus } from '../services/calls';
 import { backendFetch } from '../services/backendClient';
@@ -23,6 +24,7 @@ export default function CallScreenWeb({ route, navigation }) {
   const [seconds, setSeconds] = useState(0);
   const [errorText, setErrorText] = useState('');
   const [networkNotice, setNetworkNotice] = useState('');
+  const [invitePickerVisible, setInvitePickerVisible] = useState(false);
   const [remoteStream, setRemoteStream] = useState(null);
   const [localStream, setLocalStream] = useState(null);
   const [audioPlaybackBlocked, setAudioPlaybackBlocked] = useState(false);
@@ -40,6 +42,7 @@ export default function CallScreenWeb({ route, navigation }) {
   const connectedAtRef = useRef(null);
   const offerStartedRef = useRef(false);
   const iceRestartInProgressRef = useRef(false);
+  const upgradeNavigatedRef = useRef(false);
 
   const activeCallType = call?.call_type || callType;
   const immersiveVideo = activeCallType === 'video';
@@ -69,6 +72,17 @@ export default function CallScreenWeb({ route, navigation }) {
       localVideoRef.current.play?.().catch(() => {});
     }
   }, [localStream, cameraOff]);
+
+  const navigateToConference = useCallback(async (room) => {
+    if (!room?.id || upgradeNavigatedRef.current) return;
+    upgradeNavigatedRef.current = true;
+    navigation.replace('GroupCall', {
+      roomId: room.id,
+      conversationId: room.conversation_id || conversationId,
+      conversationName: 'Group call',
+      callType: room.call_type || activeCallType,
+    });
+  }, [activeCallType, conversationId, navigation]);
 
   const endCall = useCallback(async (reason = 'ended') => {
     const current = callRef.current;
@@ -122,9 +136,16 @@ export default function CallScreenWeb({ route, navigation }) {
         throw new Error('This browser does not support audio/video calling. Try the latest Chrome, Edge, Firefox, or Safari over HTTPS.');
       }
       const { data: liveCall, error: liveCallError } = await supabase.from('call_sessions')
-        .select('id,conversation_id,caller_id,callee_id,call_type,status,created_at,accepted_at,ended_at,expires_at')
+        .select('id,conversation_id,caller_id,callee_id,call_type,status,created_at,accepted_at,ended_at,expires_at,group_room_id')
         .eq('id', callRef.current.id).maybeSingle();
-      if (liveCallError || !liveCall || (isCaller ? !['ringing', 'accepted'].includes(liveCall.status) : liveCall.status !== 'accepted')) {
+      if (liveCallError) throw liveCallError;
+      if (liveCall?.group_room_id) {
+        callRef.current = liveCall;
+        if (activeRef.current) setCall(liveCall);
+        await navigateToConference({ id: liveCall.group_room_id, conversation_id: liveCall.conversation_id, call_type: liveCall.call_type });
+        return;
+      }
+      if (!liveCall || (isCaller ? !['ringing', 'accepted'].includes(liveCall.status) : liveCall.status !== 'accepted')) {
         throw new Error('This call is no longer available. Please start or answer the call again.');
       }
       callRef.current = liveCall;
@@ -244,6 +265,10 @@ export default function CallScreenWeb({ route, navigation }) {
         currentStatus = next.status;
         callRef.current = next;
         setCall(next);
+        if (next.group_room_id) {
+          navigateToConference({ id: next.group_room_id, conversation_id: next.conversation_id, call_type: next.call_type }).catch(() => {});
+          return;
+        }
         if (next.status === 'accepted') {
           setPhase('Connecting…');
           maybeStartOffer();
@@ -254,12 +279,16 @@ export default function CallScreenWeb({ route, navigation }) {
       }, async () => {
         if (!supabase || !activeRef.current) return;
         const { data } = await supabase.from('call_sessions')
-          .select('id,conversation_id,caller_id,callee_id,call_type,status,created_at,accepted_at,ended_at,expires_at')
+          .select('id,conversation_id,caller_id,callee_id,call_type,status,created_at,accepted_at,ended_at,expires_at,group_room_id')
           .eq('id', liveCall.id).maybeSingle();
         if (data && activeRef.current) {
           currentStatus = data.status;
           callRef.current = data;
           setCall(data);
+          if (data.group_room_id) {
+            navigateToConference({ id: data.group_room_id, conversation_id: data.conversation_id, call_type: data.call_type }).catch(() => {});
+            return;
+          }
           if (isTerminalCallStatus(data.status)) {
             setPhase(data.status === 'declined' ? 'Call declined' : 'Call ended');
             navigation.goBack();
@@ -350,7 +379,9 @@ export default function CallScreenWeb({ route, navigation }) {
           <Ionicons name="chevron-down" size={26} color={foreground} />
         </TouchableOpacity>
         <View style={[styles.encryption, { backgroundColor: immersiveVideo ? 'rgba(255,255,255,0.08)' : colors.surface, borderColor: colors.border, borderWidth: 1 }]}><Ionicons name="lock-closed" size={12} color={colors.accent} /><Text style={[typography.small, styles.encryptionText, { color: secondaryForeground }]}>Encrypted media transport</Text></View>
-        <View style={{ width: 26 }} />
+        {phase === 'Connected' && call?.status === 'accepted'
+          ? <TouchableOpacity onPress={() => setInvitePickerVisible(true)} accessibilityRole="button" accessibilityLabel="Add people to call" style={styles.addPeopleButton}><Ionicons name="person-add" size={21} color={foreground} /></TouchableOpacity>
+          : <View style={{ width: 26 }} />}
       </View>
       <View style={styles.identity}>
         {!(activeCallType === 'video' && remoteStream) ? <Avatar name={participantName} color={avatarColor || colors.primary} size={108} /> : null}
@@ -370,6 +401,25 @@ export default function CallScreenWeb({ route, navigation }) {
           <Ionicons name="call" size={27} color={colors.onDanger} style={{ transform: [{ rotate: '135deg' }] }} />
         </TouchableOpacity>
       </View>
+      {call?.id ? (
+        <CallInvitePicker
+          visible={invitePickerVisible}
+          onClose={() => setInvitePickerVisible(false)}
+          title="Add people to call"
+          conversationId={call.conversation_id || conversationId}
+          filterToConversationMembers={false}
+          excludeIds={[call.caller_id, call.callee_id]}
+          onInvite={async (person) => {
+            const activeCall = callRef.current || call;
+            const result = await backendFetch(`/group-calls/upgrade/${activeCall.id}`, {
+              method: 'POST',
+              body: JSON.stringify({ userIds: [person.id] }),
+            });
+            if (!result?.room?.id) throw new Error('Could not upgrade this call to a conference.');
+            await navigateToConference(result.room);
+          }}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -377,6 +427,7 @@ export default function CallScreenWeb({ route, navigation }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#11101A' },
   topBar: { paddingHorizontal: 22, paddingTop: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  addPeopleButton: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   encryption: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 18, paddingVertical: 7, paddingHorizontal: 11, backgroundColor: 'rgba(255,255,255,0.08)' },
   encryptionText: {},
   identity: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28 },
