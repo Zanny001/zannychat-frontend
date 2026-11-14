@@ -251,7 +251,8 @@ export default function GroupCallScreen({ route, navigation }) {
   };
 
   const endCall = async () => {
-    if (!connection || endingRef.current) return;
+    if (endingRef.current) return;
+    if (!connection) { navigation.goBack(); return; }
     endingRef.current = true;
     try {
       await backendFetch(`/group-calls/${connection.roomId}/${canEnd ? 'end' : 'leave'}`, { method: 'POST' });
