@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Room, RoomEvent, Track } from 'livekit-client';
-import { backendFetch } from '../services/backend';
-import { supabase } from '../services/supabase';
+import { backendFetch } from '../services/backendClient';
+import { supabase } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
 import CallInvitePicker from '../components/CallInvitePicker';
 
