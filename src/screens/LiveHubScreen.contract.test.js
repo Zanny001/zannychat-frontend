@@ -67,7 +67,7 @@ test('LIVE hub discovers privacy-filtered replay cards and polls pending process
   assert.ok(screen.includes('Watch replay'));
   assert.ok(screen.includes('Preparing replay…'));
   assert.ok(screen.includes('hasPendingReplays'));
-  assert.ok(screen.includes('refreshReplays'));
+  assert.ok(screen.includes('refreshPendingReplays'));
   assert.ok(screen.includes("navigation.navigate('LiveReplay'"));
 });
 
