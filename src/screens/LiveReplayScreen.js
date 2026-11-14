@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, SafeAreaView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, SafeAreaView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { backendFetch } from '../services/backendClient';
@@ -63,6 +63,21 @@ export default function LiveReplayScreen({ route, navigation }) {
           <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{replay?.streamTitle || 'LIVE replay'}</Text>
           <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>Secure replay · audience access rules apply · seven-day expiry</Text>
         </View>
+        {replay?.creatorId ? (
+          <TouchableOpacity onPress={() => Alert.alert('Delete LIVE replay?', 'This permanently deletes the saved video.', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Delete', style: 'destructive', onPress: async () => {
+              try {
+                await backendFetch('/live/replays/' + encodeURIComponent(replayId), { method: 'DELETE' });
+                navigation.goBack();
+              } catch (e) {
+                Alert.alert('Could not delete replay', e?.message || 'Please try again.');
+              }
+            } },
+          ])} accessibilityRole="button" accessibilityLabel="Delete this LIVE replay" style={{ width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.danger + '55' }}>
+            <Ionicons name="trash-outline" size={19} color={colors.danger} />
+          </TouchableOpacity>
+        ) : null}
         <TouchableOpacity onPress={() => setAttempt((value) => value + 1)} accessibilityRole="button" accessibilityLabel="Refresh LIVE replay link" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
           <Ionicons name="refresh-outline" size={20} color={colors.accent} />
         </TouchableOpacity>
