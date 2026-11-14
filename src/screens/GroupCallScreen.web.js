@@ -51,6 +51,7 @@ export default function GroupCallScreenWeb({ route, navigation }) {
   const activeRef = useRef(false);
   const endedRef = useRef(false);
   const isVideo = callType === 'video';
+  const canInviteNow = canInvite && status === 'Connected';
 
   useEffect(() => {
     if (!roomId) {
@@ -246,7 +247,7 @@ export default function GroupCallScreenWeb({ route, navigation }) {
             <Text style={[typography.small, { color: cameraOff ? colors.onPrimary : colors.textPrimary }]}>{cameraOff ? 'Camera on' : 'Camera off'}</Text>
           </TouchableOpacity>
         ) : null}
-        {canInvite ? (
+        {canInviteNow ? (
           <TouchableOpacity onPress={() => setInvitePickerVisible(true)} accessibilityRole="button" accessibilityLabel="Add people to call" style={[styles.control, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Ionicons name="person-add" size={21} color={colors.textPrimary} />
             <Text style={[typography.small, { color: colors.textPrimary }]}>Add people</Text>
