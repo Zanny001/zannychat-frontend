@@ -194,6 +194,11 @@ export default function CallScreenWeb({ route, navigation }) {
           event.track.onunmute = () => { if (activeRef.current) setRemoteVideoActive(true); };
           event.track.onmute = () => { if (activeRef.current) setRemoteVideoActive(false); };
           event.track.onended = () => { if (activeRef.current) setRemoteVideoActive(false); };
+          if (!remoteStreamRef.current) remoteStreamRef.current = new window.MediaStream();
+          if (!remoteStreamRef.current.getTracks().some((track) => track.id === event.track.id)) {
+            remoteStreamRef.current.addTrack(event.track);
+          }
+          nextStream = remoteStreamRef.current;
           if (!event.track.muted && activeRef.current) setRemoteVideoActive(true);
         }
         else if (event.track) {
