@@ -432,13 +432,20 @@ export default function CallScreen({ route, navigation }) {
       setCameraOff(next);
       setActiveCallType(next ? 'audio' : 'video');
       callTypeRef.current = next ? 'audio' : 'video';
-      setRTCAudioSessionConfiguration(!next);
-      if (isNativeCallUiAvailable) setAudioSessionPortOverride(!next);
-      else if (typeof AudioSession.selectAudioOutput === 'function') {
-        await AudioSession.selectAudioOutput(next ? 'default' : 'force_speaker').catch(() => {});
+      let audioRouteFailed = false;
+      try {
+        setRTCAudioSessionConfiguration(!next);
+        if (isNativeCallUiAvailable) setAudioSessionPortOverride(!next);
+        else if (typeof AudioSession.selectAudioOutput === 'function') {
+          await AudioSession.selectAudioOutput(next ? 'default' : 'force_speaker');
+        }
+      } catch (_) {
+        audioRouteFailed = true;
       }
       setSpeakerOn(!next);
-      setErrorText('');
+      setErrorText(audioRouteFailed
+        ? 'Your camera mode changed, but the audio route could not switch automatically. Use the speaker control.'
+        : '');
     } catch (error) {
       if (pc.signalingState === 'have-local-offer') {
         await pc.setLocalDescription({ type: 'rollback' }).catch(() => {});
