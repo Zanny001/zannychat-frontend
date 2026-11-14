@@ -309,7 +309,17 @@ export async function updateProfile({ name, status, username }) {
     .single();
 
   if (error) throw error;
-  return normalizeProfile(data);
+  const { data: confirmed, error: confirmError } = await supabase
+    .from('profiles')
+    .select('id,name,avatar_color,avatar_url,status,online,username')
+    .eq('id', authData.user.id)
+    .single();
+  if (confirmError) throw confirmError;
+  if (normalizedUsername !== undefined
+      && String(confirmed?.username || '').trim().toLowerCase() !== normalizedUsername) {
+    throw new Error('Your username change could not be confirmed as saved. Please try again.');
+  }
+  return normalizeProfile(confirmed);
 }
 
 const PROFILE_DETAIL_DEFAULTS = Object.freeze({
