@@ -29,14 +29,14 @@ function LiveMedia({ creatorMode, publisherMode, cameraEnabled, microphoneEnable
         <View style={{ flex: 1, justifyContent: 'center' }}>
           {videos.length ? (
             <FlatList
-              key={videos.length > 1 ? 'live-stage-grid' : 'live-stage-single'}
+              key={videos.length === 1 ? 'live-stage-single' : 'live-stage-grid'}
               keyboardShouldPersistTaps="handled"
               data={videos}
-              numColumns={videos.length > 1 ? 2 : 1}
+              numColumns={videos.length === 1 ? 1 : 2}
               keyExtractor={(item) => item.participant.identity}
               renderItem={({ item }) => (
                 <View style={{ flex: 1, minWidth: 0, margin: 4, borderRadius: 18, overflow: 'hidden', backgroundColor: '#211F2B' }}>
-                  <VideoTrack trackRef={item} style={{ height: videos.length > 1 ? 220 : 340, borderRadius: 18 }} />
+                  <VideoTrack trackRef={item} style={{ height: videos.length === 1 ? 340 : 220, borderRadius: 18 }} />
                   <View style={{ position: 'absolute', left: 10, bottom: 10, maxWidth: '85%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.62)' }}>
                     <Text numberOfLines={1} style={[typography.caption, { color: '#FFFFFF' }]}>{item.participant.name || item.participant.identity}</Text>
                   </View>
