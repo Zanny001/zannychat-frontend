@@ -16,20 +16,25 @@ function GroupRoomContent({ callType, onEnd, onAddPeople, canInvite, onParticipa
   const participants = useParticipants();
   const [muted, setMuted] = useState(false);
   const [cameraOff, setCameraOff] = useState(callType !== 'video');
-  const [connectionState, setConnectionState] = useState('Connected');
+  const [connectionState, setConnectionState] = useState('Connecting…');
+  const canInviteNow = canInvite && connectionState === 'Connected';
 
   useEffect(() => {
     onParticipantsChange?.(participants.map((participant) => participant.identity));
   }, [participants, onParticipantsChange]);
 
   useEffect(() => {
+    const onConnected = () => setConnectionState('Connected');
     const onReconnecting = () => setConnectionState('Reconnecting…');
     const onReconnected = () => setConnectionState('Connected');
     const onDisconnected = () => setConnectionState('Disconnected');
+    room.on(RoomEvent.Connected, onConnected);
+    if (room.state === 'connected') setConnectionState('Connected');
     room.on(RoomEvent.Reconnecting, onReconnecting);
     room.on(RoomEvent.Reconnected, onReconnected);
     room.on(RoomEvent.Disconnected, onDisconnected);
     return () => {
+      room.off(RoomEvent.Connected, onConnected);
       room.off(RoomEvent.Reconnecting, onReconnecting);
       room.off(RoomEvent.Reconnected, onReconnected);
       room.off(RoomEvent.Disconnected, onDisconnected);
@@ -133,7 +138,7 @@ function GroupRoomContent({ callType, onEnd, onAddPeople, canInvite, onParticipa
             <Text style={[styles.controlLabel, typography.small, { color: cameraOff ? colors.onPrimary : colors.textPrimary }]}>{cameraOff ? 'Camera on' : 'Camera off'}</Text>
           </Pressable>
         )}
-        {canInvite && (
+        {canInviteNow && (
           <Pressable
             onPress={onAddPeople}
             accessibilityRole="button"
