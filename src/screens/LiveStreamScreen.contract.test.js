@@ -55,3 +55,13 @@ test('LIVE chat displays profile names rather than truncated account identifiers
   assert.ok(screen.includes("item.user_name || 'ZannyChat user'"));
   assert.equal(screen.includes('String(item.user_id).slice(0, 7)'), false);
 });
+
+test('LIVE creator can record, stop, monitor and open a private replay', () => {
+  assert.ok(screen.includes("backendFetch('/live/replays/config')"));
+  assert.ok(screen.includes("`/live/${stream.id}/replays/start`"));
+  assert.ok(screen.includes("`/live/${stream.id}/replays/${replay.id}/stop`"));
+  assert.ok(screen.includes("replayStatus === 'recording'"));
+  assert.ok(screen.includes("replayStatus === 'ready'"));
+  assert.ok(screen.includes('navigation.navigate(\'LiveReplay\''));
+  assert.ok(screen.includes('five minutes'));
+});
