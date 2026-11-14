@@ -5,7 +5,7 @@ import fs from 'node:fs';
 const source = fs.readFileSync(new URL('./CallInvitePicker.js', import.meta.url), 'utf8');
 
 test('participant picker searches through the privacy-aware profile RPC', () => {
-  assert.match(source, /supabase\.rpc\('search_people'/);
+  assert.match(source, /supabase\.rpc\('search_public_profiles'/);
   assert.match(source, /p_query: term/);
   assert.match(source, /p_limit: 25/);
   assert.match(source, /conversation_participants/);
