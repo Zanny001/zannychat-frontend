@@ -108,7 +108,8 @@ test('web LIVE actions expose labels, disabled state and accessible touch target
   assert.match(liveScreen, /minHeight: 44/);
   assert.match(liveScreen, /accessibilityLabel="Hide comment"/);
   assert.match(liveScreen, /accessibilityLabel="LIVE chat message"/);
-  assert.match(liveScreen, /accessibilityLabel="Send heart reaction"/);
+  assert.match(liveScreen, /accessibilityLabel=\{'Send ' \+ reaction \+ ' reaction'\}/);
+  assert.match(liveScreen, /heart: '❤️'/);
 });
 
 test('web group-call fallback provides an accessible native-app explanation and back action', () => {
