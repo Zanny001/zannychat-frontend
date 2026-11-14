@@ -114,8 +114,8 @@ export default function ChatScreen({ route, navigation }) {
   const targetMessageId = route.params?.targetMessageId ? String(route.params.targetMessageId) : null;
   const { colors, spacing, radii, typography } = useTheme();
   const { width: windowWidth } = useWindowDimensions();
-  const compactHeader = windowWidth < 430;
-  const ultraCompactHeader = windowWidth < 360;
+  const compactHeader = windowWidth < 480;
+  const ultraCompactHeader = windowWidth < 380;
   const [messages, setMessages] = useState([]);
   const [chatCanvasKey, setChatCanvasKey] = useState('theme');
   const [hasMore, setHasMore] = useState(false);
@@ -1768,7 +1768,7 @@ Choose whether to remove this message only from your chat or retract it
 }
 
 const styles = StyleSheet.create({
-  headerAction: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center', shadowOpacity: 0.14, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
+  headerAction: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, alignItems: 'center', justifyContent: 'center', shadowOpacity: 0.14, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
   searchPanel: { borderBottomWidth: StyleSheet.hairlineWidth },
   searchField: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, paddingHorizontal: 10 },
   searchControls: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
