@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, SafeAreaView, StatusBar, StyleSheet, Text, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AudioSession, LiveKitRoom, VideoTrack, isTrackReference, useRoomContext, useTracks, useParticipants } from '@livekit/react-native';
@@ -7,8 +7,9 @@ import { backendFetch } from '../services/backendClient';
 import { supabase } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
+import CallInvitePicker from '../components/CallInvitePicker';
 
-function GroupRoomContent({ callType, onEnd }) {
+function GroupRoomContent({ callType, onEnd, onAddPeople, canInvite, onParticipantsChange, endLabel }) {
   const room = useRoomContext();
   const { colors, typography } = useTheme();
   const cameraTracks = useTracks([Track.Source.Camera]);
@@ -16,6 +17,10 @@ function GroupRoomContent({ callType, onEnd }) {
   const [muted, setMuted] = useState(false);
   const [cameraOff, setCameraOff] = useState(callType !== 'video');
   const [connectionState, setConnectionState] = useState('Connected');
+
+  useEffect(() => {
+    onParticipantsChange?.(participants.map((participant) => participant.identity));
+  }, [participants, onParticipantsChange]);
 
   useEffect(() => {
     const onReconnecting = () => setConnectionState('Reconnecting…');
@@ -128,14 +133,25 @@ function GroupRoomContent({ callType, onEnd }) {
             <Text style={[styles.controlLabel, typography.small, { color: cameraOff ? colors.onPrimary : colors.textPrimary }]}>{cameraOff ? 'Camera on' : 'Camera off'}</Text>
           </Pressable>
         )}
+        {canInvite && (
+          <Pressable
+            onPress={onAddPeople}
+            accessibilityRole="button"
+            accessibilityLabel="Add people to call"
+            style={({ pressed }) => controlStyle(pressed, false)}
+          >
+            <Ionicons name="person-add" size={22} color={colors.textPrimary} />
+            <Text style={[styles.controlLabel, typography.small, { color: colors.textPrimary }]}>Add people</Text>
+          </Pressable>
+        )}
         <Pressable
           onPress={onEnd}
           accessibilityRole="button"
-          accessibilityLabel="Leave group call"
+          accessibilityLabel={endLabel === 'End call' ? 'End call' : 'Leave group call'}
           style={({ pressed }) => controlStyle(pressed, false, true)}
         >
           <Ionicons name="call" size={23} color={colors.onDanger} style={{ transform: [{ rotate: '135deg' }] }} />
-          <Text style={[styles.controlLabel, typography.small, { color: colors.onDanger }]}>Leave</Text>
+          <Text style={[styles.controlLabel, typography.small, { color: colors.onDanger }]}>{endLabel || 'Leave'}</Text>
         </Pressable>
       </View>
     </View>
@@ -148,8 +164,13 @@ export default function GroupCallScreen({ route, navigation }) {
   const [connection, setConnection] = useState(null);
   const [errorText, setErrorText] = useState('');
   const [busy, setBusy] = useState(true);
+  const [invitePickerVisible, setInvitePickerVisible] = useState(false);
+  const [canInvite, setCanInvite] = useState(false);
+  const [canEnd, setCanEnd] = useState(false);
+  const [participantIds, setParticipantIds] = useState([]);
   const endingRef = useRef(false);
   const connectionRef = useRef(null);
+  const handleParticipantsChange = useCallback((ids) => setParticipantIds(ids), []);
 
   useEffect(() => {
     let active = true;
@@ -190,13 +211,43 @@ export default function GroupCallScreen({ route, navigation }) {
     };
   }, [conversationId, roomId]);
 
+  useEffect(() => {
+    if (!connection?.room) return undefined;
+    let active = true;
+    (async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      const userId = auth?.user?.id;
+      if (!active || !userId) return;
+      if (connection.room.source_call_id) {
+        setCanInvite(connection.room.host_user_id === userId);
+        setCanEnd(true);
+        return;
+      }
+      const { data: membership } = await supabase.from('conversation_participants')
+        .select('is_admin')
+        .eq('conversation_id', connection.room.conversation_id || conversationId)
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (!active) return;
+      const manager = connection.room.host_user_id === userId || membership?.is_admin === true;
+      setCanInvite(manager);
+      setCanEnd(manager);
+    })().catch(() => {});
+    return () => { active = false; };
+  }, [connection?.room?.id, conversationId]);
+
+  const invitePerson = async (person) => {
+    await backendFetch(`/group-calls/${connection.roomId}/invite`, {
+      method: 'POST',
+      body: JSON.stringify({ userIds: [person.id] }),
+    });
+  };
+
   const endCall = async () => {
     if (!connection || endingRef.current) return;
     endingRef.current = true;
     try {
-      const { data } = await supabase.auth.getUser();
-      const isHost = connection.room?.host_user_id === data?.user?.id;
-      await backendFetch(`/group-calls/${connection.roomId}/${isHost ? 'end' : 'leave'}`, { method: 'POST' });
+      await backendFetch(`/group-calls/${connection.roomId}/${canEnd ? 'end' : 'leave'}`, { method: 'POST' });
     } catch (_) {
       // Leaving the media room still takes priority if the backend is offline.
     } finally {
@@ -230,8 +281,19 @@ export default function GroupCallScreen({ route, navigation }) {
         </View>
       ) : connection ? (
         <LiveKitRoom serverUrl={connection.livekitUrl} token={connection.token} connect={true} audio={true} video={connection.callType === 'video'} options={{ adaptiveStream: true, dynacast: true }}>
-          <GroupRoomContent callType={connection.callType} onEnd={endCall} />
+          <GroupRoomContent callType={connection.callType} onEnd={endCall} onAddPeople={() => setInvitePickerVisible(true)} canInvite={canInvite} onParticipantsChange={handleParticipantsChange} endLabel={canEnd ? 'End call' : 'Leave'} />
         </LiveKitRoom>
+      ) : null}
+      {connection?.room ? (
+        <CallInvitePicker
+          visible={invitePickerVisible}
+          onClose={() => setInvitePickerVisible(false)}
+          onInvite={invitePerson}
+          conversationId={connection.room.conversation_id || conversationId}
+          filterToConversationMembers={!connection.room.source_call_id}
+          excludeIds={participantIds}
+          title="Add people to call"
+        />
       ) : null}
     </SafeAreaView>
   );
