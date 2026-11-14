@@ -144,8 +144,14 @@ export function subscribeToNotificationTaps(navigationRef) {
     const groupCallId = typeof data.groupCallId === 'string' ? data.groupCallId : null;
     const callType = data.callType === 'video' ? 'video' : 'audio';
     const conversationId = typeof data.conversationId === 'string' ? data.conversationId : null;
+    const liveType = typeof data.type === 'string' && data.type.startsWith('live_') ? data.type : null;
+    const liveStreamId = typeof data.streamId === 'string' ? data.streamId : null;
     const actionIdentifier = response.actionIdentifier;
-    const key = callId ? `call:${callId}:${actionIdentifier}` : groupCallId ? `group-call:${groupCallId}` : conversationId ? `chat:${conversationId}` : null;
+    const key = callId ? `call:${callId}:${actionIdentifier}`
+      : groupCallId ? `group-call:${groupCallId}`
+        : conversationId ? `chat:${conversationId}`
+          : liveType ? `live:${liveType}:${liveStreamId || data.creatorId || data.followerId || 'hub'}`
+            : null;
     if (!key || handled.has(key)) return;
     if (!navigationRef.isReady()) { pending = response; return; }
     handled.add(key);
@@ -168,6 +174,10 @@ export function subscribeToNotificationTaps(navigationRef) {
     }
     if (groupCallId) {
       navigationRef.navigate('GroupCall', { roomId: groupCallId, conversationId, conversationName: 'Group call', callType });
+      return;
+    }
+    if (liveType) {
+      navigationRef.navigate('LiveHub', { liveNotification: data });
       return;
     }
     if (conversationId) navigationRef.navigate('Chat', { conversation: { id: conversationId, participant: {} } });
