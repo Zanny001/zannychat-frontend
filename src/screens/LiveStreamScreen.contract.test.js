@@ -74,7 +74,7 @@ test('LIVE publishers can independently disable camera while keeping microphone 
 });
 
 test('LIVE stage supports multiple named video tiles in a responsive two-column grid', () => {
-  assert.ok(screen.includes("numColumns={videos.length === 1 ? 1 : 2}"));
+  assert.ok(screen.includes("numColumns={stageGridVideos.length === 1 ? 1 : 2}"));
   assert.ok(screen.includes('item.participant.name || item.participant.identity'));
   assert.ok(screen.includes('Track.Source.Microphone'));
   assert.ok(screen.includes('Audio only'));
