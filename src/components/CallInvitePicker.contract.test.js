@@ -22,3 +22,9 @@ test('picker only sends invitations through the caller-provided authorized actio
   assert.match(source, /accessibilityLabel=/);
   assert.match(source, /Close add people/);
 });
+
+test('room invite search excludes already joined participants using the authenticated roster endpoint', () => {
+  assert.match(source, /backendFetch/);
+  assert.match(source, /\/group-calls\/.*\/participants/);
+  assert.match(source, /activeParticipantIds/);
+});
