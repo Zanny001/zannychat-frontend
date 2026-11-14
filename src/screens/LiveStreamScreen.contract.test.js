@@ -146,3 +146,13 @@ test('removed native guests are demoted to audience mode without disconnecting',
   assert.ok(screen.includes('demotedToViewer'));
   assert.ok(screen.includes('You can keep watching the LIVE.'));
 });
+
+test('LIVE creator replay controls remain hidden unless the server enables replay', () => {
+  assert.ok(screen.includes("backendFetch('/live/replays/config')"));
+  assert.ok(screen.includes("`/live/${stream.id}/replays/start`"));
+  assert.ok(screen.includes("`/live/${stream.id}/replays/${replay.id}/stop`"));
+  assert.ok(screen.includes('creatorMode && replayEnabled'));
+  assert.ok(screen.includes("replayStatus === 'recording'"));
+  assert.ok(screen.includes("navigation.navigate('LiveReplay'"));
+  assert.ok(screen.includes('five minutes'));
+});
