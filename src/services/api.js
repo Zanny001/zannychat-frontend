@@ -661,8 +661,9 @@ export async function signOutEverywhere() {
 
 export async function signOut() {
   if (!SUPABASE_ENABLED || !supabase) return;
-  await removeVoipTokensBeforeSignOut('global');
-  const { error } = await supabase.auth.signOut();
+  // Settings logout is device-local; global revocation is explicit in Devices & sessions.
+  await removeVoipTokensBeforeSignOut('local');
+  const { error } = await supabase.auth.signOut({ scope: 'local' });
   if (error) throw error;
 }
 
