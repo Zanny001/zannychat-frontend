@@ -57,3 +57,10 @@ test('web LIVE animates recent reaction events over the video stage', () => {
   assert.ok(web.includes('onPress={() => react(reaction)}'));
   assert.ok(web.includes('seenReactionIds.current.has(item.id)'));
 });
+
+test('web LIVE identifies audio-only guests when their camera is disabled', () => {
+  assert.ok(web.includes('remoteAudioParticipants'));
+  assert.ok(web.includes('audioOnlyParticipants'));
+  assert.ok(web.includes('LIVE audio is on'));
+  assert.ok(web.includes('Audio only'));
+});
