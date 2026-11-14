@@ -221,21 +221,19 @@ export default function NewChatScreen({ navigation, route }) {
     const key = targetUserId + ':' + requestedCallType;
     if (autoStartedCallRef.current === key) return;
     autoStartedCallRef.current = key;
-    let active = true;
     const startRedial = async () => {
       try {
         // Call history can contain people who are not in the legacy shared-chat
         // contact list. Resolve the peer by ID through the privacy-aware profile RPC.
         const target = contacts.find((contact) => contact.id === targetUserId)
           || await fetchContactById(targetUserId);
-        if (active) await startChat(target);
+        await startChat(target);
       } catch (error) {
-        if (active) setChatError(error?.message || 'This previous call contact is unavailable.');
+        setChatError(error?.message || 'This previous call contact is unavailable.');
       }
     };
     startRedial();
-    return () => { active = false; };
-  }, [loadingContacts, contacts, targetUserId, requestedCallType]);
+  }, [loadingContacts, contacts, targetUserId, requestedCallType, startChat]);
 
   async function shareContact(contact) {
     if (sendingId !== null) return;
