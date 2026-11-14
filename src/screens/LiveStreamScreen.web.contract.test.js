@@ -49,7 +49,8 @@ test('native LIVE uses the React Native LiveKit SDK and toggles published tracks
 test('web LIVE renders each remote publisher in a labelled multi-participant stage grid', () => {
   assert.ok(web.includes('const [remoteVideoTracks, setRemoteVideoTracks] = useState([])'));
   assert.ok(web.includes('setRemoteVideoTracks((current) => current.some((item) => item.sid === track.sid)'));
-  assert.ok(web.includes('remoteVideoTracks.map((track) => <RemoteVideoTile'));
+  assert.ok(web.includes('[...remoteVideoTracks].sort('));
+  assert.ok(web.includes('<RemoteVideoTile key={track.sid}'));
   assert.ok(web.includes('track.participant.name || track.participant.identity'));
 });
 
@@ -72,4 +73,11 @@ test('web LIVE identifies audio-only guests when their camera is disabled', () =
   assert.ok(web.includes('audioOnlyParticipants'));
   assert.ok(web.includes('LIVE audio is on'));
   assert.ok(web.includes('Audio only'));
+});
+
+test('removed web guests remain viewers after LiveKit publishing permission is revoked', () => {
+  assert.ok(web.includes('RoomEvent.ParticipantPermissionsChanged'));
+  assert.ok(web.includes('setDemotedToViewer(true)'));
+  assert.ok(web.includes('Watching as viewer'));
+  assert.ok(web.includes('You can keep watching the LIVE.'));
 });

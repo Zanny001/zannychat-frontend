@@ -184,7 +184,7 @@ export default function LiveHubScreen({ navigation, route }) {
     navigation.setParams?.({ liveNotification: undefined });
 
     const shouldJoin = streamId && (
-      ['live_stream_started', 'live_invitation', 'live_guest_request'].includes(type)
+      ['live_stream_started', 'live_invitation', 'live_guest_request', 'live_guest_invitation'].includes(type)
       || (type === 'live_guest_decision' && notification.status === 'accepted')
     );
     if (shouldJoin) {
@@ -323,14 +323,14 @@ export default function LiveHubScreen({ navigation, route }) {
                   <GlassCard key={item.stream_id} contentStyle={{ padding: spacing.md }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                       <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: colors.primary + '18', alignItems: 'center', justifyContent: 'center' }}>
-                        <Ionicons name="lock-closed" size={17} color={colors.primary} />
+                        <Ionicons name={item.invitation_type === 'guest' ? 'mic' : 'lock-closed'} size={17} color={colors.primary} />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.stream.title}</Text>
-                        <Text style={[typography.caption, { color: colors.textSecondary }]}>Private invitation</Text>
+                        <Text style={[typography.caption, { color: colors.textSecondary }]}>{item.invitation_type === 'guest' ? 'Invited to join the LIVE stage' : 'Private invitation'}</Text>
                       </View>
-                      <TouchableOpacity disabled={busy} onPress={() => acceptInvitation(item)} accessibilityRole="button" accessibilityLabel={`Accept invitation to ${item.stream.title}`} accessibilityState={{ disabled: busy, busy }} style={{ backgroundColor: colors.primary, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.md }}>
-                        <Text style={[typography.small, { color: colors.background, fontWeight: '800' }]}>Join</Text>
+                      <TouchableOpacity disabled={busy} onPress={() => acceptInvitation(item)} accessibilityRole="button" accessibilityLabel={item.invitation_type === 'guest' ? `Join the LIVE stage in ${item.stream.title}` : `Accept invitation to ${item.stream.title}`} accessibilityState={{ disabled: busy, busy }} style={{ backgroundColor: colors.primary, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.md }}>
+                        <Text style={[typography.small, { color: colors.background, fontWeight: '800' }]}>{item.invitation_type === 'guest' ? 'Join stage' : 'Join'}</Text>
                       </TouchableOpacity>
                     </View>
                   </GlassCard>

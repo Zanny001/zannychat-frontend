@@ -190,7 +190,7 @@ test('native LIVE moderation, discovery and call recovery actions have explicit 
   assert.ok(hub.includes('accessibilityLabel={\`Invite \${person.name} to this LIVE stream\`}'));
   assert.match(hub, /accessibilityLabel="Allow approved viewers to join the LIVE stage"/);
   assert.match(hub, /accessibilityLabel="Go LIVE"/);
-  assert.ok(hub.includes('accessibilityLabel={\`Accept invitation to \${item.stream.title}\`}'));
+  assert.ok(hub.includes('accessibilityLabel={item.invitation_type === \'guest\' ? \`Join the LIVE stage in \${item.stream.title}\` : \`Accept invitation to \${item.stream.title}\`}'));
   assert.match(hub, /Show \${filter.label} LIVE streams/);
 
   const groupCall = readFileSync(new URL('GroupCallScreen.js', import.meta.url), 'utf8');

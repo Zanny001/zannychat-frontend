@@ -74,7 +74,7 @@ test('LIVE publishers can independently disable camera while keeping microphone 
 });
 
 test('LIVE stage supports multiple named video tiles in a responsive two-column grid', () => {
-  assert.ok(screen.includes("numColumns={videos.length === 1 ? 1 : 2}"));
+  assert.ok(screen.includes("numColumns={stageGridVideos.length === 1 ? 1 : 2}"));
   assert.ok(screen.includes('item.participant.name || item.participant.identity'));
   assert.ok(screen.includes('Track.Source.Microphone'));
   assert.ok(screen.includes('Audio only'));
@@ -96,4 +96,53 @@ test('LIVE reactions are animated over the stage and use the shared seven-reacti
   assert.ok(screen.includes('onReact(reaction)'));
   assert.ok(screen.includes('result?.reactions'));
   assert.ok(screen.includes('seenReactionIds.current.has(item.id)'));
+});
+
+
+test('LIVE creator stage controls expose direct guest invitation, microphone mute, and removal', () => {
+  assert.ok(screen.includes('/guests/invite'));
+  assert.ok(screen.includes('/guests/'));
+  assert.ok(screen.includes('/mute'));
+  assert.ok(screen.includes('Invite to stage'));
+  assert.ok(screen.includes('Mute mic'));
+  assert.ok(screen.includes('Remove guest'));
+});
+
+test('LIVE stage actions are accessible and destructive guest removal requires confirmation', () => {
+  assert.ok(screen.includes('accessibilityLabel={item.microphoneMuted ?'));
+  assert.ok(screen.includes("Alert.alert('Remove guest from stage?'"));
+  assert.ok(screen.includes("style: 'destructive'"));
+});
+
+test('stage panel shows the enforced guest capacity and retains moderator management', () => {
+  assert.ok(screen.includes('up to 5 guests'));
+  assert.ok(screen.includes('onSetModerator'));
+});
+
+test('web LIVE creator stage manager has parity with native guest controls', () => {
+  const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(webSource.includes('/guests/invite'));
+  assert.ok(webSource.includes('/mute'));
+  assert.ok(webSource.includes('Manage LIVE stage'));
+  assert.ok(webSource.includes('Remove guest'));
+  assert.ok(webSource.includes('up to 5 guests'));
+});
+
+test('native and web LIVE screens synchronize the creator spotlight across participants', () => {
+  assert.ok(screen.includes("RoomEvent.ParticipantAttributesChanged"));
+  assert.ok(screen.includes('/spotlight'));
+  assert.ok(screen.includes('spotlightUserId'));
+  assert.ok(screen.includes('SPOTLIGHT'));
+  const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(webSource.includes("RoomEvent.ParticipantAttributesChanged"));
+  assert.ok(webSource.includes('/spotlight'));
+  assert.ok(webSource.includes('spotlightGuest'));
+  assert.ok(webSource.includes('spotlight={track.participant.attributes?.zannychat_spotlight'));
+});
+
+test('removed native guests are demoted to audience mode without disconnecting', () => {
+  assert.ok(screen.includes('RoomEvent.ParticipantPermissionsChanged'));
+  assert.ok(screen.includes('onDemoteToViewer'));
+  assert.ok(screen.includes('demotedToViewer'));
+  assert.ok(screen.includes('You can keep watching the LIVE.'));
 });

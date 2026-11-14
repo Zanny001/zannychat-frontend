@@ -50,7 +50,7 @@ function FloatingReaction({ item, index, onComplete }) {
   );
 }
 
-function RemoteVideoTile({ track, colors }) {
+function RemoteVideoTile({ track, colors, spotlight = false }) {
   const containerRef = useRef(null);
   useEffect(() => {
     const element = track.attach();
@@ -66,8 +66,9 @@ function RemoteVideoTile({ track, colors }) {
     };
   }, [track]);
   return (
-    <View style={{ width: '48%', minWidth: 140, minHeight: 190, borderRadius: 16, overflow: 'hidden', backgroundColor: '#050509', borderWidth: 1, borderColor: colors.border }}>
-      <View ref={containerRef} collapsable={false} style={{ width: '100%', height: 190 }} />
+    <View style={{ width: spotlight ? '100%' : '48%', minWidth: spotlight ? 260 : 140, minHeight: spotlight ? 310 : 190, borderRadius: 16, overflow: 'hidden', backgroundColor: '#050509', borderWidth: spotlight ? 2 : 1, borderColor: spotlight ? colors.accent : colors.border }}>
+      <View ref={containerRef} collapsable={false} style={{ width: '100%', height: spotlight ? 310 : 190 }} />
+      {spotlight && <View style={{ position: 'absolute', top: 8, left: 8, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: colors.accent }}><Text style={{ color: colors.onAccent, fontWeight: '900', fontSize: 10 }}>SPOTLIGHT</Text></View>}
       <View style={{ position: 'absolute', left: 8, bottom: 8, maxWidth: '88%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.65)' }}>
         <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>{track.participant.name || track.participant.identity}</Text>
       </View>
@@ -87,9 +88,13 @@ export default function LiveStreamScreen({ route, navigation }) {
   const connection = route.params?.connection;
   const stream = connection?.stream;
   const creatorMode = Boolean(route.params?.creatorMode || connection?.role === 'creator');
-  const publisherMode = Boolean(creatorMode || (connection?.role === 'guest' && connection?.canPublish));
+  const [demotedToViewer, setDemotedToViewer] = useState(false);
+  const [stageNotice, setStageNotice] = useState('');
+  const publisherMode = Boolean(creatorMode || (connection?.role === 'guest' && connection?.canPublish && !demotedToViewer));
   const moderatorMode = Boolean(creatorMode || connection?.canModerate);
   const roomRef = useRef(null);
+  const publisherModeRef = useRef(publisherMode);
+  publisherModeRef.current = publisherMode;
   const localRef = useRef(null);
   const remoteAudioRef = useRef(null);
   const [remoteVideoTracks, setRemoteVideoTracks] = useState([]);
@@ -97,6 +102,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const audioOnlyParticipants = remoteAudioParticipants.filter((participant) => !remoteVideoTracks.some((track) => track.participant.identity === participant.identity));
   const endedRef = useRef(false);
   const [status, setStatus] = useState('Connecting…');
+  useEffect(() => { setDemotedToViewer(false); setStageNotice(''); }, [connection?.token]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [camera, setCamera] = useState(publisherMode);
@@ -110,6 +116,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [guestStatus, setGuestStatus] = useState('none');
   const [guestApproved, setGuestApproved] = useState(false);
   const [reports, setReports] = useState([]);
+  const [participants, setParticipants] = useState([]);
   const [panel, setPanel] = useState('');
 
   useEffect(() => {
@@ -164,14 +171,24 @@ export default function LiveStreamScreen({ route, navigation }) {
 
     room.on(RoomEvent.TrackSubscribed, onSubscribed);
     room.on(RoomEvent.TrackUnsubscribed, onUnsubscribed);
+    room.on(RoomEvent.ParticipantAttributesChanged, () => setRemoteVideoTracks((current) => [...current]));
     room.on(RoomEvent.LocalTrackPublished, onLocalPublished);
+    room.on(RoomEvent.ParticipantPermissionsChanged, (_previousPermissions, participant) => {
+      if (participant.identity === room.localParticipant.identity && participant.permissions?.canPublish === false) {
+        setDemotedToViewer(true);
+        setCamera(false);
+        setMic(false);
+        setStageNotice('The creator moved you to the audience. You can keep watching the LIVE.');
+        setStatus('Watching as viewer');
+      }
+    });
     room.on(RoomEvent.AudioPlaybackStatusChanged, () => active && setAudioBlocked(!room.canPlaybackAudio));
     room.on(RoomEvent.Disconnected, () => active && setStatus('Disconnected'));
     (async () => {
       try {
         await room.connect(connection.livekitUrl, connection.token);
         if (!active) return;
-        if (publisherMode) {
+        if (publisherModeRef.current) {
           setStatus('Starting camera and microphone…');
           await room.localParticipant.enableCameraAndMicrophone();
           if (!active) return;
@@ -198,7 +215,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       setRemoteAudioParticipants([]);
       roomRef.current = null;
     };
-  }, [stream?.id, connection?.livekitUrl, connection?.token, creatorMode, publisherMode]);
+  }, [stream?.id, connection?.livekitUrl, connection?.token, creatorMode]);
 
   const refreshComments = useCallback(async () => {
     if (!stream?.id) return;
@@ -288,6 +305,8 @@ export default function LiveStreamScreen({ route, navigation }) {
     try {
       const next = await backendFetch(`/live/${stream.id}/join`, { method: 'POST' });
       if (next?.role !== 'guest' || !next?.canPublish) throw new Error('Guest access has not been approved.');
+      setDemotedToViewer(false);
+      setStageNotice('');
       navigation.setParams({ connection: next, creatorMode: false });
     } catch (err) { setError(err?.message || 'Could not join as guest.'); }
   };
@@ -309,6 +328,43 @@ export default function LiveStreamScreen({ route, navigation }) {
     } catch (err) { setError(err?.message || 'Could not update report.'); }
   };
 
+  const loadParticipants = async () => {
+    try {
+      const result = await backendFetch(`/live/${stream.id}/participants`);
+      setParticipants(Array.isArray(result?.participants) ? result.participants : []);
+      setPanel(panel === 'stage' ? '' : 'stage');
+    } catch (err) { setError(err?.message || 'Could not load LIVE stage participants.'); }
+  };
+  const inviteGuest = async (userId) => {
+    try {
+      await backendFetch(`/live/${stream.id}/guests/invite`, { method: 'POST', body: JSON.stringify({ userId }) });
+      setParticipants((items) => items.map((item) => item.userId === userId ? { ...item, guestInvited: true } : item));
+    } catch (err) { setError(err?.message || 'Could not invite guest.'); }
+  };
+  const muteGuest = async (userId, muted) => {
+    try {
+      const result = await backendFetch(`/live/${stream.id}/guests/${userId}/mute`, { method: 'PATCH', body: JSON.stringify({ muted }) });
+      setParticipants((items) => items.map((item) => item.userId === userId ? { ...item, microphoneMuted: result.microphoneMuted } : item));
+    } catch (err) { setError(err?.message || 'Could not update guest microphone.'); }
+  };
+  const removeGuest = async (userId) => {
+    const guest = participants.find((item) => item.userId === userId);
+    if (typeof window !== 'undefined' && !window.confirm(`Remove ${guest?.name || 'this guest'} from the LIVE stage?`)) return;
+    try {
+      await backendFetch(`/live/${stream.id}/guests/${userId}`, { method: 'DELETE' });
+      await loadParticipants();
+    } catch (err) { setError(err?.message || 'Could not remove guest.'); }
+  };
+
+  const spotlightGuest = async (userId, spotlighted) => {
+    try {
+      await backendFetch(`/live/${stream.id}/guests/${userId}/spotlight`, {
+        method: 'PATCH', body: JSON.stringify({ spotlighted }),
+      });
+      setParticipants((items) => items.map((item) => ({ ...item, spotlighted: spotlighted && item.userId === userId })));
+    } catch (err) { setError(err?.message || 'Could not update LIVE spotlight.'); }
+  };
+
   if (!stream || !connection) return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}><Text style={[typography.body, { color: colors.textPrimary }]}>This LIVE room is unavailable.</Text><Action colors={colors} label="Go back" onPress={() => navigation.goBack()} /></SafeAreaView>;
 
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -318,6 +374,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       <Text style={[typography.caption, { color: colors.textSecondary }]}>{status}</Text>
     </View>
     {!!error && <Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger, paddingHorizontal: 14, paddingBottom: 8 }]}>{error}</Text>}
+    {!!stageNotice && <Text accessibilityRole="status" style={[typography.caption, { color: colors.accent, paddingHorizontal: 14, paddingBottom: 8 }]}>{stageNotice}</Text>}
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 20 }}>
       <View style={{ minHeight: 220, marginHorizontal: 12, borderRadius: 18, overflow: 'hidden', backgroundColor: '#050509', position: 'relative' }}>
         {publisherMode && <View ref={localRef} collapsable={false} style={{ width: '100%', minHeight: 220 }} />}
@@ -330,7 +387,7 @@ export default function LiveStreamScreen({ route, navigation }) {
         )}
         {!!remoteVideoTracks.length && (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'stretch', gap: 8, padding: 8 }}>
-            {remoteVideoTracks.map((track) => <RemoteVideoTile key={track.sid} track={track} colors={colors} />)}
+            {[...remoteVideoTracks].sort((a, b) => Number(b.participant.attributes?.zannychat_spotlight === 'true') - Number(a.participant.attributes?.zannychat_spotlight === 'true')).map((track) => <RemoteVideoTile key={track.sid} track={track} colors={colors} spotlight={track.participant.attributes?.zannychat_spotlight === 'true'} />)}
           </View>
         )}
         {(audioOnlyParticipants.length > 0 || localAudioOnly) && (
@@ -353,7 +410,19 @@ export default function LiveStreamScreen({ route, navigation }) {
         <Action colors={colors} label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={toggleCamera} />
         <Action colors={colors} label={mic ? 'Mute mic' : 'Unmute mic'} onPress={toggleMic} />
       </View>}
+      {creatorMode && stream.allow_guests && <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}><Action colors={colors} label={panel === 'stage' ? 'Close stage manager' : 'Manage LIVE stage'} onPress={loadParticipants} /></View>}
       {moderatorMode && <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}><Action colors={colors} label={panel === 'reports' ? 'Close safety reports' : 'Safety reports'} onPress={loadReports} /></View>}
+      {panel === 'stage' && creatorMode && <View style={{ margin: 12, padding: 12, borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+        <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 8 }}>LIVE stage manager · up to 5 guests</Text>
+        {participants.map((item) => <View key={item.userId} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border }}>
+          <Text style={{ color: colors.textPrimary, flex: 1, minWidth: 100 }}>{item.name}{item.stage ? ' · On stage' : !item.joined ? ' · offline' : ''}</Text>
+          {stream.allow_guests && item.joined && item.role === 'viewer' && <Action colors={colors} label={item.guestInvited ? 'Invited' : 'Invite to stage'} disabled={busy || item.guestInvited} onPress={() => inviteGuest(item.userId)} />}
+          {item.stage && <Action colors={colors} label={item.microphoneMuted ? 'Unmute mic' : 'Mute mic'} onPress={() => muteGuest(item.userId, !item.microphoneMuted)} />}
+          {item.stage && <Action colors={colors} label={item.spotlighted ? 'Unspotlight' : 'Spotlight'} onPress={() => spotlightGuest(item.userId, !item.spotlighted)} />}
+          {item.stage && <Action colors={colors} label="Remove guest" danger onPress={() => removeGuest(item.userId)} />}
+        </View>)}
+        {!participants.length && <Text style={{ color: colors.textSecondary }}>No connected viewers or guests yet.</Text>}
+      </View>}
       {panel === 'reports' && <View style={{ margin: 12, padding: 12, borderRadius: 14, backgroundColor: colors.surface }}>
         <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 8 }}>LIVE safety reports</Text>
         {reports.map((item) => <View key={item.id} style={{ paddingVertical: 7 }}>

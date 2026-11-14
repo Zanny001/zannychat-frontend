@@ -13,7 +13,7 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import { Ionicons } from '@expo/vector-icons';
 import { AudioSession, LiveKitRoom, VideoTrack, isTrackReference, useRoomContext, useTracks } from '@livekit/react-native';
-import { Track } from 'livekit-client';
+import { RoomEvent, Track } from 'livekit-client';
 import { backendFetch } from '../services/backendClient';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
@@ -53,12 +53,34 @@ function FloatingReaction({ item, index, onComplete }) {
   );
 }
 
-function LiveMedia({ creatorMode, publisherMode, cameraEnabled, microphoneEnabled, onToggleCamera, onToggleMicrophone, moderatorMode, canManageGuests, canRequestGuest, guestApproved, guestRequestStatus, guestRequests, showGuestRequests, title, comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, floatingReactions, onRemoveFloatingReaction, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, onRequestGuest, onJoinGuest, onToggleGuestRequests, onReviewGuestRequest, busy }) {
+function LiveMedia({ creatorMode, publisherMode, cameraEnabled, microphoneEnabled, onToggleCamera, onToggleMicrophone, moderatorMode, canManageGuests, canRequestGuest, guestApproved, guestRequestStatus, guestRequests, showGuestRequests, title, comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, floatingReactions, onRemoveFloatingReaction, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, onInviteGuest, onMuteGuest, onRemoveGuest, onSpotlightGuest, onDemoteToViewer, onRequestGuest, onJoinGuest, onToggleGuestRequests, onReviewGuestRequest, busy }) {
   const { colors, typography } = useTheme();
   const room = useRoomContext();
+  const [spotlightUserId, setSpotlightUserId] = useState(() => (
+    [...room.remoteParticipants.values()].find((participant) => participant.attributes?.zannychat_spotlight === 'true')?.identity || null
+  ));
+  useEffect(() => {
+    const onParticipantAttributesChanged = (_changed, participant) => {
+      const active = participant.attributes?.zannychat_spotlight === 'true';
+      setSpotlightUserId((current) => active ? participant.identity : (current === participant.identity ? null : current));
+    };
+    room.on(RoomEvent.ParticipantAttributesChanged, onParticipantAttributesChanged);
+    return () => room.off(RoomEvent.ParticipantAttributesChanged, onParticipantAttributesChanged);
+  }, [room]);
+  useEffect(() => {
+    const onParticipantPermissionsChanged = (_previousPermissions, participant) => {
+      if (participant.identity === room.localParticipant.identity && participant.permissions?.canPublish === false) {
+        onDemoteToViewer?.();
+      }
+    };
+    room.on(RoomEvent.ParticipantPermissionsChanged, onParticipantPermissionsChanged);
+    return () => room.off(RoomEvent.ParticipantPermissionsChanged, onParticipantPermissionsChanged);
+  }, [room, onDemoteToViewer]);
   const tracks = useTracks([Track.Source.Camera]);
   const audioTracks = useTracks([Track.Source.Microphone]);
   const videos = tracks.filter(isTrackReference);
+  const spotlightVideo = videos.find((track) => track.participant.identity === spotlightUserId);
+  const stageGridVideos = spotlightVideo ? videos.filter((track) => track.participant.identity !== spotlightUserId) : videos;
   const videoIdentities = new Set(videos.map((track) => track.participant.identity));
   const audioOnlyParticipants = audioTracks.filter(isTrackReference)
     .filter((track) => !track.participant.isLocal && !videoIdentities.has(track.participant.identity));
@@ -93,16 +115,27 @@ function LiveMedia({ creatorMode, publisherMode, cameraEnabled, microphoneEnable
           <TouchableOpacity onPress={onEnd} accessibilityRole="button" accessibilityLabel={creatorMode ? 'End LIVE stream' : 'Leave LIVE stream'} style={{ backgroundColor: hexToRgba(colors.surface, 0.82), borderWidth: 1, borderColor: colors.border, padding: 8, borderRadius: 12 }}><Ionicons name="close" size={20} color={colors.textPrimary} /></TouchableOpacity>
         </View>
         <View style={{ flex: 1, justifyContent: 'center', position: 'relative' }}>
-          {videos.length ? (
+          {spotlightVideo && (
+            <View style={{ marginHorizontal: 6, marginBottom: 8, borderRadius: 20, overflow: 'hidden', borderWidth: 2, borderColor: colors.accent, backgroundColor: '#211F2B' }}>
+              <VideoTrack trackRef={spotlightVideo} style={{ height: 360, borderRadius: 18 }} />
+              <View style={{ position: 'absolute', top: 10, left: 10, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, backgroundColor: colors.accent }}>
+                <Text style={{ color: colors.onAccent, fontWeight: '900', fontSize: 10, letterSpacing: 1 }}>SPOTLIGHT</Text>
+              </View>
+              <View style={{ position: 'absolute', left: 10, bottom: 10, maxWidth: '85%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.72)' }}>
+                <Text numberOfLines={1} style={[typography.caption, { color: '#FFFFFF' }]}>{spotlightVideo.participant.name || spotlightVideo.participant.identity}</Text>
+              </View>
+            </View>
+          )}
+          {stageGridVideos.length ? (
             <FlatList
-              key={videos.length === 1 ? 'live-stage-single' : 'live-stage-grid'}
+              key={stageGridVideos.length === 1 ? 'live-stage-single' : 'live-stage-grid'}
               keyboardShouldPersistTaps="handled"
-              data={videos}
-              numColumns={videos.length === 1 ? 1 : 2}
+              data={stageGridVideos}
+              numColumns={stageGridVideos.length === 1 ? 1 : 2}
               keyExtractor={(item) => item.participant.identity}
               renderItem={({ item }) => (
                 <View style={{ flex: 1, minWidth: 0, margin: 4, borderRadius: 18, overflow: 'hidden', backgroundColor: '#211F2B' }}>
-                  <VideoTrack trackRef={item} style={{ height: videos.length === 1 ? 340 : 220, borderRadius: 18 }} />
+                  <VideoTrack trackRef={item} style={{ height: stageGridVideos.length === 1 ? 340 : 220, borderRadius: 18 }} />
                   <View style={{ position: 'absolute', left: 10, bottom: 10, maxWidth: '85%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.62)' }}>
                     <Text numberOfLines={1} style={[typography.caption, { color: '#FFFFFF' }]}>{item.participant.name || item.participant.identity}</Text>
                   </View>
@@ -166,12 +199,24 @@ function LiveMedia({ creatorMode, publisherMode, cameraEnabled, microphoneEnable
         </View>
         {showParticipants && creatorMode && (
           <View style={{ maxHeight: 190, marginHorizontal: 14, marginBottom: 8, padding: 10, borderRadius: 14, backgroundColor: hexToRgba(colors.surface, 0.94), borderWidth: 1, borderColor: colors.border }}>
-            <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: 6 }]}>Manage LIVE moderators</Text>
+            <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: 6 }]}>Manage LIVE stage & moderators · up to 5 guests</Text>
             <FlatList keyboardShouldPersistTaps="handled" data={participants} keyExtractor={(item) => item.userId} renderItem={({ item }) => (
-              <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 7, borderTopWidth: 1, borderTopColor: colors.border }}>
-                <Text numberOfLines={1} style={[typography.small, { color: colors.textPrimary, flex: 1 }]}>{item.name}{!item.joined ? ' · offline' : ''}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, paddingVertical: 7, borderTopWidth: 1, borderTopColor: colors.border }}>
+                <Text numberOfLines={1} style={[typography.small, { color: colors.textPrimary, flex: 1, minWidth: 90 }]}>{item.name}{item.stage ? ' · On stage' : !item.joined ? ' · offline' : ''}</Text>
+                {canManageGuests && item.joined && item.role === 'viewer' && <TouchableOpacity onPress={() => onInviteGuest(item.userId)} disabled={busy || item.guestInvited} accessibilityRole="button" accessibilityLabel={item.guestInvited ? 'Guest already invited to stage' : 'Invite viewer to LIVE stage'}>
+                  <Text style={{ color: item.guestInvited ? colors.textSecondary : colors.accent, fontWeight: '800', fontSize: 10 }}>{item.guestInvited ? 'Invited' : 'Invite to stage'}</Text>
+                </TouchableOpacity>}
+                {item.stage && <TouchableOpacity onPress={() => onMuteGuest(item.userId, !item.microphoneMuted)} disabled={busy} accessibilityRole="button" accessibilityLabel={item.microphoneMuted ? 'Unmute guest microphone' : 'Mute guest microphone'}>
+                  <Text style={{ color: colors.accent, fontWeight: '800', fontSize: 10 }}>{item.microphoneMuted ? 'Unmute mic' : 'Mute mic'}</Text>
+                </TouchableOpacity>}
+                {item.stage && <TouchableOpacity onPress={() => onSpotlightGuest(item.userId, !item.spotlighted)} disabled={busy} accessibilityRole="button" accessibilityLabel={item.spotlighted ? 'Remove guest spotlight' : 'Spotlight guest'}>
+                  <Text style={{ color: colors.accent, fontWeight: '800', fontSize: 10 }}>{item.spotlighted ? 'Unspotlight' : 'Spotlight'}</Text>
+                </TouchableOpacity>}
+                {item.stage && <TouchableOpacity onPress={() => onRemoveGuest(item.userId)} disabled={busy} accessibilityRole="button" accessibilityLabel="Remove guest from LIVE stage">
+                  <Text style={{ color: colors.danger, fontWeight: '800', fontSize: 10 }}>Remove guest</Text>
+                </TouchableOpacity>}
                 {(item.moderator || item.joined) && <TouchableOpacity onPress={() => onSetModerator(item.userId, !item.moderator)} accessibilityRole="button" accessibilityLabel={item.moderator ? `Remove ${item.name} as LIVE moderator` : `Make ${item.name} a LIVE moderator`}>
-                  <Text style={{ color: item.moderator ? colors.danger : colors.accent, fontWeight: '800', fontSize: 11 }}>{item.moderator ? 'Remove moderator' : 'Make moderator'}</Text>
+                  <Text style={{ color: item.moderator ? colors.danger : colors.accent, fontWeight: '800', fontSize: 10 }}>{item.moderator ? 'Remove moderator' : 'Make moderator'}</Text>
                 </TouchableOpacity>}
               </View>
             )} ListEmptyComponent={<Text style={[typography.caption, { color: colors.textSecondary }]}>No viewers are currently connected.</Text>} />
@@ -230,7 +275,9 @@ export default function LiveStreamScreen({ route, navigation }) {
   const creatorMode = Boolean(route.params?.creatorMode || connection?.role === 'creator');
   const moderatorMode = Boolean(creatorMode || connection?.canModerate);
   const stream = connection?.stream;
-  const publisherMode = Boolean(creatorMode || connection?.role === 'guest');
+  const [demotedToViewer, setDemotedToViewer] = useState(false);
+  const [stageNotice, setStageNotice] = useState('');
+  const publisherMode = Boolean(creatorMode || (connection?.role === 'guest' && !demotedToViewer));
   const canRequestGuest = Boolean(!publisherMode && stream?.allow_guests);
   const [comments, setComments] = useState([]);
   const [reports, setReports] = useState([]);
@@ -244,6 +291,13 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [floatingReactions, setFloatingReactions] = useState([]);
   const seenReactionIds = useRef(new Set());
   const [cameraEnabled, setCameraEnabled] = useState(publisherMode);
+  useEffect(() => { setDemotedToViewer(false); setStageNotice(''); }, [connection?.token]);
+  const handleDemotedToViewer = useCallback(() => {
+    setDemotedToViewer(true);
+    setCameraEnabled(false);
+    setMicrophoneEnabled(false);
+    setStageNotice('The creator moved you to the audience. You can keep watching the LIVE.');
+  }, []);
   const [microphoneEnabled, setMicrophoneEnabled] = useState(publisherMode);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
@@ -406,6 +460,8 @@ export default function LiveStreamScreen({ route, navigation }) {
       if (nextConnection?.role !== 'guest' || !nextConnection?.canPublish) {
         throw new Error('Guest access has not been approved yet.');
       }
+      setDemotedToViewer(false);
+      setStageNotice('');
       navigation.setParams({ connection: nextConnection, creatorMode: false });
       setGuestApproved(false);
       setGuestRequestStatus('accepted');
@@ -433,13 +489,56 @@ export default function LiveStreamScreen({ route, navigation }) {
     } catch (e) { Alert.alert('Could not update moderator', e?.message || 'Please try again.'); }
   };
 
+  const inviteGuest = async (userId) => {
+    try {
+      await backendFetch(`/live/${stream.id}/guests/invite`, {
+        method: 'POST', body: JSON.stringify({ userId }),
+      });
+      setParticipants((current) => current.map((item) => item.userId === userId ? { ...item, guestInvited: true } : item));
+      Alert.alert('Stage invitation sent', 'The viewer can now join as a guest.');
+    } catch (e) { Alert.alert('Could not invite guest', e?.message || 'Please try again.'); }
+  };
+
+  const muteGuest = async (userId, muted) => {
+    try {
+      const result = await backendFetch(`/live/${stream.id}/guests/${userId}/mute`, {
+        method: 'PATCH', body: JSON.stringify({ muted }),
+      });
+      setParticipants((current) => current.map((item) => item.userId === userId
+        ? { ...item, microphoneMuted: result.microphoneMuted } : item));
+    } catch (e) { Alert.alert('Could not update guest microphone', e?.message || 'Check LiveKit remote-unmute settings and try again.'); }
+  };
+
+  const removeGuest = (userId) => {
+    const guest = participants.find((item) => item.userId === userId);
+    Alert.alert('Remove guest from stage?', `${guest?.name || 'This guest'} will lose stage publishing access and remain watching as a viewer.`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove guest', style: 'destructive', onPress: async () => {
+        try {
+          await backendFetch(`/live/${stream.id}/guests/${userId}`, { method: 'DELETE' });
+          await loadParticipants();
+        } catch (e) { Alert.alert('Could not remove guest', e?.message || 'Please try again.'); }
+      } },
+    ]);
+  };
+
+  const spotlightGuest = async (userId, spotlighted) => {
+    try {
+      await backendFetch(`/live/${stream.id}/guests/${userId}/spotlight`, {
+        method: 'PATCH', body: JSON.stringify({ spotlighted }),
+      });
+      setParticipants((current) => current.map((item) => ({ ...item, spotlighted: spotlighted && item.userId === userId })));
+    } catch (e) { Alert.alert('Could not update spotlight', e?.message || 'Please try again.'); }
+  };
+
   if (!connection || !stream) return <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}><Text style={{ color: colors.textPrimary }}>This LIVE room is unavailable.</Text></SafeAreaView>;
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#100F18' }}>
       <StatusBar barStyle="light-content" />
       {error ? <Text accessibilityRole="alert" style={{ color: colors.danger, paddingHorizontal: 12, paddingTop: 4 }}>{error}</Text> : null}
+      {stageNotice ? <Text accessibilityRole="status" style={{ color: colors.accent, paddingHorizontal: 12, paddingTop: 4 }}>{stageNotice}</Text> : null}
       <LiveKitRoom key={connection.token} serverUrl={connection.livekitUrl} token={connection.token} connect={true} audio={publisherMode} video={publisherMode} options={{ adaptiveStream: true, dynacast: true }}>
-        <LiveMedia creatorMode={creatorMode} publisherMode={publisherMode} cameraEnabled={cameraEnabled} microphoneEnabled={microphoneEnabled} onToggleCamera={toggleCamera} onToggleMicrophone={toggleMicrophone} moderatorMode={moderatorMode} canManageGuests={Boolean(stream.allow_guests)} canRequestGuest={canRequestGuest} guestRequests={guestRequests} showGuestRequests={showGuestRequests} title={stream.title} comments={comments} reports={reports} showReports={showReports} participants={participants} showParticipants={showParticipants} draft={draft} setDraft={setDraft} onComment={sendComment} onReact={react} floatingReactions={floatingReactions} onRemoveFloatingReaction={removeFloatingReaction} onReport={report} onHide={hideComment} onEnd={leave} onRequestGuest={requestGuest} guestApproved={guestApproved} guestRequestStatus={guestRequestStatus} onJoinGuest={joinAsGuest} onToggleGuestRequests={() => { setShowReports(false); setShowParticipants(false); showGuestRequests ? setShowGuestRequests(false) : loadGuestRequests(); }} onReviewGuestRequest={reviewGuestRequest} onToggleReports={() => { setShowParticipants(false); setShowGuestRequests(false); showReports ? setShowReports(false) : loadReports(); }} onReviewReport={reviewReport} onToggleParticipants={() => { setShowReports(false); setShowGuestRequests(false); showParticipants ? setShowParticipants(false) : loadParticipants(); }} onSetModerator={setModerator} busy={busy} />
+        <LiveMedia creatorMode={creatorMode} publisherMode={publisherMode} cameraEnabled={cameraEnabled} microphoneEnabled={microphoneEnabled} onToggleCamera={toggleCamera} onToggleMicrophone={toggleMicrophone} moderatorMode={moderatorMode} canManageGuests={Boolean(stream.allow_guests)} canRequestGuest={canRequestGuest} guestRequests={guestRequests} showGuestRequests={showGuestRequests} title={stream.title} comments={comments} reports={reports} showReports={showReports} participants={participants} showParticipants={showParticipants} draft={draft} setDraft={setDraft} onComment={sendComment} onReact={react} floatingReactions={floatingReactions} onRemoveFloatingReaction={removeFloatingReaction} onReport={report} onHide={hideComment} onEnd={leave} onRequestGuest={requestGuest} guestApproved={guestApproved} guestRequestStatus={guestRequestStatus} onJoinGuest={joinAsGuest} onToggleGuestRequests={() => { setShowReports(false); setShowParticipants(false); showGuestRequests ? setShowGuestRequests(false) : loadGuestRequests(); }} onReviewGuestRequest={reviewGuestRequest} onToggleReports={() => { setShowParticipants(false); setShowGuestRequests(false); showReports ? setShowReports(false) : loadReports(); }} onReviewReport={reviewReport} onToggleParticipants={() => { setShowReports(false); setShowGuestRequests(false); showParticipants ? setShowParticipants(false) : loadParticipants(); }} onSetModerator={setModerator} onInviteGuest={inviteGuest} onMuteGuest={muteGuest} onRemoveGuest={removeGuest} onSpotlightGuest={spotlightGuest} onDemoteToViewer={handleDemotedToViewer} busy={busy} />
       </LiveKitRoom>
       {busy && <View style={{ position: 'absolute', top: '50%', alignSelf: 'center' }}><ActivityIndicator color={colors.accent} /></View>}
     </SafeAreaView>
