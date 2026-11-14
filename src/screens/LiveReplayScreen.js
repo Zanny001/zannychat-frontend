@@ -75,7 +75,6 @@ export default function LiveReplayScreen({ route, navigation }) {
             style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 20, overflow: 'hidden', backgroundColor: '#08080C' }}
             nativeControls
             contentFit="contain"
-            allowsPictureInPicture
           />
         ) : (
           <View style={{ alignItems: 'center', justifyContent: 'center', padding: 28, minHeight: 220, borderRadius: 22, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
