@@ -1,5 +1,16 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  interpolate,
+  ReduceMotion,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { Ionicons } from '@expo/vector-icons';
 import { AudioSession, LiveKitRoom, VideoTrack, isTrackReference, useTracks } from '@livekit/react-native';
 import { Track } from 'livekit-client';
@@ -10,17 +21,33 @@ import { hexToRgba } from '../utils/color';
 const LIVE_REACTION_EMOJI = Object.freeze({ heart: '❤️', clap: '👏', laugh: '😂', wow: '😮', fire: '🔥' });
 
 function FloatingReaction({ item, index, onComplete }) {
-  const progress = useRef(new Animated.Value(0)).current;
+  const progress = useSharedValue(0);
+  const reducedMotion = useReducedMotion();
+
   useEffect(() => {
-    const animation = Animated.timing(progress, { toValue: 1, duration: 1800, useNativeDriver: true });
-    animation.start(({ finished }) => { if (finished) onComplete(item.id); });
-    return () => animation.stop();
-  }, [item.id, onComplete, progress]);
-  const translateY = progress.interpolate({ inputRange: [0, 1], outputRange: [0, -210] });
-  const opacity = progress.interpolate({ inputRange: [0, 0.15, 0.8, 1], outputRange: [0, 1, 1, 0] });
-  const scale = progress.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0.65, 1.2, 1] });
+    progress.set(withTiming(1, {
+      duration: reducedMotion ? 250 : 1800,
+      easing: Easing.linear,
+      reduceMotion: ReduceMotion.System,
+    }, (finished) => {
+      if (finished) scheduleOnRN(onComplete, item.id);
+    }));
+    return () => cancelAnimation(progress);
+  }, [item.id, onComplete, progress, reducedMotion]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    const value = progress.get();
+    return {
+      opacity: interpolate(value, [0, 0.15, 0.8, 1], [0, 1, 1, 0]),
+      transform: [
+        { translateY: interpolate(value, [0, 1], [0, reducedMotion ? 0 : -210]) },
+        { scale: interpolate(value, [0, 0.2, 1], [reducedMotion ? 0.96 : 0.65, 1.2, 1]) },
+      ],
+    };
+  });
+
   return (
-    <Animated.Text pointerEvents="none" style={{ position: 'absolute', bottom: 26, left: (15 + (index * 17) % 70) + '%', opacity, transform: [{ translateY }, { scale }], fontSize: 32 }}>
+    <Animated.Text pointerEvents="none" style={[{ position: 'absolute', bottom: 26, left: (15 + (index * 17) % 70) + '%', fontSize: 32 }, animatedStyle]}>
       {LIVE_REACTION_EMOJI[item.reaction] || LIVE_REACTION_EMOJI.heart}
     </Animated.Text>
   );
@@ -64,14 +91,14 @@ function LiveMedia({ creatorMode, publisherMode, cameraEnabled, microphoneEnable
             />
           ) : (
             <View style={{ alignItems: 'center', padding: 24 }}>
-              {audioOnlyParticipants.length > 0
+              {(audioOnlyParticipants.length > 0 || hasLocalAudioOnly)
                 ? <Ionicons name="mic" size={44} color={colors.accent} />
                 : <Ionicons name="videocam-outline" size={44} color={colors.accent} />}
               <Text style={[typography.heading, { color: '#FFFFFF', marginTop: 14 }]}>
-                {audioOnlyParticipants.length > 0 ? 'LIVE audio is on' : creatorMode ? 'Your LIVE is starting' : 'Waiting for the creator video'}
+                {audioOnlyParticipants.length > 0 || hasLocalAudioOnly ? 'LIVE audio is on' : creatorMode ? 'Your LIVE is starting' : 'Waiting for the creator video'}
               </Text>
               <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: 8 }]}>
-                {audioOnlyParticipants.length > 0 ? 'The stage is continuing with microphones while cameras are off.' : 'Keep this screen open while you are live.'}
+                {audioOnlyParticipants.length > 0 || hasLocalAudioOnly ? 'The stage is continuing with microphones while cameras are off.' : 'Keep this screen open while you are live.'}
               </Text>
               {audioOnlyParticipants.map((track) => (
                 <View key={track.participant.identity} style={{ marginTop: 10, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 14, backgroundColor: hexToRgba(colors.surface, 0.88), borderWidth: 1, borderColor: colors.border }}>
@@ -80,13 +107,14 @@ function LiveMedia({ creatorMode, publisherMode, cameraEnabled, microphoneEnable
               ))}
             </View>
           )}
-          {videos.length > 0 && audioOnlyParticipants.length > 0 && (
+          {videos.length > 0 && (audioOnlyParticipants.length > 0 || hasLocalAudioOnly) && (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, paddingVertical: 8 }}>
               {audioOnlyParticipants.map((track) => (
                 <View key={track.participant.identity} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: hexToRgba(colors.surface, 0.88), borderWidth: 1, borderColor: colors.border }}>
                   <Text style={[typography.caption, { color: '#FFFFFF' }]}>{track.participant.name || track.participant.identity} · Audio only</Text>
                 </View>
               ))}
+              {hasLocalAudioOnly && <View style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: hexToRgba(colors.surface, 0.88), borderWidth: 1, borderColor: colors.border }}><Text style={[typography.caption, { color: '#FFFFFF' }]}>You · Audio only</Text></View>}
             </View>
           )}
           <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
