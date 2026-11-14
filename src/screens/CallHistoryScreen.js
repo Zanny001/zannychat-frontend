@@ -54,6 +54,22 @@ export default function CallHistoryScreen({ navigation }) {
     ]);
   };
 
+  const redialCall = (item, peerId, callType) => {
+    if (item.isGroupCall) {
+      navigation.navigate('GroupCall', {
+        conversationId: item.conversation_id,
+        conversationName: item.participantName || 'Group',
+        callType,
+      });
+      return;
+    }
+    navigation.navigate('NewChat', {
+      callType,
+      directoryFilter: 'all',
+      targetUserId: peerId,
+    });
+  };
+
   const actions = [
     { title: 'Audio', subtitle: 'Start a voice call', icon: 'call-outline', accent: colors.primary, action: () => navigation.navigate('NewChat', { callType: 'audio', directoryFilter: 'all' }) },
     { title: 'Video', subtitle: 'Face to face', icon: 'videocam-outline', accent: colors.accent || colors.primary, action: () => navigation.navigate('NewChat', { callType: 'video', directoryFilter: 'all' }) },
@@ -148,20 +164,12 @@ export default function CallHistoryScreen({ navigation }) {
                     <Text style={[typography.small, { color: colors.textSecondary }]} numberOfLines={1}>{formatDate(item.created_at)}{item.durationSeconds ? ` · ${formatDuration(item.durationSeconds)}` : ''}</Text>
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    {!item.isGroupCall ? (
-                      <>
-                        <TouchableOpacity onPress={() => navigation.navigate('NewChat', { callType: 'audio', directoryFilter: 'all', targetUserId: userId })} accessibilityRole="button" accessibilityLabel={'Call ' + (item.participantName || 'contact') + ' again'} style={{ width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.13) }}>
-                          <Ionicons name="call" size={17} color={colors.primary} />
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => navigation.navigate('NewChat', { callType: 'video', directoryFilter: 'all', targetUserId: userId })} accessibilityRole="button" accessibilityLabel={'Video call ' + (item.participantName || 'contact') + ' again'} style={{ width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.accent || colors.primary, 0.13) }}>
-                          <Ionicons name="videocam" size={17} color={colors.accent || colors.primary} />
-                        </TouchableOpacity>
-                      </>
-                    ) : (
-                      <View style={{ width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(callAccent, 0.13) }}>
-                        <Ionicons name="people" size={17} color={callAccent} />
-                      </View>
-                    )}
+                    <TouchableOpacity onPress={() => redialCall(item, userId, 'audio')} accessibilityRole="button" accessibilityLabel={'Call ' + (item.participantName || 'contact') + ' again'} style={{ width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.13) }}>
+                      <Ionicons name="call" size={17} color={colors.primary} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => redialCall(item, userId, 'video')} accessibilityRole="button" accessibilityLabel={'Video call ' + (item.participantName || 'contact') + ' again'} style={{ width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.accent || colors.primary, 0.13) }}>
+                      <Ionicons name="videocam" size={17} color={colors.accent || colors.primary} />
+                    </TouchableOpacity>
                     <TouchableOpacity onPress={() => removeCall(item)} disabled={deletingCallId === item.id} accessibilityRole="button" accessibilityLabel={'Delete call record with ' + (item.participantName || 'contact')} accessibilityState={{ disabled: deletingCallId === item.id }} style={{ width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.danger, 0.12) }}>
                       {deletingCallId === item.id ? <ActivityIndicator size="small" color={colors.danger} /> : <Ionicons name="trash-outline" size={17} color={colors.danger} />}
                     </TouchableOpacity>
