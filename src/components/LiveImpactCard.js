@@ -16,12 +16,12 @@ const REACTION_COLLECTION = [
 ];
 
 const IMPACT_MILESTONES = [
-  { threshold: 10, label: 'First Spark' },
-  { threshold: 50, label: 'Community Favorite' },
-  { threshold: 250, label: 'Stage Star' },
-  { threshold: 1000, label: 'Iconic Voice' },
-  { threshold: 5000, label: 'Legendary Presence' },
-  { threshold: 10000, label: 'Hall of Fame' },
+  { id: 'first-spark', threshold: 10, label: 'First Spark' },
+  { id: 'community-favorite', threshold: 50, label: 'Community Favorite' },
+  { id: 'stage-star', threshold: 250, label: 'Stage Star' },
+  { id: 'iconic-voice', threshold: 1000, label: 'Iconic Voice' },
+  { id: 'legendary-presence', threshold: 5000, label: 'Legendary Presence' },
+  { id: 'hall-of-fame', threshold: 10000, label: 'Hall of Fame' },
 ];
 
 function Stat({ label, value, color }) {
@@ -42,6 +42,7 @@ export default function LiveImpactCard({ impact, showEmpty = false }) {
   const uniqueSupporters = Number(impact.uniqueSupporters || 0);
   if (!showEmpty && impactScore === 0 && totalReactions === 0 && uniqueSupporters === 0) return null;
   const badges = Array.isArray(impact.badges) ? impact.badges : [];
+  const earnedBadgeIds = new Set(badges.map((badge) => badge.id));
   const reactionBreakdown = Array.isArray(impact.reactionBreakdown) ? impact.reactionBreakdown : [];
   const reactionCounts = new Map(reactionBreakdown.map((item) => [item.reaction, Number(item.count || 0)]));
   const nextMilestone = impact.nextMilestone || IMPACT_MILESTONES.find((milestone) => impactScore < milestone.threshold) || null;
@@ -100,19 +101,19 @@ export default function LiveImpactCard({ impact, showEmpty = false }) {
         </Text>
       </View>
       <View style={{ marginTop: spacing.md }}>
-        <Text style={[typography.caption, { color: mood.thread, fontWeight: '900', letterSpacing: 1, marginBottom: 8 }]}>BADGE COLLECTION · {badges.length}</Text>
-      {badges.length > 0 ? (
+        <Text style={[typography.caption, { color: mood.thread, fontWeight: '900', letterSpacing: 1, marginBottom: 8 }]}>BADGE COLLECTION · {badges.length}/{IMPACT_MILESTONES.length}</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
-          {badges.map((badge) => (
-            <View key={badge.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 999, backgroundColor: hexToRgba(mood.signal, 0.12), borderWidth: 1, borderColor: hexToRgba(mood.signal, 0.25) }}>
-              <Ionicons name="ribbon-outline" size={14} color={mood.signal} />
-              <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: '700' }]}>{badge.label}</Text>
-            </View>
-          ))}
+          {IMPACT_MILESTONES.map((badge) => {
+            const earned = earnedBadgeIds.has(badge.id) || impactScore >= badge.threshold;
+            return (
+              <View key={badge.id} accessible accessibilityLabel={`${badge.label}: ${earned ? 'earned' : 'locked'}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 999, backgroundColor: earned ? hexToRgba(mood.signal, 0.12) : colors.surfaceAlt, borderWidth: 1, borderColor: earned ? hexToRgba(mood.signal, 0.25) : colors.border }}>
+                <Ionicons name={earned ? 'ribbon-outline' : 'lock-closed-outline'} size={14} color={earned ? mood.signal : colors.textSecondary} />
+                <Text style={[typography.caption, { color: earned ? colors.textPrimary : colors.textSecondary, fontWeight: '700' }]}>{badge.label}</Text>
+              </View>
+            );
+          })}
         </View>
-      ) : showEmpty ? (
-        <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.md }]}>Go LIVE, welcome your community, and start earning your first Impact badge.</Text>
-      ) : null}
+        {showEmpty && badges.length === 0 && <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Go LIVE, welcome your community, and unlock your first Impact badge.</Text>}
       </View>
     </GlassCard>
   );
