@@ -49,7 +49,8 @@ test('native LIVE uses the React Native LiveKit SDK and toggles published tracks
 test('web LIVE renders each remote publisher in a labelled multi-participant stage grid', () => {
   assert.ok(web.includes('const [remoteVideoTracks, setRemoteVideoTracks] = useState([])'));
   assert.ok(web.includes('setRemoteVideoTracks((current) => current.some((item) => item.sid === track.sid)'));
-  assert.ok(web.includes('remoteVideoTracks.map((track) => <RemoteVideoTile'));
+  assert.ok(web.includes('[...remoteVideoTracks].sort('));
+  assert.ok(web.includes('<RemoteVideoTile key={track.sid}'));
   assert.ok(web.includes('track.participant.name || track.participant.identity'));
 });
 
