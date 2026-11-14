@@ -29,3 +29,7 @@ test('Answer notification action accepts the call once after loading its screen'
   assert.ok(incoming.includes('autoAnswerHandledRef.current = true'));
   assert.ok(incoming.includes("updateCallStatus(call.id, 'accepted')"));
 });
+
+test('replay-ready notification taps deduplicate by replay id', () => {
+  assert.ok(source.includes('data.replayId || liveStreamId'));
+});
