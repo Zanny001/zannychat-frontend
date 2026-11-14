@@ -40,6 +40,7 @@ export default function GroupCallScreenWeb({ route, navigation }) {
   const [errorText, setErrorText] = useState('');
   const [muted, setMuted] = useState(false);
   const [cameraOff, setCameraOff] = useState(callType !== 'video');
+  const [isVideo, setIsVideo] = useState(callType === 'video');
   const [remoteVideoTracks, setRemoteVideoTracks] = useState([]);
   const [participantIds, setParticipantIds] = useState([]);
   const [audioBlocked, setAudioBlocked] = useState(false);
@@ -52,7 +53,7 @@ export default function GroupCallScreenWeb({ route, navigation }) {
   const activeRef = useRef(false);
   const endedRef = useRef(false);
   const requestedVideo = callType === 'video';
-  const isVideo = (connection?.callType || callType) === 'video';
+  const isVideoMode = isVideo || (connection?.callType || callType) === 'video';
   const canInviteNow = canInvite && status === 'Connected';
 
   useEffect(() => {
@@ -188,6 +189,7 @@ export default function GroupCallScreenWeb({ route, navigation }) {
     try {
       await roomRef.current?.localParticipant.setCameraEnabled(!next);
       setCameraOff(next);
+      setIsVideo(!next);
     } catch (error) { setErrorText(error?.message || 'Could not change camera state.'); }
   }, [cameraOff]);
 
@@ -230,7 +232,7 @@ export default function GroupCallScreenWeb({ route, navigation }) {
 
       {errorText ? <Text style={[typography.small, styles.error, { color: colors.danger }]}>{errorText}</Text> : null}
 
-      {isVideo ? (
+      {(isVideoMode || localCameraTrack || remoteVideoTracksView.length > 0) ? (
         <ScrollView contentContainerStyle={styles.videoGrid}>
           {localCameraTrack && !cameraOff
             ? <MediaTile track={localCameraTrack} name="You" local colors={colors} />
@@ -259,7 +261,7 @@ export default function GroupCallScreenWeb({ route, navigation }) {
           <Ionicons name={muted ? 'mic-off' : 'mic'} size={21} color={muted ? colors.onPrimary : colors.textPrimary} />
           <Text style={[typography.small, { color: muted ? colors.onPrimary : colors.textPrimary }]}>{muted ? 'Unmute' : 'Mute'}</Text>
         </TouchableOpacity>
-        {isVideo ? (
+        {(isVideoMode || localCameraTrack || remoteVideoTracksView.length > 0) ? (
           <TouchableOpacity onPress={toggleCamera} accessibilityRole="button" accessibilityLabel={cameraOff ? 'Turn camera on' : 'Turn camera off'} style={[styles.control, { backgroundColor: cameraOff ? colors.primary : colors.surface, borderColor: colors.border }]}>
             <Ionicons name={cameraOff ? 'videocam-off' : 'videocam'} size={21} color={cameraOff ? colors.onPrimary : colors.textPrimary} />
             <Text style={[typography.small, { color: cameraOff ? colors.onPrimary : colors.textPrimary }]}>{cameraOff ? 'Camera on' : 'Camera off'}</Text>
