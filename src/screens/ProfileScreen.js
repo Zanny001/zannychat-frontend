@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
@@ -13,21 +13,57 @@ import { getCurrentUser } from '../services/api';
 export default function ProfileScreen({ navigation }) {
   const { colors, spacing, typography, mood } = useTheme();
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [profileError, setProfileError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
   const tabBarHeight = useBottomTabBarHeight();
 
-  // Refetches every time this tab regains focus, so coming back from
-  // Edit Profile shows the change immediately instead of stale data
-  // from the initial mount.
+  // Refresh on focus and ignore stale responses after the tab loses focus.
+  // A retry uses the same guarded request path.
   useFocusEffect(
     useCallback(() => {
-      getCurrentUser().then(setUser);
-    }, [])
+      let active = true;
+      setLoading(true);
+      setProfileError('');
+      (async () => {
+        try {
+          const profile = await getCurrentUser();
+          if (active) setUser(profile || null);
+        } catch {
+          if (active) setProfileError("We couldn't load your profile. Check your connection and try again.");
+        } finally {
+          if (active) setLoading(false);
+        }
+      })();
+      return () => { active = false; };
+    }, [reloadKey])
   );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Profile" brand />
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: tabBarHeight + spacing.lg }}>
+        {profileError ? (
+          <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
+            <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textPrimary }]}>{profileError}</Text>
+            <Pressable
+              onPress={() => setReloadKey((value) => value + 1)}
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading your profile"
+              style={({ pressed }) => [{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }, pressed && { opacity: 0.7 }]}
+            >
+              <Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text>
+            </Pressable>
+          </GlassCard>
+        ) : null}
+
+        {loading && !user ? (
+          <View style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, marginBottom: spacing.md }}>
+            <ActivityIndicator color={colors.primary} />
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>Loading your profile…</Text>
+          </View>
+        ) : null}
+
         <GlassCard style={{ marginBottom: spacing.lg, borderRadius: 28 }} contentStyle={{ padding: 20 }} intensity={44} tintAlpha={0.56}>
           <View style={[styles.heroGlow, { backgroundColor: hexToRgba(mood.signal, 0.14) }]} />
           <View style={[styles.heroGlowSecondary, { backgroundColor: hexToRgba(mood.thread, 0.12) }]} />
@@ -45,14 +81,24 @@ export default function ProfileScreen({ navigation }) {
           </View>
           <View style={[styles.profileDivider, { backgroundColor: colors.border }]} />
           <View style={styles.profileActions}>
-            <TouchableOpacity style={[styles.profileAction, { backgroundColor: hexToRgba(mood.signal, 0.13), borderColor: hexToRgba(mood.signal, 0.24) }]} onPress={() => navigation.navigate('EditProfile')} accessibilityRole="button" accessibilityLabel="Edit your profile">
+            <Pressable
+              style={({ pressed }) => [styles.profileAction, { backgroundColor: hexToRgba(mood.signal, 0.13), borderColor: hexToRgba(mood.signal, 0.24) }, pressed && { opacity: 0.72 }]}
+              onPress={() => navigation.navigate('EditProfile')}
+              accessibilityRole="button"
+              accessibilityLabel="Edit your profile"
+            >
               <Ionicons name="pencil-outline" size={16} color={mood.signal} />
               <Text numberOfLines={1} style={[typography.small, { color: colors.textPrimary, marginLeft: 7, flexShrink: 1 }]}>Edit profile</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.profileAction, { backgroundColor: hexToRgba(mood.thread, 0.1), borderColor: hexToRgba(mood.thread, 0.2) }]} onPress={() => navigation.navigate('QRContact')} accessibilityRole="button" accessibilityLabel="Show your contact QR code">
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.profileAction, { backgroundColor: hexToRgba(mood.thread, 0.1), borderColor: hexToRgba(mood.thread, 0.2) }, pressed && { opacity: 0.72 }]}
+              onPress={() => navigation.navigate('QRContact')}
+              accessibilityRole="button"
+              accessibilityLabel="Show your contact QR code"
+            >
               <Ionicons name="qr-code-outline" size={16} color={mood.thread} />
               <Text numberOfLines={1} style={[typography.small, { color: colors.textPrimary, marginLeft: 7, flexShrink: 1 }]}>My QR code</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </GlassCard>
         <Text style={[typography.small, { color: colors.textSecondary, marginBottom: spacing.sm, marginLeft: 4, letterSpacing: 1.1 }]}>PERSONALIZE & PROTECT</Text>
@@ -75,13 +121,19 @@ export default function ProfileScreen({ navigation }) {
 function MenuRow({ icon, label, onPress }) {
   const { colors, spacing, typography } = useTheme();
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel={label} accessibilityHint={`Opens ${label.toLowerCase()}`}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityHint={`Opens ${label.toLowerCase()}`}
+      style={({ pressed }) => pressed && { opacity: 0.76 }}
+    >
       <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={styles.row} intensity={26}>
         <Ionicons name={icon} size={20} color={colors.accent} />
         <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm, flex: 1 }]}>{label}</Text>
         <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
       </GlassCard>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -93,7 +145,7 @@ const styles = StyleSheet.create({
   avatarStatus: { position: 'absolute', right: 2, bottom: 3, width: 14, height: 14, borderRadius: 7, borderWidth: 2 },
   profileDivider: { height: StyleSheet.hairlineWidth, marginVertical: 18 },
   profileActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  profileAction: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 11, flex: 1, minWidth: 132 },
+  profileAction: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 11, flex: 1, minWidth: 132 },
   row: { flexDirection: 'row', alignItems: 'center' },
   editPill: {
     flexDirection: 'row',
