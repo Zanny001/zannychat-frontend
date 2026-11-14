@@ -37,10 +37,13 @@ test('web LIVE preserves moderation, guest access and safe room cleanup', () => 
   assert.ok(web.includes('room.disconnect()'));
 });
 
-test('native LIVE implementation remains unchanged and continues using the React Native LiveKit SDK', () => {
+test('native LIVE uses the React Native LiveKit SDK and toggles published tracks directly', () => {
   assert.ok(native.includes("from '@livekit/react-native'"));
   assert.ok(native.includes('<LiveKitRoom'));
-  assert.ok(native.includes('video={publisherMode && cameraEnabled}'));
+  assert.ok(native.includes('useRoomContext'));
+  assert.ok(native.includes('audio={publisherMode} video={publisherMode}'));
+  assert.ok(native.includes('room.localParticipant.setCameraEnabled(nextEnabled)'));
+  assert.ok(native.includes('room.localParticipant.setMicrophoneEnabled(nextEnabled)'));
 });
 
 test('web LIVE renders each remote publisher in a labelled multi-participant stage grid', () => {
