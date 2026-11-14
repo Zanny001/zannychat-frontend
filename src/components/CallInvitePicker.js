@@ -40,8 +40,8 @@ export default function CallInvitePicker({
   }, [visible]);
 
   const searchPeople = useCallback(async () => {
-    const term = query.trim();
-    if (term.replace(/^@/, '').length < 2) {
+    const term = query.trim().replace(/^@/, '');
+    if (term.length < 2) {
       setErrorText('Enter at least two characters to search.');
       setResults([]);
       return;
