@@ -10,7 +10,11 @@ import { hexToRgba } from '../utils/color';
 function LiveMedia({ creatorMode, publisherMode, cameraEnabled, microphoneEnabled, onToggleCamera, onToggleMicrophone, moderatorMode, canManageGuests, canRequestGuest, guestApproved, guestRequestStatus, guestRequests, showGuestRequests, title, comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, onRequestGuest, onJoinGuest, onToggleGuestRequests, onReviewGuestRequest, busy }) {
   const { colors, typography } = useTheme();
   const tracks = useTracks([Track.Source.Camera]);
+  const audioTracks = useTracks([Track.Source.Microphone]);
   const videos = tracks.filter(isTrackReference);
+  const videoIdentities = new Set(videos.map((track) => track.participant.identity));
+  const audioOnlyParticipants = audioTracks.filter(isTrackReference)
+    .filter((track) => !track.participant.isLocal && !videoIdentities.has(track.participant.identity));
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={{ flex: 1, backgroundColor: '#100F18' }}>
@@ -40,7 +44,31 @@ function LiveMedia({ creatorMode, publisherMode, cameraEnabled, microphoneEnable
               )}
             />
           ) : (
-            <View style={{ alignItems: 'center', padding: 24 }}><Ionicons name="videocam-outline" size={44} color={colors.accent} /><Text style={[typography.heading, { color: '#FFFFFF', marginTop: 14 }]}>{creatorMode ? 'Your LIVE is starting' : 'Waiting for the creator video'}</Text><Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: 8 }]}>Keep this screen open while you are live.</Text></View>
+            <View style={{ alignItems: 'center', padding: 24 }}>
+              {audioOnlyParticipants.length > 0
+                ? <Ionicons name="mic" size={44} color={colors.accent} />
+                : <Ionicons name="videocam-outline" size={44} color={colors.accent} />}
+              <Text style={[typography.heading, { color: '#FFFFFF', marginTop: 14 }]}>
+                {audioOnlyParticipants.length > 0 ? 'LIVE audio is on' : creatorMode ? 'Your LIVE is starting' : 'Waiting for the creator video'}
+              </Text>
+              <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: 8 }]}>
+                {audioOnlyParticipants.length > 0 ? 'The stage is continuing with microphones while cameras are off.' : 'Keep this screen open while you are live.'}
+              </Text>
+              {audioOnlyParticipants.map((track) => (
+                <View key={track.participant.identity} style={{ marginTop: 10, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 14, backgroundColor: hexToRgba(colors.surface, 0.88), borderWidth: 1, borderColor: colors.border }}>
+                  <Text style={[typography.small, { color: '#FFFFFF' }]}>{track.participant.name || track.participant.identity} · Audio only</Text>
+                </View>
+              ))}
+            </View>
+          )}
+          {videos.length > 0 && audioOnlyParticipants.length > 0 && (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, paddingVertical: 8 }}>
+              {audioOnlyParticipants.map((track) => (
+                <View key={track.participant.identity} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: hexToRgba(colors.surface, 0.88), borderWidth: 1, borderColor: colors.border }}>
+                  <Text style={[typography.caption, { color: '#FFFFFF' }]}>{track.participant.name || track.participant.identity} · Audio only</Text>
+                </View>
+              ))}
+            </View>
           )}
         </View>
         {publisherMode && (
