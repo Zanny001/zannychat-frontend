@@ -25,7 +25,10 @@ export default function CallScreenWeb({ route, navigation }) {
   const [networkNotice, setNetworkNotice] = useState('');
   const [remoteStream, setRemoteStream] = useState(null);
   const [localStream, setLocalStream] = useState(null);
+  const [audioPlaybackBlocked, setAudioPlaybackBlocked] = useState(false);
   const remoteVideoRef = useRef(null);
+  const remoteAudioRef = useRef(null);
+  const remoteStreamRef = useRef(null);
   const localVideoRef = useRef(null);
   const pcRef = useRef(null);
   const localStreamRef = useRef(null);
@@ -43,12 +46,22 @@ export default function CallScreenWeb({ route, navigation }) {
   const foreground = immersiveVideo ? '#FFFFFF' : colors.textPrimary;
   const secondaryForeground = immersiveVideo ? '#C4C2D2' : colors.textSecondary;
 
-  useEffect(() => {
-    if (remoteVideoRef.current && remoteStream) {
-      remoteVideoRef.current.srcObject = remoteStream;
-      remoteVideoRef.current.play?.().catch(() => {});
+  const playRemoteMedia = useCallback(async () => {
+    const element = activeCallType === 'video' ? remoteVideoRef.current : remoteAudioRef.current;
+    if (!element || !remoteStream) return;
+    if (element.srcObject !== remoteStream) element.srcObject = remoteStream;
+    try {
+      await element.play?.();
+      setAudioPlaybackBlocked(false);
+    } catch (_) {
+      // Browsers may block autoplay until the user taps an explicit control.
+      setAudioPlaybackBlocked(true);
     }
-  }, [remoteStream]);
+  }, [activeCallType, remoteStream]);
+
+  useEffect(() => {
+    playRemoteMedia();
+  }, [playRemoteMedia]);
 
   useEffect(() => {
     if (localVideoRef.current && localStream) {
@@ -139,7 +152,15 @@ export default function CallScreenWeb({ route, navigation }) {
       pcRef.current = pc;
       stream.getTracks().forEach((track) => pc.addTrack(track, stream));
       pc.ontrack = (event) => {
-        const nextStream = event.streams?.[0];
+        let nextStream = event.streams?.[0];
+        if (nextStream) remoteStreamRef.current = nextStream;
+        else if (event.track) {
+          if (!remoteStreamRef.current) remoteStreamRef.current = new window.MediaStream();
+          if (!remoteStreamRef.current.getTracks().some((track) => track.id === event.track.id)) {
+            remoteStreamRef.current.addTrack(event.track);
+          }
+          nextStream = remoteStreamRef.current;
+        }
         if (nextStream && activeRef.current) setRemoteStream(nextStream);
       };
       pc.onicecandidate = (event) => {
@@ -265,6 +286,7 @@ export default function CallScreenWeb({ route, navigation }) {
       try { stream?.getTracks?.().forEach((track) => track.stop()); } catch (_) {}
       pcRef.current = null;
       localStreamRef.current = null;
+      remoteStreamRef.current = null;
     };
   }, []);
 
@@ -311,6 +333,10 @@ export default function CallScreenWeb({ route, navigation }) {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: immersiveVideo ? '#11101A' : colors.background }]}>
       <StatusBar barStyle={!immersiveVideo && resolvedMode === 'light' ? 'dark-content' : 'light-content'} />
+      {activeCallType !== 'video' ? React.createElement('audio', {
+        ref: remoteAudioRef, autoPlay: true, playsInline: true,
+        style: { display: 'none' },
+      }) : null}
       {activeCallType === 'video' && remoteStream ? React.createElement('video', {
         ref: remoteVideoRef, autoPlay: true, playsInline: true,
         style: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', backgroundColor: '#11101A' },
@@ -331,6 +357,7 @@ export default function CallScreenWeb({ route, navigation }) {
         <Text numberOfLines={2} style={[typography.display, styles.name, { color: foreground, maxWidth: '100%', paddingHorizontal: 8 }]}>{participantName}</Text>
         <Text style={[typography.body, styles.phase, { color: secondaryForeground }]}>{phase === 'Connected' ? formatCallDuration(seconds) : phase}</Text>
         {networkNotice ? <Text style={[typography.small, styles.networkNotice, { color: immersiveVideo ? '#F2D28B' : colors.warning }]}>{networkNotice}</Text> : null}
+        {audioPlaybackBlocked && remoteStream ? <TouchableOpacity onPress={playRemoteMedia} accessibilityRole="button" accessibilityLabel="Enable call audio" style={[styles.retry, { backgroundColor: colors.primary, borderRadius: 12 }]}><Text style={[typography.small, { color: colors.onPrimary, fontWeight: '800' }]}>Tap to hear audio</Text></TouchableOpacity> : null}
         {errorText ? <Text style={[typography.small, styles.error, { color: immersiveVideo ? '#FFB8C0' : colors.danger }]}>{errorText}</Text> : null}
         {phase !== 'Connected' && phase !== 'Unavailable' && !isTerminalCallStatus(call?.status) ? <ActivityIndicator style={{ marginTop: 18 }} color={immersiveVideo ? '#FFFFFF' : colors.primary} /> : null}
       </View>
