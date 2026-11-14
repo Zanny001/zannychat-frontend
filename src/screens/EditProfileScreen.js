@@ -189,8 +189,12 @@ export default function EditProfileScreen({ navigation }) {
     setSaving(true);
     let profileIdentitySaved = false;
     try {
-      await updateProfile({ name: name.trim(), status: status.trim(), username: normalizedUsername });
+      const savedProfile = await updateProfile({ name: name.trim(), status: status.trim(), username: normalizedUsername });
       profileIdentitySaved = true;
+      setUser(savedProfile);
+      setName(savedProfile?.name || name.trim());
+      setUsername(savedProfile?.username || normalizedUsername);
+      setStatus(savedProfile?.status || status.trim());
       const savedDetails = await updateMyProfileDetails({ ...details, birthday: details.birthday || null });
       setDetails({ ...DEFAULT_DETAILS, ...(savedDetails || {}) });
       Alert.alert('Profile saved', 'Your name, username and profile information have been saved.', [
