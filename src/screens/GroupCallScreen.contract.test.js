@@ -10,7 +10,7 @@ test('group call releases a successful join when the screen unmounts before conn
 });
 
 test('group call cleanup releases an established participant unless explicit leave/end is already running', () => {
-  assert.ok(screen.includes('if (current?.roomId && !endingRef.current)'));
+  assert.ok(screen.includes('if (current?.roomId && !directCallId && !endingRef.current)'));
   assert.ok(screen.includes('`/group-calls/${current.roomId}/leave`'));
   assert.ok(screen.includes('endingRef.current = true'));
 });
