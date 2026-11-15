@@ -110,7 +110,7 @@ test('LIVE creator stage controls expose direct guest invitation, microphone mut
 
 test('LIVE stage actions are accessible and destructive guest removal requires confirmation', () => {
   assert.ok(screen.includes('accessibilityLabel={item.microphoneMuted ?'));
-  assert.ok(screen.includes("Alert.alert('Remove guest from stage?'"));
+  assert.ok(screen.includes("showAppAlert('Remove guest from stage?'"));
   assert.ok(screen.includes("style: 'destructive'"));
 });
 
