@@ -23,9 +23,11 @@ test('call duration formatting is stable and clamps invalid values', () => {
   assert.equal(formatCallDuration(Number.NaN), '00:00');
 });
 
-test('call end action cancels only a ringing outgoing invitation and ends accepted calls', () => {
+test('call screen exits use valid caller-cancel and callee-decline transitions while ringing', () => {
+  assert.equal(getCallEndStatus({ reason: 'ended', isCaller: true, status: 'ringing' }), 'cancelled');
   assert.equal(getCallEndStatus({ reason: 'cancelled', isCaller: true, status: 'ringing' }), 'cancelled');
+  assert.equal(getCallEndStatus({ reason: 'ended', isCaller: false, status: 'ringing' }), 'declined');
+  assert.equal(getCallEndStatus({ reason: 'declined', isCaller: false, status: 'ringing' }), 'declined');
   assert.equal(getCallEndStatus({ reason: 'cancelled', isCaller: true, status: 'accepted' }), 'ended');
   assert.equal(getCallEndStatus({ reason: 'ended', isCaller: false, status: 'accepted' }), 'ended');
-  assert.equal(getCallEndStatus({ reason: 'cancelled', isCaller: false, status: 'ringing' }), 'ended');
 });
