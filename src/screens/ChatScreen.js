@@ -793,7 +793,7 @@ export default function ChatScreen({ route, navigation }) {
           else if (item.kind === 'file') uploaded = await uploadChatFile(conversation.id, item.uri, item.name, item.mimeType, item.size);
           else uploaded = await uploadVoiceNote(conversation.id, item.uri, item.durationSeconds);
         } catch (error) {
-          if (error?.code === 'UNSUPPORTED_MEDIA_TYPE' || error?.code === 'FILE_TOO_LARGE') {
+          if (isPermanentAttachmentUploadError(error)) {
             const removed = await removePendingAttachment(myUserId, conversation.id, item.id);
             if (removed) {
               await removePreservedAttachment(FileSystem, item);
