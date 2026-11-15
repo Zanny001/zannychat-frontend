@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Alert, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../theme/ThemeContext';
@@ -13,6 +14,9 @@ import { BACKEND_ENABLED } from '../services/backendClient';
 import GlassInput from '../components/GlassInput';
 import { validatePasswordChange } from '../utils/authValidation';
 import { getPrivacyCheckupItems } from '../utils/privacyCheckup';
+
+const ACCOUNT_DELETE_REAUTH_KEY = 'zannychat.account-delete-reauth.v1';
+const ACCOUNT_DELETE_REAUTH_TTL_MS = 10 * 60 * 1000;
 
 // One of the three Profile rows the Oct 2026 audit found rendering but
 // doing nothing ("the single most visible 'looks finished, isn't'
@@ -32,6 +36,37 @@ export default function PrivacySecurityScreen({ navigation }) {
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [authProviders, setAuthProviders] = useState({ email: true, google: false });
   const [reauthenticatingGoogle, setReauthenticatingGoogle] = useState(false);
+  const [googleReauthVerified, setGoogleReauthVerified] = useState(false);
+  const [googleReauthMismatch, setGoogleReauthMismatch] = useState(false);
+
+  const refreshAuthProviders = useCallback(async () => {
+    if (!SUPABASE_ENABLED || !supabase) return;
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data?.user) return;
+    const providers = new Set([
+      ...(Array.isArray(data.user.app_metadata?.providers) ? data.user.app_metadata.providers : []),
+      data.user.app_metadata?.provider,
+      ...(Array.isArray(data.user.identities) ? data.user.identities.map((identity) => identity.provider) : []),
+    ].filter(Boolean));
+    setAuthProviders({ email: providers.has('email'), google: providers.has('google') });
+
+    const pendingRaw = await AsyncStorage.getItem(ACCOUNT_DELETE_REAUTH_KEY);
+    if (!pendingRaw) return;
+    await AsyncStorage.removeItem(ACCOUNT_DELETE_REAUTH_KEY).catch(() => {});
+    try {
+      const pending = JSON.parse(pendingRaw);
+      if (!Number.isFinite(pending.expiresAt) || pending.expiresAt < Date.now()) return;
+      if (pending.userId === data.user.id) {
+        setGoogleReauthVerified(true);
+        setGoogleReauthMismatch(false);
+      } else {
+        setGoogleReauthVerified(false);
+        setGoogleReauthMismatch(true);
+      }
+    } catch {
+      setGoogleReauthVerified(false);
+    }
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -40,18 +75,8 @@ export default function PrivacySecurityScreen({ navigation }) {
         .then(setBlocked)
         .catch(() => {})
         .finally(() => setLoading(false));
-      if (SUPABASE_ENABLED && supabase) {
-        supabase.auth.getUser().then(({ data, error }) => {
-          if (error || !data?.user) return;
-          const providers = new Set([
-            ...(Array.isArray(data.user.app_metadata?.providers) ? data.user.app_metadata.providers : []),
-            data.user.app_metadata?.provider,
-            ...(Array.isArray(data.user.identities) ? data.user.identities.map((identity) => identity.provider) : []),
-          ].filter(Boolean));
-          setAuthProviders({ email: providers.has('email'), google: providers.has('google') });
-        }).catch(() => {});
-      }
-    }, [])
+      refreshAuthProviders().catch(() => {});
+    }, [refreshAuthProviders])
   );
 
   async function handleUnblock(entry) {
@@ -98,11 +123,25 @@ export default function PrivacySecurityScreen({ navigation }) {
   async function handleGoogleReauthForDeletion() {
     if (!SUPABASE_ENABLED || !supabase || !authProviders.google) return;
     setReauthenticatingGoogle(true);
+    setGoogleReauthVerified(false);
+    setGoogleReauthMismatch(false);
     try {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data?.user?.id) throw new Error('Your session has expired. Sign in again first.');
+      await AsyncStorage.setItem(ACCOUNT_DELETE_REAUTH_KEY, JSON.stringify({
+        userId: data.user.id,
+        expiresAt: Date.now() + ACCOUNT_DELETE_REAUTH_TTL_MS,
+      }));
       const result = await startGoogleOAuth(supabase, { prompt: 'select_account' });
-      if (result?.cancelled) return;
-      Alert.alert('Google verification complete', 'Return to Privacy & security and confirm account deletion within five minutes.');
+      if (result?.cancelled) {
+        await AsyncStorage.removeItem(ACCOUNT_DELETE_REAUTH_KEY).catch(() => {});
+        return;
+      }
+      // Native OAuth returns to this process; web OAuth reloads the app and
+      // refreshAuthProviders validates the stored user ID when this screen opens.
+      if (Platform.OS !== 'web') await refreshAuthProviders();
     } catch (error) {
+      await AsyncStorage.removeItem(ACCOUNT_DELETE_REAUTH_KEY).catch(() => {});
       Alert.alert("Couldn't verify with Google", error.message || 'Please try again.');
     } finally {
       setReauthenticatingGoogle(false);
@@ -124,6 +163,14 @@ export default function PrivacySecurityScreen({ navigation }) {
     }
     if (!authProviders.email && !authProviders.google) {
       Alert.alert('Re-authentication required', 'Sign in again with your account provider before deleting your account.');
+      return;
+    }
+    if (authProviders.google && !deletePassword && !googleReauthVerified) {
+      Alert.alert('Verify with Google first', 'Re-verify the same Google account, return here, and then confirm deletion within five minutes.');
+      return;
+    }
+    if (googleReauthMismatch) {
+      Alert.alert('Google account mismatch', 'The Google account used for verification does not match the account you are deleting. Sign back into the original account.');
       return;
     }
     Alert.alert(
@@ -353,8 +400,14 @@ export default function PrivacySecurityScreen({ navigation }) {
           {authProviders.google && (
             <View style={{ marginBottom: spacing.md }}>
               <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 20, marginBottom: spacing.sm }]}>
-                Google accounts can verify ownership with Google instead of a local password. After verification, return here and confirm deletion within five minutes.
+                Google accounts can verify ownership with Google instead of a local password. After Google returns to ZannyChat, reopen Privacy & security and confirm deletion within five minutes. We verify that the same account returned.
               </Text>
+              {googleReauthVerified && (
+                <Text style={[typography.caption, { color: colors.success || colors.primary, marginBottom: spacing.sm }]}>Google verification confirmed for this account.</Text>
+              )}
+              {googleReauthMismatch && (
+                <Text style={[typography.caption, { color: colors.danger, marginBottom: spacing.sm }]}>The Google account did not match the account being deleted.</Text>
+              )}
               <TouchableOpacity
                 onPress={handleGoogleReauthForDeletion}
                 disabled={reauthenticatingGoogle || deletingAccount || !BACKEND_ENABLED}
