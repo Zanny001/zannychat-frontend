@@ -14,10 +14,20 @@ export function confirmAction({ title, message, confirmText = 'Delete', destruct
   });
 }
 
-export function showAppAlert(title, message) {
+export function showAppAlert(title, message, { onDismiss } = {}) {
+  let completed = false;
+  const finish = () => {
+    if (completed) return;
+    completed = true;
+    onDismiss?.();
+  };
   if (Platform.OS === 'web' && typeof globalThis.alert === 'function') {
-    globalThis.alert(`${title}\n\n${message}`);
+    globalThis.alert(title + '\n\n' + message);
+    finish();
     return;
   }
-  Alert.alert(title, message);
+  Alert.alert(title, message, [{ text: 'OK', onPress: finish }], {
+    cancelable: false,
+    onDismiss: finish,
+  });
 }
