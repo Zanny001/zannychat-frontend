@@ -239,6 +239,7 @@ export default function GroupCallScreen({ route, navigation }) {
   const [participantIds, setParticipantIds] = useState([]);
   const endingRef = useRef(false);
   const connectionRef = useRef(null);
+  const nativeConnectedRef = useRef(false);
   const handleParticipantsChange = useCallback((ids) => setParticipantIds(ids), []);
 
   useEffect(() => {
@@ -376,13 +377,18 @@ export default function GroupCallScreen({ route, navigation }) {
   };
 
   const handleRoomConnected = useCallback(() => {
-    if (!nativeCallId) return;
-    if (isCaller) reportNativeOutgoingConnected(nativeCallId).catch(() => {});
-    else if (nativeRequestId) fulfillNativeIncomingConnected(nativeRequestId).catch(() => {});
+    if (nativeConnectedRef.current) return;
+    if (isCaller && nativeCallId) {
+      nativeConnectedRef.current = true;
+      reportNativeOutgoingConnected(nativeCallId).catch(() => {});
+    } else if (nativeRequestId) {
+      nativeConnectedRef.current = true;
+      fulfillNativeIncomingConnected(nativeRequestId).catch(() => {});
+    }
   }, [isCaller, nativeCallId, nativeRequestId]);
 
   useEffect(() => {
-    if (!directCallId || !connection || !supabase) return undefined;
+    if (!directCallId || !supabase) return undefined;
     let active = true;
     const heartbeat = () => supabase.rpc('heartbeat_call_session', { p_call_id: directCallId })
       .then(({ error }) => {
@@ -393,30 +399,37 @@ export default function GroupCallScreen({ route, navigation }) {
       }).catch(() => {});
     heartbeat();
     const timer = setInterval(heartbeat, 30_000);
+    const handleCallUpdate = (next) => {
+      if (!active || !next || endingRef.current) return;
+      if (next.group_room_id) {
+        endingRef.current = true;
+        navigation.replace('GroupCall', {
+          roomId: next.group_room_id,
+          conversationId: next.conversation_id || conversationId,
+          conversationName: 'Group call',
+          callType: next.call_type || callType,
+        });
+      } else if (['declined', 'cancelled', 'ended', 'missed', 'failed'].includes(next.status)) {
+        endingRef.current = true;
+        if (nativeCallId) reportNativeCallEnded(nativeCallId, 'remoteEnded').catch(() => {});
+        navigation.goBack();
+      }
+    };
     const channel = supabase.channel(`direct-livekit-call:${directCallId}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'call_sessions', filter: `id=eq.${directCallId}` }, (event) => {
-        const next = event?.new;
-        if (!active || !next || endingRef.current) return;
-        if (next.group_room_id) {
-          endingRef.current = true;
-          navigation.replace('GroupCall', {
-            roomId: next.group_room_id,
-            conversationId: next.conversation_id || conversationId,
-            conversationName: 'Group call',
-            callType: next.call_type || callType,
-          });
-        } else if (['declined', 'cancelled', 'ended', 'missed', 'failed'].includes(next.status)) {
-          endingRef.current = true;
-          if (nativeCallId) reportNativeCallEnded(nativeCallId, 'remoteEnded').catch(() => {});
-          navigation.goBack();
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'call_sessions', filter: `id=eq.${directCallId}` }, (event) => handleCallUpdate(event?.new))
+      .subscribe((channelStatus) => {
+        if (channelStatus === 'SUBSCRIBED') {
+          supabase.from('call_sessions').select('id,conversation_id,call_type,status,group_room_id')
+            .eq('id', directCallId).maybeSingle()
+            .then(({ data }) => { if (data) handleCallUpdate(data); }).catch(() => {});
         }
-      }).subscribe();
+      });
     return () => {
       active = false;
       clearInterval(timer);
       supabase.removeChannel(channel);
     };
-  }, [callType, connection, conversationId, directCallId, navigation, nativeCallId]);
+  }, [callType, conversationId, directCallId, navigation, nativeCallId]);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
