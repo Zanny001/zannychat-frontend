@@ -15,7 +15,7 @@ test('chat read state is fetched through a server-side privacy projection', () =
 });
 
 test('chat list and personal export no longer request peers read cursors from participant rows', () => {
-  assert.match(api, /conversation_participants\(user_id, profiles\(id, name, avatar_color, avatar_url, status, online\), is_favorite, is_muted, is_archived\)/);
+  assert.match(api, /conversation_participants\(user_id, is_favorite, is_muted, is_archived\)/);\n  assert.match(api, /rpc\(\\s*'get_conversation_profile_directory'/);\n  assert.doesNotMatch(api, /conversation_participants\(user_id, profiles/);\n  assert.match(exportService, /rpc\('get_my_profile'\)/);\n  assert.doesNotMatch(exportService, /from\('profiles'\)\.select\('\*'\)/);
   assert.match(exportService, /rpc\('get_my_read_cursors'\)/);
   assert.doesNotMatch(exportService, /select\('[^']*last_read_at/);
 });
