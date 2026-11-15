@@ -5,7 +5,7 @@ import fs from 'node:fs';
 const api = fs.readFileSync(new URL('./api.js', import.meta.url), 'utf8');
 
 test('chat media uploads use the exact 25 MiB Storage limit', () => {
-  assert.match(api, /MAX_CHAT_MEDIA_UPLOAD_BYTES = 25 * 1024 * 1024/);
+  assert.match(api, /MAX_CHAT_MEDIA_UPLOAD_BYTES = 25 \* 1024 \* 1024/);
   assert.match(api, /assertChatMediaSize\(arrayBuffer\?\.byteLength\)/);
   assert.match(api, /FILE_TOO_LARGE/);
 });
