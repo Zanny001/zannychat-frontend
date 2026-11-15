@@ -5,12 +5,15 @@ import { createSecureAuthStorage, secureAuthStorageLimits } from './secureAuthSt
 function createMemoryStore() {
   const secure = new Map();
   const legacy = new Map();
+  const options = [];
   return {
     secure,
     legacy,
+    options,
     secureStore: {
+      WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'WHEN_UNLOCKED_THIS_DEVICE_ONLY',
       getItemAsync: async (key) => secure.has(key) ? secure.get(key) : null,
-      setItemAsync: async (key, value) => { secure.set(key, value); },
+      setItemAsync: async (key, value, secureOptions) => { options.push(secureOptions); secure.set(key, value); },
       deleteItemAsync: async (key) => { secure.delete(key); },
     },
     legacyStorage: {
@@ -33,6 +36,14 @@ test('secure auth storage round-trips large UTF-8 sessions in bounded chunks', a
   assert.ok(chunks.length > 1);
   assert.ok(chunks.every(([, value]) => new TextEncoder().encode(value).byteLength <= secureAuthStorageLimits.chunkBytes));
   assert.equal(memory.legacy.has('sb-zanny-auth-token'), false);
+});
+
+test('session values use device-only Keychain accessibility when SecureStore supports it', async () => {
+  const memory = createMemoryStore();
+  const storage = createSecureAuthStorage(memory);
+  await storage.setItem('sb-zanny-auth-token', 'device-only-session');
+  assert.ok(memory.options.length >= 2);
+  assert.ok(memory.options.every((options) => options?.keychainAccessible === 'WHEN_UNLOCKED_THIS_DEVICE_ONLY'));
 });
 
 test('first read migrates the existing AsyncStorage session and removes the legacy copy', async () => {
