@@ -74,7 +74,7 @@ export default function CreateGroupScreen({ navigation }) {
           creating ? (
             <ActivityIndicator size="small" color={colors.primary} />
           ) : (
-            <TouchableOpacity onPress={handleCreate} disabled={!canCreate || creating} accessibilityRole="button" accessibilityLabel="Create group" accessibilityState={{ disabled: !canCreate || creating, busy: creating }} style={{ minHeight: 44, justifyContent: "center" }}>
+            <TouchableOpacity onPress={handleCreate} disabled={!canCreate || creating} accessibilityRole="button" accessibilityLabel="Create group" accessibilityState={{ disabled: !canCreate || creating, busy: creating }} style={{ minHeight: 48, justifyContent: "center" }}>
               <Text style={[typography.bodyStrong, { color: canCreate ? colors.primary : colors.textSecondary }]}>Create</Text>
             </TouchableOpacity>
           )
@@ -100,7 +100,7 @@ export default function CreateGroupScreen({ navigation }) {
           ) : contactsError ? (
             <View style={{ alignItems: 'center', padding: spacing.lg, gap: spacing.sm }}>
               <Text accessibilityRole="alert" style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{contactsError}</Text>
-              <TouchableOpacity onPress={loadContacts} accessibilityRole="button" accessibilityLabel="Retry loading contacts" style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md }}>
+              <TouchableOpacity onPress={loadContacts} accessibilityRole="button" accessibilityLabel="Retry loading contacts" style={{ minHeight: 48, justifyContent: 'center', paddingHorizontal: spacing.md }}>
                 <Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text>
               </TouchableOpacity>
             </View>
