@@ -434,3 +434,13 @@ The source scan covered these families:
 
 ### Verification status
 - Changes are committed on the PR branch. Current GitHub Actions query has not returned a new run for these commits, so these tests are **not yet verified by CI**. No device push-delivery test has been run.
+
+
+## Latest handoff checkpoint — 2026-11-16
+
+- Push preference implementation is now complete in source: startup registration checks persisted `pushEnabled`, token registration verifies the Supabase upsert result, opt-out awaits and verifies token deletion, and the screen reports preference/registration status. The detail string was added after a source recheck found it had not been inserted in the first UI commit.
+- Added `NotificationsScreen.contract.test.js`; it covers startup opt-out, token-save confirmation, server deletion ordering, and registration-state copy.
+- Latest branch head: `f4dc8124be975ee735dbe06dd67debb7545efbbf`. PR #85 remains draft, open and unmerged (17 changed files).
+- Latest premium workflow run 653 failed because the old composer contract expected the previous translucent input style. The assertion was updated in `ChatScreen.contract.test.js` to the new surface, border, radius and height values. No new workflow run has been returned for the subsequent commits, so neither this repair nor the notification changes are CI-verified.
+- Vercel still reports the team's build-rate-limit failure. No successful deployment of the latest branch head is confirmed.
+- The app has received first-pass source review across all 46 registered screens; visual/responsive, keyboard, accessibility, runtime and physical-device acceptance remain outstanding.
