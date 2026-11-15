@@ -65,7 +65,7 @@ export default function ChatFoldersScreen({ navigation }) {
   ]);
 
   const Choice = ({ item, selected, onPress, subtitle }) => (
-    <TouchableOpacity onPress={onPress} accessibilityRole="checkbox" accessibilityLabel={item.label} accessibilityState={{ checked: selected }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 11 }}>
+    <TouchableOpacity onPress={onPress} accessibilityRole="checkbox" accessibilityLabel={item.label} accessibilityState={{ checked: selected }} style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', paddingVertical: 10 }}>
       <Ionicons name={selected ? 'checkbox' : 'square-outline'} size={21} color={selected ? colors.primary : colors.textSecondary} />
       <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm, flex: 1, minWidth: 0 }]}>{item.label}</Text>
       {item.icon ? <Ionicons name={item.icon} size={18} color={colors.textSecondary} /> : null}
@@ -79,26 +79,26 @@ export default function ChatFoldersScreen({ navigation }) {
         <GlassCard glow style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md }}>
           <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.xs }]}>Create a folder</Text>
           <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>A chat appears when it matches any selected category. Folders are saved on this device and are not synced across devices yet.</Text>
-          <TextInput value={name} onChangeText={setName} maxLength={32} placeholder="e.g. Work, Close friends" placeholderTextColor={colors.textSecondary} accessibilityLabel="Folder name" style={[typography.body, { color: colors.textPrimary, borderColor: colors.border, borderWidth: 1, borderRadius: radii.md, paddingHorizontal: spacing.md, paddingVertical: 12, marginBottom: spacing.md }]} />
+          <TextInput value={name} onChangeText={setName} maxLength={32} placeholder="e.g. Work, Close friends" placeholderTextColor={colors.textSecondary} accessibilityLabel="Folder name" style={[typography.body, { color: colors.textPrimary, borderColor: colors.border, borderWidth: 1, borderRadius: radii.md, minHeight: 48, paddingHorizontal: spacing.md, paddingVertical: 10, marginBottom: spacing.md }]} />
           <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Include chats</Text>
           {INCLUSIONS.map((item) => <Choice key={item.key} item={item} selected={rules.includes(item.key)} onPress={() => toggle(rules, setRules, item.key)} />)}
           <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.sm }} />
           <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Additional filters</Text>
           {EXCLUSIONS.map((item) => <Choice key={item.key} item={item} selected={excluded.includes(item.key)} onPress={() => toggle(excluded, setExcluded, item.key)} />)}
           {error ? <Text style={[typography.caption, { color: colors.danger, marginTop: spacing.sm }]}>{error}</Text> : null}
-          <TouchableOpacity onPress={create} disabled={saving || !rules.length} accessibilityRole="button" accessibilityLabel={editingId ? 'Save chat folder changes' : 'Create chat folder'} accessibilityState={{ disabled: saving || !rules.length, busy: saving }} style={{ backgroundColor: colors.primary, opacity: saving || !rules.length ? 0.55 : 1, borderRadius: radii.pill, paddingVertical: 13, alignItems: 'center', marginTop: spacing.md, flexDirection: 'row', justifyContent: 'center' }}>
+          <TouchableOpacity onPress={create} disabled={saving || !rules.length} accessibilityRole="button" accessibilityLabel={editingId ? 'Save chat folder changes' : 'Create chat folder'} accessibilityState={{ disabled: saving || !rules.length, busy: saving }} style={{ backgroundColor: colors.primary, opacity: saving || !rules.length ? 0.55 : 1, borderRadius: radii.pill, minHeight: 48, paddingVertical: 10, alignItems: 'center', marginTop: spacing.md, flexDirection: 'row', justifyContent: 'center' }}>
             {saving ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name="add-circle-outline" size={18} color={colors.onPrimary} />}
             <Text style={[typography.bodyStrong, { color: colors.onPrimary, marginLeft: 8 }]}>{saving ? 'Saving…' : editingId ? 'Save changes' : 'Create folder'}</Text>
           </TouchableOpacity>
-          {editingId ? <TouchableOpacity onPress={cancelEdit} accessibilityRole="button" accessibilityLabel="Cancel chat folder editing" style={{ alignItems: 'center', paddingVertical: 10 }}><Text style={[typography.body, { color: colors.textSecondary }]}>Cancel editing</Text></TouchableOpacity> : null}
+          {editingId ? <TouchableOpacity onPress={cancelEdit} accessibilityRole="button" accessibilityLabel="Cancel chat folder editing" style={{ minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 }}><Text style={[typography.body, { color: colors.textSecondary }]}>Cancel editing</Text></TouchableOpacity> : null}
         </GlassCard>
         <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.sm }]}>Your folders · {folders.length}</Text>
         {loading ? <ActivityIndicator color={colors.primary} /> : folders.length ? folders.map((folder) => (
           <GlassCard key={folder.id} style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, flexDirection: 'row', alignItems: 'center' }}>
             <View style={{ width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: `${colors.primary}18` }}><Ionicons name="folder-open-outline" size={20} color={colors.primary} /></View>
             <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm }}><Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{folder.name}</Text><Text style={[typography.caption, { color: colors.textSecondary }]}>{folder.rules.join(' · ')}{folder.excluded.length ? ` · excludes ${folder.excluded.join(', ')}` : ''}</Text></View>
-            <TouchableOpacity onPress={() => edit(folder)} accessibilityRole="button" accessibilityLabel={`Edit ${folder.name} folder`} hitSlop={8} style={{ padding: 7 }}><Ionicons name="create-outline" size={19} color={colors.primary} /></TouchableOpacity>
-            <TouchableOpacity onPress={() => remove(folder)} accessibilityRole="button" accessibilityLabel={`Delete ${folder.name} folder`} hitSlop={8} style={{ padding: 7 }}><Ionicons name="trash-outline" size={19} color={colors.danger} /></TouchableOpacity>
+            <TouchableOpacity onPress={() => edit(folder)} accessibilityRole="button" accessibilityLabel={`Edit ${folder.name} folder`} hitSlop={8} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="create-outline" size={19} color={colors.primary} /></TouchableOpacity>
+            <TouchableOpacity onPress={() => remove(folder)} accessibilityRole="button" accessibilityLabel={`Delete ${folder.name} folder`} hitSlop={8} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="trash-outline" size={19} color={colors.danger} /></TouchableOpacity>
           </GlassCard>
         )) : <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>No custom folders yet. Create one to organize your chats.</Text>}
       </ScrollView>
