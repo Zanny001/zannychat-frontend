@@ -1,5 +1,6 @@
 import { supabase, SUPABASE_ENABLED } from './supabaseClient';
 import { backendFetch } from './backendClient';
+import { resolveProfileAvatarUrls } from './api';
 import { startNativeOutgoingCall, setPendingNativeCallMapping, bindPendingNativeCallMapping, clearPendingNativeCallMapping } from './nativeCallSystem';
 
 function requireCalls() {
@@ -133,14 +134,17 @@ export async function listCallHistory(limit = 100) {
   let profilesById = {};
   if (peerIds.length) {
     const { data: profiles, error: profileError } = await supabase.from('profiles').select('id,name,avatar_color').in('id', peerIds);
-    if (!profileError) profilesById = Object.fromEntries((profiles || []).map((profile) => [profile.id, profile]));
+    if (!profileError) {
+      const resolvedProfiles = await resolveProfileAvatarUrls(profiles || []);
+      profilesById = Object.fromEntries(resolvedProfiles.map((profile) => [profile.id, profile]));
+    }
   }
   const directCalls = rows.filter((row) => !row.group_room_id).map((row) => {
     const peerId = row.caller_id === userId ? row.callee_id : row.caller_id;
     const profile = profilesById[peerId] || {};
     const duration = row.accepted_at && row.ended_at ? Math.max(0, Math.floor((Date.parse(row.ended_at) - Date.parse(row.accepted_at)) / 1000)) : 0;
     return { ...row, direction: row.caller_id === userId ? 'outgoing' : 'incoming',
-      participantName: profile.name || 'ZannyChat contact', avatarColor: profile.avatar_color || '#6C5CE7',
+      participantName: profile.name || 'ZannyChat contact', participantAvatarUrl: profile.avatarUrl || profile.avatar_url || null, avatarColor: profile.avatar_color || profile.avatarColor || '#6C5CE7',
       durationSeconds: Number.isFinite(duration) ? duration : 0 };
   });
   const hidden = await backendFetch('/calls/history/hidden').catch(() => null);
