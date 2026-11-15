@@ -224,10 +224,17 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
   // from the auth callback races React Navigation's conditional screen removal.
   useEffect(() => {
     if (!SUPABASE_ENABLED || !navigationRef.isReady()) return;
-    const currentRoute = navigationRef.getCurrentRoute()?.name;
-    const protectedLinkRoutes = ['QRContact', 'JoinGroup', 'LiveStream', 'LiveReplay'];
-    if (protectedLinkRoutes.includes(currentRoute)) {
-      if (isAuthenticated) takePendingAuthRoute();
+    const currentRouteState = navigationRef.getCurrentRoute();
+    const currentRoute = currentRouteState?.name;
+    const requiredLinkParams = { QRContact: 'userId', JoinGroup: 'token', LiveStream: 'streamId', LiveReplay: 'replayId' };
+    if (Object.prototype.hasOwnProperty.call(requiredLinkParams, currentRoute)) {
+      if (isAuthenticated) {
+        const pendingRoute = takePendingAuthRoute();
+        if (pendingRoute?.name === currentRoute && !currentRouteState?.params?.[requiredLinkParams[currentRoute]]) {
+          const routes = [{ name: 'Main' }, pendingRoute];
+          navigationRef.resetRoot({ index: routes.length - 1, routes });
+        }
+      }
       return;
     }
     if (!isAuthenticated && ['PasswordRecovery', 'PasswordReset'].includes(currentRoute)) return;
