@@ -18,7 +18,7 @@ test('call history uses the privacy-scoped profile directory RPC', () => {
 
 test('call history keeps redial and per-user deletion service actions', () => {
   assert.match(callsSource, /export async function hideCallHistory/);
-  assert.match(callsSource, /backendFetch\(['"]\/calls\/history\//);
+  assert.match(callsSource, /backendFetch\(\s*[`'"]\/calls\/history\//);
   assert.match(callsSource, /export async function listCallHistory/);
 });
 
