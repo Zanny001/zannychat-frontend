@@ -203,7 +203,7 @@ test('changing a viewer token to an approved guest token does not mark the parti
 
 
 test('native and web LIVE sessions renew participant presence and support stale reconnect', () => {
-  assert.ok(screen.includes("`/live/${stream.id}/heartbeat`"));
+  assert.ok(screen.includes("`/live/${streamId}/heartbeat`"));
   assert.ok(screen.includes('setInterval(heartbeat, 30_000)'));
   assert.ok(screen.includes("room.state !== 'connected'"));
   const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
