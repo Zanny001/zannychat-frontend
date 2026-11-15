@@ -188,7 +188,7 @@ test('LIVE video tiles use a responsive moderate 16:9 frame instead of oversized
 
 test('LIVE creator receives continuously refreshed in-screen guest requests without relying on push notifications', () => {
   assert.ok(screen.includes("setInterval(refreshGuestRequests, 3500)"));
-  assert.ok(screen.includes('if (incoming.length) setShowGuestRequests(true)'));
+  assert.ok(screen.includes('if (hasNewRequest) setShowGuestRequests(true)'));
   assert.ok(screen.includes('Guest requests ({guestRequests.length})'));
   assert.ok(screen.includes("onReviewGuestRequest(item.user_id, 'accepted')"));
   assert.ok(screen.includes("onReviewGuestRequest(item.user_id, 'declined')"));
