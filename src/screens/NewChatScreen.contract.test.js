@@ -17,12 +17,12 @@ test('New Chat favorite action is a sibling of the open-chat action, never neste
   const mainClose = screen.indexOf('</TouchableOpacity>', mainOpen);
   const favoriteOpen = screen.indexOf('<TouchableOpacity', mainClose + 1);
   const favoriteIndex = screen.indexOf('style={styles.favoriteButton}', mainClose + 1);
-  const rowEnd = screen.indexOf('\\n              </View>', favoriteIndex);
+  const rowEnd = screen.indexOf('\n              </View>', favoriteIndex);
   assert.ok(rowStart >= 0, 'contact row wrapper must exist');
   assert.ok(mainOpen > rowStart && mainClose > mainOpen, 'main contact action must be a complete sibling control');
   assert.ok(favoriteOpen > mainClose && favoriteIndex > mainClose, 'favorite action must start after the open-chat action closes');
   const row = screen.slice(rowStart, rowEnd);
-  assert.match(row, /accessibilityLabel=\\{favoriteIds\\.includes\\(item\\.id\\)/);
+  assert.match(row, /accessibilityLabel=\{favoriteIds\.includes\(item\.id\)/);
   assert.ok(rowEnd > favoriteIndex, 'both controls must remain inside the same row');
 });
 
