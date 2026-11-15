@@ -377,6 +377,7 @@ async function ensurePrivateAvatarCopy(userId, avatarUrl, currentAvatarPath) {
   const { error: uploadError } = await supabase.storage.from('private-avatars').upload(legacyPath, image, {
     upsert: true,
     contentType: image.type || 'image/jpeg',
+    cacheControl: '0',
   });
   if (uploadError) throw uploadError;
   const { error: detailsError } = await supabase.from('profile_details')
@@ -386,19 +387,42 @@ async function ensurePrivateAvatarCopy(userId, avatarUrl, currentAvatarPath) {
 }
 
 async function removeLegacyPublicAvatar(userId, avatarUrl) {
+  const bucket = supabase.storage.from('avatars');
+  const paths = new Set();
   const legacyPath = getLegacyAvatarStoragePath(avatarUrl, userId);
-  if (legacyPath) {
-    const { error } = await supabase.storage.from('avatars').remove([legacyPath]);
+  if (legacyPath) paths.add(legacyPath);
+
+  // Remove every legacy object owned by this profile, not only the current
+  // pointer. Older uploads could otherwise remain publicly reachable.
+  let offset = 0;
+  while (true) {
+    const { data, error } = await bucket.list(userId, { limit: 1000, offset });
+    if (error) throw error;
+    const entries = Array.isArray(data) ? data : [];
+    for (const entry of entries) {
+      if (entry?.id && typeof entry.name === 'string' && entry.name) {
+        paths.add(`${userId}/${entry.name}`);
+      }
+    }
+    if (entries.length < 1000) break;
+    offset += entries.length;
+  }
+
+  const allPaths = [...paths];
+  for (let start = 0; start < allPaths.length; start += 1000) {
+    const { error } = await bucket.remove(allPaths.slice(start, start + 1000));
     if (error) throw error;
   }
-  if (avatarUrl) {
-    const { error } = await supabase.from('profiles').update({ avatar_url: null }).eq('id', userId);
-    if (error) throw error;
-  }
+  const { error } = await supabase.from('profiles').update({ avatar_url: null }).eq('id', userId);
+  if (error) throw error;
 }
 
 async function ensureLegacyPublicAvatar(userId, avatarUrl, privatePath) {
-  if (getLegacyAvatarStoragePath(avatarUrl, userId)) return avatarUrl;
+  const existingPath = getLegacyAvatarStoragePath(avatarUrl, userId);
+  if (existingPath) {
+    const { data: existingImage, error: existingError } = await supabase.storage.from('avatars').download(existingPath);
+    if (!existingError && existingImage) return avatarUrl;
+  }
   if (!privatePath || !privatePath.startsWith(`${userId}/`) || privatePath.includes('..')) return null;
   const { data: image, error: downloadError } = await supabase.storage.from('private-avatars').download(privatePath);
   if (downloadError || !image) throw downloadError || new Error('Could not prepare your profile photo for public visibility.');
@@ -458,21 +482,47 @@ export async function updateMyProfileDetails(details = {}) {
     .eq('user_id', authData.user.id)
     .maybeSingle();
   if (currentDetailsError) throw currentDetailsError;
-  const nextProfileVisibility = row.profile_visibility ?? currentDetails?.profile_visibility ?? 'everyone';
-  const nextPhotoVisibility = row.photo_visibility ?? currentDetails?.photo_visibility ?? 'everyone';
+  const currentProfileVisibility = currentDetails?.profile_visibility ?? 'everyone';
+  const currentPhotoVisibility = currentDetails?.photo_visibility ?? 'everyone';
+  const nextProfileVisibility = row.profile_visibility ?? currentProfileVisibility;
+  const nextPhotoVisibility = row.photo_visibility ?? currentPhotoVisibility;
+  const visibilityChanged = nextProfileVisibility !== currentProfileVisibility
+    || nextPhotoVisibility !== currentPhotoVisibility;
   const needsPrivateAvatar = nextProfileVisibility !== 'everyone' || nextPhotoVisibility !== 'everyone';
-  // Tighten first when moving private: public objects are removed before the
-  // privacy setting is committed. When moving public, commit the preference
-  // first; a failed public copy then leaves the avatar hidden, never exposed.
+
+  // Public storage objects are removed before a private transition. The
+  // database RPC then verifies the private copy and blocks legacy direct writes.
   if (needsPrivateAvatar) {
     await syncAvatarVisibility(authData.user.id, nextProfileVisibility, nextPhotoVisibility);
   }
-  const { data, error } = await supabase.from('profile_details').upsert(row, { onConflict: 'user_id' }).select('*').single();
+
+  const rowToSave = { ...row };
+  if (visibilityChanged) {
+    delete rowToSave.profile_visibility;
+    delete rowToSave.photo_visibility;
+  }
+  const { data, error } = await supabase.from('profile_details').upsert(rowToSave, { onConflict: 'user_id' }).select('*').single();
   if (error) throw error;
+
+  if (visibilityChanged) {
+    const { error: visibilityError } = await supabase.rpc('update_my_profile_visibility', {
+      p_profile_visibility: nextProfileVisibility,
+      p_photo_visibility: nextPhotoVisibility,
+    });
+    if (visibilityError) throw visibilityError;
+  }
+
+  // For a public transition, make the preference public before creating the
+  // public object. A failed copy leaves no public URL or object to expose.
   if (!needsPrivateAvatar) {
     await syncAvatarVisibility(authData.user.id, nextProfileVisibility, nextPhotoVisibility);
   }
-  const saved = { ...PROFILE_DETAIL_DEFAULTS, ...data };
+  const saved = {
+    ...PROFILE_DETAIL_DEFAULTS,
+    ...data,
+    profile_visibility: nextProfileVisibility,
+    photo_visibility: nextPhotoVisibility,
+  };
   saved.cover_image_url = saved.cover_path
     ? await getPrivateProfileCoverUrl(authData.user.id)
     : null;
