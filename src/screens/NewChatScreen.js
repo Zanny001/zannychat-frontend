@@ -410,24 +410,15 @@ export default function NewChatScreen({ navigation, route }) {
             const isBusy = openingChatId !== null || sendingId !== null;
 
             return (
-              <TouchableOpacity
-                onPress={() =>
-                  isShareMode ? shareContact(item) : startChat(item)
-                }
-                activeOpacity={0.7}
-                disabled={isBusy}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  isShareMode
-                    ? `Share contact ${item.name}`
-                    : `Open chat with ${item.name}`
-                }
-                accessibilityState={{ disabled: isBusy }}
-              >
-                <GlassCard
-                  style={{ marginBottom: spacing.sm }}
-                  contentStyle={styles.row}
-                  intensity={26}
+              <View style={[styles.contactRow, { borderBottomColor: colors.borderSubtle }]}>
+                <TouchableOpacity
+                  onPress={() => isShareMode ? shareContact(item) : startChat(item)}
+                  activeOpacity={0.72}
+                  disabled={isBusy}
+                  accessibilityRole="button"
+                  accessibilityLabel={isShareMode ? `Share contact ${item.name}` : `Open chat with ${item.name}`}
+                  accessibilityState={{ disabled: isBusy }}
+                  style={styles.contactMain}
                 >
                   <Avatar
                     name={item.name}
@@ -435,22 +426,27 @@ export default function NewChatScreen({ navigation, route }) {
                     imageUrl={item.avatarUrl}
                     online={item.online}
                   />
-
                   <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm, marginRight: spacing.xs }}>
-                    <Text style={[typography.body, { color: colors.textPrimary }]} numberOfLines={1}>{item.name}</Text>
+                    <Text style={[typography.bodyStrong, { color: colors.textPrimary }]} numberOfLines={1}>{item.name}</Text>
                     {item.username ? <Text style={[typography.caption, { color: colors.textSecondary }]} numberOfLines={1}>@{item.username}</Text> : null}
                   </View>
+                  {(isOpening || isSending) ? <ActivityIndicator size="small" color={colors.textSecondary} /> : null}
+                </TouchableOpacity>
 
-                  {!isShareMode && <TouchableOpacity onPress={() => toggleFavorite(item.id)} accessibilityRole="button" accessibilityLabel={favoriteIds.includes(item.id) ? `Remove ${item.name} from favorites` : `Add ${item.name} to favorites`} accessibilityState={{ selected: favoriteIds.includes(item.id) }} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name={favoriteIds.includes(item.id) ? 'star' : 'star-outline'} size={20} color={favoriteIds.includes(item.id) ? colors.gold : colors.textSecondary} /></TouchableOpacity>}
-
-                  {(isOpening || isSending) && (
-                    <ActivityIndicator
-                      size="small"
-                      color={colors.textSecondary}
-                    />
-                  )}
-                </GlassCard>
-              </TouchableOpacity>
+                {!isShareMode ? (
+                  <TouchableOpacity
+                    onPress={() => toggleFavorite(item.id)}
+                    disabled={isBusy}
+                    accessibilityRole="button"
+                    accessibilityLabel={favoriteIds.includes(item.id) ? `Remove ${item.name} from favorites` : `Add ${item.name} to favorites`}
+                    accessibilityState={{ selected: favoriteIds.includes(item.id), disabled: isBusy }}
+                    style={styles.favoriteButton}
+                    hitSlop={4}
+                  >
+                    <Ionicons name={favoriteIds.includes(item.id) ? 'star' : 'star-outline'} size={20} color={favoriteIds.includes(item.id) ? colors.gold : colors.textSecondary} />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
             );
           }}
         />
@@ -468,6 +464,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 0,
   },
+  contactRow: { minHeight: 76, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
+  contactMain: { flex: 1, minWidth: 0, minHeight: 52, flexDirection: 'row', alignItems: 'center' },
+  favoriteButton: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', marginLeft: 4 },
   qrRow: {
     flexDirection: 'row',
     alignItems: 'center',
