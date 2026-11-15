@@ -43,7 +43,7 @@ test('making a profile public restores its legacy URL for older clients', () => 
   const body = api.slice(start, end);
   assert.match(body, /from\('private-avatars'\)\.download/);
   assert.match(body, /from\('avatars'\)\.upload/);
-  assert.ok(body.includes(".from('profiles').update({ avatar_url: publicUrl }")));
+  assert.ok(body.includes(".from('profiles').update({ avatar_url: publicUrl })"));
 });
 
 test('viewer avatar resolution uses the batch authorization RPC and never falls back for restricted profiles', () => {
