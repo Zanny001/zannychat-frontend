@@ -15,10 +15,7 @@ function contrast(a, b) {
 
 test('Crown Aurora is the stable default ZannyChat palette', () => {
   assert.equal(DEFAULT_MOOD_KEY, 'royalNeon');
-  assert.deepEqual(
-    ['ink', 'inkRaised', 'inkRaisedAlt', 'signal', 'thread', 'gold', 'paper', 'inkSoft'],
-    ['ink', 'inkRaised', 'inkRaisedAlt', 'signal', 'thread', 'gold', 'paper', 'inkSoft']
-  );
+  assert.equal(MOODS.royalNeon.key, 'royalNeon');
   assert.equal(MOODS.royalNeon.label, 'Crown Aurora');
   assert.deepEqual(
     [MOODS.royalNeon.ink, MOODS.royalNeon.inkRaised, MOODS.royalNeon.inkRaisedAlt,
