@@ -211,3 +211,11 @@ test('native and web LIVE sessions renew participant presence and support stale 
   assert.ok(web.includes('setInterval(heartbeat, 30_000)'));
   assert.ok(web.includes("status !== 'Connected'"));
 });
+
+
+test('native LIVE screens expose audio output selection for viewers and creators', () => {
+  assert.ok(screen.includes('AudioSession.showAudioRoutePicker()'));
+  assert.ok(screen.includes('AudioSession.getAudioOutputs()'));
+  assert.ok(screen.includes('AudioSession.selectAudioOutput(output)'));
+  assert.ok(screen.includes('Choose LIVE audio output'));
+});
