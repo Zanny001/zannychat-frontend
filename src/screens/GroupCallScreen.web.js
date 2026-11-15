@@ -179,14 +179,14 @@ export default function GroupCallScreenWeb({ route, navigation }) {
   }, [connection?.room?.id, conversationId]);
 
   useEffect(() => {
-    if (!connection?.roomId) return undefined;
+    if (!connection?.roomId || status !== 'Connected') return undefined;
     let active = true;
     const heartbeat = () => backendFetch(`/group-calls/${connection.roomId}/heartbeat`, { method: 'POST' })
       .catch((error) => { if (active) console.warn('[group-calls] presence heartbeat failed:', error?.message || error); });
     heartbeat();
     const interval = setInterval(heartbeat, 30_000);
     return () => { active = false; clearInterval(interval); };
-  }, [connection?.roomId]);
+  }, [connection?.roomId, status]);
 
   const toggleMute = useCallback(async () => {
     const next = !muted;
