@@ -83,3 +83,13 @@ test('Netlify deploy applies baseline browser security headers', () => {
   assert.match(source, /Permissions-Policy = "camera=\(self\), microphone=\(self\), geolocation=\(self\)"/);
   assert.match(source, /frame-ancestors 'none'/);
 });
+
+
+test('startup has a hard deadline fallback for unexpected font or auth initialization stalls', () => {
+  const source = fs.readFileSync(path.join(root, 'App.js'), 'utf8');
+  assert.match(source, /startupDeadlineReached/);
+  assert.match(source, /startup exceeded 12 seconds/i);
+  assert.match(source, /setInitialRoute\(\(currentRoute\) => currentRoute \|\| 'Onboarding'\)/);
+  assert.match(source, /fontFallbackReady \|\| startupDeadlineReached/);
+  assert.match(source, /clearTimeout\(startupDeadline\)/);
+});
