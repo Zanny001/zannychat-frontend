@@ -38,10 +38,10 @@ export default function AuthRequiredScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingHorizontal: spacing.lg, paddingVertical: spacing.xl || spacing.lg }]}>
         <Text style={[typography.caption, styles.brand, { color: colors.primary }]}>ZANNYCHAT</Text>
         <Text style={[typography.title, styles.title, { color: colors.textPrimary }]}>{validLink ? copy.title : 'This link is incomplete'}</Text>
-        <Text style={[styles.body, { color: colors.textSecondary }]}>
+        <Text style={[typography.body, styles.body, { color: colors.textSecondary }]}>
           {validLink ? copy.body : 'Ask the sender to share a fresh link, then open it again.'}
         </Text>
         {validLink ? (
@@ -52,7 +52,7 @@ export default function AuthRequiredScreen({ navigation, route }) {
               onPress={() => continueTo('Login')}
               style={[styles.primaryButton, { backgroundColor: colors.primary, borderRadius: radii?.lg || 18 }]}
             >
-              <Text style={[styles.primaryText, { color: colors.onPrimary }]}>Sign in</Text>
+              <Text style={[typography.body, styles.primaryText, { color: colors.onPrimary }]}>Sign in</Text>
             </TouchableOpacity>
             <TouchableOpacity
               accessibilityRole="button"
@@ -60,11 +60,11 @@ export default function AuthRequiredScreen({ navigation, route }) {
               onPress={() => continueTo('Signup')}
               style={[styles.secondaryButton, { borderColor: colors.border, borderRadius: radii?.lg || 18 }]}
             >
-              <Text style={[styles.secondaryText, { color: colors.textPrimary }]}>Create account</Text>
+              <Text style={[typography.body, styles.secondaryText, { color: colors.textPrimary }]}>Create account</Text>
             </TouchableOpacity>
           </>
         ) : null}
-        <Text style={[styles.footer, { color: colors.textSecondary }]}>Your link is only used to resume the requested action after authentication.</Text>
+        <Text style={[typography.caption, styles.footer, { color: colors.textSecondary }]}>Your link is only used to resume the requested action after authentication.</Text>
       </View>
     </SafeAreaView>
   );
@@ -72,13 +72,13 @@ export default function AuthRequiredScreen({ navigation, route }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  container: { flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', justifyContent: 'center', paddingHorizontal: spacing.lg, paddingVertical: spacing.xl || spacing.lg },
-  brand: { fontSize: 12, fontWeight: '900', letterSpacing: 2.4, marginBottom: 20 },
-  title: { fontSize: 28, lineHeight: 34, fontWeight: '800', marginBottom: 12 },
-  body: { fontSize: 15, lineHeight: 23, marginBottom: 28 },
+  container: { flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', justifyContent: 'center' },
+  brand: { letterSpacing: 2.4, marginBottom: 20 },
+  title: { marginBottom: 12 },
+  body: { marginBottom: 28 },
   primaryButton: { minHeight: 54, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18, marginBottom: 12 },
   primaryText: { fontSize: 15, fontWeight: '800' },
   secondaryButton: { minHeight: 54, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18, borderWidth: 1 },
   secondaryText: { fontSize: 15, fontWeight: '700' },
-  footer: { fontSize: 12, lineHeight: 18, marginTop: 22 },
+  footer: { marginTop: 22 },
 });
