@@ -91,7 +91,7 @@ function DraftVideoPreview({ uri }) {
   return <VideoView player={player} nativeControls contentFit="contain" style={{ width: '100%', height: '100%' }} />;
 }
 
-const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB — enforced server-side too since 0006 (storage.buckets.file_size_limit)
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MiB — enforced by the chat-media Storage bucket too
 const MESSAGE_PAGE_SIZE = 30;
 
 const DAY_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
