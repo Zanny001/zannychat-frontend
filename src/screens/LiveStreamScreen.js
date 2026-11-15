@@ -381,9 +381,6 @@ export default function LiveStreamScreen({ route, navigation }) {
     return () => {
       clearInterval(interval);
       AudioSession.stopAudioSession();
-      if (stream?.id && !endedRef.current) {
-        backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' }).catch(() => {});
-      }
     };
   }, [stream?.id, creatorMode, refreshComments]);
 
@@ -397,9 +394,39 @@ export default function LiveStreamScreen({ route, navigation }) {
       } catch (_) {}
     };
     checkApproval();
-    const interval = setInterval(checkApproval, 15000);
+    const interval = setInterval(checkApproval, 4000);
     return () => { active = false; clearInterval(interval); };
   }, [stream?.id, creatorMode, publisherMode, stream?.allow_guests]);
+
+  useEffect(() => {
+    if (!navigation?.addListener || !stream?.id) return undefined;
+    const unsubscribe = navigation.addListener('beforeRemove', () => {
+      if (!endedRef.current) {
+        endedRef.current = true;
+        backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' }).catch(() => {});
+      }
+    });
+    return unsubscribe;
+  }, [navigation, stream?.id, creatorMode]);
+
+  useEffect(() => {
+    if (!creatorMode || !stream?.id || !stream.allow_guests) return undefined;
+    let active = true;
+    const refreshGuestRequests = async () => {
+      try {
+        const result = await backendFetch(`/live/${stream.id}/guest-requests`);
+        if (!active) return;
+        const incoming = Array.isArray(result?.requests) ? result.requests : [];
+        setGuestRequests(incoming);
+        // Keep new requests visible on the creator's stage without requiring
+        // them to discover and open a separate panel or rely on push delivery.
+        if (incoming.length) setShowGuestRequests(true);
+      } catch (_) {}
+    };
+    refreshGuestRequests();
+    const interval = setInterval(refreshGuestRequests, 3500);
+    return () => { active = false; clearInterval(interval); };
+  }, [creatorMode, stream?.id, stream?.allow_guests]);
 
   const leave = async () => {
     if (!stream?.id || endedRef.current) return;
