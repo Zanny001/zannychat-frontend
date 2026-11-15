@@ -20,6 +20,33 @@ import { hexToRgba } from '../utils/color';
 
 const LIVE_REACTION_EMOJI = Object.freeze({ heart: '❤️', clap: '👏', laugh: '😂', wow: '😮', fire: '🔥', idea: '💡', support: '🙌' });
 
+async function chooseNativeAudioOutput() {
+  try {
+    if (Platform.OS === 'ios') {
+      await AudioSession.showAudioRoutePicker();
+      return;
+    }
+    const outputs = await AudioSession.getAudioOutputs();
+    const choices = ['speaker', 'earpiece'].filter((output) => outputs.includes(output));
+    if (!choices.length) {
+      Alert.alert('Audio output', 'No alternate audio output is currently available.');
+      return;
+    }
+    Alert.alert('Audio output', 'Choose where LIVE audio should play.', [
+      ...choices.map((output) => ({
+        text: output === 'speaker' ? 'Speaker' : 'Phone earpiece',
+        onPress: () => AudioSession.selectAudioOutput(output).catch(() => {
+          Alert.alert('Audio output unavailable', 'The selected audio output could not be activated.');
+        }),
+      })),
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  } catch (_) {
+    Alert.alert('Audio output unavailable', 'Could not load available audio outputs.');
+  }
+}
+
+
 function FloatingReaction({ item, index, onComplete }) {
   const progress = useSharedValue(0);
   const reducedMotion = useReducedMotion();
@@ -127,6 +154,9 @@ function LiveMedia({ streamId, creatorMode, publisherMode, cameraEnabled, microp
         <View style={{ position: 'absolute', zIndex: 2, top: 10, left: 14, right: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View style={{ backgroundColor: colors.danger, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 12 }}><Text style={[typography.small, { color: colors.onDanger }]}>● LIVE</Text></View>
           <Text numberOfLines={1} style={[typography.bodyStrong, { color: '#FFFFFF', flex: 1, minWidth: 0, marginHorizontal: 12 }]}>{title}</Text>
+          <TouchableOpacity onPress={chooseNativeAudioOutput} accessibilityRole="button" accessibilityLabel="Choose LIVE audio output" style={{ backgroundColor: hexToRgba(colors.surface, 0.82), borderWidth: 1, borderColor: colors.border, padding: 8, borderRadius: 12, marginRight: 8 }}>
+            <Ionicons name="volume-high-outline" size={19} color={colors.textPrimary} />
+          </TouchableOpacity>
           {creatorMode && <TouchableOpacity onPress={onToggleParticipants} accessibilityRole="button" accessibilityLabel="Manage LIVE moderators" style={{ backgroundColor: hexToRgba(colors.surface, 0.82), borderWidth: 1, borderColor: colors.border, padding: 8, borderRadius: 12, marginRight: 8 }}><Ionicons name="people-outline" size={19} color={colors.textPrimary} /></TouchableOpacity>}
           {creatorMode && canManageGuests && <TouchableOpacity onPress={onToggleGuestRequests} accessibilityRole="button" accessibilityLabel="Review guest requests" style={{ backgroundColor: hexToRgba(colors.surface, 0.82), borderWidth: 1, borderColor: colors.border, padding: 8, borderRadius: 12, marginRight: 8 }}><Ionicons name="person-add-outline" size={19} color={colors.textPrimary} /></TouchableOpacity>}
           {creatorMode && replayEnabled && <TouchableOpacity onPress={replayStatus === 'ready' ? onViewReplay : replayStatus === 'recording' ? onStopReplay : onStartReplay} disabled={replayBusy || ['starting', 'processing'].includes(replayStatus)} accessibilityRole="button" accessibilityLabel={replayStatus === 'ready' ? 'Watch saved LIVE replay' : replayStatus === 'recording' ? 'Stop LIVE replay recording' : 'Start LIVE replay recording'} style={{ backgroundColor: hexToRgba(colors.surface, 0.82), borderWidth: 1, borderColor: replayStatus === 'recording' ? colors.danger : colors.border, padding: 8, borderRadius: 12, marginRight: 8 }}>
