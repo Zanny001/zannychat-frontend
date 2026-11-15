@@ -45,6 +45,7 @@ export default function CallScreenWeb({ route, navigation }) {
   const connectedAtRef = useRef(null);
   const offerStartedRef = useRef(false);
   const iceRestartInProgressRef = useRef(false);
+  const disconnectTimerRef = useRef(null);
   const upgradeNavigatedRef = useRef(false);
   const endingRef = useRef(false);
 
@@ -255,9 +256,28 @@ export default function CallScreenWeb({ route, navigation }) {
         const state = pc.iceConnectionState;
 
         if (state === 'connected' || state === 'completed') {
+          if (disconnectTimerRef.current) {
+            clearTimeout(disconnectTimerRef.current);
+            disconnectTimerRef.current = null;
+          }
           iceRestartInProgressRef.current = false;
           setErrorText('');
           return;
+        }
+
+        if ((state === 'disconnected' || state === 'failed') && !disconnectTimerRef.current) {
+          disconnectTimerRef.current = setTimeout(async () => {
+            disconnectTimerRef.current = null;
+            if (!activeRef.current || ['connected', 'completed'].includes(pc.iceConnectionState)) return;
+            const current = callRef.current;
+            if (current?.id && current.status === 'accepted') {
+              try {
+                const updated = await updateCallStatus(current.id, 'ended');
+                callRef.current = { ...current, ...updated };
+              } catch (_) {}
+            }
+            if (activeRef.current) navigation.goBack();
+          }, 120_000);
         }
 
         if (
@@ -358,6 +378,8 @@ export default function CallScreenWeb({ route, navigation }) {
 
     return () => {
       activeRef.current = false;
+      if (disconnectTimerRef.current) clearTimeout(disconnectTimerRef.current);
+      disconnectTimerRef.current = null;
       unsubscribeSignals();
       unsubscribeSession();
       try { pc?.close(); } catch (_) {}
