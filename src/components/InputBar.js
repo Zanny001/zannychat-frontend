@@ -219,6 +219,7 @@ export default function InputBar({
 
           <TouchableOpacity
             onPress={onStopRecording}
+            hitSlop={6}
             style={[styles.sendBtn, { backgroundColor: colors.primary, shadowColor: colors.primary, shadowOpacity: 0.36, shadowRadius: 12, elevation: 5 }]}
             accessibilityLabel="Send voice message"
             accessibilityRole="button"
@@ -268,6 +269,7 @@ export default function InputBar({
 
           <TouchableOpacity
             onPress={text.trim() ? handleSend : onStartRecording}
+            hitSlop={6}
             style={[styles.sendBtn, { backgroundColor: text.trim() ? colors.primary : hexToRgba(colors.surfaceAlt, 0.8), shadowColor: text.trim() ? colors.primary : colors.accent, shadowOpacity: text.trim() ? 0.36 : 0.12, shadowRadius: text.trim() ? 12 : 6, elevation: text.trim() ? 5 : 2 }]}
             accessibilityLabel={text.trim() ? (editing ? 'Confirm edit' : 'Send message') : 'Record a voice message'}
             accessibilityRole="button"
