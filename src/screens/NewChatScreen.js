@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -118,7 +119,7 @@ export default function NewChatScreen({ navigation, route }) {
     setFavoriteIds(next);
     try { await AsyncStorage.setItem(favoriteStorageKey, JSON.stringify(next)); } catch (_) {
       setFavoriteIds(favoriteIds);
-      Alert.alert('Could not save favorite', 'Please check device storage and try again.');
+      showAppAlert('Could not save favorite', 'Please check device storage and try again.');
     }
   }
 
@@ -252,7 +253,7 @@ export default function NewChatScreen({ navigation, route }) {
     } catch (err) {
       console.error('[NewChat] Failed to share contact:', err);
 
-      Alert.alert(
+      showAppAlert(
         "Couldn't share contact",
         err?.message || 'Please try again.'
       );
