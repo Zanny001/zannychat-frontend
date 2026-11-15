@@ -145,10 +145,10 @@ test('interactive controls keep 44-point minimum touch targets on high-traffic s
   ];
   for (const [file, minimumCount] of contracts) {
     const source = readFileSync(new URL(file, import.meta.url), 'utf8');
-    const targets = source.match(/minHeight\s*:\s*44\b/g) || [];
+    const targets = [...source.matchAll(/minHeight\s*:\s*(\d+)\b/g)].filter((match) => Number(match[1]) >= 44);
     assert.ok(
       targets.length >= minimumCount,
-      file + ' expected at least ' + minimumCount + ' 44-point touch targets, found ' + targets.length,
+      file + ' expected at least ' + minimumCount + ' 44-point-or-larger touch targets, found ' + targets.length,
     );
   }
 });
