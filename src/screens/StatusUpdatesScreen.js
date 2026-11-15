@@ -242,7 +242,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
 
   const chooseVideo = async () => {
     try {
-      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'], allowsEditing: false, videoMaxDuration: 30 });
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'], allowsEditing: false, videoMaxDuration: 30, videoExportPreset: ImagePicker.VideoExportPreset.H264_1280x720 });
       if (!result.canceled && result.assets?.[0]) { setVideo(result.assets[0]); setPhoto(null); setPublishError(''); setPublishSuccess(''); }
     } catch (pickerError) { setPublishError(pickerError?.message || 'The video picker could not be opened.'); }
   };

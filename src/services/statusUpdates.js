@@ -190,13 +190,22 @@ export async function publishPhotoStatus(asset, caption = '', audience = 'contac
   const { data: auth, error: authError } = await supabase.auth.getUser();
   if (authError || !auth?.user?.id) throw new Error('Sign in to publish a status.');
   const blob = await readPickedStatusBlob(asset);
-  if (!blob || blob.size < 1 || blob.size > 10 * 1024 * 1024) throw new Error('Photo must be smaller than 10 MB.');
-  const mime = asset.mimeType || blob.type || 'image/jpeg';
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(mime)) throw new Error('Choose a JPG, PNG, or WebP photo.');
+  if (!blob || blob.size < 1 || blob.size > 10 * 1024 * 1024) throw new Error('Photo must be 10 MiB or smaller.');
+  const supportedImageMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'];
+  const assetName = String(asset.fileName || asset.name || asset.uri || '').toLowerCase();
+  const mimeCandidates = [blob.type, asset.mimeType].map((value) => String(value || '').toLowerCase());
+  const mime = mimeCandidates.find((value) => supportedImageMimes.includes(value))
+    || (assetName.endsWith('.heic') ? 'image/heic'
+      : assetName.endsWith('.heif') ? 'image/heif'
+        : assetName.endsWith('.gif') ? 'image/gif'
+          : assetName.endsWith('.png') ? 'image/png'
+            : assetName.endsWith('.webp') ? 'image/webp'
+              : assetName.endsWith('.jpg') || assetName.endsWith('.jpeg') ? 'image/jpeg' : '');
+  if (!mime) throw new Error('Choose a JPG, PNG, WebP, GIF, HEIC, or HEIF photo.');
   const captionText = String(caption || '').trim().slice(0, STATUS_TEXT_LIMIT);
   const row = await createStatusRecord(captionText, audience, 'image', expiryHours);
   await saveStatusAudienceRecipients(row.id, selectedIds, auth.user.id);
-  const ext = mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
+  const ext = ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/heic': 'heic', 'image/heif': 'heif' })[mime];
   const path = `${auth.user.id}/${row.id}/photo.${ext}`;
   const { error: updateError } = await supabase.from('status_updates').update({ media_path: path }).eq('id', row.id).eq('user_id', auth.user.id);
   if (updateError) { await supabase.from('status_updates').delete().eq('id', row.id); throw updateError; }
@@ -215,13 +224,17 @@ export async function publishVideoStatus(asset, caption = '', audience = 'contac
   const { data: auth, error: authError } = await supabase.auth.getUser();
   if (authError || !auth?.user?.id) throw new Error('Sign in to publish a status.');
   const blob = await readPickedStatusBlob(asset);
-  if (!blob || blob.size < 1 || blob.size > 50 * 1024 * 1024) throw new Error('Video must be smaller than 50 MB.');
-  const mime = asset.mimeType || blob.type || 'video/mp4';
-  if (mime !== 'video/mp4') throw new Error('Choose an MP4 video. Other video formats are not supported yet.');
+  if (!blob || blob.size < 1 || blob.size > 50 * 1024 * 1024) throw new Error('Video must be 50 MiB or smaller.');
+  const assetName = String(asset.fileName || asset.name || asset.uri || '').toLowerCase();
+  const mimeCandidates = [blob.type, asset.mimeType].map((value) => String(value || '').toLowerCase());
+  const mime = mimeCandidates.find((value) => value === 'video/mp4' || value === 'video/quicktime')
+    || (assetName.endsWith('.mov') ? 'video/quicktime' : assetName.endsWith('.mp4') ? 'video/mp4' : '');
+  const extension = mime === 'video/quicktime' ? 'mov' : mime === 'video/mp4' ? 'mp4' : null;
+  if (!extension) throw new Error('Choose an MP4 or MOV video. Other video formats are not supported yet.');
   const captionText = String(caption || '').trim().slice(0, STATUS_TEXT_LIMIT);
   const row = await createStatusRecord(captionText, audience, 'video', expiryHours);
   await saveStatusAudienceRecipients(row.id, selectedIds, auth.user.id);
-  const path = `${auth.user.id}/${row.id}/video.mp4`;
+  const path = `${auth.user.id}/${row.id}/video.${extension}`;
   const { error: updateError } = await supabase.from('status_updates').update({ media_path: path }).eq('id', row.id).eq('user_id', auth.user.id);
   if (updateError) { await supabase.from('status_updates').delete().eq('id', row.id); throw updateError; }
   const bytes = await blob.arrayBuffer();
