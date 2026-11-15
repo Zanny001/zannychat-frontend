@@ -93,3 +93,12 @@ test('startup has a hard deadline fallback for unexpected font or auth initializ
   assert.match(source, /fontFallbackReady \|\| startupDeadlineReached/);
   assert.match(source, /clearTimeout\(startupDeadline\)/);
 });
+
+
+test('native auth session restoration is bounded and still allows late auth events to recover', () => {
+  const source = fs.readFileSync(path.join(root, 'App.js'), 'utf8');
+  assert.match(source, /SESSION_RESTORE_TIMEOUT_MS = 8000/);
+  assert.match(source, /Promise\.race\(\[/);
+  assert.match(source, /authStateObserved/);
+  assert.match(source, /if \(mounted && !authStateObserved\)/);
+});
