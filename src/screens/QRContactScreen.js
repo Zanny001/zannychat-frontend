@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -31,13 +32,13 @@ export default function QRContactScreen({ navigation, route }) {
 
   async function beginScan() {
     if (!liveReady) {
-      Alert.alert('Live account required', 'QR contact discovery needs a connected Supabase account and ZannyChat backend.');
+      showAppAlert('Live account required', 'QR contact discovery needs a connected Supabase account and ZannyChat backend.');
       return;
     }
     if (!permission?.granted) {
       const result = await requestPermission();
       if (!result.granted) {
-        Alert.alert('Camera access needed', 'Allow camera access to scan a ZannyChat contact QR code.');
+        showAppAlert('Camera access needed', 'Allow camera access to scan a ZannyChat contact QR code.');
         return;
       }
     }
@@ -56,7 +57,7 @@ export default function QRContactScreen({ navigation, route }) {
       navigation.replace('Chat', { conversation });
     } catch (error) {
       handledRef.current = false;
-      Alert.alert('Could not connect to contact', error.message || 'Check the QR code and try again.');
+      showAppAlert('Could not connect to contact', error.message || 'Check the QR code and try again.');
       setProcessing(false);
     }
   }
@@ -67,7 +68,7 @@ export default function QRContactScreen({ navigation, route }) {
     if (!userId) {
       handledRef.current = true;
       setScanning(false);
-      Alert.alert('Not a ZannyChat QR code', 'Scan a QR code from a ZannyChat profile.');
+      showAppAlert('Not a ZannyChat QR code', 'Scan a QR code from a ZannyChat profile.');
       handledRef.current = false;
       return;
     }
