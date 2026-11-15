@@ -68,7 +68,7 @@ export default function ProfileScreen({ navigation }) {
               onPress={() => setReloadKey((value) => value + 1)}
               accessibilityRole="button"
               accessibilityLabel="Retry loading your profile"
-              style={({ pressed }) => [{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }, pressed && { opacity: 0.7 }]}
+              style={({ pressed }) => [{ minHeight: 48, justifyContent: 'center', alignSelf: 'flex-start' }, pressed && { opacity: 0.7 }]}
             >
               <Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text>
             </Pressable>
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   avatarStatus: { position: 'absolute', right: 2, bottom: 3, width: 14, height: 14, borderRadius: 7, borderWidth: 2 },
   profileDivider: { height: StyleSheet.hairlineWidth, marginVertical: 18 },
   profileActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  profileAction: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 11, flex: 1, minWidth: 132 },
+  profileAction: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 11, flex: 1, minWidth: 132 },
   row: { flexDirection: 'row', alignItems: 'center' },
   editPill: {
     flexDirection: 'row',
