@@ -363,7 +363,10 @@ async function getOwnProfileRow() {
 async function ensurePrivateAvatarCopy(userId, avatarUrl, currentAvatarPath) {
   if (typeof currentAvatarPath === 'string'
       && currentAvatarPath.startsWith(`${userId}/`)
-      && !currentAvatarPath.includes('..')) return currentAvatarPath;
+      && !currentAvatarPath.includes('..')) {
+    const { data: existingPrivateImage, error: privateReadError } = await supabase.storage.from('private-avatars').download(currentAvatarPath);
+    if (!privateReadError && existingPrivateImage) return currentAvatarPath;
+  }
   const legacyPath = getLegacyAvatarStoragePath(avatarUrl, userId);
   if (!legacyPath) {
     if (avatarUrl) throw new Error('Your existing profile photo could not be secured. Upload a new photo before changing its visibility.');
@@ -604,10 +607,9 @@ export async function resolveProfileAvatarUrls(profiles = [], expiresIn = 3600) 
     const { data, error } = await supabase.rpc('get_visible_profile_avatar_paths', { p_user_ids: ids.slice(start, start + 500) });
     if (error) {
       if (isMissingRpcFunction(error, 'get_visible_profile_avatar_paths')) {
-        return profiles.map((profile) => {
-          const avatarUrl = profile.avatar_url || profile.avatarUrl || null;
-          return { ...profile, avatar_url: avatarUrl, avatarUrl };
-        });
+        // Fail closed during an incomplete backend rollout: public legacy URLs
+        // cannot prove that the current viewer is allowed to see the photo.
+        return profiles.map((profile) => ({ ...profile, avatar_url: null, avatarUrl: null }));
       }
       throw error;
     }
