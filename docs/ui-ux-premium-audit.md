@@ -249,3 +249,21 @@ The source scan covered these families:
 - Re-run or repair the cancelled calling workflow and complete all its remaining checks.
 - Complete visual/browser/device QA and accessibility/keyboard acceptance.
 - Keep PR #85 draft and unmerged; no production deploy or Supabase mutation is part of this pass.
+
+
+## Profile and messaging utility source-review checkpoint — 2026-11-15
+
+### Reviewed in this pass
+- `EditProfileScreen.js` and the `updateProfile` service path: the UI normalizes username input, validates the allowed 3–24 character format, writes identity fields, then re-reads the current profile and verifies the returned name/status/username before reporting success. The form updates its local values from the confirmed response. Additional profile details save separately and the UI explicitly reports partial success if that second operation fails.
+- `ProfileScreen.js`: reviewed profile data refresh on focus and LIVE impact retrieval/error handling.
+- `StatusUpdatesScreen.js`: reviewed focus refresh and owner-side delete action; detailed story composition, viewer, reaction and privacy-state review remains pending.
+- `SharedMediaScreen.js`: reviewed media grid/open-preview interaction and failed-photo retry state; full media-type, pagination, empty and access-error review remains pending.
+- `DraftsScreen.js`: reviewed focus refresh, unavailable-conversation handling and delete failure feedback.
+- `ScheduledMessagesScreen.js`: reviewed focus refresh path; scheduling/edit/cancel/delivery edge cases remain pending.
+
+### Finding relevant to the reported username persistence issue
+- The current branch contains a read-after-write confirmation in `src/services/api.js:updateProfile`: after updating the authenticated user's profile row, it calls `getCurrentUser()` and rejects the save if the returned identity does not match the requested values. `EditProfileScreen` only displays the saved state after this confirmation. This is a meaningful source-level safeguard, but it does not replace an end-to-end test that edits a username, leaves the screen, reopens the app/session, and verifies the persisted value from the server.
+
+### Status
+- No new confirmed defect was established in this limited source pass. Static review is not a substitute for exercising server permissions, data persistence, media permissions, offline/retry states, and accessibility with real accounts/devices.
+- The 46-screen inventory remains only partially reviewed; no claim of full audit completion.
