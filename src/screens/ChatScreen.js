@@ -99,6 +99,22 @@ function isPermanentAttachmentUploadError(error) {
   const message = String(error?.message || error?.error || '').toLowerCase();
   return /invalidmime|unsupported mime|mime type.*not|file size.*limit|payload too large|row-level security|access denied|not authorized/.test(message);
 }
+
+function getPermanentAttachmentErrorMessage(error) {
+  const status = Number(error?.statusCode ?? error?.status ?? error?.response?.status);
+  const message = String(error?.message || error?.error || '').toLowerCase();
+  if (error?.code === 'UNSUPPORTED_MEDIA_TYPE' || status === 415 || /invalidmime|unsupported mime|mime type.*not/.test(message)) {
+    return 'This file type cannot be shared securely. Choose a supported photo, video, audio file, document, or archive.';
+  }
+  if (error?.code === 'FILE_TOO_LARGE' || status === 413 || /file size.*limit|payload too large/.test(message)) {
+    return 'This attachment exceeds the 25 MiB upload limit.';
+  }
+  if (status === 403 || /row-level security|access denied|not authorized/.test(message)) {
+    return 'You no longer have permission to upload attachments in this conversation. Refresh the chat and try again.';
+  }
+  if (status === 404) return 'The attachment service could not find this conversation. Reopen the chat and try again.';
+  return error?.message || 'This attachment cannot be uploaded. Choose a supported file under 25 MiB.';
+}
 const MESSAGE_PAGE_SIZE = 30;
 
 const DAY_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -691,7 +707,7 @@ export default function ChatScreen({ route, navigation }) {
 
   async function queueAttachmentRetry(item, error) {
     if (isPermanentAttachmentUploadError(error)) {
-      Alert.alert('Attachment cannot be uploaded', error.message || 'Choose a supported file under 25 MB.');
+      Alert.alert('Attachment cannot be uploaded', getPermanentAttachmentErrorMessage(error));
       return;
     }
     const recovery = await preserveAttachmentForRetry(FileSystem, item, myUserId, conversation.id);
@@ -801,7 +817,7 @@ export default function ChatScreen({ route, navigation }) {
             }
             Alert.alert(
               'Attachment cannot be uploaded',
-              `${error.message || 'Choose a supported file under 25 MB.'}${removed ? ' The invalid retry item was removed.' : ' Remove this item from the retry list.'}`
+              `${getPermanentAttachmentErrorMessage(error)}${removed ? ' The invalid retry item was removed.' : ' Remove this item from the retry list.'}`
             );
             break;
           }
