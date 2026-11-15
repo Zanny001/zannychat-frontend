@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useCallback, useMemo, useState } from 'react';
 import { SafeAreaView, ScrollView, View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -31,11 +32,11 @@ export default function SavedMessagesScreen({ navigation }) {
 
   useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
 
-  const remove = (item) => Alert.alert('Remove saved message?', 'This removes the local bookmark only. The original message will remain in the conversation.', [
+  const remove = (item) => showAppAlert('Remove saved message?', 'This removes the local bookmark only. The original message will remain in the conversation.', [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Remove', style: 'destructive', onPress: async () => {
       try { setItems(await removeSavedMessage(userId, item.id)); }
-      catch (_) { Alert.alert('Could not remove bookmark', 'Please try again.'); }
+      catch (_) { showAppAlert('Could not remove bookmark', 'Please try again.'); }
     } },
   ]);
 
