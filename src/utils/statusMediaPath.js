@@ -1,5 +1,5 @@
-const PHOTO_PATH = /^[^/]+\/[^/]+\/photo\.(?:jpg|png|webp)$/;
-const VIDEO_PATH = /^[^/]+\/[^/]+\/video\.mp4$/;
+const PHOTO_PATH = /^[^/]+\/[^/]+\/photo\.(?:jpg|png|webp|gif|heic|heif)$/;
+const VIDEO_PATH = /^[^/]+\/[^/]+\/video\.(?:mp4|mov)$/;
 
 /** Validate a status media object key against the status row that references it. */
 export function isSafeStatusMediaPath(row) {
