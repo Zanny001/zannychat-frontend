@@ -19,9 +19,9 @@ test('shared header gives the title flexible space and preserves one-line trunca
   assert.match(header, /numberOfLines=\{1\} ellipsizeMode="tail"/);
 });
 
-test('chat header icon controls meet the 44-point touch target guideline', () => {
+test('chat header icon controls meet the 48-point touch target guideline', () => {
   const chat = source('./ChatScreen.js');
-  assert.match(chat, /headerAction: \{ width: 44, height: 44, borderRadius: 22/);
+  assert.match(chat, /headerAction: \{ width: 48, height: 48, borderRadius: 24/);
 });
 
 test('chat message bubbles constrain long text and wrap delivery metadata without overflow', () => {
