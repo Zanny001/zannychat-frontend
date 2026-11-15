@@ -306,9 +306,12 @@ export async function updateProfile({ name, status, username }) {
   if (error?.code === '23505') throw new Error('That username is already taken. Try another one.');
   if (error) throw error;
   const savedProfile = await getCurrentUser();
-  if (normalizedUsername !== undefined
-      && String(savedProfile?.username || '').trim().toLowerCase() !== normalizedUsername) {
-    throw new Error('Your username change could not be confirmed as saved. Please try again.');
+  const profileMismatch = (name !== undefined && String(savedProfile?.name ?? '') !== String(name ?? ''))
+    || (status !== undefined && String(savedProfile?.status ?? '') !== String(status ?? ''))
+    || (normalizedUsername !== undefined
+      && String(savedProfile?.username || '').trim().toLowerCase() !== normalizedUsername);
+  if (profileMismatch) {
+    throw new Error('Your profile changes could not be confirmed as saved. Please try again.');
   }
   return savedProfile;
 }
