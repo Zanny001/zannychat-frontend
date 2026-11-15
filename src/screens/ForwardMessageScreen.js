@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,14 +22,14 @@ export default function ForwardMessageScreen({ navigation, route }) {
         const rows = Array.isArray(result) ? result : result?.conversations || [];
         if (mounted) setConversations(rows.filter((item) => item.id !== sourceConversationId && !item.isArchived));
       })
-      .catch((error) => Alert.alert("Couldn't load chats", error.message || 'Please try again.'))
+      .catch((error) => showAppAlert("Couldn't load chats", error.message || 'Please try again.'))
       .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
   }, [sourceConversationId]);
 
   async function forwardTo(conversation) {
     if (typeof messageText !== 'string' || !messageText.trim()) {
-      Alert.alert('Cannot forward message', 'Only non-empty text messages can be forwarded in this version.');
+      showAppAlert('Cannot forward message', 'Only non-empty text messages can be forwarded in this version.');
       return;
     }
     setSendingId(conversation.id);
@@ -36,7 +37,7 @@ export default function ForwardMessageScreen({ navigation, route }) {
       await sendMessage(conversation.id, messageText.trim());
       navigation.replace('Chat', { conversation });
     } catch (error) {
-      Alert.alert("Couldn't forward message", error.message || 'Please try again.');
+      showAppAlert("Couldn't forward message", error.message || 'Please try again.');
       setSendingId(null);
     }
   }
