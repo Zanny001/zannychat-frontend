@@ -269,13 +269,10 @@ export async function getCurrentUser() {
   const { data: authData } = await supabase.auth.getUser();
   if (!authData?.user) return null;
 
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', authData.user.id)
-    .single();
-
+  const { data, error } = await supabase.rpc('get_my_profile');
   if (error) throw error;
+  const profile = Array.isArray(data) ? data[0] : data;
+  if (!profile) throw new Error('Your profile is still being set up. Please try again.');
   return normalizeProfile(profile);
 }
 
@@ -301,25 +298,19 @@ export async function updateProfile({ name, status, username }) {
 
   const { data: authData } = await supabase.auth.getUser();
   if (!authData?.user?.id) throw new Error('Sign in to update your profile.');
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('profiles')
     .update({ ...(name !== undefined && { name }), ...(status !== undefined && { status }), ...(normalizedUsername !== undefined && { username: normalizedUsername }) })
-    .eq('id', authData.user.id)
-    .select()
-    .single();
+    .eq('id', authData.user.id);
 
+  if (error?.code === '23505') throw new Error('That username is already taken. Try another one.');
   if (error) throw error;
-  const { data: confirmed, error: confirmError } = await supabase
-    .from('profiles')
-    .select('id,name,avatar_color,avatar_url,status,online,username')
-    .eq('id', authData.user.id)
-    .single();
-  if (confirmError) throw confirmError;
+  const savedProfile = await getCurrentUser();
   if (normalizedUsername !== undefined
-      && String(confirmed?.username || '').trim().toLowerCase() !== normalizedUsername) {
+      && String(savedProfile?.username || '').trim().toLowerCase() !== normalizedUsername) {
     throw new Error('Your username change could not be confirmed as saved. Please try again.');
   }
-  return normalizeProfile(confirmed);
+  return savedProfile;
 }
 
 const PROFILE_DETAIL_DEFAULTS = Object.freeze({
@@ -791,7 +782,7 @@ export async function fetchConversations({ limit = 50, offset = 0 } = {}) {
     .from('conversations')
     .select(
       `id, created_at, name, is_group,
-       conversation_participants(user_id, profiles(id, name, avatar_color, avatar_url, status, online), is_favorite, is_muted, is_archived),
+       conversation_participants(user_id, is_favorite, is_muted, is_archived),
        messages!messages_conversation_id_fkey(sender_id, text, created_at, media_type)`
     )
     .order('created_at', { ascending: false, referencedTable: 'messages' })
@@ -801,11 +792,30 @@ export async function fetchConversations({ limit = 50, offset = 0 } = {}) {
 
   if (error) throw error;
 
+  const participantIds = [...new Set(
+    (data || []).flatMap((row) => (row.conversation_participants || []).map((participant) => participant.user_id)).filter(Boolean),
+  )];
+  const participantProfiles = [];
+  for (let start = 0; start < participantIds.length; start += 500) {
+    const { data: batchProfiles, error: participantProfilesError } = await supabase.rpc(
+      'get_conversation_profile_directory',
+      { p_user_ids: participantIds.slice(start, start + 500) },
+    );
+    if (participantProfilesError) throw participantProfilesError;
+    participantProfiles.push(...(batchProfiles || []));
+  }
+  const profilesById = new Map(participantProfiles.map((profile) => [profile.id, profile]));
+  for (const row of data || []) {
+    row.conversation_participants = (row.conversation_participants || []).map((participant) => ({
+      ...participant,
+      profiles: profilesById.get(participant.user_id) || null,
+    }));
+  }
+
   let readCursors;
   const { data: rpcReadCursors, error: readCursorError } = await supabase.rpc('get_my_read_cursors');
   if (readCursorError) {
     if (!isMissingRpcFunction(readCursorError, 'get_my_read_cursors')) throw readCursorError;
-    // This RLS-scoped query returns only the signed-in user's own read cursors.
     if (currentUserId) {
       const { data: participantRows, error: participantError } = await supabase
         .from('conversation_participants')
@@ -822,9 +832,6 @@ export async function fetchConversations({ limit = 50, offset = 0 } = {}) {
   const readCursorByConversation = new Map((readCursors || []).map((item) => [item.conversation_id, item.last_read_at]));
   for (const row of data || []) row.my_last_read_at = readCursorByConversation.get(row.id) || null;
 
-  // Sorted here (not via .order() in the query) by actual last-activity
-  // rather than the conversation row's own created_at, so a thread that
-  // just got a reply moves back to the top like a chat list should.
   const conversations = data
     .map((row) => normalizeConversation(row, currentUserId))
     .sort((a, b) => new Date(b._sortKey) - new Date(a._sortKey))
