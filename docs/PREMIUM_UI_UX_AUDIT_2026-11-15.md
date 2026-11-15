@@ -78,3 +78,9 @@ The inbox conversation row already uses a compact, accessible `Pressable` rather
 - The Chats screen's All / Unread / Favorites / Groups / Archived chips had no explicit minimum height. Their content plus vertical padding could leave the interactive target below the 44-point baseline.
 - Raised the shared filter-pill container to a 44-point minimum and centered its label without increasing horizontal density.
 - Added `src/screens/ChatListScreen.contract.test.js` to protect touch height and selected-state accessibility.
+
+## Additional verified issues and remediation — Chats header and search
+
+- The camera, drafts and new-chat header controls were 40×40, 40×40 and 34×34 respectively. These are visually compact but undersized as standalone touch targets.
+- Standardized the three controls to 44×44, increased the search surface to a balanced 48-point minimum, and gave the Moments “See all” action a 44-point interaction height.
+- Extended the Chats layout contract to protect these dimensions.
