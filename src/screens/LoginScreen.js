@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useState } from 'react';
 import { startGoogleOAuth } from '../services/googleAuth';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
@@ -11,7 +12,7 @@ import Knot from '../components/Knot';
 
 function showMessage(title, message) {
   if (Platform.OS === 'web' && typeof window !== 'undefined') window.alert(`${title}\n\n${message}`);
-  else Alert.alert(title, message);
+  else showAppAlert(title, message);
 }
 
 export default function LoginScreen({ navigation }) {
