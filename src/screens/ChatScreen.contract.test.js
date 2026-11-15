@@ -42,9 +42,9 @@ test('deleted-message tombstones can be removed by either participant', () => {
 
 test('message composer keeps a distinct moderate input surface and balanced control sizing', () => {
   const inputBar = fs.readFileSync(new URL('../components/InputBar.js', import.meta.url), 'utf8');
-  assert.match(inputBar, /backgroundColor: hexToRgba\(colors\.surfaceElevated, 0\.78\)/);
-  assert.match(inputBar, /borderColor: hexToRgba\(colors\.primary, 0\.24\)/);
-  assert.match(inputBar, /minHeight: 48/);
+  assert.match(inputBar, /backgroundColor: colors\.surfaceElevated/);
+  assert.match(inputBar, /borderColor: hexToRgba\(colors\.primary, 0\.32\)/);
+  assert.match(inputBar, /borderRadius: 20/);\n  assert.match(inputBar, /minHeight: 52/);
   assert.match(inputBar, /width: 48, height: 48/);
   assert.match(inputBar, /accessibilityLabel="Send voice message"/);
   assert.match(inputBar, /accessibilityLabel=\{text\.trim\(\) \? \(editing \? 'Confirm edit' : 'Send message'\) : 'Record a voice message'\}/);
