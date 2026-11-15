@@ -124,7 +124,7 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
           <TouchableOpacity
             onPress={submit} disabled={saving || !conversationId || !text.trim()}
             accessibilityRole="button" accessibilityLabel="Schedule message"
-            style={{ minHeight: 46, borderRadius: radii.md, backgroundColor: saving || !conversationId || !text.trim() ? colors.border : colors.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}
+            style={{ minHeight: 48, borderRadius: radii.md, backgroundColor: saving || !conversationId || !text.trim() ? colors.border : colors.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}
           >
             {saving ? <ActivityIndicator color={colors.background} /> : <Ionicons name="calendar-outline" size={18} color={colors.background} />}
             <Text style={[typography.bodyStrong, { color: colors.background }]}>{saving ? 'Scheduling…' : 'Schedule message'}</Text>

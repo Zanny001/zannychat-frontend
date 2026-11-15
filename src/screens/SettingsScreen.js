@@ -331,6 +331,7 @@ function ConnectionsPanel() {
             disabled={checking}
             accessibilityLabel="Re-check connections"
             accessibilityRole="button"
+            style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}
           >
             {checking ? (
               <ActivityIndicator size="small" color={colors.textSecondary} />
@@ -399,7 +400,7 @@ const styles = StyleSheet.create({
   applyCustomColors: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
   appearanceOption: { flex: 1, minHeight: 76, borderWidth: 1, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingVertical: 10, paddingHorizontal: 4 },
   textSizeOption: { flex: 1, minHeight: 70, borderWidth: 1, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingVertical: 8, paddingHorizontal: 3 },
-  accessibilitySwitchRow: { flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
+  accessibilitySwitchRow: { minHeight: 48, flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
   swatchRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 18 },
   swatchWrap: { alignItems: 'center', width: 68 },
   swatchRing: {
@@ -420,5 +421,5 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
   },
-  logoutBtn: { borderWidth: 1.5, paddingVertical: 14, alignItems: 'center', marginTop: 4 },
+  logoutBtn: { minHeight: 48, borderWidth: 1.5, paddingVertical: 12, alignItems: 'center', marginTop: 4 },
 });
