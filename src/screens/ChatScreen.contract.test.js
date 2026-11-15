@@ -32,11 +32,10 @@ test('invalid files already in the retry queue are removed instead of retried fo
 
 
 test('deleted-message tombstones can be removed by either participant', () => {
-  const start = screen.indexOf('const messageOptions');
-  const end = screen.indexOf('const messageActions', start);
-  const block = screen.slice(start, end > start ? end : start + 5000);
-  assert.match(block, /key: 'delete'/);
-  assert.match(block, /label: sheetMessage\.deletedAt \? 'Remove deleted message' : isMineMessage\(sheetMessage\) \? 'Delete' : 'Delete for me'/);
-  assert.doesNotMatch(block, /\.\.\.\(isMineMessage\(sheetMessage\)\s*\?/);
+  const deleteIndex = screen.indexOf("key: 'delete'");
+  const deleteAction = screen.slice(deleteIndex - 120, deleteIndex + 550);
+  assert.ok(deleteIndex >= 0, 'message action menu must expose deletion');
+  assert.match(deleteAction, /label: sheetMessage\.deletedAt \? 'Remove deleted message' : isMineMessage\(sheetMessage\) \? 'Delete' : 'Delete for me'/);
+  assert.doesNotMatch(deleteAction, /\.\.\.\(isMineMessage\(sheetMessage\)\s*\?/);
   assert.match(screen, /performDeleteMessage\(deleteMessageTarget, 'me'\)/);
 });
