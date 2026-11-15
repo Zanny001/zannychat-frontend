@@ -106,3 +106,24 @@ test('legacy session remains readable if SecureStore is temporarily unavailable 
   assert.equal(await storage.getItem('sb-zanny-auth-token'), 'legacy-session');
   assert.equal(memory.legacy.get('sb-zanny-auth-token'), 'legacy-session');
 });
+
+test('failed secure deletion leaves a revocation marker so the session cannot reappear', async () => {
+  const memory = createMemoryStore();
+  const storage = createSecureAuthStorage(memory);
+  await storage.setItem('sb-zanny-auth-token', 'signed-in-session');
+
+  const originalDelete = memory.secureStore.deleteItemAsync;
+  memory.secureStore.deleteItemAsync = async (key) => {
+    if (key.endsWith('.secure-v2.manifest')) throw new Error('simulated Keychain deletion failure');
+    return originalDelete(key);
+  };
+
+  await assert.rejects(storage.removeItem('sb-zanny-auth-token'), /Keychain deletion failure/);
+  assert.equal(await storage.getItem('sb-zanny-auth-token'), null);
+  assert.equal(memory.legacy.get('sb-zanny-auth-token.secure-v2.revoked'), '1');
+
+  memory.secureStore.deleteItemAsync = originalDelete;
+  await storage.setItem('sb-zanny-auth-token', 'new-session');
+  assert.equal(await storage.getItem('sb-zanny-auth-token'), 'new-session');
+  assert.equal(memory.legacy.has('sb-zanny-auth-token.secure-v2.revoked'), false);
+});
