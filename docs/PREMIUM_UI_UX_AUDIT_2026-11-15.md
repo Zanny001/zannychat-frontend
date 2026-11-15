@@ -9,7 +9,7 @@
 - Scope priority: visual interfaces, moderate container proportions, typography, density, accessibility, responsive behavior and premium consistency.
 - This is an in-progress source audit across 49 screen implementation files / approximately 45 navigation experiences. It is not a claim that all screens have received visual/device sign-off.
 - The audit is being delivered in isolated, draft pull requests (#76–#83) so changes remain reviewable and no unverified UI work is merged or deployed.
-- Current CI status: the premium UI/unit workflow is green on PRs #77–#81 and #83. PRs #76 and #82 are rerunning after final composer/settings refinements. The separate native calling client workflow is still running across the open branches.
+- Current CI status: the premium UI/unit workflow is green on PRs #77–#83. PR #76 is rerunning after the final composer/header target refinements. The separate native calling client workflow is still running across the open branches.
 
 ## Confirmed product foundation
 
@@ -130,4 +130,29 @@ The inbox conversation row already uses a compact, accessible `Pressable` rather
 3. Run representative visual QA at 320, 360, 390, 430 and tablet widths, plus web desktop/mobile widths. Validate keyboard/safe-area behavior, long names, large text, RTL where supported, and reduced motion.
 4. Test on a real Android device (including Android 10/11 blur fallback) and a supported iOS device; verify camera/mic permissions, audio route, call invite, media save, LIVE guest controls, status reactions, and profile image upload.
 5. Verify production deployment/preview domains and backend connectivity only after merge approval. No production deployment has been performed as part of this source audit.
+
+## Shared-component and theme-consistency audit
+
+- The shared Header back action was 44 points; it is now 48.
+- Chat-bubble image/video save actions were 34×34 and the voice play control was 32×32. These are now 48×48; media preview dimensions remain compact (220×220 image and 232×174 video).
+- Action Sheet reaction chips were 44×44. They are now 48×48, and the reaction row wraps on narrow screens instead of overflowing.
+- Call Invite Picker close/search controls were 40×40 and the invite action was 34 points high. These now use 48-point targets.
+- The Avatar component used a fixed purple fallback even when the user selected a different palette. The fallback now uses the active theme's primary color, and initials/group glyph foreground is selected for contrast against explicit avatar colors.
+- The Call Invite Picker now reuses the shared contrast-safe Avatar component instead of drawing white initials over arbitrary profile colors.
+- The floating bottom navigation is 76 points high with full tab-item interaction regions; its 38×34 icon shell is decorative, not the touch target.
+- A source scan across the 49 screen files found no hard-coded black text colors. Dark canvases are confined to intentional media/video and full-screen photo-viewer surfaces with light foregrounds.
+
+## Additional verified product behavior and honest states
+
+- The Chats story tray uses the signed-in user's own avatar URL for “Your story”; it does not substitute a generic icon when the profile photo is available.
+- Call History already exposes separate audio redial, video redial and delete actions; the utility-screen pass enlarges those controls rather than removing or collapsing the actions.
+- The profile editor awaits the identity write and profile-details upsert, refreshes the signed-in profile, and verifies the persisted username. Existing regression tests cover both writes and the duplicate-username path.
+- Settings labels the Zero-Knowledge Vault as “Coming Soon” rather than presenting a nonfunctional switch as if the feature were live.
+- These interface changes do not require Supabase schema changes. The audit leaves the earlier contact-directory RPC migration untouched.
+
+## Current completion boundary
+
+- Source-level audit and targeted fixes have now covered the 49 screen implementation files plus the shared interaction components listed above.
+- Premium UI/unit CI is green on PRs #77–#83. PR #76 is rerunning after its final composer/header changes. Native calling client checks are still running; do not merge or deploy until they finish green.
+- The audit is not release-complete until the required CI, preview verification, real Android/iOS device checks and responsive browser viewport checks are finished.
 
