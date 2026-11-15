@@ -596,7 +596,7 @@ export async function uploadAvatar(localUri, mimeType = 'image/jpeg') {
   let avatarUrl = null;
   if (!needsPrivate) {
     const { error: legacyUploadError } = await supabase.storage.from('avatars')
-      .upload(path, arrayBuffer, { contentType: safeMimeType, upsert: true });
+      .upload(path, arrayBuffer, { contentType: safeMimeType, upsert: true, cacheControl: '0' });
     if (legacyUploadError) throw legacyUploadError;
     const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(path);
     avatarUrl = publicUrlData?.publicUrl || null;
