@@ -15,6 +15,6 @@ test('status reaction controls expose selected and disabled state and retain acc
   const source = await readFile(new URL('../screens/StatusUpdatesScreen.js', import.meta.url), 'utf8');
   assert.match(source, /accessibilityLabel="Status reactions"/);
   assert.match(source, /accessibilityState=\{\{ selected: mine, disabled: busy \}\}/);
-  assert.match(source, /minWidth: 44, minHeight: 44/);
+  assert.match(source, /minWidth: 48, minHeight: 48/);
   assert.match(source, /onPress=\{\(\) => toggleStatusReaction\(viewing\.id, emoji, mine\)\}/);
 });
