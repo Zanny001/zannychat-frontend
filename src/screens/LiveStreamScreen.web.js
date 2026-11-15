@@ -295,7 +295,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       setRemoteAudioParticipants([]);
       roomRef.current = null;
     };
-  }, [stream?.id, connection?.livekitUrl, connection?.token, creatorMode]);
+  }, [stream?.id, connection?.livekitUrl, connection?.token, creatorMode, connectionLoading]);
 
   useEffect(() => {
     if (!stream?.id || status !== 'Connected') return undefined;
