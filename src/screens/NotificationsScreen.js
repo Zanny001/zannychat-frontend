@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, Switch, TextInput, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -41,13 +42,13 @@ export default function NotificationsScreen({ navigation }) {
   async function saveQuietTime(field, value) {
     const normalized = String(value || '').trim();
     if (parseClockTime(normalized) === null) {
-      Alert.alert('Use 24-hour time', 'Enter a valid time in HH:MM format, such as 22:00 or 08:00.');
+      showAppAlert('Use 24-hour time', 'Enter a valid time in HH:MM format, such as 22:00 or 08:00.');
       setQuietStartDraft(prefs.quietHoursStart || '22:00');
       setQuietEndDraft(prefs.quietHoursEnd || '08:00');
       return;
     }
     if (field === 'quietHoursStart' && normalized === (prefs.quietHoursEnd || '08:00') || field === 'quietHoursEnd' && normalized === (prefs.quietHoursStart || '22:00')) {
-      Alert.alert('Choose two different times', 'The start and end of quiet hours must be different.');
+      showAppAlert('Choose two different times', 'The start and end of quiet hours must be different.');
       setQuietStartDraft(prefs.quietHoursStart || '22:00');
       setQuietEndDraft(prefs.quietHoursEnd || '08:00');
       return;
@@ -68,7 +69,7 @@ export default function NotificationsScreen({ navigation }) {
   async function handleBrowserCallAlerts(value) {
     if (Platform.OS !== 'web' || typeof Notification === 'undefined') return;
     if (!value) {
-      Alert.alert('Browser permission', 'To turn browser call alerts off, change ZannyChat notification permission in your browser site settings.');
+      showAppAlert('Browser permission', 'To turn browser call alerts off, change ZannyChat notification permission in your browser site settings.');
       setBrowserCallPermission(Notification.permission);
       return;
     }
@@ -76,7 +77,7 @@ export default function NotificationsScreen({ navigation }) {
       const permission = await Notification.requestPermission();
       setBrowserCallPermission(permission);
       if (permission !== 'granted') {
-        Alert.alert('Notifications not enabled', 'Allow notifications for ZannyChat in your browser site settings to receive call alerts when this tab is in the background.');
+        showAppAlert('Notifications not enabled', 'Allow notifications for ZannyChat in your browser site settings to receive call alerts when this tab is in the background.');
       }
     } catch (_) {
       setBrowserCallPermission(Notification.permission);
