@@ -22,3 +22,14 @@ for (const [platform, source] of [['native', nativeSource], ['web', webSource]])
     assert.match(source, /setLocalDescription\(\{ type: 'rollback' \}\)/);
   });
 }
+
+
+for (const [platform, source] of [['native', nativeSource], ['web', webSource]]) {
+  test(`${platform} call screen ends the session when navigation removes the active call`, () => {
+    assert.match(source, /navigation\.addListener\('beforeRemove'/);
+    assert.match(source, /event\.preventDefault\(\)/);
+    assert.match(source, /updateCallStatus\(current\.id/);
+    assert.match(source, /navigation\.dispatch\(event\.data\.action\)/);
+    assert.match(source, /endingRef\.current/);
+  });
+}
