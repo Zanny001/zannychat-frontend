@@ -133,7 +133,10 @@ export async function listCallHistory(limit = 100) {
   const peerIds = [...new Set(rows.map((row) => row.caller_id === userId ? row.callee_id : row.caller_id).filter(Boolean))];
   let profilesById = {};
   if (peerIds.length) {
-    const { data: profiles, error: profileError } = await supabase.from('profiles').select('id,name,avatar_color').in('id', peerIds);
+    const { data: profiles, error: profileError } = await supabase.rpc(
+      'get_conversation_profile_directory',
+      { p_user_ids: peerIds },
+    );
     if (!profileError) {
       const resolvedProfiles = await resolveProfileAvatarUrls(profiles || []);
       profilesById = Object.fromEntries(resolvedProfiles.map((profile) => [profile.id, profile]));
