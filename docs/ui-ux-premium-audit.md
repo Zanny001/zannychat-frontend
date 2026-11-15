@@ -1,6 +1,6 @@
 # ZannyChat premium UI/UX audit and implementation log
 
-Updated: 2026-11-15
+Updated: 2026-11-15 (handoff checkpoint 2)
 Reference package: `ZannyChat-Ultra-Premium-Designs.zip`
 
 ## Design direction extracted from the supplied references
@@ -110,7 +110,34 @@ The supplied audit names 46 screens. Status below distinguishes design-reference
 ## Implemented in this pass
 
 - Updated the existing default `royalNeon` palette to the Crown Aurora values while preserving its key, so stored theme selections remain valid.
-- Added contract tests for palette identity, dark/light semantic text contrast, outgoing bubble contrast, and shared touch/spacing tokens.
+- Added contract tests for palette identity, semantic text contrast, outgoing bubble contrast, and shared touch/spacing tokens.
+- Expanded the contrast contract to exercise every selectable mood in dark/light appearance and normal/high-contrast accessibility modes, checking text on background, raised surface and alternate surface, plus primary/accent labels and outgoing bubbles.
+
+## Handoff checkpoint — 2026-11-15
+
+### Completed so far
+- PR #85 (`design/crown-aurora-premium-system`) is the active, draft-only implementation branch.
+- The Crown Aurora default palette is implemented in `src/theme/colors.js`; the persisted `royalNeon` key is unchanged to preserve existing user preferences.
+- The reference's six-position navigation concept has been reconciled with the app's six existing destinations. No destination or feature is removed.
+- The source review in this first pass covers the theme provider/tokens, typography, shared glass/header/chat-row components, navigation, Chats, Chat, Profile, Settings, Chat Appearance and Status Updates.
+- The supplied HTML's sample people, counters, timestamps, and fake activity are treated as mockup-only and must not replace live service data.
+- The premium contrast contract now covers all selectable palettes, light/dark modes and high-contrast modes. Commit: `35857cec5420d0fef8617aa66c608a8b4f98395a`.
+- Previous PR #85 baseline workflows passed: Advanced calling client checks and Premium status and LIVE quality. Netlify preview check and Vercel check were successful for commit `428c11c04c29371886e98882dc76f2fc8facd03e`. The new expanded test commit still requires fresh CI confirmation.
+
+### Next exact steps
+1. Confirm CI for `35857cec5420d0fef8617aa66c608a8b4f98395a`; repair any theme/mode contrast regression before adding more visual changes.
+2. Continue the 46-screen audit in route groups: authentication; messaging and chat utilities; calls/LIVE/replay; profile/settings/privacy/data; channels/events/notifications. Record each screen's actual implementation, modal/action-sheet states, empty/loading/error states, and test evidence.
+3. Prioritise shared primitives and high-traffic screens before one-off polish: header/action spacing, glass surface fallback, tab bar, conversation rows, composer, message bubbles, profile cards, status/LIVE overlays.
+4. Add or extend focused contract tests alongside each shared component/screen change. Run unit, release, readiness, integrity, and web-export checks after implementation waves.
+5. Perform responsive browser checks at narrow phone, 390px reference, large phone, tablet and desktop widths; verify keyboard/scroll and light/dark/high-contrast/text-scale combinations.
+6. Perform physical-device QA on Android 10/11 and a modern Android device. Do not claim blur, animation, camera, microphone, media, or navigation quality without runtime verification.
+7. Review backend/Supabase dependencies before any data/schema/policy/function change. This design phase has no identified Supabase requirement; keep the database untouched unless a concrete dependency is found.
+8. Keep PR #85 draft and do not merge/deploy until the implementation and relevant checks are complete; production hosting is separately constrained by deployment quotas and is not implied by CI.
+
+### Outstanding / not verified
+- The remaining screen source reviews and all per-screen interaction/state audits.
+- No visual screenshot comparison, responsive browser run, physical-device review, or keyboard/accessibility acceptance has yet been completed for this design pass.
+- No Supabase migration, production deployment, or merge has been performed for this design pass.
 
 ## Verification and release gates
 
