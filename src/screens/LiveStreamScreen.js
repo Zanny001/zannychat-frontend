@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, {
@@ -29,20 +30,20 @@ async function chooseNativeAudioOutput() {
     const outputs = await AudioSession.getAudioOutputs();
     const choices = ['speaker', 'earpiece'].filter((output) => outputs.includes(output));
     if (!choices.length) {
-      Alert.alert('Audio output', 'No alternate audio output is currently available.');
+      showAppAlert('Audio output', 'No alternate audio output is currently available.');
       return;
     }
-    Alert.alert('Audio output', 'Choose where LIVE audio should play.', [
+    showAppAlert('Audio output', 'Choose where LIVE audio should play.', [
       ...choices.map((output) => ({
         text: output === 'speaker' ? 'Speaker' : 'Phone earpiece',
         onPress: () => AudioSession.selectAudioOutput(output).catch(() => {
-          Alert.alert('Audio output unavailable', 'The selected audio output could not be activated.');
+          showAppAlert('Audio output unavailable', 'The selected audio output could not be activated.');
         }),
       })),
       { text: 'Cancel', style: 'cancel' },
     ]);
   } catch (_) {
-    Alert.alert('Audio output unavailable', 'Could not load available audio outputs.');
+    showAppAlert('Audio output unavailable', 'Could not load available audio outputs.');
   }
 }
 
@@ -136,7 +137,7 @@ function LiveMedia({ streamId, creatorMode, publisherMode, cameraEnabled, microp
       await room.localParticipant.setCameraEnabled(nextEnabled);
       onToggleCamera(nextEnabled);
     } catch (error) {
-      Alert.alert('Camera unavailable', error?.message || 'Camera permission is unavailable.');
+      showAppAlert('Camera unavailable', error?.message || 'Camera permission is unavailable.');
     }
   }, [cameraEnabled, onToggleCamera, room]);
   const handleToggleMicrophone = useCallback(async () => {
@@ -145,7 +146,7 @@ function LiveMedia({ streamId, creatorMode, publisherMode, cameraEnabled, microp
       await room.localParticipant.setMicrophoneEnabled(nextEnabled);
       onToggleMicrophone(nextEnabled);
     } catch (error) {
-      Alert.alert('Microphone unavailable', error?.message || 'Microphone permission is unavailable.');
+      showAppAlert('Microphone unavailable', error?.message || 'Microphone permission is unavailable.');
     }
   }, [microphoneEnabled, onToggleMicrophone, room]);
   return (
@@ -502,19 +503,19 @@ export default function LiveStreamScreen({ route, navigation }) {
       setComments((current) => [...current, result.comment].slice(-50));
       setDraft('');
     } catch (e) {
-      Alert.alert('Comment not sent', e?.message || 'Please try again.');
+      showAppAlert('Comment not sent', e?.message || 'Please try again.');
     } finally { setBusy(false); }
   };
 
   const react = async (reaction = 'heart') => {
     try { await backendFetch(`/live/${stream.id}/react`, { method: 'POST', body: JSON.stringify({ reaction }) }); }
-    catch (e) { Alert.alert('Reaction not sent', e?.message || 'Please try again.'); }
+    catch (e) { showAppAlert('Reaction not sent', e?.message || 'Please try again.'); }
   };
   const removeFloatingReaction = useCallback((reactionId) => {
     setFloatingReactions((current) => current.filter((item) => item.id !== reactionId));
   }, []);
 
-  const report = () => Alert.alert('Report LIVE stream', 'Choose a reason for reporting this stream.', [
+  const report = () => showAppAlert('Report LIVE stream', 'Choose a reason for reporting this stream.', [
     { text: 'Harassment', onPress: () => submitReport('harassment') },
     { text: 'Hate or violence', onPress: () => submitReport('hate') },
     { text: 'Spam', onPress: () => submitReport('spam') },
@@ -524,14 +525,14 @@ export default function LiveStreamScreen({ route, navigation }) {
   const submitReport = async (reason) => {
     try {
       await backendFetch(`/live/${stream.id}/report`, { method: 'POST', body: JSON.stringify({ reason }) });
-      Alert.alert('Report submitted', 'Thanks for helping keep ZannyChat safe.');
-    } catch (e) { Alert.alert('Report not sent', e?.message || 'Please try again.'); }
+      showAppAlert('Report submitted', 'Thanks for helping keep ZannyChat safe.');
+    } catch (e) { showAppAlert('Report not sent', e?.message || 'Please try again.'); }
   };
   const hideComment = async (commentId) => {
     try {
       await backendFetch(`/live/${stream.id}/comments/${commentId}/hide`, { method: 'POST' });
       setComments((current) => current.filter((item) => item.id !== commentId));
-    } catch (e) { Alert.alert('Could not hide comment', e?.message || 'Please try again.'); }
+    } catch (e) { showAppAlert('Could not hide comment', e?.message || 'Please try again.'); }
   };
 
   const loadReports = async () => {
@@ -539,7 +540,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       const result = await backendFetch(`/live/${stream.id}/reports`);
       setReports(Array.isArray(result?.reports) ? result.reports : []);
       setShowReports(true);
-    } catch (e) { Alert.alert('Reports unavailable', e?.message || 'Please try again.'); }
+    } catch (e) { showAppAlert('Reports unavailable', e?.message || 'Please try again.'); }
   };
 
   const reviewReport = async (reportId, status) => {
@@ -548,7 +549,7 @@ export default function LiveStreamScreen({ route, navigation }) {
         method: 'PATCH', body: JSON.stringify({ status }),
       });
       setReports((current) => current.map((item) => item.id === reportId ? { ...item, ...result.report } : item));
-    } catch (e) { Alert.alert('Could not update report', e?.message || 'Please try again.'); }
+    } catch (e) { showAppAlert('Could not update report', e?.message || 'Please try again.'); }
   };
 
   const loadParticipants = async () => {
@@ -556,7 +557,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       const result = await backendFetch(`/live/${stream.id}/participants`);
       setParticipants(Array.isArray(result?.participants) ? result.participants : []);
       setShowParticipants(true);
-    } catch (e) { Alert.alert('Participants unavailable', e?.message || 'Please try again.'); }
+    } catch (e) { showAppAlert('Participants unavailable', e?.message || 'Please try again.'); }
   };
 
   const loadGuestRequests = async () => {
@@ -564,15 +565,15 @@ export default function LiveStreamScreen({ route, navigation }) {
       const result = await backendFetch(`/live/${stream.id}/guest-requests`);
       setGuestRequests(Array.isArray(result?.requests) ? result.requests : []);
       setShowGuestRequests(true);
-    } catch (e) { Alert.alert('Guest requests unavailable', e?.message || 'Please try again.'); }
+    } catch (e) { showAppAlert('Guest requests unavailable', e?.message || 'Please try again.'); }
   };
 
   const requestGuest = async () => {
     try {
       await backendFetch(`/live/${stream.id}/guest-requests`, { method: 'POST' });
       setGuestRequestStatus('requested');
-      Alert.alert('Request sent', 'The creator will decide whether to bring you on stage.');
-    } catch (e) { Alert.alert('Could not request guest access', e?.message || 'Please try again.'); }
+      showAppAlert('Request sent', 'The creator will decide whether to bring you on stage.');
+    } catch (e) { showAppAlert('Could not request guest access', e?.message || 'Please try again.'); }
   };
 
   const joinAsGuest = async () => {
@@ -586,7 +587,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       navigation.setParams({ connection: nextConnection, creatorMode: false });
       setGuestApproved(false);
       setGuestRequestStatus('accepted');
-    } catch (e) { Alert.alert('Could not join as guest', e?.message || 'Please try again.'); }
+    } catch (e) { showAppAlert('Could not join as guest', e?.message || 'Please try again.'); }
   };
 
   const reviewGuestRequest = async (userId, status) => {
@@ -595,7 +596,7 @@ export default function LiveStreamScreen({ route, navigation }) {
         method: 'PATCH', body: JSON.stringify({ status }),
       });
       setGuestRequests((current) => current.filter((item) => item.user_id !== userId));
-    } catch (e) { Alert.alert('Could not update guest request', e?.message || 'Please try again.'); }
+    } catch (e) { showAppAlert('Could not update guest request', e?.message || 'Please try again.'); }
   };
 
   const setModerator = async (userId, makeModerator) => {
@@ -607,7 +608,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       setParticipants((current) => current.flatMap((item) => item.userId === userId
         ? (makeModerator || item.joined ? [{ ...item, moderator: makeModerator }] : [])
         : [item]));
-    } catch (e) { Alert.alert('Could not update moderator', e?.message || 'Please try again.'); }
+    } catch (e) { showAppAlert('Could not update moderator', e?.message || 'Please try again.'); }
   };
 
   const inviteGuest = async (userId) => {
@@ -616,8 +617,8 @@ export default function LiveStreamScreen({ route, navigation }) {
         method: 'POST', body: JSON.stringify({ userId }),
       });
       setParticipants((current) => current.map((item) => item.userId === userId ? { ...item, guestInvited: true } : item));
-      Alert.alert('Stage invitation sent', 'The viewer can now join as a guest.');
-    } catch (e) { Alert.alert('Could not invite guest', e?.message || 'Please try again.'); }
+      showAppAlert('Stage invitation sent', 'The viewer can now join as a guest.');
+    } catch (e) { showAppAlert('Could not invite guest', e?.message || 'Please try again.'); }
   };
 
   const muteGuest = async (userId, muted) => {
@@ -627,18 +628,18 @@ export default function LiveStreamScreen({ route, navigation }) {
       });
       setParticipants((current) => current.map((item) => item.userId === userId
         ? { ...item, microphoneMuted: result.microphoneMuted } : item));
-    } catch (e) { Alert.alert('Could not update guest microphone', e?.message || 'Check LiveKit remote-unmute settings and try again.'); }
+    } catch (e) { showAppAlert('Could not update guest microphone', e?.message || 'Check LiveKit remote-unmute settings and try again.'); }
   };
 
   const removeGuest = (userId) => {
     const guest = participants.find((item) => item.userId === userId);
-    Alert.alert('Remove guest from stage?', `${guest?.name || 'This guest'} will lose stage publishing access and remain watching as a viewer.`, [
+    showAppAlert('Remove guest from stage?', `${guest?.name || 'This guest'} will lose stage publishing access and remain watching as a viewer.`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Remove guest', style: 'destructive', onPress: async () => {
         try {
           await backendFetch(`/live/${stream.id}/guests/${userId}`, { method: 'DELETE' });
           await loadParticipants();
-        } catch (e) { Alert.alert('Could not remove guest', e?.message || 'Please try again.'); }
+        } catch (e) { showAppAlert('Could not remove guest', e?.message || 'Please try again.'); }
       } },
     ]);
   };
@@ -649,7 +650,7 @@ export default function LiveStreamScreen({ route, navigation }) {
         method: 'PATCH', body: JSON.stringify({ spotlighted }),
       });
       setParticipants((current) => current.map((item) => ({ ...item, spotlighted: spotlighted && item.userId === userId })));
-    } catch (e) { Alert.alert('Could not update spotlight', e?.message || 'Please try again.'); }
+    } catch (e) { showAppAlert('Could not update spotlight', e?.message || 'Please try again.'); }
   };
 
   const startReplay = async () => {
@@ -658,9 +659,9 @@ export default function LiveStreamScreen({ route, navigation }) {
     try {
       const result = await backendFetch(`/live/${stream.id}/replays/start`, { method: 'POST' });
       setReplay(result?.replay || null);
-      Alert.alert('Replay recording started', 'ZannyChat will stop this recording automatically after five minutes.');
+      showAppAlert('Replay recording started', 'ZannyChat will stop this recording automatically after five minutes.');
     } catch (e) {
-      Alert.alert('Could not start replay', e?.message || 'Please try again.');
+      showAppAlert('Could not start replay', e?.message || 'Please try again.');
     } finally {
       setReplayBusy(false);
     }
@@ -672,7 +673,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       startReplay();
       return;
     }
-    Alert.alert("Record this LIVE?", "A secure replay will be saved for up to seven days; access follows this LIVE's audience settings. Monthly free-tier limits apply.", [
+    showAppAlert("Record this LIVE?", "A secure replay will be saved for up to seven days; access follows this LIVE's audience settings. Monthly free-tier limits apply.", [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Start recording', onPress: startReplay },
     ]);
@@ -686,7 +687,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       setReplay((current) => ({ ...current, ...(result?.replay || {}), status: result?.replay?.status || 'processing' }));
       refreshReplay();
     } catch (e) {
-      Alert.alert('Could not stop replay', e?.message || 'The automatic five-minute stop remains active.');
+      showAppAlert('Could not stop replay', e?.message || 'The automatic five-minute stop remains active.');
     } finally {
       setReplayBusy(false);
     }
