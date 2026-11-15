@@ -366,6 +366,7 @@ export default function LiveStreamScreen({ route, navigation }) {
 
   useEffect(() => {
     if (!streamId) {
+      setConnection(null);
       setConnectionLoading(false);
       setError('This LIVE link is incomplete. Reopen it from LIVE Hub.');
       return undefined;
