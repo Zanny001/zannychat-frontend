@@ -48,7 +48,12 @@ export async function registerForPushNotifications() {
   } catch (error) {
     console.warn('[notifications] call actions unavailable:', error?.message || error);
   }
-  if (!SUPABASE_ENABLED) return null;
+  if (!SUPABASE_ENABLED || !supabase) return null;
+  const prefs = await loadNotificationPrefs();
+  if (!prefs.pushEnabled) {
+    console.log('[push] skipped — push notifications are disabled in this account on this device.');
+    return null;
+  }
 
   if (!Device.isDevice) {
     console.log('[push] skipped — physical device required (this is a simulator/emulator).');
@@ -88,10 +93,11 @@ export async function registerForPushNotifications() {
 
   try {
     const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
-    const { data: authData } = await supabase.auth.getUser();
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError) throw authError;
     if (!authData?.user) return null;
 
-    await supabase
+    const { error: tokenError } = await supabase
       .from('push_tokens')
       .upsert(
         {
@@ -102,6 +108,7 @@ export async function registerForPushNotifications() {
         },
         { onConflict: 'expo_push_token' }
       );
+    if (tokenError) throw tokenError;
 
     return token;
   } catch (err) {
@@ -115,13 +122,17 @@ export async function registerForPushNotifications() {
 // Turning push "off" here means the server genuinely stops having a
 // token to send to, not just a local visual switch.
 export async function unregisterPushNotifications() {
-  if (!SUPABASE_ENABLED) return;
+  if (!SUPABASE_ENABLED || !supabase) return false;
   try {
-    const { data: authData } = await supabase.auth.getUser();
-    if (!authData?.user) return;
-    await supabase.from('push_tokens').delete().eq('user_id', authData.user.id);
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError) throw authError;
+    if (!authData?.user) return false;
+    const { error } = await supabase.from('push_tokens').delete().eq('user_id', authData.user.id);
+    if (error) throw error;
+    return true;
   } catch (err) {
     console.warn('[push] unregister failed:', err.message);
+    return false;
   }
 }
 
