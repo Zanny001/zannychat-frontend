@@ -36,7 +36,7 @@ export async function createPersonalDataExport() {
   if (!account?.id) throw new Error('Please sign in again before exporting your data.');
 
   const [profileResult, membershipResult, readCursorResult, preferences] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', account.id).maybeSingle(),
+    supabase.rpc('get_my_profile'),
     supabase.from('conversation_participants')
       .select('conversation_id, joined_at, is_favorite, is_muted, is_archived')
       .eq('user_id', account.id),
@@ -62,7 +62,7 @@ export async function createPersonalDataExport() {
 
   return buildPersonalDataExport({
     account,
-    profile: profileResult.data,
+    profile: Array.isArray(profileResult.data) ? profileResult.data[0] || null : profileResult.data,
     memberships,
     conversations,
     messages,
