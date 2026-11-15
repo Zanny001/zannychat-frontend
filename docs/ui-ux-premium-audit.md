@@ -400,3 +400,11 @@ The source scan covered these families:
 - `avatars` is intentionally public for public-profile avatars; upload/update policies use `private.can_upload_public_avatar`, and the profile trigger blocks a public avatar pointer when profile/photo visibility is restricted. Restricted photos use `private-avatars`.
 - `live-replays` is private and has no direct authenticated object policy; replay access is mediated through authenticated backend playback URLs. This matches the app's intended access path.
 - No Storage policy or bucket change was made. Runtime tests with multiple accounts are still required to prove visibility and deletion behavior at the object API boundary.
+
+
+## Scheduled-message worker deployment cross-check — 2026-11-16
+
+- Backend `src/jobs/scheduledMessages.js` is a one-shot worker entrypoint that calls the guarded `deliver_due_scheduled_messages` RPC.
+- Backend `.github/workflows/scheduled-messages.yml` exists and schedules the delivery, message-attachment cleanup, and call-invitation notification jobs every five minutes. It expects GitHub Actions secrets `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+- The workflow definition is present, but secret availability and recent successful scheduled workflow runs were not verifiable through the connected GitHub actions tools in this pass. Do not claim scheduled delivery is operational until the workflow run history and secret configuration are confirmed.
+- Backend `render.yaml` defines only the web service; the scheduled worker is designed to run through GitHub Actions rather than a continuously running Render worker. No Render service was changed.
