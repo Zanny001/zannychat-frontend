@@ -12,27 +12,27 @@ test('owner profile reads use the owner-only RPC rather than direct wildcard tab
   const start = api.indexOf('export async function getCurrentUser');
   const end = api.indexOf('// Edits made in mock mode', start);
   const body = api.slice(start, end);
-  assert.match(body, /rpc\\('get_my_profile'\\)/);
-  assert.doesNotMatch(body, /from\\('profiles'\\)/);
+  assert.ok(body.includes("rpc('get_my_profile')"));
+  assert.equal(body.includes(".from('profiles')"), false);
 });
 
 test('profile edits do not request a private full-row SELECT after UPDATE', () => {
   const start = api.indexOf('export async function updateProfile');
   const end = api.indexOf('const PROFILE_DETAIL_DEFAULTS', start);
   const body = api.slice(start, end);
-  assert.match(body, /return getCurrentUser\\(\\)/);
-  assert.doesNotMatch(body, /\\.select\\(\\)/);
+  assert.ok(body.includes('return getCurrentUser()'));
+  assert.equal(body.includes('.select('), false);
 });
 
 test('conversation participant profile details are fetched through the relationship-scoped RPC', () => {
   const start = api.indexOf('export async function fetchConversations');
   const end = api.indexOf('// Removes the current user', start);
   const body = api.slice(start, end);
-  assert.doesNotMatch(body, /profiles\\(id, name/);
-  assert.match(body, /rpc\\(\\s*'get_conversation_profile_directory'/);
+  assert.equal(body.includes('profiles(id, name'), false);
+  assert.ok(body.includes("'get_conversation_profile_directory'"));
 });
 
 test('personal data export reads the full profile through the owner-only RPC', () => {
-  assert.match(exportService, /rpc\\('get_my_profile'\\)/);
-  assert.doesNotMatch(exportService, /from\\('profiles'\\)\\.select\\('\\*'\\)/);
+  assert.ok(exportService.includes("supabase.rpc('get_my_profile')"));
+  assert.equal(exportService.includes("from('profiles').select('*')"), false);
 });
