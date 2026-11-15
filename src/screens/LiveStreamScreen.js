@@ -289,6 +289,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [showParticipants, setShowParticipants] = useState(false);
   const [guestRequests, setGuestRequests] = useState([]);
   const [showGuestRequests, setShowGuestRequests] = useState(false);
+  const seenGuestRequestIds = useRef(new Set());
   const [guestApproved, setGuestApproved] = useState(false);
   const [guestRequestStatus, setGuestRequestStatus] = useState('none');
   const [floatingReactions, setFloatingReactions] = useState([]);
@@ -381,9 +382,6 @@ export default function LiveStreamScreen({ route, navigation }) {
     return () => {
       clearInterval(interval);
       AudioSession.stopAudioSession();
-      if (stream?.id && !endedRef.current) {
-        backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' }).catch(() => {});
-      }
     };
   }, [stream?.id, creatorMode, refreshComments]);
 
@@ -397,9 +395,45 @@ export default function LiveStreamScreen({ route, navigation }) {
       } catch (_) {}
     };
     checkApproval();
-    const interval = setInterval(checkApproval, 15000);
+    const interval = setInterval(checkApproval, 4000);
     return () => { active = false; clearInterval(interval); };
   }, [stream?.id, creatorMode, publisherMode, stream?.allow_guests]);
+
+  useEffect(() => {
+    if (!navigation?.addListener || !stream?.id) return undefined;
+    const unsubscribe = navigation.addListener('beforeRemove', () => {
+      if (!endedRef.current) {
+        endedRef.current = true;
+        backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' }).catch(() => {});
+      }
+    });
+    return unsubscribe;
+  }, [navigation, stream?.id, creatorMode]);
+
+  useEffect(() => {
+    if (!creatorMode || !stream?.id || !stream.allow_guests) return undefined;
+    let active = true;
+    const refreshGuestRequests = async () => {
+      try {
+        const result = await backendFetch(`/live/${stream.id}/guest-requests`);
+        if (!active) return;
+        const incoming = Array.isArray(result?.requests) ? result.requests : [];
+        const incomingIds = new Set(incoming.map((item) => item.user_id));
+        seenGuestRequestIds.current.forEach((userId) => {
+          if (!incomingIds.has(userId)) seenGuestRequestIds.current.delete(userId);
+        });
+        const hasNewRequest = incoming.some((item) => !seenGuestRequestIds.current.has(item.user_id));
+        incoming.forEach((item) => seenGuestRequestIds.current.add(item.user_id));
+        setGuestRequests(incoming);
+        // Surface each new request once; allow the creator to switch to other
+        // stage controls without the poll repeatedly stealing panel focus.
+        if (hasNewRequest) setShowGuestRequests(true);
+      } catch (_) {}
+    };
+    refreshGuestRequests();
+    const interval = setInterval(refreshGuestRequests, 3500);
+    return () => { active = false; clearInterval(interval); };
+  }, [creatorMode, stream?.id, stream?.allow_guests]);
 
   const leave = async () => {
     if (!stream?.id || endedRef.current) return;
@@ -621,6 +655,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       <StatusBar barStyle="light-content" />
       {error ? <Text accessibilityRole="alert" style={{ color: colors.danger, paddingHorizontal: 12, paddingTop: 4 }}>{error}</Text> : null}
       {stageNotice ? <Text accessibilityRole="status" style={{ color: colors.accent, paddingHorizontal: 12, paddingTop: 4 }}>{stageNotice}</Text> : null}
+      {guestApproved && !publisherMode ? <Text accessibilityRole="status" style={{ color: colors.accent, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: colors.surface }}>The creator invited you to the LIVE stage. Tap “Join the stage” below to connect your camera and microphone.</Text> : null}
       <LiveKitRoom key={connection.token} serverUrl={connection.livekitUrl} token={connection.token} connect={true} audio={publisherMode} video={publisherMode} options={{ adaptiveStream: true, dynacast: true }}>
         <LiveMedia creatorMode={creatorMode} publisherMode={publisherMode} cameraEnabled={cameraEnabled} microphoneEnabled={microphoneEnabled} onToggleCamera={toggleCamera} onToggleMicrophone={toggleMicrophone} moderatorMode={moderatorMode} canManageGuests={Boolean(stream.allow_guests)} canRequestGuest={canRequestGuest} guestRequests={guestRequests} showGuestRequests={showGuestRequests} title={stream.title} comments={comments} reports={reports} showReports={showReports} participants={participants} showParticipants={showParticipants} draft={draft} setDraft={setDraft} onComment={sendComment} onReact={react} floatingReactions={floatingReactions} onRemoveFloatingReaction={removeFloatingReaction} onReport={report} onHide={hideComment} onEnd={leave} onRequestGuest={requestGuest} guestApproved={guestApproved} guestRequestStatus={guestRequestStatus} onJoinGuest={joinAsGuest} onToggleGuestRequests={() => { setShowReports(false); setShowParticipants(false); showGuestRequests ? setShowGuestRequests(false) : loadGuestRequests(); }} onReviewGuestRequest={reviewGuestRequest} onToggleReports={() => { setShowParticipants(false); setShowGuestRequests(false); showReports ? setShowReports(false) : loadReports(); }} onReviewReport={reviewReport} onToggleParticipants={() => { setShowReports(false); setShowGuestRequests(false); showParticipants ? setShowParticipants(false) : loadParticipants(); }} onSetModerator={setModerator} onInviteGuest={inviteGuest} onMuteGuest={muteGuest} onRemoveGuest={removeGuest} onSpotlightGuest={spotlightGuest} onDemoteToViewer={handleDemotedToViewer} replayEnabled={replayEnabled} replayStatus={replay?.status || 'none'} replayBusy={replayBusy} onStartReplay={confirmStartReplay} onStopReplay={stopReplay} onViewReplay={viewReplay} busy={busy} />
       </LiveKitRoom>

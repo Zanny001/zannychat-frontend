@@ -118,6 +118,8 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [draft, setDraft] = useState('');
   const [guestStatus, setGuestStatus] = useState('none');
   const [guestApproved, setGuestApproved] = useState(false);
+  const [guestRequests, setGuestRequests] = useState([]);
+  const seenGuestRequestIds = useRef(new Set());
   const [reports, setReports] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [panel, setPanel] = useState('');
@@ -243,7 +245,6 @@ export default function LiveStreamScreen({ route, navigation }) {
       active = false;
       room.removeAllListeners();
       room.disconnect();
-      if (!endedRef.current) backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' }).catch(() => {});
       if (localRef.current) localRef.current.replaceChildren();
       if (remoteAudioRef.current) remoteAudioRef.current.replaceChildren();
       setRemoteVideoTracks([]);
@@ -288,9 +289,43 @@ export default function LiveStreamScreen({ route, navigation }) {
       } catch (_) {}
     };
     check();
-    const timer = setInterval(check, 15000);
+    const timer = setInterval(check, 4000);
     return () => { active = false; clearInterval(timer); };
   }, [stream?.id, creatorMode, publisherMode, stream?.allow_guests]);
+
+  useEffect(() => {
+    if (!navigation?.addListener || !stream?.id) return undefined;
+    const unsubscribe = navigation.addListener('beforeRemove', () => {
+      if (!endedRef.current) {
+        endedRef.current = true;
+        backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' }).catch(() => {});
+      }
+    });
+    return unsubscribe;
+  }, [navigation, stream?.id, creatorMode]);
+
+  useEffect(() => {
+    if (!creatorMode || !stream?.id || !stream.allow_guests) return undefined;
+    let active = true;
+    const refreshGuestRequests = async () => {
+      try {
+        const result = await backendFetch(`/live/${stream.id}/guest-requests`);
+        if (!active) return;
+        const incoming = Array.isArray(result?.requests) ? result.requests : [];
+        const incomingIds = new Set(incoming.map((item) => item.user_id));
+        seenGuestRequestIds.current.forEach((userId) => {
+          if (!incomingIds.has(userId)) seenGuestRequestIds.current.delete(userId);
+        });
+        const hasNewRequest = incoming.some((item) => !seenGuestRequestIds.current.has(item.user_id));
+        incoming.forEach((item) => seenGuestRequestIds.current.add(item.user_id));
+        setGuestRequests(incoming);
+        if (hasNewRequest) setPanel('guestRequests');
+      } catch (_) {}
+    };
+    refreshGuestRequests();
+    const timer = setInterval(refreshGuestRequests, 3500);
+    return () => { active = false; clearInterval(timer); };
+  }, [creatorMode, stream?.id, stream?.allow_guests]);
 
   const leave = async () => {
     if (!stream?.id || endedRef.current) return;
@@ -370,6 +405,15 @@ export default function LiveStreamScreen({ route, navigation }) {
       setPanel(panel === 'stage' ? '' : 'stage');
     } catch (err) { setError(err?.message || 'Could not load LIVE stage participants.'); }
   };
+  const reviewGuestRequest = async (userId, statusValue) => {
+    try {
+      await backendFetch(`/live/${stream.id}/guest-requests/${userId}`, {
+        method: 'PATCH', body: JSON.stringify({ status: statusValue }),
+      });
+      setGuestRequests((items) => items.filter((item) => item.user_id !== userId));
+    } catch (err) { setError(err?.message || 'Could not update guest request.'); }
+  };
+
   const inviteGuest = async (userId) => {
     try {
       await backendFetch(`/live/${stream.id}/guests/invite`, { method: 'POST', body: JSON.stringify({ userId }) });
@@ -445,6 +489,7 @@ export default function LiveStreamScreen({ route, navigation }) {
     </View>
     {!!error && <Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger, paddingHorizontal: 14, paddingBottom: 8 }]}>{error}</Text>}
     {!!stageNotice && <Text accessibilityRole="status" style={[typography.caption, { color: colors.accent, paddingHorizontal: 14, paddingBottom: 8 }]}>{stageNotice}</Text>}
+    {guestApproved && !publisherMode && <Text accessibilityRole="status" style={[typography.caption, { color: colors.accent, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: colors.surface }]}>The creator invited you to the LIVE stage. Tap “Join the stage” below to connect your camera and microphone.</Text>}
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 20 }}>
       <View style={{ minHeight: 220, marginHorizontal: 12, borderRadius: 18, overflow: 'hidden', backgroundColor: '#050509', position: 'relative' }}>
         {publisherMode && <View ref={localRef} collapsable={false} style={{ width: '100%', minHeight: 220 }} />}
@@ -480,7 +525,10 @@ export default function LiveStreamScreen({ route, navigation }) {
         <Action colors={colors} label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={toggleCamera} />
         <Action colors={colors} label={mic ? 'Mute mic' : 'Unmute mic'} onPress={toggleMic} />
       </View>}
-      {creatorMode && stream.allow_guests && <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}><Action colors={colors} label={panel === 'stage' ? 'Close stage manager' : 'Manage LIVE stage'} onPress={loadParticipants} /></View>}
+      {creatorMode && stream.allow_guests && <View style={{ paddingHorizontal: 12, paddingBottom: 10, flexDirection: 'row', gap: 8 }}>
+        <Action colors={colors} label={panel === 'stage' ? 'Close stage manager' : 'Manage LIVE stage'} onPress={loadParticipants} />
+        <Action colors={colors} label={`Guest requests (${guestRequests.length})`} onPress={() => setPanel(panel === 'guestRequests' ? '' : 'guestRequests')} />
+      </View>}
       {creatorMode && replayEnabled && <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}><Action colors={colors} label={replayBusy ? 'Updating replay…' : replay?.status === 'ready' ? 'Watch saved LIVE replay' : replay?.status === 'recording' ? 'Stop LIVE replay' : replay?.status === 'processing' || replay?.status === 'starting' ? 'Preparing replay…' : 'Start LIVE replay'} disabled={replayBusy || ['starting', 'processing'].includes(replay?.status)} onPress={replay?.status === 'ready' ? viewReplay : replay?.status === 'recording' ? stopReplay : confirmStartReplay} /></View>}
       {moderatorMode && <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}><Action colors={colors} label={panel === 'reports' ? 'Close safety reports' : 'Safety reports'} onPress={loadReports} /></View>}
       {panel === 'stage' && creatorMode && <View style={{ margin: 12, padding: 12, borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
@@ -493,6 +541,15 @@ export default function LiveStreamScreen({ route, navigation }) {
           {item.stage && <Action colors={colors} label="Remove guest" danger onPress={() => removeGuest(item.userId)} />}
         </View>)}
         {!participants.length && <Text style={{ color: colors.textSecondary }}>No connected viewers or guests yet.</Text>}
+      </View>}
+      {panel === 'guestRequests' && creatorMode && <View style={{ margin: 12, padding: 12, borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.accent }}>
+        <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 8 }}>Viewer requests to join your LIVE stage ({guestRequests.length})</Text>
+        {guestRequests.map((item) => <View key={item.user_id} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border }}>
+          <Text style={{ color: colors.textPrimary, flex: 1, minWidth: 100 }}>{item.name || 'Viewer'}</Text>
+          <Action colors={colors} label="Approve" onPress={() => reviewGuestRequest(item.user_id, 'accepted')} />
+          <Action colors={colors} label="Decline" danger onPress={() => reviewGuestRequest(item.user_id, 'declined')} />
+        </View>)}
+        {!guestRequests.length && <Text style={{ color: colors.textSecondary }}>No pending guest requests.</Text>}
       </View>}
       {panel === 'reports' && <View style={{ margin: 12, padding: 12, borderRadius: 14, backgroundColor: colors.surface }}>
         <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 8 }}>LIVE safety reports</Text>

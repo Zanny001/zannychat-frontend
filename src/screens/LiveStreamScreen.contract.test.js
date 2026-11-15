@@ -184,3 +184,19 @@ test('LIVE video tiles use a responsive moderate 16:9 frame instead of oversized
   assert.ok(webSource.includes('single={remoteVideoTracks.length === 1}'));
   assert.ok(!webSource.includes('minHeight: spotlight ? 310 : 190'));
 });
+
+
+test('LIVE creator receives continuously refreshed in-screen guest requests without relying on push notifications', () => {
+  assert.ok(screen.includes("setInterval(refreshGuestRequests, 3500)"));
+  assert.ok(screen.includes('if (hasNewRequest) setShowGuestRequests(true)'));
+  assert.ok(screen.includes('Guest requests ({guestRequests.length})'));
+  assert.ok(screen.includes("onReviewGuestRequest(item.user_id, 'accepted')"));
+  assert.ok(screen.includes("onReviewGuestRequest(item.user_id, 'declined')"));
+});
+
+test('changing a viewer token to an approved guest token does not mark the participant as having left', () => {
+  const cleanup = screen.slice(screen.indexOf('AudioSession.startAudioSession'), screen.indexOf('  }, [stream?.id, creatorMode, refreshComments]'));
+  assert.equal(cleanup.includes("backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}"), false);
+  assert.ok(screen.includes("navigation.addListener('beforeRemove'"));
+  assert.ok(screen.includes('navigation.setParams({ connection: nextConnection, creatorMode: false })'));
+});

@@ -81,3 +81,19 @@ test('removed web guests remain viewers after LiveKit publishing permission is r
   assert.ok(web.includes('Watching as viewer'));
   assert.ok(web.includes('You can keep watching the LIVE.'));
 });
+
+
+test('web LIVE creator sees incoming guest requests in an automatically refreshed actionable panel', () => {
+  assert.ok(web.includes("setInterval(refreshGuestRequests, 3500)"));
+  assert.ok(web.includes("if (hasNewRequest) setPanel('guestRequests')"));
+  assert.ok(web.includes('Guest requests ('));
+  assert.ok(web.includes("reviewGuestRequest(item.user_id, 'accepted')"));
+  assert.ok(web.includes("reviewGuestRequest(item.user_id, 'declined')"));
+});
+
+test('web viewer-to-guest token handoff preserves LIVE room membership until actual navigation away', () => {
+  const roomEffect = web.slice(web.indexOf('const room = new Room'), web.indexOf('  }, [stream?.id, connection?.livekitUrl, connection?.token, creatorMode]'));
+  assert.equal(roomEffect.includes("backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}"), false);
+  assert.ok(web.includes("navigation.addListener('beforeRemove'"));
+  assert.ok(web.includes('navigation.setParams({ connection: next, creatorMode: false })'));
+});
