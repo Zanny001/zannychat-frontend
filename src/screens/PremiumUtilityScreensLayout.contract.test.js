@@ -32,7 +32,7 @@ test('Shared touch-target contract counts 44-point and larger controls', () => {
 
 test('Settings accessibility, connection and logout actions retain 48-point targets', () => {
   const source = read('SettingsScreen.js');
-  assert.match(source, /accessibilityLabel="Re-check connections"[\\s\\S]*?minWidth: 48, minHeight: 48/);
-  assert.match(source, /accessibilitySwitchRow: \\{ minHeight: 48/);
-  assert.match(source, /logoutBtn: \\{ minHeight: 48/);
+  assert.match(source, /accessibilityLabel="Re-check connections"[\s\S]*?minWidth: 48, minHeight: 48/);
+  assert.match(source, /accessibilitySwitchRow: \{ minHeight: 48/);
+  assert.match(source, /logoutBtn: \{ minHeight: 48/);
 });
