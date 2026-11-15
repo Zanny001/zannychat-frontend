@@ -267,3 +267,10 @@ The source scan covered these families:
 ### Status
 - No new confirmed defect was established in this limited source pass. Static review is not a substitute for exercising server permissions, data persistence, media permissions, offline/retry states, and accessibility with real accounts/devices.
 - The 46-screen inventory remains only partially reviewed; no claim of full audit completion.
+
+
+## Latest action — calling CI retry requested
+
+- The cancelled `client-quality` job from workflow run 824 was successfully queued for rerun via GitHub Actions (new job ID `132990314246`). It had previously passed npm audit, Android Expo prebuild and Android Kotlin compilation before cancellation during compile-only APK assembly.
+- The retry is queued, not yet passed. Check the rerun before changing the PR's readiness state.
+- Latest known commit before this note: `5b748e0ecfe24d9fef1360236b28c153332982c4`. Vercel reports build-rate-limit failure for that commit. No production deployment is confirmed.
