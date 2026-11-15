@@ -340,3 +340,13 @@ The source scan covered these families:
 - This trigger is the server-side username bootstrap path for both email and Google OAuth signups; the frontend Google OAuth flow correctly relies on the auth-state listener rather than creating a second profile row.
 - This confirms the auto-username mechanism exists in the live database; it does not prove every historical user already has a username or that all OAuth metadata variants supply a display name. The function's explicit fallbacks cover absent name metadata.
 - No Supabase migration or data change was needed. Do not query or expose real users' personal profile data for this check.
+
+
+## Latest source checkpoint — 2026-11-16
+
+- Verified the screen inventory table contains exactly 46 screen rows and no remaining `Pending source review` / `Source review pending` entries. This is first-pass source coverage only, not completed visual or runtime acceptance.
+- Confirmed PR #85 remains open, draft, unmerged and mergeable according to the latest PR metadata snapshot. Its branch remains `design/crown-aurora-premium-system`.
+- Final composer cleanup removed an unused theme-token destructure and redundant inline border-width override. Latest code commit: `8414425a7a19259428ee8440293268b774c38c31`.
+- Latest queried commit has no associated GitHub Actions run returned by the current workflow query; Vercel remains blocked by the team's build-rate limit. Do not claim the new composer/privacy tests have run.
+- Supabase read-only inspection confirmed the auth-user insert trigger creates a profile and generates a username from available name metadata with a safe fallback and UUID suffix. No live account PII was read and no DB changes were made.
+- The PR description has been refreshed to include the composer and privacy fixes, the complete first-pass screen source review, and the outstanding QA/deployment gates.
