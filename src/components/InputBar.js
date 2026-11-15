@@ -249,9 +249,10 @@ export default function InputBar({
             style={[
               styles.inputWrap,
               {
-                backgroundColor: hexToRgba(colors.surfaceElevated, 0.78),
-                borderColor: hexToRgba(colors.primary, 0.24),
-                borderRadius: radii.pill,
+                backgroundColor: colors.surfaceElevated,
+                borderColor: hexToRgba(colors.primary, 0.32),
+                borderRadius: 20,
+                borderWidth: 1,
               },
             ]}
           >
@@ -292,7 +293,7 @@ const styles = StyleSheet.create({
   wrap: { borderTopWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   draftStatus: { flexDirection: 'row', alignItems: 'center', paddingTop: 5, paddingBottom: 1 },
   row: { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
-  inputWrap: { flex: 1, minWidth: 0, minHeight: 48, paddingHorizontal: 12, marginHorizontal: 2, maxHeight: 104, borderWidth: 1, justifyContent: 'center' },
+  inputWrap: { flex: 1, minWidth: 0, minHeight: 52, paddingHorizontal: 14, marginHorizontal: 2, maxHeight: 108, borderWidth: 1, justifyContent: 'center' },
   sendBtn: { width: 48, height: 48, minWidth: 48, minHeight: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)' },
   replyBar: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
   recordingIndicator: {
