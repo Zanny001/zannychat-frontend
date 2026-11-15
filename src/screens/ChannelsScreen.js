@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useCallback, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ActivityIndicator, Alert, Share, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View } from 'react-native';
@@ -191,7 +192,7 @@ export default function ChannelsScreen({ navigation }) {
       await setChannelPostReaction(post.channelId, post.id, post.myReaction === emoji ? null : emoji);
       await refreshCommunityFeed();
     } catch (err) {
-      Alert.alert('Could not save reaction', err?.message || 'Please try again.');
+      showAppAlert('Could not save reaction', err?.message || 'Please try again.');
     } finally {
       setBusy(false);
     }
@@ -207,7 +208,7 @@ export default function ChannelsScreen({ navigation }) {
       }
       navigation.navigate('LiveStream', { connection, creatorMode: connection.role === 'creator' });
     } catch (err) {
-      Alert.alert('Could not join LIVE', err?.message || 'This stream may have ended or requires an invitation.');
+      showAppAlert('Could not join LIVE', err?.message || 'This stream may have ended or requires an invitation.');
     } finally {
       setBusy(false);
     }
@@ -246,13 +247,13 @@ export default function ChannelsScreen({ navigation }) {
 
   const create = async () => {
     const valid = validateChannel({ title, description });
-    if (!valid.ok) { Alert.alert('Check channel details', valid.error); return; }
+    if (!valid.ok) { showAppAlert('Check channel details', valid.error); return; }
     setBusy(true); setError('');
     try {
       const item = await createChannel({ ...valid, isPrivate: isPrivateDraft });
       setChannels((old) => [item, ...old.filter((row) => row.id !== item.id)]);
       setTitle(''); setDescription(''); setIsPrivateDraft(false); setSelected(item); setSelectedIsPrivateDraft(Boolean(item.is_private)); setPosts([]); setPostsCursor(null); setHasMorePosts(false);
-      Alert.alert('Channel created', 'You can now publish updates to your channel.');
+      showAppAlert('Channel created', 'You can now publish updates to your channel.');
     } catch (err) { setError(err?.message || 'Could not create channel.'); }
     finally { setBusy(false); }
   };
@@ -268,7 +269,7 @@ export default function ChannelsScreen({ navigation }) {
     finally { setBusy(false); }
   };
 
-  const revokeInvite = (invite) => Alert.alert('Revoke invitation?', 'Anyone who has not joined with this token will no longer be able to use it.', [
+  const revokeInvite = (invite) => showAppAlert('Revoke invitation?', 'Anyone who has not joined with this token will no longer be able to use it.', [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Revoke', style: 'destructive', onPress: async () => {
       if (!selected) return;
@@ -281,14 +282,14 @@ export default function ChannelsScreen({ navigation }) {
 
   const joinChannelInvite = async () => {
     const token = inviteTokenDraft.trim();
-    if (!token) { Alert.alert('Invitation needed', 'Paste the invitation token you received.'); return; }
+    if (!token) { showAppAlert('Invitation needed', 'Paste the invitation token you received.'); return; }
     setBusy(true); setError('');
     try {
       const channel = await acceptChannelInvite(token);
       setInviteTokenDraft('');
       await refresh();
       await openChannel(channel);
-      Alert.alert('Joined channel', `You joined ${channel.title}.`);
+      showAppAlert('Joined channel', `You joined ${channel.title}.`);
     } catch (err) { setError(err?.message || 'Could not accept channel invitation.'); }
     finally { setBusy(false); }
   };
@@ -307,7 +308,7 @@ export default function ChannelsScreen({ navigation }) {
   const publish = async () => {
     const body = normalizeChannelPost(postText);
     if (publishingRef.current) return;
-    if (!selected || !body) { Alert.alert('Write a post', 'Enter a message before publishing.'); return; }
+    if (!selected || !body) { showAppAlert('Write a post', 'Enter a message before publishing.'); return; }
     publishingRef.current = true;
     setBusy(true); setError('');
     const draftKey = channelPostDraftKey(selected.id, userId);
@@ -354,7 +355,7 @@ export default function ChannelsScreen({ navigation }) {
     finally { setBusy(false); }
   };
 
-  const removePost = (post) => Alert.alert('Delete post?', 'This removes the post and its comments and reactions.', [
+  const removePost = (post) => showAppAlert('Delete post?', 'This removes the post and its comments and reactions.', [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Delete', style: 'destructive', onPress: async () => {
       if (!selected) return;
@@ -452,7 +453,7 @@ export default function ChannelsScreen({ navigation }) {
     finally { setBusy(false); }
   };
 
-  const removeComment = (post, comment) => Alert.alert('Delete comment?', 'This comment will be removed from the channel post.', [
+  const removeComment = (post, comment) => showAppAlert('Delete comment?', 'This comment will be removed from the channel post.', [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Delete', style: 'destructive', onPress: async () => {
       if (!selected) return;
@@ -480,7 +481,7 @@ export default function ChannelsScreen({ navigation }) {
   const saveChannelDetails = async () => {
     if (!selected || !isOwner || busy) return;
     const valid = validateChannel({ title: channelTitleDraft, description: channelDescriptionDraft });
-    if (!valid.ok) { Alert.alert('Check channel details', valid.error); return; }
+    if (!valid.ok) { showAppAlert('Check channel details', valid.error); return; }
     setBusy(true); setError('');
     try {
       const updated = await updateChannel(selected.id, { ...valid, isPrivate: selectedIsPrivateDraft });
@@ -502,7 +503,7 @@ export default function ChannelsScreen({ navigation }) {
     }
   };
 
-  const reportPost = (post) => Alert.alert('Report channel post', 'Choose the main reason for reporting this post.', [
+  const reportPost = (post) => showAppAlert('Report channel post', 'Choose the main reason for reporting this post.', [
     { text: 'Spam', onPress: () => submitPostReport(post, 'spam') },
     { text: 'Harassment', onPress: () => submitPostReport(post, 'harassment') },
     { text: 'Hate', onPress: () => submitPostReport(post, 'hate') },
@@ -511,7 +512,7 @@ export default function ChannelsScreen({ navigation }) {
     { text: 'Cancel', style: 'cancel' },
   ]);
 
-  const reportComment = (post, comment) => Alert.alert('Report channel comment', 'Choose the main reason for reporting this comment.', [
+  const reportComment = (post, comment) => showAppAlert('Report channel comment', 'Choose the main reason for reporting this comment.', [
     { text: 'Spam', onPress: () => submitCommentReport(post, comment, 'spam') },
     { text: 'Harassment', onPress: () => submitCommentReport(post, comment, 'harassment') },
     { text: 'Hate', onPress: () => submitCommentReport(post, comment, 'hate') },
@@ -525,7 +526,7 @@ export default function ChannelsScreen({ navigation }) {
     setBusy(true); setError('');
     try {
       await reportChannelPostComment(selected.id, post.id, comment.id, reason);
-      Alert.alert('Report submitted', 'Thank you. Channel moderators can review this report.');
+      showAppAlert('Report submitted', 'Thank you. Channel moderators can review this report.');
     } catch (err) { setError(err?.message || 'Could not submit comment report.'); }
     finally { setBusy(false); }
   };
@@ -535,7 +536,7 @@ export default function ChannelsScreen({ navigation }) {
     setBusy(true); setError('');
     try {
       await reportChannelPost(selected.id, post.id, reason);
-      Alert.alert('Report submitted', 'Thank you. Channel moderators can review this report.');
+      showAppAlert('Report submitted', 'Thank you. Channel moderators can review this report.');
     } catch (err) { setError(err?.message || 'Could not submit report.'); }
     finally { setBusy(false); }
   };
@@ -582,7 +583,7 @@ export default function ChannelsScreen({ navigation }) {
     finally { setBusy(false); }
   };
 
-  const remove = (channel) => Alert.alert('Delete channel?', 'This permanently removes the channel, its subscriptions, and its posts.', [
+  const remove = (channel) => showAppAlert('Delete channel?', 'This permanently removes the channel, its subscriptions, and its posts.', [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Delete', style: 'destructive', onPress: async () => {
       setBusy(true);
