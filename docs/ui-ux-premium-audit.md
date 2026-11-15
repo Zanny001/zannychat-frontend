@@ -139,6 +139,37 @@ The supplied audit names 46 screens. Status below distinguishes design-reference
 - No visual screenshot comparison, responsive browser run, physical-device review, or keyboard/accessibility acceptance has yet been completed for this design pass.
 - No Supabase migration, production deployment, or merge has been performed for this design pass.
 
+
+## Route inventory verification — 2026-11-15
+
+A fresh source pass parsed the registered screen imports in `src/navigation/AppNavigator.js` and confirmed **46 distinct screen modules are registered and their source files are present**. This confirms route/source presence only; it does not mean every interaction or visual state has been accepted.
+
+The source scan covered these families:
+- Core and authentication: onboarding, sign-in, sign-up, recovery, reset, verification and auth-required.
+- Messaging and social: chat list/conversation, new chat, contact discovery, groups, peer profile, forwarding, saved/drafts/pinned/scheduled messages, folders, shared media, channels, polls and events.
+- Calls and LIVE: call history, incoming/outgoing/direct/group call, LIVE hub, stream, replay and creator profile.
+- Account and support: profile/edit profile, settings, privacy, notifications, data/storage/export, sessions, appearance, help and QR contact.
+
+### Static review signals (not automatic defect classifications)
+
+- The six high-traffic source areas reviewed earlier use the shared theme and component system; no new navigation route or feature is required to render the supplied visual direction.
+- Several utility screens have low counts of explicit accessibility annotations in a static scan. This is a review signal, not proof of inaccessible controls: native control semantics and parent labels also count. The next pass must test actual focus order, labels, selected/expanded/disabled states and screen-reader output.
+- Fixed dimensions and absolute positioning are concentrated in media, call, LIVE and avatar/illustration treatments. They must be reviewed against actual container bounds and device widths before changing them; fixed dimensions are not defects by themselves.
+- Literal colours are concentrated in immersive call/LIVE/media contexts. Preserve intentional media-stage colours while auditing all app-chrome overlays for theme correctness.
+- No database dependency was found in the Crown Aurora visual-token and shared-presentation changes. Do not change Supabase schema or policies merely to match static mockup content.
+
+### Implementation wave status
+
+| Wave | Scope | Status |
+|---|---|---|
+| 0 | Extract reference tokens and principles; preserve all six existing destinations | Done |
+| 1 | Crown Aurora default palette and cross-theme contrast contract | Implemented; expanded test commit awaits fresh CI confirmation |
+| 2 | Shared navigation/header/surface/composer refinement | Pending implementation and regression tests |
+| 3 | Chats, Chat, New Chat, message utilities and media | Source inventory present; detailed visual/interaction pass pending |
+| 4 | Calls, LIVE, replay and creator profile | Source inventory present; detailed visual/device pass pending |
+| 5 | Auth, profile, privacy, settings, data and support | Source inventory present; detailed visual/interaction pass pending |
+| 6 | Responsive, accessibility, keyboard, theme matrix and physical-device acceptance | Pending |
+
 ## Verification and release gates
 
 - Automated verification is pending CI for this branch.
