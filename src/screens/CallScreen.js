@@ -45,6 +45,7 @@ export default function CallScreen({ route, navigation }) {
   const seenSignals = useRef(new Set());
   const offerStarted = useRef(false);
   const iceRestartInProgress = useRef(false);
+  const disconnectTimerRef = useRef(null);
   const activeRef = useRef(true);
   const nativeConnectedRef = useRef(false);
   const nativeEndedRef = useRef(false);
@@ -225,9 +226,28 @@ export default function CallScreen({ route, navigation }) {
         if (!activeRef.current) return;
         const state = pc.iceConnectionState;
         if (state === 'connected' || state === 'completed') {
+          if (disconnectTimerRef.current) {
+            clearTimeout(disconnectTimerRef.current);
+            disconnectTimerRef.current = null;
+          }
           iceRestartInProgress.current = false;
           setErrorText('');
           return;
+        }
+
+        if ((state === 'disconnected' || state === 'failed') && !disconnectTimerRef.current) {
+          disconnectTimerRef.current = setTimeout(async () => {
+            disconnectTimerRef.current = null;
+            if (!activeRef.current || ['connected', 'completed'].includes(pc.iceConnectionState)) return;
+            const current = callRef.current;
+            if (current?.id && current.status === 'accepted') {
+              try {
+                const updated = await updateCallStatus(current.id, 'ended');
+                callRef.current = { ...current, ...updated };
+              } catch (_) {}
+            }
+            if (activeRef.current) navigation.goBack();
+          }, 120_000);
         }
         if ((state === 'disconnected' || state === 'failed') && currentStatus === 'accepted' && !iceRestartInProgress.current) {
           iceRestartInProgress.current = true;
@@ -344,6 +364,8 @@ export default function CallScreen({ route, navigation }) {
     });
     return () => {
       activeRef.current = false;
+      if (disconnectTimerRef.current) clearTimeout(disconnectTimerRef.current);
+      disconnectTimerRef.current = null;
       unsubscribeSignals();
       unsubscribeSession();
       try { pc?.close(); } catch (_) {}
