@@ -53,3 +53,11 @@ test('native and web group calls renew participant leases and recover stale disc
   assert.ok(web.includes('setInterval(heartbeat, 30_000)'));
   assert.ok(web.includes("status !== 'Connected'"));
 });
+
+
+test('native group calls expose speaker and earpiece output selection', () => {
+  assert.ok(screen.includes('AudioSession.showAudioRoutePicker()'));
+  assert.ok(screen.includes('AudioSession.getAudioOutputs()'));
+  assert.ok(screen.includes('AudioSession.selectAudioOutput(output)'));
+  assert.ok(screen.includes('Choose audio output'));
+});
