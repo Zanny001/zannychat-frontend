@@ -643,7 +643,7 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center' },
   newChatBtn: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   searchBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 9 },
-  filterPill: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999, borderWidth: 1 },
+  filterPill: { minHeight: 44, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   demoPill: {
     flexDirection: 'row',
     alignItems: 'center',
