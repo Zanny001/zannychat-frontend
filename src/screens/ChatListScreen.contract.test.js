@@ -16,9 +16,9 @@ test('inbox filters expose the selected state to assistive technology', () => {
 });
 
 test('Chats header actions and search field keep moderate accessible dimensions', () => {
-  assert.match(screen, /cameraBtn: \{ width: 44, height: 44, minWidth: 44, minHeight: 48/);
-  assert.match(screen, /draftsBtn: \{ width: 44, height: 44, minWidth: 44, minHeight: 48/);
-  assert.match(screen, /newChatBtn: \{ width: 44, height: 44, minWidth: 44, minHeight: 48/);
+  assert.match(screen, /cameraBtn: \{ width: 48, height: 48, minWidth: 48, minHeight: 48/);
+  assert.match(screen, /draftsBtn: \{ width: 48, height: 48, minWidth: 48, minHeight: 48/);
+  assert.match(screen, /newChatBtn: \{ width: 48, height: 48, minWidth: 48, minHeight: 48/);
   assert.match(screen, /searchBar: \{ minHeight: 48/);
   assert.match(screen, /accessibilityLabel="See all moments" style=\{\{ minHeight: 48/);
 });
