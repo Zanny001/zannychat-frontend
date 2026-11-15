@@ -243,10 +243,10 @@ export default function SharedMediaScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   tabRail: { flexDirection: 'row', borderWidth: 1, padding: 4, gap: 4 },
-  tab: { flex: 1, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 11, borderWidth: 1, paddingHorizontal: 4 },
+  tab: { flex: 1, minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 11, borderWidth: 1, paddingHorizontal: 4 },
   count: { fontSize: 11, marginLeft: 5, fontVariant: ['tabular-nums'] },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28 },
-  retryButton: { marginTop: 16, paddingHorizontal: 18, paddingVertical: 11 },
+  retryButton: { minHeight: 48, marginTop: 16, paddingHorizontal: 18, paddingVertical: 8, alignItems: 'center', justifyContent: 'center' },
   photoGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   photoCell: { width: '48.5%', aspectRatio: 0.92, marginBottom: 10, borderWidth: 1, overflow: 'hidden' },
   photo: { width: '100%', height: '100%' },
