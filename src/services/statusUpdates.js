@@ -215,13 +215,22 @@ export async function publishVideoStatus(asset, caption = '', audience = 'contac
   const { data: auth, error: authError } = await supabase.auth.getUser();
   if (authError || !auth?.user?.id) throw new Error('Sign in to publish a status.');
   const blob = await readPickedStatusBlob(asset);
-  if (!blob || blob.size < 1 || blob.size > 50 * 1024 * 1024) throw new Error('Video must be smaller than 50 MB.');
-  const mime = asset.mimeType || blob.type || 'video/mp4';
-  if (mime !== 'video/mp4') throw new Error('Choose an MP4 video. Other video formats are not supported yet.');
+  if (!blob || blob.size < 1 || blob.size > 50 * 1024 * 1024) throw new Error('Video must be 50 MiB or smaller.');
+  const assetName = String(asset.fileName || asset.name || asset.uri || '').toLowerCase();
+  const suppliedMime = String(asset.mimeType || blob.type || '').toLowerCase();
+  const mime = suppliedMime === 'video/mp4' || suppliedMime === 'video/quicktime'
+    ? suppliedMime
+    : assetName.endsWith('.mov')
+      ? 'video/quicktime'
+      : assetName.endsWith('.mp4')
+        ? 'video/mp4'
+        : '';
+  const extension = mime === 'video/quicktime' ? 'mov' : mime === 'video/mp4' ? 'mp4' : null;
+  if (!extension) throw new Error('Choose an MP4 or MOV video. Other video formats are not supported yet.');
   const captionText = String(caption || '').trim().slice(0, STATUS_TEXT_LIMIT);
   const row = await createStatusRecord(captionText, audience, 'video', expiryHours);
   await saveStatusAudienceRecipients(row.id, selectedIds, auth.user.id);
-  const path = `${auth.user.id}/${row.id}/video.mp4`;
+  const path = `${auth.user.id}/${row.id}/video.${extension}`;
   const { error: updateError } = await supabase.from('status_updates').update({ media_path: path }).eq('id', row.id).eq('user_id', auth.user.id);
   if (updateError) { await supabase.from('status_updates').delete().eq('id', row.id); throw updateError; }
   const bytes = await blob.arrayBuffer();
