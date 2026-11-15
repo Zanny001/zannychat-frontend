@@ -36,6 +36,10 @@ function makeManifestKey(key) {
   return `${key}.secure-v2.manifest`;
 }
 
+function makeRevocationKey(key) {
+  return `${key}.secure-v2.revoked`;
+}
+
 function makeChunkKey(key, generation, index) {
   return `${key}.secure-v2.${generation}.${index}`;
 }
@@ -104,6 +108,7 @@ export function createSecureAuthStorage({
     typeof secureStore.deleteItemAsync !== 'function' ||
     !legacyStorage ||
     typeof legacyStorage.getItem !== 'function' ||
+    typeof legacyStorage.setItem !== 'function' ||
     typeof legacyStorage.removeItem !== 'function'
   ) {
     throw new TypeError('Secure auth storage requires SecureStore and legacy storage adapters.');
@@ -123,6 +128,8 @@ export function createSecureAuthStorage({
 
   async function getItem(key) {
       if (typeof key !== 'string' || !key) throw new TypeError('Auth storage key is required.');
+      // A durable sign-out marker takes precedence over any stale secure or legacy session.
+      if (await legacyStorage.getItem(makeRevocationKey(key)) === '1') return null;
       let stored;
       try {
         stored = await readManifest(key);
@@ -180,16 +187,20 @@ export function createSecureAuthStorage({
       } catch {
         // SecureStore is now authoritative; a stale legacy copy is not read while a manifest exists.
       }
+      await legacyStorage.removeItem(makeRevocationKey(key));
       if (previous.manifest) await deleteGeneration(secureStore, key, previous.manifest);
     }
 
   async function removeItem(key) {
       if (typeof key !== 'string' || !key) throw new TypeError('Auth storage key is required.');
-      // Remove the legacy copy first so a failed secure delete cannot resurrect a signed-out session.
+      // Persist revocation before touching either copy. If Keychain/Keystore is
+      // temporarily unavailable, getItem still refuses to resurrect the session.
+      await legacyStorage.setItem(makeRevocationKey(key), '1');
       await legacyStorage.removeItem(key);
       const stored = await readManifest(key);
       await secureStore.deleteItemAsync(makeManifestKey(key));
       if (stored.manifest) await deleteGeneration(secureStore, key, stored.manifest);
+      await legacyStorage.removeItem(makeRevocationKey(key));
     }
 
   return { getItem, setItem, removeItem };
