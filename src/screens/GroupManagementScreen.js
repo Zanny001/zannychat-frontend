@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, Share, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -56,12 +57,12 @@ export default function GroupManagementScreen({ navigation, route }) {
 
   const changeAdmin = (member) => {
     const next = !member.isAdmin;
-    Alert.alert(next ? 'Promote to admin?' : 'Remove admin role?', `${member.profile?.name || 'This member'} ${next ? 'will be able to manage group members' : 'will no longer be able to manage group members'}.`, [
+    showAppAlert(next ? 'Promote to admin?' : 'Remove admin role?', `${member.profile?.name || 'This member'} ${next ? 'will be able to manage group members' : 'will no longer be able to manage group members'}.`, [
       { text: 'Cancel', style: 'cancel' },
       { text: next ? 'Promote' : 'Remove role', onPress: async () => {
         setBusyId(member.id);
         try { await setGroupMemberAdmin(conversationId, member.id, next); await refresh(); }
-        catch (err) { Alert.alert('Could not update role', err?.message || 'Please try again.'); }
+        catch (err) { showAppAlert('Could not update role', err?.message || 'Please try again.'); }
         finally { setBusyId(null); }
       } },
     ]);
@@ -69,7 +70,7 @@ export default function GroupManagementScreen({ navigation, route }) {
 
   const removeMember = (member) => {
     const self = member.id === currentUserId;
-    Alert.alert(self ? 'Leave group?' : 'Remove member?', self ? 'You will leave this group on this account.' : `Remove ${member.profile?.name || 'this member'} from the group?`, [
+    showAppAlert(self ? 'Leave group?' : 'Remove member?', self ? 'You will leave this group on this account.' : `Remove ${member.profile?.name || 'this member'} from the group?`, [
       { text: 'Cancel', style: 'cancel' },
       { text: self ? 'Leave group' : 'Remove', style: 'destructive', onPress: async () => {
         setBusyId(member.id);
@@ -77,7 +78,7 @@ export default function GroupManagementScreen({ navigation, route }) {
           await removeGroupMember(conversationId, member.id);
           if (self) { navigation.popToTop(); }
           else await refresh();
-        } catch (err) { Alert.alert(self ? 'Could not leave group' : 'Could not remove member', err?.message || 'Please try again.'); }
+        } catch (err) { showAppAlert(self ? 'Could not leave group' : 'Could not remove member', err?.message || 'Please try again.'); }
         finally { setBusyId(null); }
       } },
     ]);
@@ -95,24 +96,24 @@ Invite link: ${invite.inviteLink}
 
 If the link does not open the app, copy this invite token into Profile → Join a group:
 ${invite.token}` });
-    } catch (err) { Alert.alert('Could not create invite', err?.message || 'Please try again.'); }
+    } catch (err) { showAppAlert('Could not create invite', err?.message || 'Please try again.'); }
     finally { setInviteBusy(false); }
   };
-  const revokeInvite = (invite = activeInvite) => { if (!invite?.id) return; Alert.alert('Revoke invite?', 'Anyone who has not used this link will no longer be able to join with it.', [
+  const revokeInvite = (invite = activeInvite) => { if (!invite?.id) return; showAppAlert('Revoke invite?', 'Anyone who has not used this link will no longer be able to join with it.', [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Revoke', style: 'destructive', onPress: async () => {
       setInviteBusy(true);
-      try { await revokeGroupInvite(conversationId, invite.id); if (activeInvite?.id === invite.id) setActiveInvite(null); setGroupInvites(await fetchGroupInvites(conversationId)); Alert.alert('Invite revoked', 'This invite can no longer be used.'); }
-      catch (err) { Alert.alert('Could not revoke invite', err?.message || 'Please try again.'); }
+      try { await revokeGroupInvite(conversationId, invite.id); if (activeInvite?.id === invite.id) setActiveInvite(null); setGroupInvites(await fetchGroupInvites(conversationId)); showAppAlert('Invite revoked', 'This invite can no longer be used.'); }
+      catch (err) { showAppAlert('Could not revoke invite', err?.message || 'Please try again.'); }
       finally { setInviteBusy(false); }
     } },
   ]); };
   const actionStyle = { minHeight: 44, borderRadius: radii.md, paddingHorizontal: spacing.sm, justifyContent: 'center', borderWidth: 1, borderColor: colors.border };
   const saveMetadata = async () => {
     const validation = validateGroupMetadata(groupMetadata);
-    if (!validation.ok) { Alert.alert('Group details need attention', validation.errors.join('\n')); return; }
-    try { setMetadataBusy(true); const saved = await updateGroupMetadata(conversationId, validation.value); setGroupMetadata({ name: saved.name || validation.value.name, topic: saved.topic || validation.value.topic, description: saved.description || validation.value.description, adminOnlyMessages: typeof saved.adminOnlyMessages === 'boolean' ? saved.adminOnlyMessages : validation.value.adminOnlyMessages }); Alert.alert('Group details saved', 'The group name, topic, description, and announcement setting have been updated.'); }
-    catch (err) { Alert.alert('Could not save group details', err?.message || 'Please try again.'); }
+    if (!validation.ok) { showAppAlert('Group details need attention', validation.errors.join('\n')); return; }
+    try { setMetadataBusy(true); const saved = await updateGroupMetadata(conversationId, validation.value); setGroupMetadata({ name: saved.name || validation.value.name, topic: saved.topic || validation.value.topic, description: saved.description || validation.value.description, adminOnlyMessages: typeof saved.adminOnlyMessages === 'boolean' ? saved.adminOnlyMessages : validation.value.adminOnlyMessages }); showAppAlert('Group details saved', 'The group name, topic, description, and announcement setting have been updated.'); }
+    catch (err) { showAppAlert('Could not save group details', err?.message || 'Please try again.'); }
     finally { setMetadataBusy(false); }
   };
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
