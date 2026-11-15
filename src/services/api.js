@@ -1469,7 +1469,7 @@ export async function reportUser({ reportedUserId, messageId = null, reason = ''
 // URI displays/plays fine on-device without a real upload); contacts
 // never upload anything, they just reference another profile's id.
 
-const MAX_CHAT_MEDIA_UPLOAD_BYTES = 25_000_000;
+const MAX_CHAT_MEDIA_UPLOAD_BYTES = 25 * 1024 * 1024;
 const CHAT_MEDIA_MIME_TYPES = new Set([
   'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif',
   'video/mp4', 'video/quicktime', 'video/webm', 'video/3gpp',
@@ -1524,7 +1524,7 @@ function assertSafeChatAttachmentName(fileName) {
 
 function assertChatMediaSize(byteLength) {
   if (Number.isFinite(byteLength) && byteLength > MAX_CHAT_MEDIA_UPLOAD_BYTES) {
-    throw createChatMediaError('FILE_TOO_LARGE', 'Chat attachments are limited to 25 MB (25,000,000 bytes).');
+    throw createChatMediaError('FILE_TOO_LARGE', 'Chat attachments are limited to 25 MiB (26,214,400 bytes).');
   }
 }
 
