@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   left: { flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0, marginRight: 8 },
-  backButton: { minWidth: 44, minHeight: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  backButton: { minWidth: 48, minHeight: 48, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   titlePressed: { opacity: 0.72 },
   titleContent: { flex: 1, minWidth: 0 },
   titleText: { flexShrink: 1, minWidth: 0 },
