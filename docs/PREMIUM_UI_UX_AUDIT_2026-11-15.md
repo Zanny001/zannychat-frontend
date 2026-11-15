@@ -84,3 +84,9 @@ The inbox conversation row already uses a compact, accessible `Pressable` rather
 - The camera, drafts and new-chat header controls were 40×40, 40×40 and 34×34 respectively. These are visually compact but undersized as standalone touch targets.
 - Standardized the three controls to 44×44, increased the search surface to a balanced 48-point minimum, and gave the Moments “See all” action a 44-point interaction height.
 - Extended the Chats layout contract to protect these dimensions.
+
+## Additional responsive finding and remediation — New Chat quick actions
+
+- The Find friends, Scan QR and New group shortcuts shared a fixed, non-wrapping horizontal row. Their combined intrinsic widths could exceed the available content width on smaller phones.
+- Enabled wrapping and gave each action a consistent flexible basis, with a 44-point minimum content height. This preserves the quick-action hierarchy while allowing the third action to move to a second row when necessary.
+- Added a narrow-screen layout contract.
