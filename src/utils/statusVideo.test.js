@@ -5,11 +5,11 @@ import fs from 'node:fs';
 const service = fs.readFileSync(new URL('../services/statusUpdates.js', import.meta.url), 'utf8');
 const screen = fs.readFileSync(new URL('../screens/StatusUpdatesScreen.js', import.meta.url), 'utf8');
 
-test('video status upload is MP4-only and bounded to 50 MiB', () => {
+test('video status upload supports MP4 and MOV and is bounded to 50 MiB', () => {
   assert.match(service, /50 \* 1024 \* 1024/);
-  assert.match(service, /mime !== 'video\/mp4'/);
+  assert.match(service, /value === 'video\/mp4' \|\| value === 'video\/quicktime'/);
   assert.match(service, /createStatusRecord\(captionText,\s*audience,\s*'video',\s*expiryHours\)/);
-  assert.match(service, /video\.mp4/);
+  assert.match(service, /video\.\$\{extension\}/);
   assert.match(service, /contentType:\s*mime/);
 });
 
