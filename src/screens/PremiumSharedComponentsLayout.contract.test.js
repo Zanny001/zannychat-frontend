@@ -25,6 +25,8 @@ test('Call invitation sheet close, search and invite actions use 48-point contro
   assert.match(source, /closeButton: \{[\s\S]*?width: 48,\s*height: 48/);
   assert.match(source, /searchButton: \{[\s\S]*?width: 48,\s*height: 48/);
   assert.match(source, /inviteButton: \{[\s\S]*?minHeight: 48/);
+  assert.match(source, /<Avatar name=\{displayName\} color=\{item\.avatar_color \|\| colors\.primary\} size=\{42\} \/>/);
+  assert.doesNotMatch(source, /avatarText: \{ color: '#FFFFFF'/);
 });
 
 test('Avatar fallback follows the active theme palette and preserves foreground contrast', () => {
