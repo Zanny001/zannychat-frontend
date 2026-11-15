@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { countReadersForMessage, resolveMessageDeliveryStatus, countDeliveredRecipients } from '../utils/readReceipts';
 import { buildGroupReceiptDetails } from '../utils/groupReceiptDetails';
@@ -447,7 +448,7 @@ export default function ChatScreen({ route, navigation }) {
         setEditing(null);
         return true;
       } catch (err) {
-        Alert.alert("Couldn't edit message", err.message || 'Please try again.');
+        showAppAlert("Couldn't edit message", err.message || 'Please try again.');
         return false;
       }
     }
@@ -496,7 +497,7 @@ export default function ChatScreen({ route, navigation }) {
           ? 'Your message could not be saved for automatic retry because the pending-message queue is full or local storage is unavailable. Keep this draft and try again after clearing pending messages.'
           : err.message || 'Please try again.';
       setSendError(failureMessage);
-      Alert.alert('Message not sent', failureMessage);
+      showAppAlert('Message not sent', failureMessage);
       return false;
     }
   }
@@ -514,9 +515,9 @@ export default function ChatScreen({ route, navigation }) {
     setSummarizing(true);
     try {
       const summary = await summarizeConversation(conversation.id);
-      Alert.alert(`Summary of your chat with ${display.participant.name}`, summary);
+      showAppAlert(`Summary of your chat with ${display.participant.name}`, summary);
     } catch (err) {
-      Alert.alert("Couldn't summarize", err.message || 'Please try again.');
+      showAppAlert("Couldn't summarize", err.message || 'Please try again.');
     } finally {
       setSummarizing(false);
     }
@@ -591,14 +592,14 @@ export default function ChatScreen({ route, navigation }) {
         deliveryState: messageDeliveryState,
       });
       if (!details.length) {
-        Alert.alert('Message status', 'Receipt details are not available for this message yet.');
+        showAppAlert('Message status', 'Receipt details are not available for this message yet.');
         return;
       }
       const visible = details.slice(0, 12).map((item) => `${item.name}: ${item.status}`);
       if (details.length > visible.length) visible.push(`…and ${details.length - visible.length} more members`);
-      Alert.alert('Message status', visible.join('\n'));
+      showAppAlert('Message status', visible.join('\n'));
     } catch (err) {
-      Alert.alert('Could not load message status', err?.message || 'Please try again.');
+      showAppAlert('Could not load message status', err?.message || 'Please try again.');
     }
   }
 
@@ -607,9 +608,9 @@ export default function ChatScreen({ route, navigation }) {
     try {
       const user = await getCurrentUser();
       await saveMessageLocally(user?.id || 'me', message, { ...display, id: conversation.id });
-      Alert.alert('Message saved', 'Added to your on-device Saved messages collection. This bookmark does not sync to other devices.');
+      showAppAlert('Message saved', 'Added to your on-device Saved messages collection. This bookmark does not sync to other devices.');
     } catch (err) {
-      Alert.alert('Could not save message', err.message || 'Please try again.');
+      showAppAlert('Could not save message', err.message || 'Please try again.');
     }
   }
 
@@ -622,13 +623,13 @@ export default function ChatScreen({ route, navigation }) {
       if (isMessagePinned(pinnedMessages, conversation.id, message.id)) {
         const pinId = `${String(conversation.id)}:${String(message.id)}`;
         setPinnedMessages(await unpinMessageLocally(userId, pinId));
-        Alert.alert('Message unpinned', 'Removed from your pinned messages. If this was a shared pin, other members will no longer see it.');
+        showAppAlert('Message unpinned', 'Removed from your pinned messages. If this was a shared pin, other members will no longer see it.');
       } else {
         setPinnedMessages(await pinMessageLocally(userId, message, conversationRecord));
-        Alert.alert('Message pinned', 'Added to your pinned messages. When connected to your account, this pin is shared with other members of the conversation and syncs across devices.');
+        showAppAlert('Message pinned', 'Added to your pinned messages. When connected to your account, this pin is shared with other members of the conversation and syncs across devices.');
       }
     } catch (err) {
-      Alert.alert('Could not update pin', err.message || 'Please try again.');
+      showAppAlert('Could not update pin', err.message || 'Please try again.');
     }
   }
 
@@ -650,7 +651,7 @@ export default function ChatScreen({ route, navigation }) {
   function handleBlockUser() {
     const peer = display.participant;
     if (!peer?.id) return;
-    Alert.alert(`Block ${peer.name}?`, "They won't be able to message you, and you won't see theirs.", [
+    showAppAlert(`Block ${peer.name}?`, "They won't be able to message you, and you won't see theirs.", [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Block',
@@ -660,7 +661,7 @@ export default function ChatScreen({ route, navigation }) {
             await blockUser(peer.id);
             navigation.goBack();
           } catch (err) {
-            Alert.alert("Couldn't block", err.message || 'Please try again.');
+            showAppAlert("Couldn't block", err.message || 'Please try again.');
           }
         },
       },
@@ -671,8 +672,8 @@ export default function ChatScreen({ route, navigation }) {
     const peer = display.participant;
     if (!peer?.id) return;
     reportUser({ reportedUserId: peer.id, messageId, reason: '' })
-      .then(() => Alert.alert('Report received', 'Thanks — our team will review it.'))
-      .catch((err) => Alert.alert("Couldn't send report", err.message || 'Please try again.'));
+      .then(() => showAppAlert('Report received', 'Thanks — our team will review it.'))
+      .catch((err) => showAppAlert("Couldn't send report", err.message || 'Please try again.'));
   }
 
   // --- Attachments ------------------------------------------------------
@@ -687,7 +688,7 @@ export default function ChatScreen({ route, navigation }) {
     const saved = await savePendingAttachment(myUserId, conversation.id, queuedItem);
     if (!saved && recovery.preserved) await removePreservedAttachment(FileSystem, queuedItem);
     if (saved) setPendingAttachments((items) => [...items.filter((entry) => entry.id !== queuedItem.id), queuedItem].slice(-20));
-    Alert.alert(
+    showAppAlert(
       saved ? 'Attachment waiting to retry' : 'Could not save retry',
       saved ? `The ${item.kind} upload failed. ${recovery.preserved ? 'A recovery copy was saved in app storage for retries after restarting the app.' : 'The original file must remain available on this device; a durable recovery copy could not be created.'} ${error?.message || ''}`.trim() : 'The upload failed and this device could not save a retry record. Please select the attachment again.'
     );
@@ -702,7 +703,7 @@ export default function ChatScreen({ route, navigation }) {
   async function handlePickedVideo(asset) {
     if (!asset?.uri) return;
     if (asset.fileSize && asset.fileSize > MAX_FILE_SIZE) {
-      Alert.alert('Video too large', 'Videos are limited to 25MB for now. Choose a shorter or smaller video.');
+      showAppAlert('Video too large', 'Videos are limited to 25MB for now. Choose a shorter or smaller video.');
       return;
     }
     setMediaCaption('');
@@ -730,7 +731,7 @@ export default function ChatScreen({ route, navigation }) {
       setMediaDraft(null);
       setMediaCaption('');
     } catch (err) {
-      Alert.alert(`Couldn't send ${draft.kind}`, err.message || 'Please try again.');
+      showAppAlert(`Couldn't send ${draft.kind}`, err.message || 'Please try again.');
     } finally { setUploading(false); }
   }
 
@@ -738,15 +739,15 @@ export default function ChatScreen({ route, navigation }) {
     if (!uri) return;
     try {
       await saveMediaToLibrary({ uri, kind, FileSystem, MediaLibrary, prefix: 'zannychat-chat' });
-      Alert.alert('Saved to your library', `${kind === 'video' ? 'Video' : 'Image'} saved successfully.`);
+      showAppAlert('Saved to your library', `${kind === 'video' ? 'Video' : 'Image'} saved successfully.`);
     } catch (error) {
-      Alert.alert('Could not save media', error?.message || 'Please try again.');
+      showAppAlert('Could not save media', error?.message || 'Please try again.');
     }
   }
 
   function discardPendingAttachment(item) {
     const label = item.name || (item.kind === 'image' ? 'photo' : item.kind === 'video' ? 'video' : item.kind === 'voice' ? 'voice note' : 'file');
-    Alert.alert('Remove queued attachment?', `“${label}” will be removed from this device's retry queue. This cannot be undone.`, [
+    showAppAlert('Remove queued attachment?', `“${label}” will be removed from this device's retry queue. This cannot be undone.`, [
       { text: 'Keep', style: 'cancel' },
       { text: 'Remove', style: 'destructive', onPress: async () => {
         try {
@@ -755,7 +756,7 @@ export default function ChatScreen({ route, navigation }) {
           await removePreservedAttachment(FileSystem, item);
           setPendingAttachments((items) => items.filter((entry) => entry.id !== item.id));
         } catch (error) {
-          Alert.alert('Could not remove attachment', error?.message || 'Please try again.');
+          showAppAlert('Could not remove attachment', error?.message || 'Please try again.');
         }
       } },
     ]);
@@ -768,7 +769,7 @@ export default function ChatScreen({ route, navigation }) {
       : pendingAttachments;
     const retryable = candidates.filter((item) => isAttachmentRetryDue(item));
     if (!retryable.length) {
-      Alert.alert('Uploads are waiting', attachmentId ? 'This attachment is still in its retry waiting period.' : 'Please wait before retrying these attachments.');
+      showAppAlert('Uploads are waiting', attachmentId ? 'This attachment is still in its retry waiting period.' : 'Please wait before retrying these attachments.');
       return;
     }
     setRetryingAttachments(true);
@@ -789,14 +790,14 @@ export default function ChatScreen({ route, navigation }) {
             nextRetryAt: getAttachmentNextRetryAt(Math.min(100, (Number.isInteger(entry.attempts) ? entry.attempts : 0) + 1)),
             lastError: getSafeRetryError(error, 'attachment'),
           } : entry));
-          Alert.alert('Attachment still waiting', getSafeRetryError(error, 'attachment'));
+          showAppAlert('Attachment still waiting', getSafeRetryError(error, 'attachment'));
           break;
         }
         // Remove from the retry queue before creating a message record. If the
         // insert response is lost, we must not blindly create a duplicate.
         const removedFromQueue = await removePendingAttachment(myUserId, conversation.id, item.id);
         if (!removedFromQueue) {
-          Alert.alert('Upload succeeded; retry record remains', 'The media uploaded, but the local retry record could not be cleared. Check the conversation before retrying to avoid duplicates.');
+          showAppAlert('Upload succeeded; retry record remains', 'The media uploaded, but the local retry record could not be cleared. Check the conversation before retrying to avoid duplicates.');
           break;
         }
         await removePreservedAttachment(FileSystem, item);
@@ -813,7 +814,7 @@ export default function ChatScreen({ route, navigation }) {
           setMessages((prev) => [...prev, sent]);
           stickToBottom.current = true;
         } catch (error) {
-          Alert.alert('Upload succeeded; message status uncertain', 'The media uploaded, but saving the message failed. Check the conversation before sending it again to avoid duplicates.');
+          showAppAlert('Upload succeeded; message status uncertain', 'The media uploaded, but saving the message failed. Check the conversation before sending it again to avoid duplicates.');
           break;
         }
       }
@@ -840,7 +841,7 @@ export default function ChatScreen({ route, navigation }) {
   async function handleTakePhoto() {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Camera access needed', 'Allow camera access in Settings to take a photo.');
+      showAppAlert('Camera access needed', 'Allow camera access in Settings to take a photo.');
       return;
     }
 
@@ -858,7 +859,7 @@ export default function ChatScreen({ route, navigation }) {
     if (!asset) return;
 
     if (asset.size && asset.size > MAX_FILE_SIZE) {
-      Alert.alert('File too large', 'Files are limited to 25MB for now.');
+      showAppAlert('File too large', 'Files are limited to 25MB for now.');
       return;
     }
 
@@ -872,14 +873,14 @@ export default function ChatScreen({ route, navigation }) {
       setMessages((prev) => [...prev, sent]);
       stickToBottom.current = true;
     } catch (err) {
-      Alert.alert("Couldn't send file", err.message || 'Please try again.');
+      showAppAlert("Couldn't send file", err.message || 'Please try again.');
     } finally { setUploading(false); }
   }
 
   async function handleStartRecording() {
     const permission = await AudioModule.requestRecordingPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Microphone access needed', 'Allow microphone access in Settings to send voice messages.');
+      showAppAlert('Microphone access needed', 'Allow microphone access in Settings to send voice messages.');
       return;
     }
     try {
@@ -887,7 +888,7 @@ export default function ChatScreen({ route, navigation }) {
       await audioRecorder.prepareToRecordAsync();
       audioRecorder.record();
     } catch (err) {
-      Alert.alert("Couldn't start recording", err.message || 'Please try again.');
+      showAppAlert("Couldn't start recording", err.message || 'Please try again.');
     }
   }
 
@@ -898,7 +899,7 @@ export default function ChatScreen({ route, navigation }) {
       await audioRecorder.stop();
       uri = audioRecorder.uri;
     } catch (err) {
-      Alert.alert("Couldn't finish recording", err.message || 'Please try again.');
+      showAppAlert("Couldn't finish recording", err.message || 'Please try again.');
       return;
     }
     // A near-instant tap-release is almost always an accidental press,
@@ -916,7 +917,7 @@ export default function ChatScreen({ route, navigation }) {
       setMessages((prev) => [...prev, sent]);
       stickToBottom.current = true;
     } catch (err) {
-      Alert.alert("Couldn't send voice message", err.message || 'Please try again.');
+      showAppAlert("Couldn't send voice message", err.message || 'Please try again.');
     } finally { setUploading(false); }
   }
 
@@ -933,7 +934,7 @@ export default function ChatScreen({ route, navigation }) {
     try {
       await Linking.openURL(url);
     } catch (err) {
-      Alert.alert("Couldn't open file", 'No app on this device can open that link.');
+      showAppAlert("Couldn't open file", 'No app on this device can open that link.');
     }
   }
 
@@ -953,7 +954,7 @@ export default function ChatScreen({ route, navigation }) {
       const newConversation = await createConversation(sharedUserId, profile);
       navigation.push('Chat', { conversation: newConversation });
     } catch (err) {
-      Alert.alert("Couldn't open contact", err.message || 'Please try again.');
+      showAppAlert("Couldn't open contact", err.message || 'Please try again.');
     }
   }
 
@@ -1055,7 +1056,7 @@ export default function ChatScreen({ route, navigation }) {
       return;
     }
     handledTargetMessageRef.current = targetMessageId;
-    Alert.alert('Message not found in loaded history', 'The message may have been deleted or is older than the history checked. You can still use “Load earlier messages” in the conversation.');
+    showAppAlert('Message not found in loaded history', 'The message may have been deleted or is older than the history checked. You can still use “Load earlier messages” in the conversation.');
   }, [targetMessageId, messages, listItems, loadingOlder, hasMore, loadOlder]);
 
   function toggleSearch() {
@@ -1244,14 +1245,14 @@ export default function ChatScreen({ route, navigation }) {
 
   const handleStartCall = useCallback(async (callType) => {
     if (!canStartCall({ conversationId: display.id, participantId: display.participant?.id, isGroup: display.isGroup, callType })) {
-      Alert.alert('Calls unavailable', 'Audio and video calls are currently available in direct conversations.');
+      showAppAlert('Calls unavailable', 'Audio and video calls are currently available in direct conversations.');
       return;
     }
     try {
       const call = await startCall({ conversationId: display.id, calleeId: display.participant.id, callType });
       navigation.navigate('OutgoingCall', { call, callType, participantName: display.participant.name || 'ZannyChat contact', avatarColor: display.participant.avatarColor });
     } catch (error) {
-      Alert.alert('Could not start call', error?.message || 'Check your connection and try again.');
+      showAppAlert('Could not start call', error?.message || 'Check your connection and try again.');
     }
   }, [display, navigation]);
 
