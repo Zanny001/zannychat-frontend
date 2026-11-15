@@ -1,7 +1,6 @@
 import { Platform } from 'react-native';
 import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SecureStore from 'expo-secure-store';
 import { createSecureAuthStorage } from './secureAuthStorage';
 
 // AsyncStorage's web implementation is IndexedDB-backed, which has a
@@ -62,7 +61,16 @@ const webStorage = {
   removeItem: async (key) => removeLocalStorage(key),
 };
 
-const nativeStorage = createSecureAuthStorage({ secureStore: SecureStore, legacyStorage: AsyncStorage });
+let nativeStorage = AsyncStorage;
+if (Platform.OS !== 'web') {
+  try {
+    const SecureStore = require('expo-secure-store');
+    nativeStorage = createSecureAuthStorage({ secureStore: SecureStore, legacyStorage: AsyncStorage });
+  } catch (_) {
+    // Existing binaries without the native module keep working until the next native rebuild.
+    nativeStorage = AsyncStorage;
+  }
+}
 const authStorage = Platform.OS === 'web' ? webStorage : nativeStorage;
 
 // Hosted services are opt-in. With no EXPO_PUBLIC_* configuration the app
