@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, SafeAreaView, StatusBar, StyleSheet, Text, Pressable, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Platform, SafeAreaView, StatusBar, StyleSheet, Text, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AudioSession, LiveKitRoom, VideoTrack, isTrackReference, useRoomContext, useTracks, useParticipants } from '@livekit/react-native';
 import { RoomEvent, Track } from 'livekit-client';
@@ -73,6 +73,32 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
     }
   };
 
+  const chooseAudioOutput = async () => {
+    try {
+      if (Platform.OS === 'ios') {
+        await AudioSession.showAudioRoutePicker();
+        return;
+      }
+      const outputs = await AudioSession.getAudioOutputs();
+      const choices = ['speaker', 'earpiece'].filter((output) => outputs.includes(output));
+      if (!choices.length) {
+        Alert.alert('Audio output', 'No alternate audio output is currently available.');
+        return;
+      }
+      Alert.alert('Audio output', 'Choose where call audio should play.', [
+        ...choices.map((output) => ({
+          text: output === 'speaker' ? 'Speaker' : 'Phone earpiece',
+          onPress: () => AudioSession.selectAudioOutput(output).catch(() => {
+            Alert.alert('Audio output unavailable', 'The selected audio output could not be activated.');
+          }),
+        })),
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    } catch (_) {
+      Alert.alert('Audio output unavailable', 'Could not load available audio outputs.');
+    }
+  };
+
   const tracks = cameraTracks.filter(isTrackReference);
   const controlStyle = (pressed, active = false, destructive = false) => [
     styles.control,
@@ -140,6 +166,15 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
         >
           <Ionicons name={muted ? 'mic-off' : 'mic'} size={23} color={muted ? colors.onPrimary : colors.textPrimary} />
           <Text style={[styles.controlLabel, typography.small, { color: muted ? colors.onPrimary : colors.textPrimary }]}>{muted ? 'Unmute' : 'Mute'}</Text>
+        </Pressable>
+        <Pressable
+          onPress={chooseAudioOutput}
+          accessibilityRole="button"
+          accessibilityLabel="Choose audio output"
+          style={({ pressed }) => controlStyle(pressed)}
+        >
+          <Ionicons name="volume-high-outline" size={23} color={colors.textPrimary} />
+          <Text style={[styles.controlLabel, typography.small, { color: colors.textPrimary }]}>Audio</Text>
         </Pressable>
         <Pressable
             onPress={toggleCamera}
