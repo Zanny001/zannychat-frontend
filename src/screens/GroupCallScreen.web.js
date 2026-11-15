@@ -236,6 +236,8 @@ export default function GroupCallScreenWeb({ route, navigation }) {
   }, []);
 
   const endCall = useCallback(async () => {
+    if (endedRef.current) return;
+    endedRef.current = true;
     try {
       if (directCallId) {
         await updateCallStatus(directCallId, 'ended');
@@ -244,19 +246,27 @@ export default function GroupCallScreenWeb({ route, navigation }) {
         if (!activeRoomId) { navigation.goBack(); return; }
         await backendFetch(`/group-calls/${activeRoomId}/${canEnd ? 'end' : 'leave'}`, { method: 'POST' });
       }
-      endedRef.current = true;
       roomRef.current?.disconnect();
       navigation.goBack();
-    } catch (error) { setErrorText(error?.message || 'Could not leave this call.'); }
+    } catch (error) {
+      endedRef.current = false;
+      setErrorText(error?.message || 'Could not leave this call.');
+    }
   }, [canEnd, connection?.roomId, directCallId, navigation, roomId]);
 
   const invitePerson = useCallback(async (person) => {
     if (directCallId) {
       endedRef.current = true;
-      const result = await backendFetch(`/group-calls/upgrade/${directCallId}`, {
-        method: 'POST',
-        body: JSON.stringify({ userIds: [person.id], callType: connection?.callType || callType }),
-      });
+      let result;
+      try {
+        result = await backendFetch(`/group-calls/upgrade/${directCallId}`, {
+          method: 'POST',
+          body: JSON.stringify({ userIds: [person.id], callType: connection?.callType || callType }),
+        });
+      } catch (error) {
+        endedRef.current = false;
+        throw error;
+      }
       if (!result?.room?.id) {
         endedRef.current = false;
         throw new Error('Could not upgrade this call to a conference.');
