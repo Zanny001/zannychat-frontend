@@ -13,14 +13,17 @@ test('New Chat contact rows use a calm, moderate list treatment rather than a ca
 
 test('New Chat favorite action is a sibling of the open-chat action, never nested inside it', () => {
   const rowStart = screen.indexOf('<View style={[styles.contactRow');
-  const rowEnd = screen.indexOf('</View>', rowStart);
-  const row = screen.slice(rowStart, screen.indexOf('</View>\n              </View>', rowStart) + '</View>'.length);
+  const mainOpen = screen.indexOf('<TouchableOpacity', rowStart);
+  const mainClose = screen.indexOf('</TouchableOpacity>', mainOpen);
+  const favoriteOpen = screen.indexOf('<TouchableOpacity', mainClose + 1);
+  const favoriteIndex = screen.indexOf('style={styles.favoriteButton}', mainClose + 1);
+  const rowEnd = screen.indexOf('\\n              </View>', favoriteIndex);
   assert.ok(rowStart >= 0, 'contact row wrapper must exist');
-  assert.ok(row.includes('style={styles.contactMain}'));
-  assert.ok(row.includes('style={styles.favoriteButton}'));
-  assert.ok(row.indexOf('</TouchableOpacity>') < row.indexOf('style={styles.favoriteButton}'));
-  assert.match(row, /accessibilityLabel=\{favoriteIds\.includes\(item\.id\)/);
-  assert.ok(rowEnd > rowStart);
+  assert.ok(mainOpen > rowStart && mainClose > mainOpen, 'main contact action must be a complete sibling control');
+  assert.ok(favoriteOpen > mainClose && favoriteIndex > mainClose, 'favorite action must start after the open-chat action closes');
+  const row = screen.slice(rowStart, rowEnd);
+  assert.match(row, /accessibilityLabel=\\{favoriteIds\\.includes\\(item\\.id\\)/);
+  assert.ok(rowEnd > favoriteIndex, 'both controls must remain inside the same row');
 });
 
 test('New Chat favorite control remains independently accessible and has a 44-point target', () => {
