@@ -26,6 +26,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Audit npm dependency vulnerabilities
+        run: npm audit --audit-level=high
       - name: Create non-production Firebase config for compile-only CI
         run: |
           if [ ! -f google-services.json ]; then
