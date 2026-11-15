@@ -7,7 +7,7 @@ const peerProfile = fs.readFileSync(new URL('./PeerProfileScreen.js', import.met
 const impactCard = fs.readFileSync(new URL('../components/LiveImpactCard.js', import.meta.url), 'utf8');
 
 test('own profile loads and displays the authenticated creator LIVE impact summary', () => {
-  assert.ok(ownProfile.includes("backendFetch(`/live/creators/${currentUser.id}/impact`)"));
+  assert.ok(ownProfile.includes("backendFetch(`/live/creators/${profile.id}/impact`)"));
   assert.ok(ownProfile.includes('<LiveImpactCard impact={liveImpact} showEmpty />'));
   assert.ok(ownProfile.includes('let active = true'));
 });
