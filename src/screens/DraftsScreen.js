@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useCallback, useState } from 'react';
 import { SafeAreaView, ScrollView, View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -50,18 +51,18 @@ export default function DraftsScreen({ navigation }) {
   function openDraft(draft) {
     const conversation = conversations.find((item) => item.id === draft.conversationId);
     if (!conversation) {
-      Alert.alert('Conversation unavailable', 'This draft is still stored on this device, but its conversation details are unavailable right now. Reconnect and retry, or delete the draft from here.');
+      showAppAlert('Conversation unavailable', 'This draft is still stored on this device, but its conversation details are unavailable right now. Reconnect and retry, or delete the draft from here.');
       return;
     }
     navigation.navigate('Chat', { conversation });
   }
 
   function confirmDelete(draft) {
-    Alert.alert('Delete draft?', 'This removes the unsent text from this device. It will not affect sent messages.', [
+    showAppAlert('Delete draft?', 'This removes the unsent text from this device. It will not affect sent messages.', [
       { text: 'Keep draft', style: 'cancel' },
       { text: 'Delete draft', style: 'destructive', onPress: async () => {
         const cleared = await clearDraft(draft.key);
-        if (!cleared) { Alert.alert("Couldn't delete draft", 'The draft is still stored on this device. Please try again.'); return; }
+        if (!cleared) { showAppAlert("Couldn't delete draft", 'The draft is still stored on this device. Please try again.'); return; }
         setDrafts((current) => current.filter((item) => item.id !== draft.id));
       } },
     ]);
