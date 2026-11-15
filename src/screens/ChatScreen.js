@@ -1367,7 +1367,7 @@ export default function ChatScreen({ route, navigation }) {
             >
               <Ionicons name="ellipsis-vertical" size={20} color={colors.textPrimary} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => { if (!display.isGroup && display.participant?.id) navigation.navigate('PeerProfile', { participant: display.participant, conversation: display }); }} accessibilityRole="button" accessibilityLabel={`View ${display.participant?.name || 'contact'} profile`} style={{ padding: 2 }}>
+            <TouchableOpacity onPress={() => { if (!display.isGroup && display.participant?.id) navigation.navigate('PeerProfile', { participant: display.participant, conversation: display }); }} accessibilityRole="button" accessibilityLabel={`View ${display.participant?.name || 'contact'} profile`} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}>
             <Avatar
               name={display.participant?.name}
               color={display.participant?.avatarColor}
@@ -1398,7 +1398,7 @@ export default function ChatScreen({ route, navigation }) {
               autoFocus
             />
             {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => { setSearchQuery(''); setActiveSearchIndex(0); }} accessibilityLabel="Clear message search" accessibilityRole="button" hitSlop={8}>
+              <TouchableOpacity onPress={() => { setSearchQuery(''); setActiveSearchIndex(0); }} accessibilityLabel="Clear message search" accessibilityRole="button" hitSlop={8} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
@@ -1538,15 +1538,15 @@ export default function ChatScreen({ route, navigation }) {
                   <Text numberOfLines={1} style={{ color: colors.text, fontSize: 13, fontWeight: '600' }}>{item.name || (item.kind === 'image' ? 'Photo' : item.kind === 'voice' ? 'Voice note' : 'File')}</Text>
                   <Text numberOfLines={2} style={{ color: colors.textSecondary, fontSize: 11 }}>{item.lastError ? `Last error: ${item.lastError}` : item.recoveryCopy ? 'Recovery copy saved on this device' : 'Original file must remain available'}{Number.isInteger(item.attempts) && item.attempts > 0 ? ` · ${item.attempts} failed attempt${item.attempts === 1 ? '' : 's'}` : ''}</Text>
                 </View>
-                <TouchableOpacity disabled={retryingAttachments} onPress={() => retryPendingAttachments(item.id)} accessibilityRole="button" accessibilityLabel={`Retry queued ${item.kind} attachment`} style={{ padding: 6 }}>
+                <TouchableOpacity disabled={retryingAttachments} onPress={() => retryPendingAttachments(item.id)} accessibilityRole="button" accessibilityLabel={`Retry queued ${item.kind} attachment`} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ color: colors.accent, fontWeight: '700', fontSize: 12 }}>Retry</Text>
                 </TouchableOpacity>
-                <TouchableOpacity disabled={retryingAttachments} onPress={() => discardPendingAttachment(item)} accessibilityRole="button" accessibilityLabel={`Remove queued ${item.kind} attachment`} style={{ padding: 6 }}>
+                <TouchableOpacity disabled={retryingAttachments} onPress={() => discardPendingAttachment(item)} accessibilityRole="button" accessibilityLabel={`Remove queued ${item.kind} attachment`} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ color: colors.danger, fontWeight: '700', fontSize: 12 }}>Remove</Text>
                 </TouchableOpacity>
               </View>
             ))}
-            <TouchableOpacity disabled={retryingAttachments} onPress={retryPendingAttachments} style={{ alignSelf: 'flex-end', paddingTop: 2 }} accessibilityRole="button" accessibilityLabel="Retry attachment uploads">
+            <TouchableOpacity disabled={retryingAttachments} onPress={retryPendingAttachments} style={{ alignSelf: 'flex-end', minHeight: 48, justifyContent: 'center', paddingHorizontal: 8 }} accessibilityRole="button" accessibilityLabel="Retry attachment uploads">
               <Text style={{ color: colors.accent, fontWeight: '700' }}>{retryingAttachments ? 'Retrying uploads…' : 'Retry eligible uploads'}</Text>
             </TouchableOpacity>
           </View>
@@ -1555,7 +1555,7 @@ export default function ChatScreen({ route, navigation }) {
         {pendingOutbox.length > 0 ? (
           <View style={{ marginHorizontal: spacing.md, marginBottom: 8, padding: 10, borderRadius: 8, backgroundColor: hexToRgba(colors.accent, 0.10) }}>
             <Text style={{ color: colors.text, fontSize: 13 }}>{pendingOutbox.length} message{pendingOutbox.length === 1 ? '' : 's'} waiting to send. They are saved on this device.</Text>
-            <TouchableOpacity disabled={retryingOutbox} onPress={async () => { if (automaticRetryInFlightRef.current) return; automaticRetryInFlightRef.current = true; setRetryingOutbox(true); try { for (const item of [...pendingOutbox]) { const ok = await handleSend(item.text, item.requestId, item.replyToId); if (!ok) break; } } finally { automaticRetryInFlightRef.current = false; setRetryingOutbox(false); } }} style={{ alignSelf: 'flex-end', paddingTop: 6 }} accessibilityRole="button" accessibilityLabel="Retry sending pending messages" accessibilityState={{ disabled: retryingOutbox, busy: retryingOutbox }}>
+            <TouchableOpacity disabled={retryingOutbox} onPress={async () => { if (automaticRetryInFlightRef.current) return; automaticRetryInFlightRef.current = true; setRetryingOutbox(true); try { for (const item of [...pendingOutbox]) { const ok = await handleSend(item.text, item.requestId, item.replyToId); if (!ok) break; } } finally { automaticRetryInFlightRef.current = false; setRetryingOutbox(false); } }} style={{ alignSelf: 'flex-end', minHeight: 48, justifyContent: 'center', paddingHorizontal: 8 }} accessibilityRole="button" accessibilityLabel="Retry sending pending messages" accessibilityState={{ disabled: retryingOutbox, busy: retryingOutbox }}>
               <Text style={{ color: colors.accent, fontWeight: '700' }}>{retryingOutbox ? 'Retrying…' : 'Retry pending messages'}</Text>
             </TouchableOpacity>
           </View>
@@ -1566,7 +1566,7 @@ export default function ChatScreen({ route, navigation }) {
             <Text style={{ color: colors.danger, fontSize: 13 }}>
               Message not sent: {sendError}
             </Text>
-            <TouchableOpacity onPress={() => setSendError('')} style={{ alignSelf: 'flex-end', paddingTop: 6 }} accessibilityRole="button" accessibilityLabel="Dismiss message error">
+            <TouchableOpacity onPress={() => setSendError('')} style={{ alignSelf: 'flex-end', minHeight: 48, justifyContent: 'center', paddingHorizontal: 8 }} accessibilityRole="button" accessibilityLabel="Dismiss message error">
               <Text style={{ color: colors.danger, fontWeight: '600' }}>Dismiss</Text>
             </TouchableOpacity>
           </View>
@@ -1701,7 +1701,7 @@ Choose whether to remove this message only from your chat or retract it
                 }}
                 accessibilityRole="button"
                 accessibilityLabel="Cancel message deletion"
-                style={{ paddingHorizontal: 14, paddingVertical: 11 }}
+                style={{ minHeight: 48, justifyContent: 'center', paddingHorizontal: 14, paddingVertical: 8 }}
               >
                 <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>
                   Cancel
@@ -1715,7 +1715,8 @@ Choose whether to remove this message only from your chat or retract it
                 accessibilityLabel="Delete message for me"
                 style={{
                   paddingHorizontal: 16,
-                  paddingVertical: 11,
+                  minHeight: 48,
+                  paddingVertical: 8,
                   borderRadius: radii.md || 10,
                   backgroundColor: colors.danger,
                   opacity: deletingMessage ? 0.65 : 1,
@@ -1737,7 +1738,7 @@ Choose whether to remove this message only from your chat or retract it
                   onPress={() => performDeleteMessage(deleteMessageTarget, 'everyone')}
                   accessibilityRole="button"
                   accessibilityLabel="Delete message for everyone"
-                  style={{ paddingHorizontal: 16, paddingVertical: 11, borderRadius: radii.md || 10, backgroundColor: colors.danger, opacity: deletingMessage ? 0.65 : 1, minWidth: 120, alignItems: 'center' }}
+                  style={{ minHeight: 48, paddingHorizontal: 16, paddingVertical: 8, borderRadius: radii.md || 10, backgroundColor: colors.danger, opacity: deletingMessage ? 0.65 : 1, minWidth: 120, alignItems: 'center' }}
                 >
                   {deletingMessage ? <ActivityIndicator size="small" color={colors.onDanger} /> : <Text style={{ color: colors.onDanger, fontWeight: '700' }}>Delete for everyone</Text>}
                 </TouchableOpacity>
@@ -1750,9 +1751,9 @@ Choose whether to remove this message only from your chat or retract it
       <Modal visible={Boolean(mediaDraft)} animationType="slide" onRequestClose={() => setMediaDraft(null)}>
         <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: Platform.OS === 'ios' ? 52 : 24, paddingHorizontal: spacing.md, paddingBottom: spacing.lg }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md }}>
-            <TouchableOpacity onPress={() => { setMediaDraft(null); setMediaCaption(''); }} accessibilityRole="button" accessibilityLabel="Discard media draft"><Ionicons name="close" size={26} color={colors.textPrimary} /></TouchableOpacity>
+            <TouchableOpacity onPress={() => { setMediaDraft(null); setMediaCaption(''); }} accessibilityRole="button" accessibilityLabel="Discard media draft" style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close" size={26} color={colors.textPrimary} /></TouchableOpacity>
             <Text style={[typography.title, { color: colors.textPrimary }]}>Edit before sending</Text>
-            <TouchableOpacity onPress={sendMediaDraft} disabled={uploading} accessibilityRole="button" accessibilityLabel="Send media"><Ionicons name="send" size={22} color={colors.primary} /></TouchableOpacity>
+            <TouchableOpacity onPress={sendMediaDraft} disabled={uploading} accessibilityRole="button" accessibilityLabel="Send media" style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="send" size={22} color={colors.primary} /></TouchableOpacity>
           </View>
           <View style={{ flex: 1, minHeight: 220, borderRadius: radii.lg, overflow: 'hidden', backgroundColor: '#080808', justifyContent: 'center' }}>
             {mediaDraft?.kind === 'video' && mediaDraft?.uri ? <DraftVideoPreview uri={mediaDraft.uri} /> : mediaDraft?.uri ? <Image source={{ uri: mediaDraft.uri }} style={{ width: '100%', height: '100%' }} resizeMode="contain" /> : null}
@@ -1760,9 +1761,9 @@ Choose whether to remove this message only from your chat or retract it
           <Text style={[typography.small, { color: colors.textSecondary, marginTop: spacing.md, marginBottom: spacing.xs }]}>CAPTION & EMOJI</Text>
           <TextInput value={mediaCaption} onChangeText={setMediaCaption} placeholder="Add a caption…" placeholderTextColor={colors.textSecondary} multiline maxLength={1000} style={{ minHeight: 54, maxHeight: 110, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, color: colors.textPrimary, padding: spacing.md }} />
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.sm }}>
-            {['❤️', '😂', '🔥', '😍', '✨', '👍', '🎉', '🥹'].map((emoji) => <TouchableOpacity key={emoji} onPress={() => setMediaCaption((value) => `${value}${emoji}`)} accessibilityRole="button" accessibilityLabel={`Add ${emoji}`}><Text style={{ fontSize: 24 }}>{emoji}</Text></TouchableOpacity>)}
+            {['❤️', '😂', '🔥', '😍', '✨', '👍', '🎉', '🥹'].map((emoji) => <TouchableOpacity key={emoji} onPress={() => setMediaCaption((value) => `${value}${emoji}`)} accessibilityRole="button" accessibilityLabel={`Add ${emoji}`} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 24 }}>{emoji}</Text></TouchableOpacity>)}
           </View>
-          <TouchableOpacity onPress={sendMediaDraft} disabled={uploading} accessibilityRole="button" accessibilityLabel="Send selected media" accessibilityState={{ disabled: uploading, busy: uploading }} style={{ marginTop: spacing.lg, borderRadius: radii.md, backgroundColor: colors.primary, padding: spacing.md, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', opacity: uploading ? 0.65 : 1 }}>
+          <TouchableOpacity onPress={sendMediaDraft} disabled={uploading} accessibilityRole="button" accessibilityLabel="Send selected media" accessibilityState={{ disabled: uploading, busy: uploading }} style={{ minHeight: 48, marginTop: spacing.lg, borderRadius: radii.md, backgroundColor: colors.primary, padding: spacing.sm, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', opacity: uploading ? 0.65 : 1 }}>
             {uploading ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name="send" size={18} color={colors.onPrimary} />}
             <Text style={[typography.bodyStrong, { color: colors.onPrimary, marginLeft: 8 }]}>{uploading ? 'Sending…' : 'Send media'}</Text>
           </TouchableOpacity>
@@ -1804,14 +1805,14 @@ Choose whether to remove this message only from your chat or retract it
 }
 
 const styles = StyleSheet.create({
-  headerAction: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, alignItems: 'center', justifyContent: 'center', shadowOpacity: 0.14, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
+  headerAction: { width: 48, height: 48, borderRadius: 24, borderWidth: 1, alignItems: 'center', justifyContent: 'center', shadowOpacity: 0.14, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
   searchPanel: { borderBottomWidth: StyleSheet.hairlineWidth },
   searchField: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, paddingHorizontal: 10 },
   searchControls: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
-  searchNavButton: { width: 34, height: 30, alignItems: 'center', justifyContent: 'center' },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1 },
+  searchNavButton: { width: 48, height: 48, minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  chip: { minHeight: 48, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1 },
   uploadingRow: { flexDirection: 'row', alignItems: 'center', paddingBottom: 8 },
-  loadOlderPill: { paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1 },
+  loadOlderPill: { minHeight: 48, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1 },
   lightbox: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', alignItems: 'center', justifyContent: 'center' },
   lightboxImage: { width: '100%', height: '80%' },
   lightboxClose: { position: 'absolute', top: 56, right: 20, zIndex: 1 },
