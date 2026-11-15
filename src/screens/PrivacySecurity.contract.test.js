@@ -12,6 +12,7 @@ test('Google-only accounts have a provider reauthentication path for account del
   assert.match(screen, /ACCOUNT_DELETE_REAUTH_KEY/);
   assert.match(screen, /pending\.userId === data\.user\.id/);
   assert.match(screen, /googleReauthVerified/);
+  assert.match(screen, /if \(googleReauthMismatch\)/);
 });
 
 test('account deletion still requires exact DELETE confirmation and server-side fresh authentication', () => {
