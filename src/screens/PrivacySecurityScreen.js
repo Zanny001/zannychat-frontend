@@ -165,12 +165,12 @@ export default function PrivacySecurityScreen({ navigation }) {
       Alert.alert('Re-authentication required', 'Sign in again with your account provider before deleting your account.');
       return;
     }
-    if (authProviders.google && !deletePassword && !googleReauthVerified) {
-      Alert.alert('Verify with Google first', 'Re-verify the same Google account, return here, and then confirm deletion within five minutes.');
+    if (googleReauthMismatch && !deletePassword) {
+      Alert.alert('Google account mismatch', 'The Google account used for verification does not match the account you are deleting. Sign back into the original account.');
       return;
     }
-    if (googleReauthMismatch) {
-      Alert.alert('Google account mismatch', 'The Google account used for verification does not match the account you are deleting. Sign back into the original account.');
+    if (authProviders.google && !deletePassword && !googleReauthVerified) {
+      Alert.alert('Verify with Google first', 'Re-verify the same Google account, return here, and then confirm deletion within five minutes.');
       return;
     }
     Alert.alert(
@@ -406,7 +406,7 @@ export default function PrivacySecurityScreen({ navigation }) {
                 <Text style={[typography.caption, { color: colors.success || colors.primary, marginBottom: spacing.sm }]}>Google verification confirmed for this account.</Text>
               )}
               {googleReauthMismatch && (
-                <Text style={[typography.caption, { color: colors.danger, marginBottom: spacing.sm }]}>The Google account did not match the account being deleted.</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.sm }]}>The Google account did not match the account being deleted.</Text>
               )}
               <TouchableOpacity
                 onPress={handleGoogleReauthForDeletion}
