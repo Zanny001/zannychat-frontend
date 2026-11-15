@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
   wrap: { borderTopWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   draftStatus: { flexDirection: 'row', alignItems: 'center', paddingTop: 5, paddingBottom: 1 },
   row: { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
-  inputWrap: { flex: 1, minWidth: 0, minHeight: 44, paddingHorizontal: 12, marginHorizontal: 2, maxHeight: 104, borderWidth: 1, justifyContent: 'center' },
+  inputWrap: { flex: 1, minWidth: 0, minHeight: 48, paddingHorizontal: 12, marginHorizontal: 2, maxHeight: 104, borderWidth: 1, justifyContent: 'center' },
   sendBtn: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)' },
   replyBar: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
   recordingIndicator: {
