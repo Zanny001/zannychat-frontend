@@ -45,7 +45,7 @@ test('LIVE approved guests receive publishing permissions and can rejoin after c
   assert.ok(screen.includes("nextConnection?.role !== 'guest'"));
   assert.ok(screen.includes("guestRequestStatus === 'requested'"));
   assert.ok(screen.includes("setGuestRequestStatus('requested')"));
-  assert.ok(screen.includes("navigation.setParams({ connection: nextConnection, creatorMode: false })"));
+  assert.ok(screen.includes("setConnection(nextConnection)"));
 });
 
 test('LIVE viewers can request guest access and creators can approve or decline requests', () => {
@@ -198,7 +198,7 @@ test('changing a viewer token to an approved guest token does not mark the parti
   const cleanup = screen.slice(screen.indexOf('AudioSession.startAudioSession'), screen.indexOf('  }, [stream?.id, creatorMode, refreshComments]'));
   assert.equal(cleanup.includes("backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}"), false);
   assert.ok(screen.includes("navigation.addListener('beforeRemove'"));
-  assert.ok(screen.includes('navigation.setParams({ connection: nextConnection, creatorMode: false })'));
+  assert.ok(screen.includes('setConnection(nextConnection)'));
 });
 
 
@@ -218,4 +218,19 @@ test('native LIVE screens expose audio output selection for viewers and creators
   assert.ok(screen.includes('AudioSession.getAudioOutputs()'));
   assert.ok(screen.includes('AudioSession.selectAudioOutput(output)'));
   assert.ok(screen.includes('Choose LIVE audio output'));
+});
+
+test('LIVE navigation serializes only a stable stream ID and fetches a fresh authorized token', () => {
+  assert.ok(screen.includes('const streamId = route.params?.streamId || initialConnection?.stream?.id || null'));
+  assert.ok(screen.includes('`/live/${streamId}/join`'));
+  assert.equal(screen.includes('navigation.setParams({ connection:'), false);
+  const hub = fs.readFileSync(new URL('./LiveHubScreen.js', import.meta.url), 'utf8');
+  assert.ok(hub.includes("navigation.navigate('LiveStream', { streamId: connection.stream.id, creatorMode: true })"));
+  assert.ok(hub.includes("navigation.navigate('LiveStream', { streamId: stream.id, creatorMode: false })"));
+  assert.equal(hub.includes("navigation.navigate('LiveStream', { connection"), false);
+});
+
+test('LIVE reactions refresh the server feed immediately after an accepted reaction', () => {
+  assert.ok(screen.includes('if (result?.accepted) await refreshComments()'));
+  assert.ok(screen.includes('if (!stream?.id)'));
 });

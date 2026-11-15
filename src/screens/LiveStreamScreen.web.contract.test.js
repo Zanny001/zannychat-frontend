@@ -92,8 +92,18 @@ test('web LIVE creator sees incoming guest requests in an automatically refreshe
 });
 
 test('web viewer-to-guest token handoff preserves LIVE room membership until actual navigation away', () => {
-  const roomEffect = web.slice(web.indexOf('const room = new Room'), web.indexOf('  }, [stream?.id, connection?.livekitUrl, connection?.token, creatorMode]'));
+  const roomEffect = web.slice(web.indexOf('const room = new Room'), web.indexOf('  }, [stream?.id, connection?.livekitUrl, connection?.token, creatorMode, connectionLoading]'));
   assert.equal(roomEffect.includes("backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}"), false);
   assert.ok(web.includes("navigation.addListener('beforeRemove'"));
-  assert.ok(web.includes('navigation.setParams({ connection: next, creatorMode: false })'));
+  assert.ok(web.includes('setConnection(next)'));
+});
+
+test('web LIVE route uses a stream ID and fetches its connection after navigation', () => {
+  assert.ok(web.includes('const streamId = route.params?.streamId || initialConnection?.stream?.id || null'));
+  assert.ok(web.includes('`/live/${streamId}/join`'));
+  assert.equal(web.includes('navigation.setParams({ connection:'), false);
+});
+
+test('web LIVE reactions refresh the server feed immediately after acceptance', () => {
+  assert.ok(web.includes('if (result?.accepted) await refreshComments()'));
 });

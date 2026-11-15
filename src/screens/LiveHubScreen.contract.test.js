@@ -57,7 +57,7 @@ test('web Go LIVE exposes startup failures in the page instead of relying on nat
 
 test('Go LIVE validates the server connection before opening the broadcast studio', () => {
   assert.ok(screen.includes("!connection?.stream?.id || !connection?.livekitUrl || !connection?.token"));
-  assert.ok(screen.includes("navigation.navigate('LiveStream', { connection, creatorMode: true })"));
+  assert.ok(screen.includes("navigation.navigate('LiveStream', { streamId: connection.stream.id, creatorMode: true })"));
 });
 
 test('LIVE hub receives direct guest-stage invitations and opens the stage for invitees', () => {
