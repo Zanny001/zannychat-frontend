@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -151,21 +151,51 @@ function LiveMedia({ streamId, creatorMode, publisherMode, cameraEnabled, microp
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={{ flex: 1, backgroundColor: '#100F18' }}>
-        <View style={{ position: 'absolute', zIndex: 2, top: 10, left: 14, right: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <View style={{ backgroundColor: colors.danger, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 12 }}><Text style={[typography.small, { color: colors.onDanger }]}>● LIVE</Text></View>
-          <Text numberOfLines={1} style={[typography.bodyStrong, { color: '#FFFFFF', flex: 1, minWidth: 0, marginHorizontal: 12 }]}>{title}</Text>
-          <TouchableOpacity onPress={chooseNativeAudioOutput} accessibilityRole="button" accessibilityLabel="Choose LIVE audio output" style={{ backgroundColor: hexToRgba(colors.surface, 0.82), borderWidth: 1, borderColor: colors.border, minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', padding: 6, borderRadius: 12, marginRight: 8 }}>
-            <Ionicons name="volume-high-outline" size={19} color={colors.textPrimary} />
-          </TouchableOpacity>
-          {creatorMode && <TouchableOpacity onPress={onToggleParticipants} accessibilityRole="button" accessibilityLabel="Manage LIVE moderators" style={{ backgroundColor: hexToRgba(colors.surface, 0.82), borderWidth: 1, borderColor: colors.border, minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', padding: 6, borderRadius: 12, marginRight: 8 }}><Ionicons name="people-outline" size={19} color={colors.textPrimary} /></TouchableOpacity>}
-          {creatorMode && canManageGuests && <TouchableOpacity onPress={onToggleGuestRequests} accessibilityRole="button" accessibilityLabel="Review guest requests" style={{ backgroundColor: hexToRgba(colors.surface, 0.82), borderWidth: 1, borderColor: colors.border, minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', padding: 6, borderRadius: 12, marginRight: 8 }}><Ionicons name="person-add-outline" size={19} color={colors.textPrimary} /></TouchableOpacity>}
-          {creatorMode && replayEnabled && <TouchableOpacity onPress={replayStatus === 'ready' ? onViewReplay : replayStatus === 'recording' ? onStopReplay : onStartReplay} disabled={replayBusy || ['starting', 'processing'].includes(replayStatus)} accessibilityRole="button" accessibilityLabel={replayStatus === 'ready' ? 'Watch saved LIVE replay' : replayStatus === 'recording' ? 'Stop LIVE replay recording' : 'Start LIVE replay recording'} style={{ backgroundColor: hexToRgba(colors.surface, 0.82), borderWidth: 1, borderColor: replayStatus === 'recording' ? colors.danger : colors.border, padding: 8, borderRadius: 12, marginRight: 8 }}>
-            {replayBusy || ['starting', 'processing'].includes(replayStatus) ? <ActivityIndicator size="small" color={colors.accent} /> : <Ionicons name={replayStatus === 'ready' ? 'play-circle-outline' : replayStatus === 'recording' ? 'stop-circle-outline' : 'radio-button-on-outline'} size={19} color={replayStatus === 'recording' ? colors.danger : colors.accent} />}
-          </TouchableOpacity>}
-          {moderatorMode && <TouchableOpacity onPress={onToggleReports} accessibilityRole="button" accessibilityLabel="Open LIVE safety reports" style={{ backgroundColor: hexToRgba(colors.surface, 0.82), borderWidth: 1, borderColor: colors.border, minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', padding: 6, borderRadius: 12, marginRight: 8 }}><Ionicons name="shield-checkmark-outline" size={19} color={colors.textPrimary} /></TouchableOpacity>}
-          <TouchableOpacity onPress={onEnd} accessibilityRole="button" accessibilityLabel={creatorMode ? 'End LIVE stream' : 'Leave LIVE stream'} style={{ backgroundColor: hexToRgba(colors.surface, 0.82), borderWidth: 1, borderColor: colors.border, minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', padding: 6, borderRadius: 12 }}><Ionicons name="close" size={20} color={colors.textPrimary} /></TouchableOpacity>
+        <View style={{ position: 'absolute', zIndex: 2, top: 10, left: 14, right: 14, gap: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48 }}>
+            <View style={{ backgroundColor: colors.danger, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 12 }}>
+              <Text style={[typography.small, { color: colors.onDanger }]}>● LIVE</Text>
+            </View>
+            <Text numberOfLines={1} style={[typography.bodyStrong, { color: '#FFFFFF', flex: 1, minWidth: 0 }]}>{title}</Text>
+            <TouchableOpacity onPress={chooseNativeAudioOutput} accessibilityRole="button" accessibilityLabel="Choose LIVE audio output" style={{ backgroundColor: hexToRgba(colors.surface, 0.82), borderWidth: 1, borderColor: colors.border, minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 14 }}>
+              <Ionicons name="volume-high-outline" size={19} color={colors.textPrimary} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onEnd} accessibilityRole="button" accessibilityLabel={creatorMode ? 'End LIVE stream' : 'Leave LIVE stream'} style={{ backgroundColor: hexToRgba(colors.surface, 0.82), borderWidth: 1, borderColor: colors.border, minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 14 }}>
+              <Ionicons name="close" size={20} color={colors.textPrimary} />
+            </TouchableOpacity>
+          </View>
+          {(creatorMode || moderatorMode) && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ alignItems: 'center', gap: 8, paddingRight: 4 }}
+              accessibilityLabel="LIVE management actions"
+            >
+              {creatorMode && (
+                <TouchableOpacity onPress={onToggleParticipants} accessibilityRole="button" accessibilityLabel="Manage LIVE moderators" style={{ backgroundColor: hexToRgba(colors.surface, 0.9), borderWidth: 1, borderColor: colors.border, minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, borderRadius: 14 }}>
+                  <Ionicons name="people-outline" size={19} color={colors.textPrimary} />
+                </TouchableOpacity>
+              )}
+              {creatorMode && canManageGuests && (
+                <TouchableOpacity onPress={onToggleGuestRequests} accessibilityRole="button" accessibilityLabel="Review guest requests" style={{ backgroundColor: hexToRgba(colors.surface, 0.9), borderWidth: 1, borderColor: colors.border, minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, borderRadius: 14 }}>
+                  <Ionicons name="person-add-outline" size={19} color={colors.textPrimary} />
+                </TouchableOpacity>
+              )}
+              {creatorMode && replayEnabled && (
+                <TouchableOpacity onPress={replayStatus === 'ready' ? onViewReplay : replayStatus === 'recording' ? onStopReplay : onStartReplay} disabled={replayBusy || ['starting', 'processing'].includes(replayStatus)} accessibilityRole="button" accessibilityLabel={replayStatus === 'ready' ? 'Watch saved LIVE replay' : replayStatus === 'recording' ? 'Stop LIVE replay recording' : 'Start LIVE replay recording'} accessibilityState={{ disabled: replayBusy || ['starting', 'processing'].includes(replayStatus), busy: replayBusy }} style={{ backgroundColor: hexToRgba(colors.surface, 0.9), borderWidth: 1, borderColor: replayStatus === 'recording' ? colors.danger : colors.border, minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, borderRadius: 14 }}>
+                  {replayBusy || ['starting', 'processing'].includes(replayStatus) ? <ActivityIndicator size="small" color={colors.accent} /> : <Ionicons name={replayStatus === 'ready' ? 'play-circle-outline' : replayStatus === 'recording' ? 'stop-circle-outline' : 'radio-button-on-outline'} size={19} color={replayStatus === 'recording' ? colors.danger : colors.accent} />}
+                </TouchableOpacity>
+              )}
+              {moderatorMode && (
+                <TouchableOpacity onPress={onToggleReports} accessibilityRole="button" accessibilityLabel="Open LIVE safety reports" style={{ backgroundColor: hexToRgba(colors.surface, 0.9), borderWidth: 1, borderColor: colors.border, minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, borderRadius: 14 }}>
+                  <Ionicons name="shield-checkmark-outline" size={19} color={colors.textPrimary} />
+                </TouchableOpacity>
+              )}
+            </ScrollView>
+          )}
         </View>
-        <View style={{ flex: 1, justifyContent: 'center', position: 'relative' }}>
+        <View style={{ flex: 1, justifyContent: 'center', position: 'relative', paddingTop: creatorMode || moderatorMode ? 108 : 58 }}>
           {spotlightVideo && (
             <View style={{ marginHorizontal: 6, marginBottom: 8, borderRadius: 20, overflow: 'hidden', borderWidth: 2, borderColor: colors.accent, backgroundColor: '#211F2B' }}>
               <VideoTrack trackRef={spotlightVideo} style={{ width: "100%", aspectRatio: 16 / 9, maxWidth: 560, maxHeight: 315, borderRadius: 18 }} />
