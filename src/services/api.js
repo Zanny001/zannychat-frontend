@@ -544,6 +544,16 @@ async function readUploadArrayBuffer(source) {
   return response.arrayBuffer();
 }
 
+const MAX_PROFILE_MEDIA_BYTES = 10 * 1024 * 1024;
+
+function assertProfileMediaSize(arrayBuffer) {
+  if (arrayBuffer?.byteLength > MAX_PROFILE_MEDIA_BYTES) {
+    const error = new Error('Profile pictures and covers must be 10 MiB or smaller.');
+    error.code = 'FILE_TOO_LARGE';
+    throw error;
+  }
+}
+
 export async function uploadProfileCover(localUri, mimeType = 'image/jpeg') {
   if (!SUPABASE_ENABLED) return { path: null, url: localUri };
   const { data: authData } = await supabase.auth.getUser();
@@ -552,6 +562,7 @@ export async function uploadProfileCover(localUri, mimeType = 'image/jpeg') {
   const extension = (mimeType.split('/')[1] || 'jpg').replace(/[^a-z0-9]/gi, '').slice(0, 8) || 'jpg';
   const objectPath = `${userId}/cover-${Date.now()}.${extension}`;
   const arrayBuffer = await readUploadArrayBuffer(localUri);
+  assertProfileMediaSize(arrayBuffer);
   const { error: uploadError } = await supabase.storage
     .from('private-avatars')
     .upload(objectPath, arrayBuffer, { contentType: mimeType, upsert: true });
@@ -582,6 +593,7 @@ export async function uploadAvatar(localUri, mimeType = 'image/jpeg') {
   const extension = ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' })[safeMimeType];
   const path = `${userId}/avatar-${Date.now()}.${extension}`;
   const arrayBuffer = await readUploadArrayBuffer(localUri);
+  assertProfileMediaSize(arrayBuffer);
   const [profile, detailsResult] = await Promise.all([
     getOwnProfileRow(),
     supabase.from('profile_details').select('profile_visibility,photo_visibility').eq('user_id', userId).maybeSingle(),
