@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -44,11 +45,11 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
 
   const submit = async () => {
     if (!conversationId) {
-      Alert.alert('Open a conversation first', 'To schedule a message, open the intended conversation and choose Schedule message from its options.');
+      showAppAlert('Open a conversation first', 'To schedule a message, open the intended conversation and choose Schedule message from its options.');
       return;
     }
     if (!text.trim()) {
-      Alert.alert('Message required', 'Write the message you want to send later.');
+      showAppAlert('Message required', 'Write the message you want to send later.');
       return;
     }
     setSaving(true);
@@ -57,21 +58,21 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
       await scheduleMessage(conversationId, validateScheduledMessageText(text), iso);
       setText('');
       await refresh();
-      Alert.alert('Message scheduled', 'It will be sent at the selected time when the scheduled-message worker is configured and running.');
+      showAppAlert('Message scheduled', 'It will be sent at the selected time when the scheduled-message worker is configured and running.');
     } catch (e) {
-      Alert.alert('Could not schedule message', e?.message || 'Please check the date and try again.');
+      showAppAlert('Could not schedule message', e?.message || 'Please check the date and try again.');
     } finally {
       setSaving(false);
     }
   };
 
   const cancel = (item) => {
-    Alert.alert('Cancel scheduled message?', 'This message will not be sent.', [
+    showAppAlert('Cancel scheduled message?', 'This message will not be sent.', [
       { text: 'Keep', style: 'cancel' },
       { text: 'Cancel message', style: 'destructive', onPress: async () => {
         setBusyId(item.id);
         try { await cancelScheduledMessage(item.id); setItems((current) => current.filter((row) => row.id !== item.id)); }
-        catch (e) { Alert.alert('Could not cancel', e?.message || 'Refresh and try again.'); }
+        catch (e) { showAppAlert('Could not cancel', e?.message || 'Refresh and try again.'); }
         finally { setBusyId(null); }
       } },
     ]);
