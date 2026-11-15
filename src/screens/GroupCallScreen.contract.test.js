@@ -5,7 +5,7 @@ import fs from 'node:fs';
 const screen = fs.readFileSync(new URL('./GroupCallScreen.js', import.meta.url), 'utf8');
 
 test('group call releases a successful join when the screen unmounts before connection resolves', () => {
-  assert.ok(screen.includes('else if (result?.room?.id)'));
+  assert.ok(screen.includes('else if (result?.room?.id && !directCallId)'));
   assert.ok(screen.includes('`/group-calls/${result.room.id}/leave`'));
 });
 
