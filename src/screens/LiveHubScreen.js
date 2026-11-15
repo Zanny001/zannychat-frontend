@@ -199,7 +199,7 @@ export default function LiveHubScreen({ navigation, route }) {
         throw new Error(connection?.message || 'The server did not return a complete LIVE room connection. Please try again.');
       }
       setStartStage('Opening your LIVE studio…');
-      navigation.navigate('LiveStream', { connection, creatorMode: true });
+      navigation.navigate('LiveStream', { streamId: connection.stream.id, creatorMode: true });
       setTitle('');
       setDescription('');
       setSelectedInvitees([]);
@@ -214,15 +214,11 @@ export default function LiveHubScreen({ navigation, route }) {
   };
 
   const joinLive = async (stream) => {
-    setBusy(true);
-    try {
-      const connection = await backendFetch('/live/' + stream.id + '/join', { method: 'POST' });
-      navigation.navigate('LiveStream', { connection, creatorMode: connection.role === 'creator' });
-    } catch (e) {
-      Alert.alert('Could not join LIVE', e?.message || 'This stream may have ended or requires an invitation.');
-    } finally {
-      setBusy(false);
-    }
+    if (!stream?.id) return;
+    // Pass only the stable stream ID. LiveStreamScreen obtains a fresh,
+    // viewer-authorized LiveKit token after navigation; tokens and objects
+    // must never be serialized into browser URLs.
+    navigation.navigate('LiveStream', { streamId: stream.id, creatorMode: false });
   };
 
   const toggleFollow = async (creatorId) => {
