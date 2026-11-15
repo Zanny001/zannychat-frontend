@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
   qrRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 44,
+    minHeight: 48,
   },
   quickAction: { flexGrow: 1, flexBasis: 128, minWidth: 128 },
   qrIcon: {
