@@ -295,11 +295,11 @@ export default function LiveHubScreen({ navigation, route }) {
                 </View>
                 <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.5 }]}>ZANNYCHAT LIVE</Text>
                 <View style={{ flex: 1 }} />
-                <TouchableOpacity onPress={() => navigation.navigate('LiveCreatorProfile')} accessibilityRole="button" accessibilityLabel="Open LIVE creator profile" style={{ minHeight: 38, paddingHorizontal: 10, borderRadius: 13, borderWidth: 1, borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <TouchableOpacity onPress={() => navigation.navigate('LiveCreatorProfile')} accessibilityRole="button" accessibilityLabel="Open LIVE creator profile" style={{ minHeight: 48, paddingHorizontal: 10, borderRadius: 13, borderWidth: 1, borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <Ionicons name="person-circle-outline" size={18} color={colors.primary} />
                   <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: '800' }]}>Creator profile</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh LIVE streams" style={{ width: 38, height: 38, borderRadius: 13, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
+                <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh LIVE streams" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="refresh" size={18} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
@@ -355,7 +355,7 @@ export default function LiveHubScreen({ navigation, route }) {
 
               {visibility === 'private' && (
                 <View style={{ gap: spacing.sm }}>
-                  <TouchableOpacity onPress={loadInviteCandidates} disabled={loadingCandidates} accessibilityRole="button" accessibilityLabel="Load contacts to invite to private LIVE" accessibilityState={{ disabled: loadingCandidates, busy: loadingCandidates }} style={{ borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.sm, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs }}>
+                  <TouchableOpacity onPress={loadInviteCandidates} disabled={loadingCandidates} accessibilityRole="button" accessibilityLabel="Load contacts to invite to private LIVE" accessibilityState={{ disabled: loadingCandidates, busy: loadingCandidates }} style={{ borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.sm, minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs }}>
                     {loadingCandidates ? <ActivityIndicator color={colors.primary} /> : <Ionicons name="people-outline" size={18} color={colors.primary} />}
                     <Text style={[typography.small, { color: colors.primary, fontWeight: '800' }]}>{loadingCandidates ? 'Loading chat contacts…' : 'Choose people from your chats'}</Text>
                   </TouchableOpacity>
@@ -438,7 +438,7 @@ export default function LiveHubScreen({ navigation, route }) {
                         </View>
                       </View>
                       {item.status === 'ready' ? (
-                        <TouchableOpacity onPress={() => openReplay(item)} accessibilityRole="button" accessibilityLabel={'Watch replay: ' + (item.streamTitle || 'LIVE replay')} style={{ minHeight: 42, borderRadius: radii.md, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.xs }}>
+                        <TouchableOpacity onPress={() => openReplay(item)} accessibilityRole="button" accessibilityLabel={'Watch replay: ' + (item.streamTitle || 'LIVE replay')} style={{ minHeight: 48, borderRadius: radii.md, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.xs }}>
                           <Ionicons name="play" size={16} color={colors.onPrimary} />
                           <Text style={[typography.small, { color: colors.onPrimary, fontWeight: '900' }]}>Watch replay</Text>
                         </TouchableOpacity>
@@ -449,7 +449,7 @@ export default function LiveHubScreen({ navigation, route }) {
                         </View>
                       )}
                     {item.creatorId === currentUserId && !['starting', 'recording', 'processing'].includes(item.status) ? (
-                        <TouchableOpacity onPress={() => deleteReplay(item)} accessibilityRole="button" accessibilityLabel={'Delete replay: ' + (item.streamTitle || 'LIVE replay')} style={{ minHeight: 38, borderRadius: radii.md, borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.32), alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.xs }}>
+                        <TouchableOpacity onPress={() => deleteReplay(item)} accessibilityRole="button" accessibilityLabel={'Delete replay: ' + (item.streamTitle || 'LIVE replay')} style={{ minHeight: 48, borderRadius: radii.md, borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.32), alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.xs }}>
                           <Ionicons name="trash-outline" size={15} color={colors.danger} />
                           <Text style={[typography.caption, { color: colors.danger, fontWeight: '800' }]}>Delete replay</Text>
                         </TouchableOpacity>
@@ -490,7 +490,7 @@ export default function LiveHubScreen({ navigation, route }) {
               {STREAM_FILTERS.map((filter) => {
                 const selected = activeFilter === filter.value;
                 return (
-                  <TouchableOpacity key={filter.value} onPress={() => setActiveFilter(filter.value)} accessibilityRole="radio" accessibilityLabel={`Show ${filter.label} LIVE streams`} accessibilityState={{ checked: selected }} style={{ minHeight: 44, paddingHorizontal: spacing.md, borderRadius: 18, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                  <TouchableOpacity key={filter.value} onPress={() => setActiveFilter(filter.value)} accessibilityRole="radio" accessibilityLabel={`Show ${filter.label} LIVE streams`} accessibilityState={{ checked: selected }} style={{ minHeight: 48, paddingHorizontal: spacing.md, borderRadius: 18, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                     <Text style={[typography.small, { color: selected ? colors.background : colors.textSecondary, fontWeight: '800' }]}>{filter.label}</Text>
                   </TouchableOpacity>
                 );

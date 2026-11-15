@@ -57,7 +57,7 @@ export default function LiveReplayScreen({ route, navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar barStyle={resolvedMode === 'dark' ? 'light-content' : 'dark-content'} />
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 12 }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Go back from LIVE replay" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Go back from LIVE replay" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
           <Ionicons name="arrow-back" size={21} color={colors.textPrimary} />
         </TouchableOpacity>
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -74,7 +74,7 @@ export default function LiveReplayScreen({ route, navigation }) {
             } catch (e) {
               showAppAlert('Could not delete replay', e?.message || 'Please try again.');
             }
-          }} accessibilityRole="button" accessibilityLabel="Delete this LIVE replay" style={{ width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.danger + '55' }}>
+          }} accessibilityRole="button" accessibilityLabel="Delete this LIVE replay" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.danger + '55' }}>
             <Ionicons name="trash-outline" size={19} color={colors.danger} />
           </TouchableOpacity>
         ) : null}
@@ -87,7 +87,7 @@ export default function LiveReplayScreen({ route, navigation }) {
         {playbackUrl && !error ? (
           <VideoView
             player={player}
-            style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 20, overflow: 'hidden', backgroundColor: '#08080C' }}
+            style={{ width: '100%', maxWidth: 720, maxHeight: 405, alignSelf: 'center', aspectRatio: 16 / 9, borderRadius: 20, overflow: 'hidden', backgroundColor: '#08080C' }}
             nativeControls
             contentFit="contain"
           />
@@ -95,7 +95,7 @@ export default function LiveReplayScreen({ route, navigation }) {
           <View style={{ alignItems: 'center', justifyContent: 'center', padding: 28, minHeight: 220, borderRadius: 22, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
             {loading ? <ActivityIndicator size="large" color={colors.accent} /> : <Ionicons name="play-circle-outline" size={42} color={colors.accent} />}
             {!!error && <Text accessibilityRole="alert" style={[typography.body, { color: colors.textPrimary, textAlign: 'center', marginTop: 14 }]}>{error}</Text>}
-            {!loading && <TouchableOpacity onPress={() => setAttempt((value) => value + 1)} accessibilityRole="button" accessibilityLabel="Retry LIVE replay playback" style={{ marginTop: 16, paddingHorizontal: 18, paddingVertical: 11, borderRadius: 14, backgroundColor: colors.primary }}>
+            {!loading && <TouchableOpacity onPress={() => setAttempt((value) => value + 1)} accessibilityRole="button" accessibilityLabel="Retry LIVE replay playback" style={{ minHeight: 48, marginTop: 16, paddingHorizontal: 18, paddingVertical: 8, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.primary }}>
               <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Try again</Text>
             </TouchableOpacity>}
           </View>

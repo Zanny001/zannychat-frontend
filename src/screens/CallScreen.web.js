@@ -562,7 +562,7 @@ export default function CallScreenWeb({ route, navigation }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#11101A' },
   topBar: { paddingHorizontal: 22, paddingTop: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  addPeopleButton: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
+  addPeopleButton: { width: 48, height: 48, minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   encryption: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 18, paddingVertical: 7, paddingHorizontal: 11, backgroundColor: 'rgba(255,255,255,0.08)' },
   encryptionText: {},
   identity: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28 },
