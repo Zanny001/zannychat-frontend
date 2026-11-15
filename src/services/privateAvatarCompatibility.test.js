@@ -27,6 +27,16 @@ test('restricting profile or photo visibility secures legacy avatars before savi
   assert.ok(body.indexOf('ensurePrivateAvatarCopy') < body.indexOf('removeLegacyPublicAvatar'));
 });
 
+test('private avatar access is checked before deleting the legacy copy', () => {
+  const start = api.indexOf('export async function updateMyProfileDetails');
+  const end = api.indexOf('\n}', start) + 2;
+  const body = api.slice(start, end);
+  const privateSync = body.indexOf('if (needsPrivateAvatar)');
+  const save = body.indexOf(".from('profile_details').upsert");
+  const publicSync = body.indexOf('if (!needsPrivateAvatar)');
+  assert.ok(privateSync >= 0 && save > privateSync && publicSync > save);
+});
+
 test('making a profile public restores its legacy URL for older clients', () => {
   const start = api.indexOf('async function ensureLegacyPublicAvatar');
   const end = api.indexOf('\n}', start) + 2;
