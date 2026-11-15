@@ -323,3 +323,11 @@ The source scan covered these families:
 - This is not the end of acceptance: all 46 still require responsive screenshot review, keyboard and focus traversal, modal/sheet and state coverage, accessibility output, reduced-motion checks and physical-device verification.
 - Notification push preference remains a follow-up: the local preference can be enabled while registration returns null (for example, permission denied, simulator, or missing EAS project). The UI should distinguish desired preference from successfully registered device token state. No notification-service behavior was changed in this pass.
 - The calling CI job retry was cancelled again during `npm ci`; no complete calling workflow pass is available. Treat it as an unresolved CI blocker.
+
+
+## Confirmed privacy UX defect fixed — 2026-11-16
+
+- Source review found a copy/expiry mismatch in Google account-deletion reauthentication: the implementation sets `ACCOUNT_DELETE_REAUTH_TTL_MS` to ten minutes, but two user-facing instructions said five minutes.
+- Updated both instructions in `PrivacySecurityScreen.js` to say ten minutes, matching the actual expiry.
+- Added a regression assertion to `PrivacySecurity.contract.test.js` verifying the 10-minute TTL, both matching user-facing strings, and absence of the stale five-minute copy.
+- Change is committed to the PR branch. Automated test execution is pending; do not mark this test passed until CI runs successfully.
