@@ -90,7 +90,31 @@ function DraftVideoPreview({ uri }) {
   return <VideoView player={player} nativeControls contentFit="contain" style={{ width: '100%', height: '100%' }} />;
 }
 
-const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB — enforced server-side too since 0006 (storage.buckets.file_size_limit)
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // Exact chat-media Storage limit (26,214,400 bytes).
+
+function isPermanentAttachmentUploadError(error) {
+  if (['UNSUPPORTED_MEDIA_TYPE', 'FILE_TOO_LARGE'].includes(error?.code)) return true;
+  const status = Number(error?.statusCode ?? error?.status ?? error?.response?.status);
+  if ([400, 403, 404, 413, 415, 422].includes(status)) return true;
+  const message = String(error?.message || error?.error || '').toLowerCase();
+  return /invalidmime|unsupported mime|mime type.*not|file size.*limit|payload too large|row-level security|access denied|not authorized/.test(message);
+}
+
+function getPermanentAttachmentErrorMessage(error) {
+  const status = Number(error?.statusCode ?? error?.status ?? error?.response?.status);
+  const message = String(error?.message || error?.error || '').toLowerCase();
+  if (error?.code === 'UNSUPPORTED_MEDIA_TYPE' || status === 415 || /invalidmime|unsupported mime|mime type.*not/.test(message)) {
+    return 'This file type cannot be shared securely. Choose a supported photo, video, audio file, document, or archive.';
+  }
+  if (error?.code === 'FILE_TOO_LARGE' || status === 413 || /file size.*limit|payload too large/.test(message)) {
+    return 'This attachment exceeds the 25 MiB upload limit.';
+  }
+  if (status === 403 || /row-level security|access denied|not authorized/.test(message)) {
+    return 'You no longer have permission to upload attachments in this conversation. Refresh the chat and try again.';
+  }
+  if (status === 404) return 'The attachment service could not find this conversation. Reopen the chat and try again.';
+  return error?.message || 'This attachment cannot be uploaded. Choose a supported file under 25 MiB.';
+}
 const MESSAGE_PAGE_SIZE = 30;
 
 const DAY_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -682,6 +706,10 @@ export default function ChatScreen({ route, navigation }) {
   }
 
   async function queueAttachmentRetry(item, error) {
+    if (isPermanentAttachmentUploadError(error)) {
+      Alert.alert('Attachment cannot be uploaded', getPermanentAttachmentErrorMessage(error));
+      return;
+    }
     const recovery = await preserveAttachmentForRetry(FileSystem, item, myUserId, conversation.id);
     const queuedItem = recovery.item;
     const saved = await savePendingAttachment(myUserId, conversation.id, queuedItem);
@@ -781,6 +809,18 @@ export default function ChatScreen({ route, navigation }) {
           else if (item.kind === 'file') uploaded = await uploadChatFile(conversation.id, item.uri, item.name, item.mimeType, item.size);
           else uploaded = await uploadVoiceNote(conversation.id, item.uri, item.durationSeconds);
         } catch (error) {
+          if (isPermanentAttachmentUploadError(error)) {
+            const removed = await removePendingAttachment(myUserId, conversation.id, item.id);
+            if (removed) {
+              await removePreservedAttachment(FileSystem, item);
+              setPendingAttachments((items) => items.filter((entry) => entry.id !== item.id));
+            }
+            Alert.alert(
+              'Attachment cannot be uploaded',
+              `${getPermanentAttachmentErrorMessage(error)}${removed ? ' The invalid retry item was removed.' : ' Remove this item from the retry list.'}`
+            );
+            break;
+          }
           await recordAttachmentRetryFailure(myUserId, conversation.id, item.id, error);
           setPendingAttachments((items) => items.map((entry) => entry.id === item.id ? {
             ...entry,

@@ -1469,34 +1469,103 @@ export async function reportUser({ reportedUserId, messageId = null, reason = ''
 // URI displays/plays fine on-device without a real upload); contacts
 // never upload anything, they just reference another profile's id.
 
+const MAX_CHAT_MEDIA_UPLOAD_BYTES = 25 * 1024 * 1024;
+const CHAT_MEDIA_MIME_TYPES = new Set([
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif',
+  'video/mp4', 'video/quicktime', 'video/webm', 'video/3gpp',
+  'audio/m4a', 'audio/mp4', 'audio/mpeg', 'audio/aac', 'audio/wav', 'audio/ogg', 'audio/webm',
+  'application/pdf', 'application/octet-stream', 'application/zip', 'application/x-zip-compressed',
+  'application/x-7z-compressed', 'application/x-rar-compressed', 'application/vnd.rar',
+  'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/rtf', 'application/json', 'application/epub+zip', 'application/gzip', 'application/x-tar',
+  'application/vnd.oasis.opendocument.text', 'application/vnd.oasis.opendocument.spreadsheet',
+  'application/vnd.oasis.opendocument.presentation', 'text/plain', 'text/csv', 'text/markdown',
+]);
+const CHAT_IMAGE_EXTENSIONS = Object.freeze({
+  'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp',
+  'image/gif': 'gif', 'image/heic': 'heic', 'image/heif': 'heif',
+});
+const BLOCKED_CHAT_MEDIA_EXTENSIONS = new Set([
+  'html', 'htm', 'svg', 'js', 'mjs', 'cjs', 'jsx', 'tsx', 'exe', 'dll', 'msi',
+  'bat', 'cmd', 'sh', 'ps1', 'vbs', 'scr', 'com', 'jar', 'apk', 'dex',
+  'php', 'phtml', 'asp', 'aspx', 'jsp', 'hta', 'wasm',
+]);
+
+function createChatMediaError(code, message) {
+  const error = new Error(message);
+  error.code = code;
+  return error;
+}
+
+function normalizeChatMediaMimeType(mimeType, fallback = 'application/octet-stream') {
+  const normalized = String(mimeType || fallback).split(';')[0].trim().toLowerCase();
+  if (!CHAT_MEDIA_MIME_TYPES.has(normalized)) {
+    throw createChatMediaError(
+      'UNSUPPORTED_MEDIA_TYPE',
+      'This file type cannot be shared securely. Choose a photo, video, audio file, PDF, Office document, text file, or archive.'
+    );
+  }
+  return normalized;
+}
+
+function assertSafeChatAttachmentName(fileName) {
+  const name = String(fileName || 'attachment');
+  const extension = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
+  if (BLOCKED_CHAT_MEDIA_EXTENSIONS.has(extension)) {
+    throw createChatMediaError(
+      'UNSUPPORTED_MEDIA_TYPE',
+      'This file extension is not supported for chat attachments. Active web pages, scripts, and executable files cannot be shared.'
+    );
+  }
+  return name;
+}
+
+function assertChatMediaSize(byteLength) {
+  if (Number.isFinite(byteLength) && byteLength > MAX_CHAT_MEDIA_UPLOAD_BYTES) {
+    throw createChatMediaError('FILE_TOO_LARGE', 'Chat attachments are limited to 25 MiB (26,214,400 bytes).');
+  }
+}
+
 export async function uploadChatImage(conversationId, localUri, mimeType = 'image/jpeg') {
+  const safeMimeType = normalizeChatMediaMimeType(mimeType, 'image/jpeg');
+  if (!safeMimeType.startsWith('image/')) {
+    throw createChatMediaError('UNSUPPORTED_MEDIA_TYPE', 'Choose a supported image format for this photo.');
+  }
   if (!SUPABASE_ENABLED) return { url: localUri, name: 'photo' };
 
-  const extension = mimeType.split('/')[1] || 'jpg';
+  const extension = CHAT_IMAGE_EXTENSIONS[safeMimeType];
+  if (!extension) throw createChatMediaError('UNSUPPORTED_MEDIA_TYPE', 'This image format is not supported.');
   const path = `${conversationId}/${Date.now()}-${Math.round(Math.random() * 1e6)}.${extension}`;
 
   const arrayBuffer = await readUploadArrayBuffer(localUri);
+  assertChatMediaSize(arrayBuffer?.byteLength);
   const { error } = await supabase.storage
     .from('chat-media')
-    .upload(path, arrayBuffer, { contentType: mimeType });
+    .upload(path, arrayBuffer, { contentType: safeMimeType });
   if (error) throw error;
 
   return { url: `storage://chat-media/${path}`, name: 'photo' };
 }
 
 export async function uploadChatFile(conversationId, localUri, fileName, mimeType, size) {
-  if (!SUPABASE_ENABLED) return { url: localUri, name: fileName, size };
+  const originalName = assertSafeChatAttachmentName(fileName);
+  const safeMimeType = normalizeChatMediaMimeType(mimeType, 'application/octet-stream');
+  assertChatMediaSize(size);
+  if (!SUPABASE_ENABLED) return { url: localUri, name: originalName, size };
 
-  const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const safeName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
   const path = `${conversationId}/${Date.now()}-${safeName}`;
 
   const arrayBuffer = await readUploadArrayBuffer(localUri);
+  assertChatMediaSize(arrayBuffer?.byteLength);
   const { error } = await supabase.storage
     .from('chat-media')
-    .upload(path, arrayBuffer, { contentType: mimeType || 'application/octet-stream' });
+    .upload(path, arrayBuffer, { contentType: safeMimeType });
   if (error) throw error;
 
-  return { url: `storage://chat-media/${path}`, name: fileName, size };
+  return { url: `storage://chat-media/${path}`, name: originalName, size: size || arrayBuffer.byteLength };
 }
 
 export async function uploadVoiceNote(conversationId, localUri, durationSeconds) {
@@ -1505,6 +1574,7 @@ export async function uploadVoiceNote(conversationId, localUri, durationSeconds)
   const path = `${conversationId}/${Date.now()}-voice.m4a`;
 
   const arrayBuffer = await readUploadArrayBuffer(localUri);
+  assertChatMediaSize(arrayBuffer?.byteLength);
   const { error } = await supabase.storage
     .from('chat-media')
     .upload(path, arrayBuffer, { contentType: 'audio/m4a' });
