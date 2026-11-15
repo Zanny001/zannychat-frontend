@@ -146,3 +146,5 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 - NewChat contact results now use moderate divider-based rows instead of a glass card for every contact. The favorite action is a separate sibling control rather than a nested pressable, preventing the star action from unintentionally triggering the row's open-chat/share action. A dedicated regression contract was added.
 
 - Chats filter chips now enforce a 44-point minimum touch height and centered content; a contract protects the target and selected-state accessibility.
+
+- Chats header camera, drafts and new-chat actions are now 44×44; search has a 48-point minimum surface and the Moments “See all” action has a 44-point target. Regression assertions cover the dimensions.
