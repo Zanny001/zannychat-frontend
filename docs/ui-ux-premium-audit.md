@@ -350,3 +350,27 @@ The source scan covered these families:
 - Latest queried commit has no associated GitHub Actions run returned by the current workflow query; Vercel remains blocked by the team's build-rate limit. Do not claim the new composer/privacy tests have run.
 - Supabase read-only inspection confirmed the auth-user insert trigger creates a profile and generates a username from available name metadata with a safe fallback and UUID suffix. No live account PII was read and no DB changes were made.
 - The PR description has been refreshed to include the composer and privacy fixes, the complete first-pass screen source review, and the outstanding QA/deployment gates.
+
+
+## Supabase database security/performance advisor review — 2026-11-16
+
+### Verified
+- Supabase security advisor reports every exposed `public` table has RLS enabled; a read-only catalog query found no public table with RLS disabled.
+- The advisor reports 37 RLS-enabled tables with no policies. These are not automatically defects: sampled call-history, scheduled-message, channel and LIVE flows use authenticated backend routes and a server-side service client, while their underlying tables are intentionally backend-only. Do not add broad authenticated policies just to silence this informational lint.
+- The advisor reports 28 SECURITY DEFINER functions callable by authenticated users. Sampled functions were reviewed: user-facing RPCs bind identity to `auth.uid()` (including profile visibility, status audience, poll/event operations, message deletion, directory lookup and read-state); visible-avatar/cover helpers delegate to profile visibility checks; legacy poll overloads delegate to guarded current signatures. Internal worker/trigger functions are not executable by authenticated users. Keep the warnings as a review inventory, not a blanket instruction to revoke execution.
+- RLS policy inspection confirms conversation membership gates, own-profile update, visible-message selection, message sender update, status audience checks, poll membership/voting checks, event membership, and own push-token management. Some sensitive tables are backend-only and have no client policies.
+- The broad-looking profile SELECT policy branch that checks for a status row is still constrained by the separate `status_updates` SELECT RLS policy, which requires an unexpired status and `can_view_status` audience authorization. No bypass was established from that branch.
+- Performance advisor reports 65 unused indexes. Many are newly introduced FK/support indexes or low-traffic worker indexes; index statistics alone do not justify dropping them. Health advisor returned no findings.
+
+### Backend route cross-checks
+- `/calls/history`, `/conversations/scheduled-messages`, `/channels`, and `/live` routers apply `requireAuth`; their handlers scope mutations to the authenticated actor and use the backend service client for backend-only tables.
+- Events and polls use RLS-backed table reads and SECURITY DEFINER RPCs for write paths; the relevant RPC definitions enforce authenticated identity and conversation membership.
+
+### Outstanding security work
+- Full function-by-function and route-by-route security review is still required before declaring a complete security audit; this pass sampled representative high-risk paths and the advisor inventory.
+- Review the message and call-session UPDATE policies for mutable-column scope and transition invariants against their trigger guards and backend flows. Do not widen grants or change policies until the exact supported client write paths and regression tests are mapped.
+- Review Storage bucket policies and public/private object URL handling separately; table RLS does not secure Storage objects.
+- No database migration or data mutation was made during this advisor pass.
+
+### Product completeness note
+- Settings explicitly marks the Zero-Knowledge Vault as “COMING SOON” and says it is not built yet. This is an acknowledged unimplemented feature, not a broken switch. Do not market or represent it as shipped until end-to-end encryption-at-rest/key management, recovery, threat model and cross-device flows exist.
