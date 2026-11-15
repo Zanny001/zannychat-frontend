@@ -42,3 +42,27 @@ test('group call UI avoids claiming end-to-end or secure-room guarantees', () =>
   assert.equal(screen.includes('secure call room'), false);
   assert.ok(screen.includes('Everyone in the room can hear you'));
 });
+
+
+test('native and web group calls renew participant leases and recover stale disconnects', () => {
+  assert.ok(screen.includes("`/group-calls/${roomId}/heartbeat`"));
+  assert.ok(screen.includes('setInterval(heartbeat, 30_000)'));
+  assert.ok(screen.includes("connectionState !== 'Connected'"));
+  const web = fs.readFileSync(new URL('./GroupCallScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(web.includes("`/group-calls/${connection.roomId}/heartbeat`"));
+  assert.ok(web.includes('setInterval(heartbeat, 30_000)'));
+  assert.ok(web.includes("status !== 'Connected'"));
+});
+
+
+test('native group calls expose speaker and earpiece output selection', () => {
+  assert.ok(screen.includes('AudioSession.showAudioRoutePicker()'));
+  assert.ok(screen.includes('AudioSession.getAudioOutputs()'));
+  assert.ok(screen.includes('AudioSession.selectAudioOutput(output)'));
+  assert.ok(screen.includes('Choose audio output'));
+});
+
+
+test('group-call controls wrap safely when audio routing and invitations are visible together', () => {
+  assert.ok(screen.includes("flexWrap: 'wrap'"));
+});

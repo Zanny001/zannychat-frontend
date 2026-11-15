@@ -113,7 +113,7 @@ export async function registerCallVoipToken(token, type) {
 export async function listCallHistory(limit = 100) {
   if (!SUPABASE_ENABLED || !supabase) return [];
   const userId = await getCallUserId();
-  const selection = 'id,conversation_id,caller_id,callee_id,call_type,status,created_at,accepted_at,ended_at,expires_at';
+  const selection = 'id,conversation_id,caller_id,callee_id,call_type,status,created_at,accepted_at,ended_at,expires_at,group_room_id';
   const loadRows = async () => {
     const { data, error } = await supabase.from('call_sessions').select(selection)
       .or(`caller_id.eq.${userId},callee_id.eq.${userId}`)
@@ -135,7 +135,7 @@ export async function listCallHistory(limit = 100) {
     const { data: profiles, error: profileError } = await supabase.from('profiles').select('id,name,avatar_color').in('id', peerIds);
     if (!profileError) profilesById = Object.fromEntries((profiles || []).map((profile) => [profile.id, profile]));
   }
-  const directCalls = rows.map((row) => {
+  const directCalls = rows.filter((row) => !row.group_room_id).map((row) => {
     const peerId = row.caller_id === userId ? row.callee_id : row.caller_id;
     const profile = profilesById[peerId] || {};
     const duration = row.accepted_at && row.ended_at ? Math.max(0, Math.floor((Date.parse(row.ended_at) - Date.parse(row.accepted_at)) / 1000)) : 0;

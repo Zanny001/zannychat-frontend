@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, SafeAreaView, StatusBar, StyleSheet, Text, Pressable, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Platform, SafeAreaView, StatusBar, StyleSheet, Text, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AudioSession, LiveKitRoom, VideoTrack, isTrackReference, useRoomContext, useTracks, useParticipants } from '@livekit/react-native';
 import { RoomEvent, Track } from 'livekit-client';
@@ -9,7 +9,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 import CallInvitePicker from '../components/CallInvitePicker';
 
-function GroupRoomContent({ callType, onEnd, onAddPeople, canInvite, onParticipantsChange, endLabel }) {
+function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onParticipantsChange, endLabel }) {
   const room = useRoomContext();
   const { colors, typography } = useTheme();
   const cameraTracks = useTracks([Track.Source.Camera]);
@@ -23,6 +23,19 @@ function GroupRoomContent({ callType, onEnd, onAddPeople, canInvite, onParticipa
   useEffect(() => {
     onParticipantsChange?.(participants.map((participant) => participant.identity));
   }, [participants, onParticipantsChange]);
+
+  useEffect(() => {
+    if (connectionState !== 'Connected' || !roomId) return undefined;
+    let active = true;
+    const heartbeat = () => {
+      if (!active || room.state !== 'connected') return;
+      backendFetch(`/group-calls/${roomId}/heartbeat`, { method: 'POST' })
+        .catch((error) => { if (active) console.warn('[group-calls] presence heartbeat failed:', error?.message || error); });
+    };
+    heartbeat();
+    const interval = setInterval(heartbeat, 30_000);
+    return () => { active = false; clearInterval(interval); };
+  }, [connectionState, room, roomId]);
 
   useEffect(() => {
     const onConnected = () => setConnectionState('Connected');
@@ -57,6 +70,32 @@ function GroupRoomContent({ callType, onEnd, onAddPeople, canInvite, onParticipa
       setIsVideo(cameraOff);
     } catch (_) {
       Alert.alert('Camera unavailable', 'Check camera permission and try again.');
+    }
+  };
+
+  const chooseAudioOutput = async () => {
+    try {
+      if (Platform.OS === 'ios') {
+        await AudioSession.showAudioRoutePicker();
+        return;
+      }
+      const outputs = await AudioSession.getAudioOutputs();
+      const choices = ['speaker', 'earpiece'].filter((output) => outputs.includes(output));
+      if (!choices.length) {
+        Alert.alert('Audio output', 'No alternate audio output is currently available.');
+        return;
+      }
+      Alert.alert('Audio output', 'Choose where call audio should play.', [
+        ...choices.map((output) => ({
+          text: output === 'speaker' ? 'Speaker' : 'Phone earpiece',
+          onPress: () => AudioSession.selectAudioOutput(output).catch(() => {
+            Alert.alert('Audio output unavailable', 'The selected audio output could not be activated.');
+          }),
+        })),
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    } catch (_) {
+      Alert.alert('Audio output unavailable', 'Could not load available audio outputs.');
     }
   };
 
@@ -127,6 +166,15 @@ function GroupRoomContent({ callType, onEnd, onAddPeople, canInvite, onParticipa
         >
           <Ionicons name={muted ? 'mic-off' : 'mic'} size={23} color={muted ? colors.onPrimary : colors.textPrimary} />
           <Text style={[styles.controlLabel, typography.small, { color: muted ? colors.onPrimary : colors.textPrimary }]}>{muted ? 'Unmute' : 'Mute'}</Text>
+        </Pressable>
+        <Pressable
+          onPress={chooseAudioOutput}
+          accessibilityRole="button"
+          accessibilityLabel="Choose audio output"
+          style={({ pressed }) => controlStyle(pressed)}
+        >
+          <Ionicons name="volume-high-outline" size={23} color={colors.textPrimary} />
+          <Text style={[styles.controlLabel, typography.small, { color: colors.textPrimary }]}>Audio</Text>
         </Pressable>
         <Pressable
             onPress={toggleCamera}
@@ -291,7 +339,7 @@ export default function GroupCallScreen({ route, navigation }) {
         </View>
       ) : connection ? (
         <LiveKitRoom serverUrl={connection.livekitUrl} token={connection.token} connect={true} audio={true} video={connection.callType === 'video'} options={{ adaptiveStream: true, dynacast: true }}>
-          <GroupRoomContent callType={connection.callType} onEnd={endCall} onAddPeople={() => setInvitePickerVisible(true)} canInvite={canInvite} onParticipantsChange={handleParticipantsChange} endLabel={canEnd ? 'End call' : 'Leave'} />
+          <GroupRoomContent roomId={connection.roomId} callType={connection.callType} onEnd={endCall} onAddPeople={() => setInvitePickerVisible(true)} canInvite={canInvite} onParticipantsChange={handleParticipantsChange} endLabel={canEnd ? 'End call' : 'Leave'} />
         </LiveKitRoom>
       ) : null}
       {connection?.room ? (
@@ -334,7 +382,7 @@ const styles = StyleSheet.create({
   participantList: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 22 },
   participantChip: { maxWidth: '100%', flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: StyleSheet.hairlineWidth, borderRadius: 18, paddingVertical: 7, paddingHorizontal: 10 },
   participantName: { fontSize: 12, fontWeight: '600', maxWidth: 180 },
-  controls: { flexDirection: 'row', justifyContent: 'center', gap: 14, padding: 18, paddingBottom: 26 },
+  controls: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 12, padding: 14, paddingBottom: 22 },
   control: { minWidth: 76, minHeight: 72, borderRadius: 24, alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 10 },
   controlLabel: { fontSize: 11, fontWeight: '700' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28 },

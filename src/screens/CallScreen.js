@@ -45,11 +45,13 @@ export default function CallScreen({ route, navigation }) {
   const seenSignals = useRef(new Set());
   const offerStarted = useRef(false);
   const iceRestartInProgress = useRef(false);
+  const disconnectTimerRef = useRef(null);
   const activeRef = useRef(true);
   const nativeConnectedRef = useRef(false);
   const nativeEndedRef = useRef(false);
   const releaseCallAudioSessionRef = useRef(async () => {});
   const upgradeNavigatedRef = useRef(false);
+  const endingRef = useRef(false);
   const callIdRef = useRef(initialCall?.id || callId);
   const callRef = useRef(initialCall || { id: callId, conversation_id: conversationId, call_type: callType, status: isCaller ? 'ringing' : 'accepted' });
   const callTypeRef = useRef(initialCall?.call_type || callType);
@@ -57,6 +59,7 @@ export default function CallScreen({ route, navigation }) {
   const navigateToConference = useCallback(async (room, connectionResult = null) => {
     if (!room?.id || upgradeNavigatedRef.current) return;
     upgradeNavigatedRef.current = true;
+    endingRef.current = true;
     if (nativeCallId && !nativeEndedRef.current) {
       nativeEndedRef.current = true;
       await reportNativeCallEnded(nativeCallId, 'remoteEnded').catch(() => {});
@@ -73,15 +76,40 @@ export default function CallScreen({ route, navigation }) {
 
   const endCall = useCallback(async (reason = 'ended') => {
     try {
-      const current = call;
+      const current = callRef.current || call;
       if (current?.id && ['ringing', 'accepted'].includes(current.status)) {
         const status = getCallEndStatus({ reason, isCaller, status: current.status });
-        await updateCallStatus(current.id, status).catch(() => {});
+        try {
+          const updated = await updateCallStatus(current.id, status);
+          callRef.current = { ...current, ...updated };
+        } catch (_) {
+          // The beforeRemove guard gets one final chance to persist the end state.
+        }
         if (nativeCallId) endNativeCall(nativeCallId).catch(() => {});
       }
     } finally {
       navigation.goBack();
     }
+  }, [call, isCaller, navigation, nativeCallId]);
+
+  useEffect(() => {
+    if (!navigation?.addListener) return undefined;
+    const unsubscribe = navigation.addListener('beforeRemove', (event) => {
+      if (endingRef.current) return;
+      const current = callRef.current || call;
+      if (!current?.id || isTerminalCallStatus(current.status)) return;
+      const status = getCallEndStatus({ reason: 'ended', isCaller, status: current.status });
+      event.preventDefault();
+      endingRef.current = true;
+      updateCallStatus(current.id, status)
+        .then((updated) => { callRef.current = { ...current, ...updated }; })
+        .catch(() => {})
+        .finally(() => {
+          if (nativeCallId) endNativeCall(nativeCallId).catch(() => {});
+          navigation.dispatch(event.data.action);
+        });
+    });
+    return unsubscribe;
   }, [call, isCaller, navigation, nativeCallId]);
 
   useEffect(() => {
@@ -198,11 +226,30 @@ export default function CallScreen({ route, navigation }) {
         if (!activeRef.current) return;
         const state = pc.iceConnectionState;
         if (state === 'connected' || state === 'completed') {
+          if (disconnectTimerRef.current) {
+            clearTimeout(disconnectTimerRef.current);
+            disconnectTimerRef.current = null;
+          }
           iceRestartInProgress.current = false;
           setErrorText('');
           return;
         }
-        if ((state === 'disconnected' || state === 'failed') && isCaller && currentStatus === 'accepted' && !iceRestartInProgress.current) {
+
+        if ((state === 'disconnected' || state === 'failed') && !disconnectTimerRef.current) {
+          disconnectTimerRef.current = setTimeout(async () => {
+            disconnectTimerRef.current = null;
+            if (!activeRef.current || ['connected', 'completed'].includes(pc.iceConnectionState)) return;
+            const current = callRef.current;
+            if (current?.id && current.status === 'accepted') {
+              try {
+                const updated = await updateCallStatus(current.id, 'ended');
+                callRef.current = { ...current, ...updated };
+              } catch (_) {}
+            }
+            if (activeRef.current) navigation.goBack();
+          }, 120_000);
+        }
+        if ((state === 'disconnected' || state === 'failed') && currentStatus === 'accepted' && !iceRestartInProgress.current) {
           iceRestartInProgress.current = true;
           try {
             pc.restartIce?.();
@@ -317,6 +364,8 @@ export default function CallScreen({ route, navigation }) {
     });
     return () => {
       activeRef.current = false;
+      if (disconnectTimerRef.current) clearTimeout(disconnectTimerRef.current);
+      disconnectTimerRef.current = null;
       unsubscribeSignals();
       unsubscribeSession();
       try { pc?.close(); } catch (_) {}

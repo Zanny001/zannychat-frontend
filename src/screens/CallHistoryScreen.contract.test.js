@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const callsScreen = fs.readFileSync(new URL('./CallHistoryScreen.js', import.meta.url), 'utf8');
 const newChatScreen = fs.readFileSync(new URL('./NewChatScreen.js', import.meta.url), 'utf8');
+const callsService = fs.readFileSync(new URL('../services/calls.js', import.meta.url), 'utf8');
 
 test('Calls screen exposes audio, video, and favourites quick actions', () => {
   assert.ok(callsScreen.includes("navigation.navigate('NewChat', { callType: 'audio', directoryFilter: 'all' })"));
@@ -36,4 +37,10 @@ test('quick actions clear stale call and filter parameters', () => {
   assert.ok(callsScreen.includes("callType: 'audio', directoryFilter: 'all'"));
   assert.ok(callsScreen.includes("callType: 'video', directoryFilter: 'all'"));
   assert.ok(callsScreen.includes("directoryFilter: 'favorites', callType: null"));
+});
+
+
+test('upgraded one-to-one calls appear only once as conference history', () => {
+  assert.ok(callsService.includes('expires_at,group_room_id'));
+  assert.ok(callsService.includes('rows.filter((row) => !row.group_room_id).map((row) => {'));
 });

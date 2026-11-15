@@ -45,7 +45,9 @@ export default function CallScreenWeb({ route, navigation }) {
   const connectedAtRef = useRef(null);
   const offerStartedRef = useRef(false);
   const iceRestartInProgressRef = useRef(false);
+  const disconnectTimerRef = useRef(null);
   const upgradeNavigatedRef = useRef(false);
+  const endingRef = useRef(false);
 
   const immersiveVideo = activeCallType === 'video' || remoteVideoActive;
   const foreground = immersiveVideo ? '#FFFFFF' : colors.textPrimary;
@@ -85,6 +87,7 @@ export default function CallScreenWeb({ route, navigation }) {
   const navigateToConference = useCallback(async (room, connectionResult = null) => {
     if (!room?.id || upgradeNavigatedRef.current) return;
     upgradeNavigatedRef.current = true;
+    endingRef.current = true;
     navigation.replace('GroupCall', {
       roomId: room.id,
       connection: connectionResult,
@@ -95,13 +98,35 @@ export default function CallScreenWeb({ route, navigation }) {
   }, [activeCallType, conversationId, navigation]);
 
   const endCall = useCallback(async (reason = 'ended') => {
-    const current = callRef.current;
+    const current = callRef.current || call;
     if (current?.id && ['ringing', 'accepted'].includes(current.status)) {
       const nextStatus = getCallEndStatus({ reason, isCaller, status: current.status });
-      await updateCallStatus(current.id, nextStatus).catch(() => {});
+      try {
+        const updated = await updateCallStatus(current.id, nextStatus);
+        callRef.current = { ...current, ...updated };
+      } catch (_) {
+        // The beforeRemove guard gets one final chance to persist the end state.
+      }
     }
     navigation.goBack();
-  }, [isCaller, navigation]);
+  }, [call, isCaller, navigation]);
+
+  useEffect(() => {
+    if (!navigation?.addListener) return undefined;
+    const unsubscribe = navigation.addListener('beforeRemove', (event) => {
+      if (endingRef.current) return;
+      const current = callRef.current || call;
+      if (!current?.id || isTerminalCallStatus(current.status)) return;
+      const nextStatus = getCallEndStatus({ reason: 'ended', isCaller, status: current.status });
+      event.preventDefault();
+      endingRef.current = true;
+      updateCallStatus(current.id, nextStatus)
+        .then((updated) => { callRef.current = { ...current, ...updated }; })
+        .catch(() => {})
+        .finally(() => navigation.dispatch(event.data.action));
+    });
+    return unsubscribe;
+  }, [call, isCaller, navigation]);
 
   useEffect(() => {
     activeRef.current = true;
@@ -231,14 +256,32 @@ export default function CallScreenWeb({ route, navigation }) {
         const state = pc.iceConnectionState;
 
         if (state === 'connected' || state === 'completed') {
+          if (disconnectTimerRef.current) {
+            clearTimeout(disconnectTimerRef.current);
+            disconnectTimerRef.current = null;
+          }
           iceRestartInProgressRef.current = false;
           setErrorText('');
           return;
         }
 
+        if ((state === 'disconnected' || state === 'failed') && !disconnectTimerRef.current) {
+          disconnectTimerRef.current = setTimeout(async () => {
+            disconnectTimerRef.current = null;
+            if (!activeRef.current || ['connected', 'completed'].includes(pc.iceConnectionState)) return;
+            const current = callRef.current;
+            if (current?.id && current.status === 'accepted') {
+              try {
+                const updated = await updateCallStatus(current.id, 'ended');
+                callRef.current = { ...current, ...updated };
+              } catch (_) {}
+            }
+            if (activeRef.current) navigation.goBack();
+          }, 120_000);
+        }
+
         if (
           (state === 'disconnected' || state === 'failed') &&
-          isCaller &&
           currentStatus === 'accepted' &&
           !iceRestartInProgressRef.current
         ) {
@@ -335,6 +378,8 @@ export default function CallScreenWeb({ route, navigation }) {
 
     return () => {
       activeRef.current = false;
+      if (disconnectTimerRef.current) clearTimeout(disconnectTimerRef.current);
+      disconnectTimerRef.current = null;
       unsubscribeSignals();
       unsubscribeSession();
       try { pc?.close(); } catch (_) {}
