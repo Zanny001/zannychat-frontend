@@ -23,7 +23,7 @@ test('save validates username, birthday, website and waits for both persisted pr
   const identityWrite = screen.indexOf('await updateProfile(');
   const detailsWrite = screen.indexOf('await updateMyProfileDetails(');
   assert.ok(identityWrite >= 0 && detailsWrite > identityWrite, 'both profile writes must be awaited');
-  assert.match(screen, /Alert\.alert\('Profile saved'/);
+  assert.match(screen, /showAppAlert\('Profile saved'/);
   assert.match(screen, /Some changes were saved/);
 });
 
