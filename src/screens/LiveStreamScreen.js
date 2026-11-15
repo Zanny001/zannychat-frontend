@@ -376,6 +376,16 @@ export default function LiveStreamScreen({ route, navigation }) {
   }, [stream?.id]);
 
   useEffect(() => {
+    if (!stream?.id) return undefined;
+    let active = true;
+    const heartbeat = () => backendFetch(`/live/${stream.id}/heartbeat`, { method: 'POST' })
+      .catch((error) => { if (active) console.warn('[live] presence heartbeat failed:', error?.message || error); });
+    heartbeat();
+    const interval = setInterval(heartbeat, 30_000);
+    return () => { active = false; clearInterval(interval); };
+  }, [stream?.id]);
+
+  useEffect(() => {
     AudioSession.startAudioSession().catch(() => {});
     refreshComments();
     const interval = setInterval(refreshComments, 4000);
