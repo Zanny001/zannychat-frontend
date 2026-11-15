@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useState } from 'react';
 import { SafeAreaView, KeyboardAvoidingView, Platform, View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
@@ -8,7 +9,7 @@ import { SUPABASE_ENABLED } from '../services/supabaseClient';
 
 function message(title, body) {
   if (Platform.OS === 'web' && typeof window !== 'undefined') window.alert(`${title}\n\n${body}`);
-  else Alert.alert(title, body);
+  else showAppAlert(title, body);
 }
 
 export default function VerifyEmailScreen({ navigation, route }) {
