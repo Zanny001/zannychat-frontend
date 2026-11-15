@@ -35,6 +35,7 @@ test('conversation participant profile details use the relationship-scoped RPC',
   const body = api.slice(start, end);
   assert.equal(body.includes('profiles(id, name'), false);
   assert.ok(body.includes("'get_conversation_profile_directory'"));
+  assert.ok(body.includes('.filter((row) => !row.is_group)'));
   assert.ok(body.includes('p_user_ids: participantIds.slice(start, start + 500)'));
 });
 
