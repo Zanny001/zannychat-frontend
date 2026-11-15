@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -36,13 +37,13 @@ export default function PollsScreen({ navigation, route }) {
     if (!conversationId || loadingMore || !hasMore) return;
     setLoadingMore(true);
     try { const page = await listConversationPollPage(conversationId, { cursor: nextCursor }); setPolls((current) => { const seen = new Set(current.map((poll) => poll.id)); return [...current, ...page.polls.filter((poll) => !seen.has(poll.id))]; }); setSelectedPollOptions((current) => ({ ...current, ...Object.fromEntries(page.polls.map((poll) => [poll.id, (poll.poll_options || []).filter((option) => option.selected_by_me).map((option) => option.id)])) })); setHasMore(page.hasMore); setNextCursor(page.nextCursor); }
-    catch (e) { Alert.alert('Could not load older polls', e?.message || 'Please try again.'); }
+    catch (e) { showAppAlert('Could not load older polls', e?.message || 'Please try again.'); }
     finally { setLoadingMore(false); }
   };
   const publish = async () => {
     setSaving(true);
-    try { await createConversationPoll(conversationId, question, options, null, allowMultiple); setQuestion(''); setOptions(['', '', '', '']); setAllowMultiple(false); await refresh(); Alert.alert('Poll created', allowMultiple ? 'Conversation members can select multiple options.' : 'Conversation members can now vote.'); }
-    catch (e) { Alert.alert('Could not create poll', e?.message || 'Please try again.'); }
+    try { await createConversationPoll(conversationId, question, options, null, allowMultiple); setQuestion(''); setOptions(['', '', '', '']); setAllowMultiple(false); await refresh(); showAppAlert('Poll created', allowMultiple ? 'Conversation members can select multiple options.' : 'Conversation members can now vote.'); }
+    catch (e) { showAppAlert('Could not create poll', e?.message || 'Please try again.'); }
     finally { setSaving(false); }
   };
   const vote = async (poll, option) => {
@@ -50,22 +51,22 @@ export default function PollsScreen({ navigation, route }) {
       setSelectedPollOptions((current) => {
         const selected = current[poll.id] || [];
         const next = selected.includes(option.id) ? selected.filter((id) => id !== option.id) : [...selected, option.id];
-        if (next.length > 10) { Alert.alert('Selection limit', 'You can select up to 10 options.'); return current; }
+        if (next.length > 10) { showAppAlert('Selection limit', 'You can select up to 10 options.'); return current; }
         return { ...current, [poll.id]: next };
       });
       return;
     }
     setVotingPollId(poll.id);
     try { await castPollVote(poll.id, [option.id]); await refresh(); }
-    catch (e) { Alert.alert('Could not vote', e?.message || 'This poll may be closed.'); }
+    catch (e) { showAppAlert('Could not vote', e?.message || 'This poll may be closed.'); }
     finally { setVotingPollId(null); }
   };
   const submitMultiVote = async (poll) => {
     const selected = selectedPollOptions[poll.id] || [];
     if (!selected.length || votingPollId) return;
     setVotingPollId(poll.id);
-    try { await castPollVote(poll.id, selected); await refresh(); Alert.alert('Vote saved', 'Your selected options have been recorded.'); }
-    catch (e) { Alert.alert('Could not vote', e?.message || 'This poll may be closed.'); }
+    try { await castPollVote(poll.id, selected); await refresh(); showAppAlert('Vote saved', 'Your selected options have been recorded.'); }
+    catch (e) { showAppAlert('Could not vote', e?.message || 'This poll may be closed.'); }
     finally { setVotingPollId(null); }
   };
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
