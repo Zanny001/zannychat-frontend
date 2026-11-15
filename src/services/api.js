@@ -795,8 +795,13 @@ export async function fetchConversations({ limit = 50, offset = 0 } = {}) {
 
   if (error) throw error;
 
+  // Group rows only need a member count in the chat list; avoid fetching
+  // every group member's profile when only direct-chat peer identity is shown.
   const participantIds = [...new Set(
-    (data || []).flatMap((row) => (row.conversation_participants || []).map((participant) => participant.user_id)).filter(Boolean),
+    (data || [])
+      .filter((row) => !row.is_group)
+      .flatMap((row) => (row.conversation_participants || []).map((participant) => participant.user_id))
+      .filter(Boolean),
   )];
   const participantProfiles = [];
   for (let start = 0; start < participantIds.length; start += 500) {
