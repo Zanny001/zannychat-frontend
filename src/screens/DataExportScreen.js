@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useState } from 'react';
 import { Alert, SafeAreaView, ScrollView, Text, TouchableOpacity, View, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,7 +17,7 @@ export default function DataExportScreen({ navigation }) {
 
   async function exportData() {
     if (!SUPABASE_ENABLED) {
-      Alert.alert('Connect your account', 'Data export requires a live, signed-in Supabase account. Demo data is not exported.');
+      showAppAlert('Connect your account', 'Data export requires a live, signed-in Supabase account. Demo data is not exported.');
       return;
     }
     setBusy(true);
@@ -30,12 +31,12 @@ export default function DataExportScreen({ navigation }) {
       await FileSystem.writeAsStringAsync(uri, json, { encoding: FileSystem.EncodingType.UTF8 });
       const canShare = await Sharing.isAvailableAsync();
       if (!canShare) {
-        Alert.alert('Sharing unavailable', 'This device does not support sharing files, so your export was not delivered. Please try again on a device with file sharing enabled.');
+        showAppAlert('Sharing unavailable', 'This device does not support sharing files, so your export was not delivered. Please try again on a device with file sharing enabled.');
         return;
       }
       await Sharing.shareAsync(uri, { mimeType: 'application/json', dialogTitle: 'Export your ZannyChat data', UTI: 'public.json' });
     } catch (error) {
-      Alert.alert('Export unavailable', error?.message || 'Your data could not be exported. Please try again.');
+      showAppAlert('Export unavailable', error?.message || 'Your data could not be exported. Please try again.');
     } finally {
       setBusy(false);
     }
