@@ -416,3 +416,21 @@ The source scan covered these families:
 - Updated `ChatScreen.contract.test.js` to assert the new composer design tokens while retaining the 48px send action, accessible labels, bounded multiline input and voice-recording controls.
 - The new contract in `PremiumDesignSystem.contract.test.js` also checks that draft, reply, edit and recording paths remain present.
 - Repair commit: `becae1846d512743c0ce2987b327145b48222063`. The PR head is updated to this commit and remains draft/unmerged. A fresh CI run has not yet appeared in the workflow query; the repair is not yet test-verified.
+
+
+## Push notification preference persistence defect fixed — 2026-11-16
+
+### Confirmed defect
+- `App.js` calls `registerForPushNotifications()` on app startup after authentication. Before this fix, the registration service did not check the persisted `pushEnabled` preference, so a user who disabled push and removed their tokens could have push silently re-registered on the next app launch.
+- Registration also ignored the Supabase upsert error and could return a token as if registration succeeded even when the token had not been saved.
+- The Notifications screen invoked registration/unregistration without awaiting the result and always presented “New messages reach this device,” even when the device was not registered.
+
+### Implemented fix
+- `registerForPushNotifications` now awaits persisted notification preferences and exits without registering when `pushEnabled` is false. This makes the startup registration path respect opt-out.
+- Registration now checks both auth lookup and push-token upsert errors before returning a token.
+- `unregisterPushNotifications` now returns an explicit boolean and reports failure when the server deletion cannot be confirmed.
+- Notifications screen now awaits registration/removal, keeps the switch enabled if opt-out cannot be confirmed, disables the control while the operation is running, and distinguishes the user's preference from confirmed device registration status. Web messaging explains that remote push requires a native build and browser call alerts are separate.
+- Added `NotificationsScreen.contract.test.js` for startup opt-out, token persistence confirmation, safe opt-out ordering and truthful UI status.
+
+### Verification status
+- Changes are committed on the PR branch. Current GitHub Actions query has not returned a new run for these commits, so these tests are **not yet verified by CI**. No device push-delivery test has been run.
