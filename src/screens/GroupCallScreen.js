@@ -178,6 +178,16 @@ export default function GroupCallScreen({ route, navigation }) {
   const handleParticipantsChange = useCallback((ids) => setParticipantIds(ids), []);
 
   useEffect(() => {
+    if (!connection?.roomId) return undefined;
+    let active = true;
+    const heartbeat = () => backendFetch(`/group-calls/${connection.roomId}/heartbeat`, { method: 'POST' })
+      .catch((error) => { if (active) console.warn('[group-calls] presence heartbeat failed:', error?.message || error); });
+    heartbeat();
+    const interval = setInterval(heartbeat, 30_000);
+    return () => { active = false; clearInterval(interval); };
+  }, [connection?.roomId]);
+
+  useEffect(() => {
     let active = true;
     AudioSession.startAudioSession().catch(() => {});
     const connect = async () => {
