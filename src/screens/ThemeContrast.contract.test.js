@@ -129,7 +129,7 @@ test('create-group screen exposes accessible selection controls and complete con
   assert.match(createGroup, /loadingContacts/);
   assert.match(createGroup, /contactsError/);
   assert.match(createGroup, /No contacts available to add yet/);
-  assert.match(createGroup, /minHeight: 49/);
+  assert.match(createGroup, /minHeight: 48/);
 });
 
 test('interactive controls keep 44-point minimum touch targets on high-traffic screens', () => {
