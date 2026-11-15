@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -42,7 +43,7 @@ export default function PrivacySecurityScreen({ navigation }) {
 
   async function handleUnblock(entry) {
     const name = entry.profile?.name || 'this person';
-    Alert.alert(`Unblock ${name}?`, 'They will be able to message you again.', [
+    showAppAlert(`Unblock ${name}?`, 'They will be able to message you again.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Unblock',
@@ -51,7 +52,7 @@ export default function PrivacySecurityScreen({ navigation }) {
             await unblockUser(entry.userId);
             setBlocked((prev) => prev.filter((b) => b.userId !== entry.userId));
           } catch (err) {
-            Alert.alert("Couldn't unblock", err.message || 'Please try again.');
+            showAppAlert("Couldn't unblock", err.message || 'Please try again.');
           }
         },
       },
@@ -60,12 +61,12 @@ export default function PrivacySecurityScreen({ navigation }) {
 
   async function handleChangePassword() {
     if (!SUPABASE_ENABLED) {
-      Alert.alert('Account connection required', 'Connect a Supabase account before changing its password.');
+      showAppAlert('Account connection required', 'Connect a Supabase account before changing its password.');
       return;
     }
     const validationError = validatePasswordChange(newPassword, confirmPassword);
     if (validationError) {
-      Alert.alert('Check your new password', validationError);
+      showAppAlert('Check your new password', validationError);
       return;
     }
     setSavingPassword(true);
@@ -73,9 +74,9 @@ export default function PrivacySecurityScreen({ navigation }) {
       await changePassword(newPassword);
       setNewPassword('');
       setConfirmPassword('');
-      Alert.alert('Password updated', 'Your account password has been changed.');
+      showAppAlert('Password updated', 'Your account password has been changed.');
     } catch (err) {
-      Alert.alert("Couldn't change password", err.message || 'Please sign in again and retry.');
+      showAppAlert("Couldn't change password", err.message || 'Please sign in again and retry.');
     } finally {
       setSavingPassword(false);
     }
@@ -83,18 +84,18 @@ export default function PrivacySecurityScreen({ navigation }) {
 
   async function handleDeleteAccount() {
     if (!SUPABASE_ENABLED) {
-      Alert.alert('Live account required', 'Account deletion is unavailable in demo mode. No account data has been deleted.');
+      showAppAlert('Live account required', 'Account deletion is unavailable in demo mode. No account data has been deleted.');
       return;
     }
     if (deleteConfirmation !== 'DELETE') {
-      Alert.alert('Confirm account deletion', 'Type DELETE exactly to confirm this permanent action.');
+      showAppAlert('Confirm account deletion', 'Type DELETE exactly to confirm this permanent action.');
       return;
     }
     if (!deletePassword) {
-      Alert.alert('Verify your password', 'Enter your current password to confirm account ownership.');
+      showAppAlert('Verify your password', 'Enter your current password to confirm account ownership.');
       return;
     }
-    Alert.alert(
+    showAppAlert(
       'Permanently delete your account?',
       'Your profile, direct chats, and your messages will be deleted. Group conversations remain for other members, but your account and membership will be removed. This cannot be undone.',
       [
@@ -106,11 +107,11 @@ export default function PrivacySecurityScreen({ navigation }) {
             setDeletingAccount(true);
             try {
               await deleteAccount(deletePassword);
-              Alert.alert('Account deleted', 'Your ZannyChat account has been deleted.', [
+              showAppAlert('Account deleted', 'Your ZannyChat account has been deleted.', [
                 { text: 'Continue', onPress: () => navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] }) },
               ]);
             } catch (error) {
-              Alert.alert("Couldn't delete account", error.message || 'Please try again.');
+              showAppAlert("Couldn't delete account", error.message || 'Please try again.');
             } finally {
               setDeletingAccount(false);
               setDeletePassword('');
