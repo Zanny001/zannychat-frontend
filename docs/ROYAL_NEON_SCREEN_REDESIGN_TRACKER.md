@@ -144,3 +144,5 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 - Chats/Main and the remaining route inventory are still incomplete pending visual, interaction, accessibility and regression validation. The source-level audit must not be treated as device-level sign-off.
 
 - NewChat contact results now use moderate divider-based rows instead of a glass card for every contact. The favorite action is a separate sibling control rather than a nested pressable, preventing the star action from unintentionally triggering the row's open-chat/share action. A dedicated regression contract was added.
+
+- Chats filter chips now enforce a 44-point minimum touch height and centered content; a contract protects the target and selected-state accessibility.
