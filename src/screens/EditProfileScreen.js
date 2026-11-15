@@ -219,7 +219,7 @@ export default function EditProfileScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Edit profile" onBack={() => navigation.goBack()} right={
-        <TouchableOpacity onPress={handleSave} disabled={saving || uploadingPhoto || uploadingCover} accessibilityRole="button" accessibilityLabel="Save profile" accessibilityState={{ disabled: saving || uploadingPhoto || uploadingCover, busy: saving }}>
+        <TouchableOpacity onPress={handleSave} disabled={saving || uploadingPhoto || uploadingCover} accessibilityRole="button" accessibilityLabel="Save profile" accessibilityState={{ disabled: saving || uploadingPhoto || uploadingCover, busy: saving }} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.sm }}>
           {saving ? <ActivityIndicator size="small" color={colors.primary} /> : <Text style={[typography.bodyStrong, { color: colors.primary }]}>Save</Text>}
         </TouchableOpacity>
       } />
@@ -254,7 +254,7 @@ export default function EditProfileScreen({ navigation }) {
                 <View style={{ height: 6, width: `${profileCompletion}%`, backgroundColor: colors.primary, borderRadius: 4 }} />
               </View>
             </View>
-            <TouchableOpacity onPress={() => setPreviewVisible(true)} accessibilityRole="button" accessibilityLabel="Preview your profile" style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: radii.md, backgroundColor: colors.surfaceElevated }}>
+            <TouchableOpacity onPress={() => setPreviewVisible(true)} accessibilityRole="button" accessibilityLabel="Preview your profile" style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: radii.md, backgroundColor: colors.surfaceElevated }}>
               <Ionicons name="eye-outline" size={18} color={colors.primary} />
               <Text style={[typography.bodyStrong, { color: colors.primary }]}>Preview your profile</Text>
             </TouchableOpacity>
@@ -293,7 +293,7 @@ export default function EditProfileScreen({ navigation }) {
       <Modal visible={previewVisible} transparent animationType="fade" onRequestClose={() => setPreviewVisible(false)}>
         <View style={styles.previewBackdrop}>
           <View style={[styles.previewCard, { backgroundColor: colors.surface, borderRadius: radii.xl }]}>
-            <TouchableOpacity onPress={() => setPreviewVisible(false)} style={{ alignSelf: 'flex-end', padding: 8 }} accessibilityRole="button" accessibilityLabel="Close profile preview">
+            <TouchableOpacity onPress={() => setPreviewVisible(false)} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }} accessibilityRole="button" accessibilityLabel="Close profile preview">
               <Ionicons name="close" size={22} color={colors.textSecondary} />
             </TouchableOpacity>
             {details.cover_image_url ? <Image source={{ uri: details.cover_image_url }} style={styles.previewCover} resizeMode="cover" /> : null}

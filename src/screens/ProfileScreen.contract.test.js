@@ -19,9 +19,9 @@ test('profile failures have a clear retry path and loading feedback', () => {
   assert.ok(profile.includes('setReloadKey((value) => value + 1)'));
 });
 
-test('profile actions use accessible Pressable controls with 44pt targets', () => {
+test('profile actions use accessible Pressable controls with 48pt targets', () => {
   assert.ok(profile.includes('Pressable'));
   assert.equal(profile.includes('TouchableOpacity'), false);
   assert.ok(profile.includes('accessibilityHint='));
-  assert.ok(profile.includes('minHeight: 44'));
+  assert.ok(profile.includes('minHeight: 48'));
 });
