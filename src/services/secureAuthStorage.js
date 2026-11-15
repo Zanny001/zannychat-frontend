@@ -118,8 +118,7 @@ export function createSecureAuthStorage({
     return { raw, manifest: parseManifest(raw) };
   }
 
-  return {
-    async getItem(key) {
+  async function getItem(key) {
       if (typeof key !== 'string' || !key) throw new TypeError('Auth storage key is required.');
       let stored;
       try {
@@ -139,16 +138,16 @@ export function createSecureAuthStorage({
       if (legacyValue === null || legacyValue === undefined) return null;
 
       try {
-        await this.setItem(key, legacyValue);
-        const migrated = await this.getItem(key);
+        await setItem(key, legacyValue);
+        const migrated = await getItem(key);
         if (migrated === legacyValue) return migrated;
       } catch {
         // Do not discard the only surviving copy of a user's current session.
       }
       return legacyValue;
-    },
+    }
 
-    async setItem(key, value) {
+  async function setItem(key, value) {
       if (typeof key !== 'string' || !key || typeof value !== 'string') {
         throw new TypeError('Auth storage requires a key and string value.');
       }
@@ -179,17 +178,18 @@ export function createSecureAuthStorage({
         // SecureStore is now authoritative; a stale legacy copy is not read while a manifest exists.
       }
       if (previous.manifest) await deleteGeneration(secureStore, key, previous.manifest);
-    },
+    }
 
-    async removeItem(key) {
+  async function removeItem(key) {
       if (typeof key !== 'string' || !key) throw new TypeError('Auth storage key is required.');
       // Remove the legacy copy first so a failed secure delete cannot resurrect a signed-out session.
       await legacyStorage.removeItem(key);
       const stored = await readManifest(key);
       await secureStore.deleteItemAsync(makeManifestKey(key));
       if (stored.manifest) await deleteGeneration(secureStore, key, stored.manifest);
-    },
-  };
+    }
+
+  return { getItem, setItem, removeItem };
 }
 
 export const secureAuthStorageLimits = Object.freeze({
