@@ -305,3 +305,21 @@ The source scan covered these families:
 - All 46 registered screen modules have now received at least a first-pass source review, including the additional groups above and the previously reviewed core Chats/Profile/Settings/Appearance/Status areas.
 - This closes the initial source-inventory pass only. It does **not** close per-screen modal/action-sheet/empty/loading/error state testing, responsive screenshots, keyboard/focus traversal, screen-reader verification, reduced-motion verification, real-device call/LIVE/QR/push testing, or backend schema/RLS acceptance.
 - No Supabase migration, production deploy, or merge was performed in this checkpoint.
+
+
+## Shared chat composer refinement — 2026-11-16
+
+### Implemented
+- Updated `src/components/InputBar.js` to replace the oversized pill-shaped message field with a moderately rounded (20px), solid raised-surface input container, stronger theme-derived border, 52px minimum container height and 14px horizontal inset. This addresses the prior visual feedback that the composer container looked unattractive while improving surface definition and legibility.
+- Preserved the existing attachment, emoji, multiline text, voice recording, reply, edit, local draft restore/save, and failed-send text-retention behaviour. The composer remains horizontally flexible for narrow screens; the 48px action controls remain unchanged.
+- Expanded `PremiumDesignSystem.contract.test.js` with a composer contract checking the surface treatment, minimum height, accessible input label, and core draft/reply/edit/recording code paths.
+
+### Verification
+- The GitHub Contents API confirms the updated source and contract test were committed to the PR branch. This environment has not run the Node test suite locally. No new GitHub Actions run was returned for the latest commit at the time of this checkpoint.
+- Vercel continues to report build-rate-limit failure. A successful production or preview deployment is not established.
+
+### Audit bookkeeping
+- Confirmed the screen inventory table has no remaining rows marked `Pending source review`. All 46 registered screen modules have at least a first-pass source review logged.
+- This is not the end of acceptance: all 46 still require responsive screenshot review, keyboard and focus traversal, modal/sheet and state coverage, accessibility output, reduced-motion checks and physical-device verification.
+- Notification push preference remains a follow-up: the local preference can be enabled while registration returns null (for example, permission denied, simulator, or missing EAS project). The UI should distinguish desired preference from successfully registered device token state. No notification-service behavior was changed in this pass.
+- The calling CI job retry was cancelled again during `npm ci`; no complete calling workflow pass is available. Treat it as an unresolved CI blocker.
