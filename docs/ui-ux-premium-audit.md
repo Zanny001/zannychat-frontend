@@ -115,6 +115,7 @@ The supplied audit names 46 screens. Status below distinguishes design-reference
 - Standardized shared Header action spacing and marked the screen title as an accessibility header.
 - Fixed a concrete LIVE usability defect: creator/moderator action controls previously shared one crowded row with the LIVE badge and title, which could overlap on narrow phones. The title/leave controls now occupy a compact first row and management actions use a horizontally scrollable, labeled 44px+ action rail. The stage reserves space for this rail while retaining bounded 16:9 video tiles.
 - Added `LiveStreamHeaderLayout.contract.test.js` to guard the horizontal action rail, accessible controls, touch targets and bounded video aspect ratio.
+- Replaced fixed chat image/video preview dimensions with viewport-aware bounds: square image previews and 16:9 video previews scale for narrow phones and cap at moderate desktop widths. Added unit tests for 280–430px phones, missing width and large viewports.
 - Expanded the contrast contract to exercise every selectable mood in dark/light appearance and normal/high-contrast accessibility modes, checking text on background, raised surface and alternate surface, plus primary/accent labels and outgoing bubbles.
 
 ## Handoff checkpoint — 2026-11-15
@@ -126,7 +127,7 @@ The supplied audit names 46 screens. Status below distinguishes design-reference
 - The source review in this first pass covers the theme provider/tokens, typography, shared glass/header/chat-row components, navigation, Chats, Chat, Profile, Settings, Chat Appearance and Status Updates.
 - The supplied HTML's sample people, counters, timestamps, and fake activity are treated as mockup-only and must not replace live service data.
 - The premium contrast contract now covers all selectable palettes, light/dark modes and high-contrast modes. Commit: `35857cec5420d0fef8617aa66c608a8b4f98395a`.
-- Shared component commits: GlassCard `e253394dd5fe48c7689ffbff7109a1253eae16dd`; Header `59ff049eea61cab959b18f78ebd7e1e851043033`. LIVE header fix `2453b235852cac805b44366ee7340c7ae7ea5696`; layout contract `183f49f6c7261016739922389d00cb32cd805321`.
+- Shared component commits: GlassCard `e253394dd5fe48c7689ffbff7109a1253eae16dd`; Header `59ff049eea61cab959b18f78ebd7e1e851043033`. LIVE header fix `2453b235852cac805b44366ee7340c7ae7ea5696`; layout contract `183f49f6c7261016739922389d00cb32cd805321`. Responsive media sizing `18aa75536b85827ca81ad13d80b2e19edc5943bd`; sizing utility `d78862dafb3008531c6b75e250e31cfb849a1dee`; unit tests `aa5e87b3b40d53464c19832074550af5ea3493f8`.
 - Previous PR #85 baseline workflows passed: Advanced calling client checks and Premium status and LIVE quality. Netlify preview check and Vercel check were successful for commit `428c11c04c29371886e98882dc76f2fc8facd03e`. The new expanded test commit still requires fresh CI confirmation.
 
 ### Next exact steps
