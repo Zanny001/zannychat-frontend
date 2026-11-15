@@ -17,7 +17,8 @@
     "test:integrity": "python3 -m unittest discover -s tests -p \"test_*.py\"",
     "test:call-recovery": "node --test src/screens/callNetworkRecovery.contract.test.cjs",
     "test:native-call-receiver": "node --test plugins/callEndedReceiver.test.cjs",
-    "test:phase6-release-quality": "node --test tests/phase6ReleaseQuality.test.cjs"
+    "test:phase6-release-quality": "node --test tests/phase6ReleaseQuality.test.cjs",
+    "build:web": "expo export --platform web"
   },
   "dependencies": {
     "@config-plugins/react-native-webrtc": "15.0.2",
