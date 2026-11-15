@@ -14,8 +14,11 @@ export function normalizePendingAuthRoute(route) {
   const params = {};
   for (const key of ALLOWED_PARAMS[route.name]) {
     const value = route.params?.[key];
-    if (typeof value === 'string' && value.length > 0 && value.length <= 4096) params[key] = value;
-    else if (typeof value === 'boolean' && key === 'creatorMode') params[key] = value;
+    if (typeof value === 'string' && value.length > 0 && value.length <= 4096) {
+      params[key] = key === 'creatorMode' && (value === 'true' || value === 'false') ? value === 'true' : value;
+    } else if (typeof value === 'boolean' && key === 'creatorMode') {
+      params[key] = value;
+    }
   }
   const requiredParam = {
     QRContact: 'userId',
