@@ -9,7 +9,7 @@
 - Scope priority: visual interfaces, moderate container proportions, typography, density, accessibility, responsive behavior and premium consistency.
 - This is an in-progress source audit across 49 screen implementation files / approximately 45 navigation experiences. It is not a claim that all screens have received visual/device sign-off.
 - The audit is being delivered in isolated, draft pull requests (#76–#83) so changes remain reviewable and no unverified UI work is merged or deployed.
-- Current CI status: the premium UI/unit workflow has passed for PRs #76–#82 after correcting stale 44-point assertions; the separate native calling client workflow is still running. PR #83 validation is in progress.
+- Current CI status: the premium UI/unit workflow is green on PRs #77–#81 and #83. PRs #76 and #82 are rerunning after final composer/settings refinements. The separate native calling client workflow is still running across the open branches.
 
 ## Confirmed product foundation
 
@@ -31,7 +31,7 @@ The inbox conversation row already uses a compact, accessible `Pressable` rather
 | Composer controls | Send control was 38×38 while the input field had no matching 48-point minimum. The controls looked visually underweighted relative to the composer. | Medium | Balanced to a 48×48 send control and 48-point input surface; existing hit-slop retained. |
 | Composer text | The multiline field used a 120-point parent maximum but no explicit text vertical alignment and could grow too tall relative to the row. | Low | Text field now caps at 96 points and vertically centers on Android. |
 | Inbox density | Conversation rows are already compact and avoid nested glass cards. | Positive | Preserve; do not reintroduce card-per-row styling. |
-| Shared header | Header title already has flexible width and one-line truncation; back control is at least 44 points. | Positive | Preserve existing responsive title behavior. |
+| Shared header | Header title already has flexible width and one-line truncation; back control is at least 48 points. | Positive | Preserve existing responsive title behavior. |
 | Theme foundation | Semantic theme tokens and dynamic typography exist, but theme-hook presence alone does not prove correct visual contrast, spacing or state design on each screen. | Medium | Expand screen-by-screen visual and interaction validation; do not replace the theme system. |
 | Shared components | Some high-traffic screens still use legacy `TouchableOpacity` controls and screen-specific styling. A mass rewrite would risk behavior regressions. | Medium | Migrate only where a verified interaction/accessibility or visual issue exists. |
 | Device validation | Source-level contracts cannot prove Android 10 rendering performance, keyboard behavior, actual safe-area spacing, tablet layouts or browser responsive appearance. | High | Keep physical-device and browser viewport QA open; do not claim release-ready based on source inspection. |
@@ -39,10 +39,10 @@ The inbox conversation row already uses a compact, accessible `Pressable` rather
 ## Changes made on this branch
 
 1. `src/components/InputBar.js`
-   - Raised the composer input field to a 44-point minimum.
+   - Raised the composer input field to a 48-point minimum.
    - Replaced the low-contrast fill with a more legible elevated theme surface.
    - Added a restrained primary-colour outline so the typing area is visually distinct in both themes.
-   - Balanced the send button to 42×42 while retaining its circular silhouette.
+   - Balanced the send button to 48×48 while retaining its circular silhouette.
    - Capped multiline text growth at 96 points and set Android vertical alignment.
    - Kept all theme values dynamic; no hard-coded theme colour was introduced.
 
@@ -77,20 +77,20 @@ The inbox conversation row already uses a compact, accessible `Pressable` rather
 
 ## Additional verified issue and remediation — Chats filters
 
-- The Chats screen's All / Unread / Favorites / Groups / Archived chips had no explicit minimum height. Their content plus vertical padding could leave the interactive target below the 44-point baseline.
-- Raised the shared filter-pill container to a 44-point minimum and centered its label without increasing horizontal density.
+- The Chats screen's All / Unread / Favorites / Groups / Archived chips had no explicit minimum height. Their content plus vertical padding could leave the interactive target below the 48-point mobile baseline.
+- Raised the shared filter-pill container to a 48-point minimum and centered its label without increasing horizontal density.
 - Added `src/screens/ChatListScreen.contract.test.js` to protect touch height and selected-state accessibility.
 
 ## Additional verified issues and remediation — Chats header and search
 
 - The camera, drafts and new-chat header controls were 40×40, 40×40 and 34×34 respectively. These are visually compact but undersized as standalone touch targets.
-- Standardized the three controls to 44×44, increased the search surface to a balanced 48-point minimum, and gave the Moments “See all” action a 48-point interaction height.
+- Standardized the three controls to 48×48, increased the search surface to a balanced 48-point minimum, and gave the Moments “See all” action a 48-point interaction height.
 - Extended the Chats layout contract to protect these dimensions.
 
 ## Additional responsive finding and remediation — New Chat quick actions
 
 - The Find friends, Scan QR and New group shortcuts shared a fixed, non-wrapping horizontal row. Their combined intrinsic widths could exceed the available content width on smaller phones.
-- Enabled wrapping and gave each action a consistent flexible basis, with a 44-point minimum content height. This preserves the quick-action hierarchy while allowing the third action to move to a second row when necessary.
+- Enabled wrapping and gave each action a consistent flexible basis, with a 48-point minimum content height. This preserves the quick-action hierarchy while allowing the third action to move to a second row when necessary.
 - Added a narrow-screen layout contract.
 
 ## Expanded screen audit — messaging collections and shared media
