@@ -22,6 +22,9 @@ test('profile edits do not request a private full-row SELECT after UPDATE', () =
   const body = api.slice(start, end);
   assert.ok(body.includes('const savedProfile = await getCurrentUser()'));
   assert.ok(body.includes('savedProfile?.username'));
+  assert.ok(body.includes('savedProfile?.name'));
+  assert.ok(body.includes('savedProfile?.status'));
+  assert.ok(body.includes('profileMismatch'));
   assert.ok(body.includes('could not be confirmed as saved'));
   assert.equal(body.includes('.select('), false);
 });
