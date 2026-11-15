@@ -219,3 +219,33 @@ The source scan covered these families:
 - Full per-screen source, visual and interaction audit; modal, drawer, empty, loading and error states.
 - Physical-device and keyboard/accessibility acceptance.
 - Production deployment and production-domain verification.
+
+
+## Calls and LIVE source-review checkpoint — 2026-11-15
+
+### Screens/source modules reviewed in this pass
+- `NewChatScreen.js`: reviewed member search debounce/cancellation, public-profile search, favorites persistence, presence filtering, retry/error handling, conversation creation, call-start handoff, call-history redial target handling, and contact sharing.
+- `CallHistoryScreen.js`: reviewed quick audio/video/favorites actions, per-user call-history deletion semantics, 1:1 redial via New Chat, and group redial via GroupCall. The group redial path starts a fresh room from the conversation ID; it does not reuse a stale room token.
+- `CallScreen.js`: reviewed native audio-session lifecycle, direct-call state validation, remote track handling, conference promotion, cleanup and before-remove end-state persistence. Full signalling, network-recovery and runtime verification remain separate gates.
+- `GroupCallScreen.js`: reviewed room join/create selection, participant state, heartbeat, reconnect/disconnect state, mute/camera controls, audio output selection, invitation capability gating and leave cleanup.
+- `IncomingCallScreen.js` and `OutgoingCallScreen.js`: reviewed expiry timers, tone/vibration cleanup, answer/decline/cancel paths, native-call handoff and terminal-state navigation.
+- `LiveHubScreen.js`: reviewed discovery/following/invitations, private invite validation, camera/microphone permission request from the Go LIVE action, stream creation, stable stream-ID navigation, replay polling/deletion and notification handoff.
+- `LiveReplayScreen.js`: reviewed authenticated playback URL retrieval, player cleanup, retry, bounded 16:9 presentation and creator-only delete affordance.
+- `LiveCreatorProfileScreen.js`: reviewed separate creator identity, backend-sourced metrics, broadcast/replay collections, and delete flows for ended broadcasts and individual replays.
+
+### Findings / follow-up
+- No confirmed source-level blocker was identified in these paths from this static review alone. The existing call and LIVE flows contain explicit loading/error/expiry/cleanup paths and should be preserved during visual changes.
+- Group call history redial is intentionally conversation-based and requests a new group room; direct-call redial routes through New Chat with a stable target user ID.
+- Creator broadcast deletion and replay deletion are distinct actions. The creator profile removes associated replay rows from its local summary after a broadcast delete; the server remains authoritative for file cleanup and access control.
+- These are source-review observations, not proof of successful camera/microphone permissions, media playback, LiveKit connectivity, call audio, notification handoff or physical-device behaviour.
+
+### Latest CI disposition
+- Workflow run 824 (`Advanced calling client checks`) was subsequently cancelled during `Assemble Android compile-only APK (placeholder Firebase)`. The preceding npm audit, Expo config/prebuild and Android Kotlin compile steps succeeded. APK assembly and all subsequent iOS, export and test steps were cancelled/skipped. Treat this workflow as **not passed**.
+- Workflow run 634 (`Premium status and LIVE quality`) remains successful for commit `1436467795eae3093c741668e3ca4ff15a17d8a0`.
+- The documentation-only checkpoint commit `e5fcdb9c1d98c1a4ebd12e31d9f74a82d7d43d5b` reports Vercel build-rate-limit failure and a pending Netlify deploy preview at the time checked. Do not interpret the previous commit's green preview checks as checks on this latest commit.
+
+### Remaining
+- Continue source review for the other registered screens and all secondary states; do not mark all 46 screens audited yet.
+- Re-run or repair the cancelled calling workflow and complete all its remaining checks.
+- Complete visual/browser/device QA and accessibility/keyboard acceptance.
+- Keep PR #85 draft and unmerged; no production deploy or Supabase mutation is part of this pass.
