@@ -36,6 +36,7 @@ test('save cannot run while profile media is uploading and username conflicts ar
 
 test('profile API persists username in profiles and optional details in the owner profile_details row', () => {
   assert.match(api, /\.from\('profiles'\)[\s\S]*?\.update\([\s\S]*?username: normalizedUsername/);
-  assert.match(api, /\.from\('profile_details'\)[\s\S]*?\.upsert\(row, \{ onConflict: 'user_id' \}\)/);
+  assert.match(api, /\.from\('profile_details'\)[\s\S]*?\.upsert\(rowToSave, { onConflict: 'user_id' }\)/);
+  assert.match(api, /rpc\('update_my_profile_visibility'/);
   assert.match(api, /grant|profile_details/);
 });

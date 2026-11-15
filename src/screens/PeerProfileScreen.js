@@ -9,7 +9,7 @@ import { hexToRgba } from '../utils/color';
 import { getSafeProfilePhotoUrl } from '../utils/profilePhoto';
 import { getProfilePresence } from '../utils/profilePresence';
 import { getProfileDetails } from '../utils/profileDetails';
-import { getPublicProfileDetails, getPrivateProfileCoverUrl } from '../services/api';
+import { getPublicProfileDetails, getPrivateProfileCoverUrl, resolveProfileAvatarUrls } from '../services/api';
 import { backendFetch } from '../services/backendClient';
 import LiveImpactCard from '../components/LiveImpactCard';
 
@@ -48,6 +48,31 @@ export default function PeerProfileScreen({ route, navigation }) {
   const [sharedDetails, setSharedDetails] = useState({});
   const [coverUrl, setCoverUrl] = useState(null);
   const [liveImpact, setLiveImpact] = useState(null);
+  const [resolvedAvatarUrl, setResolvedAvatarUrl] = useState(null);
+  const [avatarResolutionComplete, setAvatarResolutionComplete] = useState(false);
+  useEffect(() => {
+    const userId = participant.id || participant.user_id;
+    if (!userId) {
+      setResolvedAvatarUrl(null);
+      setAvatarResolutionComplete(true);
+      return undefined;
+    }
+    let active = true;
+    setResolvedAvatarUrl(null);
+    setAvatarResolutionComplete(false);
+    resolveProfileAvatarUrls([{ ...participant, id: userId }])
+      .then(([resolved]) => {
+        if (!active) return;
+        setResolvedAvatarUrl(resolved?.avatarUrl || resolved?.avatar_url || null);
+      })
+      .catch(() => {
+        if (active) setResolvedAvatarUrl(null);
+      })
+      .finally(() => {
+        if (active) setAvatarResolutionComplete(true);
+      });
+    return () => { active = false; };
+  }, [participant.id, participant.user_id]);
   useEffect(() => {
     const userId = participant.id || participant.user_id;
     if (!userId) return undefined;
@@ -92,7 +117,7 @@ export default function PeerProfileScreen({ route, navigation }) {
   const joinedLabel = joinedDate && !Number.isNaN(joinedDate.getTime()) ? joinedDate.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : null;
   const presence = resolvedPresence.presence;
   const username = participant.username ? `@${String(participant.username).replace(/^@/, '')}` : null;
-  const avatarUrl = getSafeProfilePhotoUrl(participant.avatarUrl || participant.avatar_url);
+  const avatarUrl = avatarResolutionComplete ? getSafeProfilePhotoUrl(resolvedAvatarUrl) : null;
   const extraDetails = getProfileDetails({ ...participant, ...sharedDetails });
 
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>

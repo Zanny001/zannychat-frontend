@@ -273,7 +273,8 @@ export async function getCurrentUser() {
   if (error) throw error;
   const profile = Array.isArray(data) ? data[0] : data;
   if (!profile) throw new Error('Your profile is still being set up. Please try again.');
-  return normalizeProfile(profile);
+  const [resolved] = await resolveProfileAvatarUrls([profile]);
+  return normalizeProfile(resolved || profile);
 }
 
 // Edits made in mock mode persist on mockUser for the session but
@@ -338,6 +339,122 @@ export async function getMyProfileDetails() {
   return details;
 }
 
+function getLegacyAvatarStoragePath(avatarUrl, userId) {
+  if (typeof avatarUrl !== 'string' || !avatarUrl || !userId) return null;
+  try {
+    const parsed = new URL(avatarUrl);
+    const marker = '/storage/v1/object/public/avatars/';
+    const markerIndex = parsed.pathname.indexOf(marker);
+    if (markerIndex < 0) return null;
+    const objectPath = decodeURIComponent(parsed.pathname.slice(markerIndex + marker.length));
+    if (!objectPath.startsWith(`${userId}/`) || objectPath.includes('..') || objectPath.includes('\\')) return null;
+    return objectPath;
+  } catch {
+    return null;
+  }
+}
+
+async function getOwnProfileRow() {
+  const { data, error } = await supabase.rpc('get_my_profile');
+  if (error) throw error;
+  return Array.isArray(data) ? data[0] || null : data || null;
+}
+
+async function ensurePrivateAvatarCopy(userId, avatarUrl, currentAvatarPath) {
+  if (typeof currentAvatarPath === 'string'
+      && currentAvatarPath.startsWith(`${userId}/`)
+      && !currentAvatarPath.includes('..')) {
+    const { data: existingPrivateImage, error: privateReadError } = await supabase.storage.from('private-avatars').download(currentAvatarPath);
+    if (!privateReadError && existingPrivateImage) return currentAvatarPath;
+  }
+  const legacyPath = getLegacyAvatarStoragePath(avatarUrl, userId);
+  if (!legacyPath) {
+    if (avatarUrl) throw new Error('Your existing profile photo could not be secured. Upload a new photo before changing its visibility.');
+    return null;
+  }
+  const { data: image, error: downloadError } = await supabase.storage.from('avatars').download(legacyPath);
+  if (downloadError || !image) throw downloadError || new Error('Could not prepare your existing profile photo for private access.');
+  const { error: uploadError } = await supabase.storage.from('private-avatars').upload(legacyPath, image, {
+    upsert: true,
+    contentType: image.type || 'image/jpeg',
+    cacheControl: '0',
+  });
+  if (uploadError) throw uploadError;
+  const { error: detailsError } = await supabase.from('profile_details')
+    .upsert({ user_id: userId, avatar_path: legacyPath }, { onConflict: 'user_id' });
+  if (detailsError) throw detailsError;
+  return legacyPath;
+}
+
+async function removeLegacyPublicAvatar(userId, avatarUrl) {
+  const bucket = supabase.storage.from('avatars');
+  const paths = new Set();
+  const legacyPath = getLegacyAvatarStoragePath(avatarUrl, userId);
+  if (legacyPath) paths.add(legacyPath);
+
+  // Remove every legacy object owned by this profile, not only the current
+  // pointer. Older uploads could otherwise remain publicly reachable.
+  let offset = 0;
+  while (true) {
+    const { data, error } = await bucket.list(userId, { limit: 1000, offset });
+    if (error) throw error;
+    const entries = Array.isArray(data) ? data : [];
+    for (const entry of entries) {
+      if (entry?.id && typeof entry.name === 'string' && entry.name) {
+        paths.add(`${userId}/${entry.name}`);
+      }
+    }
+    if (entries.length < 1000) break;
+    offset += entries.length;
+  }
+
+  const allPaths = [...paths];
+  for (let start = 0; start < allPaths.length; start += 1000) {
+    const { error } = await bucket.remove(allPaths.slice(start, start + 1000));
+    if (error) throw error;
+  }
+  const { error } = await supabase.from('profiles').update({ avatar_url: null }).eq('id', userId);
+  if (error) throw error;
+}
+
+async function ensureLegacyPublicAvatar(userId, avatarUrl, privatePath) {
+  const existingPath = getLegacyAvatarStoragePath(avatarUrl, userId);
+  if (existingPath) {
+    const { data: existingImage, error: existingError } = await supabase.storage.from('avatars').download(existingPath);
+    if (!existingError && existingImage) return avatarUrl;
+  }
+  if (!privatePath || !privatePath.startsWith(`${userId}/`) || privatePath.includes('..')) return null;
+  const { data: image, error: downloadError } = await supabase.storage.from('private-avatars').download(privatePath);
+  if (downloadError || !image) throw downloadError || new Error('Could not prepare your profile photo for public visibility.');
+  const { error: uploadError } = await supabase.storage.from('avatars').upload(privatePath, image, {
+    upsert: true,
+    contentType: image.type || 'image/jpeg',
+  });
+  if (uploadError) throw uploadError;
+  const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(privatePath);
+  const publicUrl = publicUrlData?.publicUrl || null;
+  if (!publicUrl) throw new Error('Could not create the public profile photo URL.');
+  const { error: updateError } = await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', userId);
+  if (updateError) throw updateError;
+  return publicUrl;
+}
+
+async function syncAvatarVisibility(userId, nextProfileVisibility, nextPhotoVisibility) {
+  const [profile, detailsResult] = await Promise.all([
+    getOwnProfileRow(),
+    supabase.from('profile_details').select('avatar_path').eq('user_id', userId).maybeSingle(),
+  ]);
+  if (detailsResult.error) throw detailsResult.error;
+  const currentAvatarPath = detailsResult.data?.avatar_path || null;
+  const needsPrivate = nextProfileVisibility !== 'everyone' || nextPhotoVisibility !== 'everyone';
+  if (needsPrivate) {
+    await ensurePrivateAvatarCopy(userId, profile?.avatar_url, currentAvatarPath);
+    await removeLegacyPublicAvatar(userId, profile?.avatar_url);
+    return;
+  }
+  await ensureLegacyPublicAvatar(userId, profile?.avatar_url, currentAvatarPath);
+}
+
 export async function updateMyProfileDetails(details = {}) {
   if (!SUPABASE_ENABLED) return { ...PROFILE_DETAIL_DEFAULTS, ...details };
   const { data: authData } = await supabase.auth.getUser();
@@ -354,9 +471,58 @@ export async function updateMyProfileDetails(details = {}) {
     row.website = parsed.href;
   }
   if (row.birthday === '') row.birthday = null;
-  const { data, error } = await supabase.from('profile_details').upsert(row, { onConflict: 'user_id' }).select('*').single();
+  for (const key of ['profile_visibility', 'photo_visibility']) {
+    if (row[key] !== undefined && !['everyone', 'contacts', 'nobody'].includes(row[key])) {
+      throw new Error('Choose a valid profile visibility setting.');
+    }
+  }
+  const { data: currentDetails, error: currentDetailsError } = await supabase
+    .from('profile_details')
+    .select('profile_visibility,photo_visibility')
+    .eq('user_id', authData.user.id)
+    .maybeSingle();
+  if (currentDetailsError) throw currentDetailsError;
+  const currentProfileVisibility = currentDetails?.profile_visibility ?? 'everyone';
+  const currentPhotoVisibility = currentDetails?.photo_visibility ?? 'everyone';
+  const nextProfileVisibility = row.profile_visibility ?? currentProfileVisibility;
+  const nextPhotoVisibility = row.photo_visibility ?? currentPhotoVisibility;
+  const visibilityChanged = nextProfileVisibility !== currentProfileVisibility
+    || nextPhotoVisibility !== currentPhotoVisibility;
+  const needsPrivateAvatar = nextProfileVisibility !== 'everyone' || nextPhotoVisibility !== 'everyone';
+
+  // Public storage objects are removed before a private transition. The
+  // database RPC then verifies the private copy and blocks legacy direct writes.
+  if (needsPrivateAvatar) {
+    await syncAvatarVisibility(authData.user.id, nextProfileVisibility, nextPhotoVisibility);
+  }
+
+  const rowToSave = { ...row };
+  if (visibilityChanged) {
+    delete rowToSave.profile_visibility;
+    delete rowToSave.photo_visibility;
+  }
+  const { data, error } = await supabase.from('profile_details').upsert(rowToSave, { onConflict: 'user_id' }).select('*').single();
   if (error) throw error;
-  const saved = { ...PROFILE_DETAIL_DEFAULTS, ...data };
+
+  if (visibilityChanged) {
+    const { error: visibilityError } = await supabase.rpc('update_my_profile_visibility', {
+      p_profile_visibility: nextProfileVisibility,
+      p_photo_visibility: nextPhotoVisibility,
+    });
+    if (visibilityError) throw visibilityError;
+  }
+
+  // For a public transition, make the preference public before creating the
+  // public object. A failed copy leaves no public URL or object to expose.
+  if (!needsPrivateAvatar) {
+    await syncAvatarVisibility(authData.user.id, nextProfileVisibility, nextPhotoVisibility);
+  }
+  const saved = {
+    ...PROFILE_DETAIL_DEFAULTS,
+    ...data,
+    profile_visibility: nextProfileVisibility,
+    photo_visibility: nextPhotoVisibility,
+  };
   saved.cover_image_url = saved.cover_path
     ? await getPrivateProfileCoverUrl(authData.user.id)
     : null;
@@ -378,6 +544,16 @@ async function readUploadArrayBuffer(source) {
   return response.arrayBuffer();
 }
 
+const MAX_PROFILE_MEDIA_BYTES = 10 * 1024 * 1024;
+
+function assertProfileMediaSize(arrayBuffer) {
+  if (arrayBuffer?.byteLength > MAX_PROFILE_MEDIA_BYTES) {
+    const error = new Error('Profile pictures and covers must be 10 MiB or smaller.');
+    error.code = 'FILE_TOO_LARGE';
+    throw error;
+  }
+}
+
 export async function uploadProfileCover(localUri, mimeType = 'image/jpeg') {
   if (!SUPABASE_ENABLED) return { path: null, url: localUri };
   const { data: authData } = await supabase.auth.getUser();
@@ -386,6 +562,7 @@ export async function uploadProfileCover(localUri, mimeType = 'image/jpeg') {
   const extension = (mimeType.split('/')[1] || 'jpg').replace(/[^a-z0-9]/gi, '').slice(0, 8) || 'jpg';
   const objectPath = `${userId}/cover-${Date.now()}.${extension}`;
   const arrayBuffer = await readUploadArrayBuffer(localUri);
+  assertProfileMediaSize(arrayBuffer);
   const { error: uploadError } = await supabase.storage
     .from('private-avatars')
     .upload(objectPath, arrayBuffer, { contentType: mimeType, upsert: true });
@@ -403,8 +580,6 @@ export async function uploadProfileCover(localUri, mimeType = 'image/jpeg') {
 // screens are the only place that import them.
 export async function uploadAvatar(localUri, mimeType = 'image/jpeg') {
   if (!SUPABASE_ENABLED) {
-    // No real storage in mock mode — just point the mock user at the
-    // local file URI directly, which <Image> can render fine on-device.
     mockUser.avatarUrl = localUri;
     return localUri;
   }
@@ -412,34 +587,44 @@ export async function uploadAvatar(localUri, mimeType = 'image/jpeg') {
   const { data: authData } = await supabase.auth.getUser();
   const userId = authData?.user?.id;
   if (!userId) throw new Error('Not signed in');
-
-  const extension = mimeType.split('/')[1] || 'jpg';
+  const safeMimeType = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'].includes(String(mimeType).toLowerCase())
+    ? String(mimeType).toLowerCase()
+    : 'image/jpeg';
+  const extension = ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic', 'image/heif': 'heif' })[safeMimeType];
   const path = `${userId}/avatar-${Date.now()}.${extension}`;
-
   const arrayBuffer = await readUploadArrayBuffer(localUri);
-  // Dual-write during the compatibility window: private media is the new
-  // authorization path, while the legacy public object and URL remain valid
-  // for older app versions and already-shared image links.
-  const privatePath = `${userId}/${path.split('/').pop()}`;
-  const { error: privateUploadError } = await supabase.storage
-    .from('private-avatars')
-    .upload(privatePath, arrayBuffer, { contentType: mimeType, upsert: true });
+  assertProfileMediaSize(arrayBuffer);
+  const [profile, detailsResult] = await Promise.all([
+    getOwnProfileRow(),
+    supabase.from('profile_details').select('profile_visibility,photo_visibility').eq('user_id', userId).maybeSingle(),
+  ]);
+  if (detailsResult.error) throw detailsResult.error;
+  const needsPrivate = (detailsResult.data?.profile_visibility || 'everyone') !== 'everyone'
+    || (detailsResult.data?.photo_visibility || 'everyone') !== 'everyone';
+  const { error: privateUploadError } = await supabase.storage.from('private-avatars')
+    .upload(path, arrayBuffer, { contentType: safeMimeType, upsert: true });
   if (privateUploadError) throw privateUploadError;
 
-  const { error: legacyUploadError } = await supabase.storage
-    .from('avatars')
-    .upload(path, arrayBuffer, { contentType: mimeType, upsert: true });
-  if (legacyUploadError) throw legacyUploadError;
+  let avatarUrl = null;
+  if (!needsPrivate) {
+    const { error: legacyUploadError } = await supabase.storage.from('avatars')
+      .upload(path, arrayBuffer, { contentType: safeMimeType, upsert: true, cacheControl: '0' });
+    if (legacyUploadError) throw legacyUploadError;
+    const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(path);
+    avatarUrl = publicUrlData?.publicUrl || null;
+    if (!avatarUrl) throw new Error('Could not create the public profile photo URL.');
+  } else {
+    await removeLegacyPublicAvatar(userId, profile?.avatar_url);
+  }
 
-  const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(path);
-  const avatarUrl = publicUrlData.publicUrl;
   const { error: detailsError } = await supabase.from('profile_details')
-    .upsert({ user_id: userId, avatar_path: privatePath }, { onConflict: 'user_id' });
+    .upsert({ user_id: userId, avatar_path: path }, { onConflict: 'user_id' });
   if (detailsError) throw detailsError;
   const { error: updateError } = await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', userId);
   if (updateError) throw updateError;
 
-  return avatarUrl;
+  if (avatarUrl) return avatarUrl;
+  return await getPrivateProfileAvatarUrl(userId);
 }
 
 // Resolves a private cover only after the database checks profile visibility,
@@ -471,6 +656,48 @@ export async function getPrivateProfileAvatarUrl(userId, expiresIn = 3600) {
   const { data: signed, error: signError } = await supabase.storage.from('private-avatars').createSignedUrl(avatarPath, expiresIn);
   if (signError) throw signError;
   return signed?.signedUrl || null;
+}
+
+// Resolves avatars in one bounded authorization query and one Storage signing
+// request. A hidden profile never falls back to a public legacy URL.
+export async function resolveProfileAvatarUrls(profiles = [], expiresIn = 3600) {
+  if (!SUPABASE_ENABLED || !Array.isArray(profiles) || profiles.length === 0) return profiles || [];
+  const ids = [...new Set(profiles.map((profile) => profile?.id).filter(Boolean))];
+  if (!ids.length) return profiles;
+  const accessRows = [];
+  for (let start = 0; start < ids.length; start += 500) {
+    const { data, error } = await supabase.rpc('get_visible_profile_avatar_paths', { p_user_ids: ids.slice(start, start + 500) });
+    if (error) {
+      if (isMissingRpcFunction(error, 'get_visible_profile_avatar_paths')) {
+        // Fail closed during an incomplete backend rollout: public legacy URLs
+        // cannot prove that the current viewer is allowed to see the photo.
+        return profiles.map((profile) => ({ ...profile, avatar_url: null, avatarUrl: null }));
+      }
+      throw error;
+    }
+    accessRows.push(...(Array.isArray(data) ? data : []));
+  }
+  const accessById = new Map(accessRows.map((entry) => [entry.user_id, entry]));
+  const pathEntries = accessRows.filter((entry) =>
+    entry?.can_view && typeof entry.avatar_path === 'string'
+    && entry.avatar_path.startsWith(`${entry.user_id}/`)
+    && !entry.avatar_path.includes('..')
+  );
+  const paths = [...new Set(pathEntries.map((entry) => entry.avatar_path))];
+  let signedByPath = new Map();
+  if (paths.length) {
+    const { data: signedRows, error: signError } = await supabase.storage.from('private-avatars').createSignedUrls(paths, expiresIn);
+    if (signError) throw signError;
+    signedByPath = new Map((signedRows || []).filter((entry) => entry?.signedUrl).map((entry) => [entry.path, entry.signedUrl]));
+  }
+  return profiles.map((profile) => {
+    const access = accessById.get(profile?.id);
+    if (!access?.can_view) return { ...profile, avatar_url: null, avatarUrl: null };
+    const signedUrl = access.avatar_path ? signedByPath.get(access.avatar_path) : null;
+    const legacyUrl = access.requires_private ? null : (profile.avatar_url || profile.avatarUrl || null);
+    const avatarUrl = signedUrl || legacyUrl;
+    return { ...profile, avatar_url: avatarUrl, avatarUrl };
+  });
 }
 
 export async function signInWithEmail(email, password) {
@@ -691,7 +918,8 @@ export async function fetchContactById(userId) {
   if (!profile) {
     throw new Error('profile is private, unavailable, or not discoverable');
   }
-  return normalizeProfile(profile);
+  const [resolved] = await resolveProfileAvatarUrls([profile]);
+  return normalizeProfile(resolved || profile);
 }
 
 // Private phone discovery: send only numbers the user explicitly selects.
@@ -715,7 +943,8 @@ export async function fetchContacts() {
 
   const { data, error } = await supabase.rpc('get_contact_directory');
   if (error) throw error;
-  return (Array.isArray(data) ? data : []).map(normalizeProfile);
+  const resolved = await resolveProfileAvatarUrls(Array.isArray(data) ? data : []);
+  return resolved.map(normalizeProfile);
 }
 
 // Search all discoverable members without exposing private auth metadata.
@@ -742,7 +971,8 @@ export async function searchPublicProfiles(query, { limit = 20, offset = 0 } = {
     p_offset: safeOffset,
   });
   if (error) throw error;
-  return (Array.isArray(data) ? data : []).map(normalizeProfile);
+  const resolved = await resolveProfileAvatarUrls(Array.isArray(data) ? data : []);
+  return resolved.map(normalizeProfile);
 }
 
 // Paginated since the Oct 2026 audit ("no pagination anywhere"): the
@@ -812,7 +1042,8 @@ export async function fetchConversations({ limit = 50, offset = 0 } = {}) {
     if (participantProfilesError) throw participantProfilesError;
     participantProfiles.push(...(batchProfiles || []));
   }
-  const profilesById = new Map(participantProfiles.map((profile) => [profile.id, profile]));
+  const profilesWithResolvedAvatars = await resolveProfileAvatarUrls(participantProfiles);
+  const profilesById = new Map(profilesWithResolvedAvatars.map((profile) => [profile.id, profile]));
   for (const row of data || []) {
     row.conversation_participants = (row.conversation_participants || []).map((participant) => ({
       ...participant,
@@ -1452,7 +1683,14 @@ export async function fetchBlockedUsers() {
     }));
   }
   const result = await backendFetch('/safety/blocked');
-  return result.blocked || [];
+  const blocked = Array.isArray(result?.blocked) ? result.blocked : [];
+  const profiles = blocked.map((entry) => entry?.profile).filter((profile) => profile?.id);
+  const resolved = await resolveProfileAvatarUrls(profiles);
+  const byId = new Map(resolved.map((profile) => [profile.id, profile]));
+  return blocked.map((entry) => ({
+    ...entry,
+    profile: entry?.profile?.id ? (byId.get(entry.profile.id) || entry.profile) : entry.profile,
+  }));
 }
 
 export async function reportUser({ reportedUserId, messageId = null, reason = '' }) {
