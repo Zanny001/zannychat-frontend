@@ -34,7 +34,7 @@ test('status media retry is guarded against rapid duplicate requests', () => {
 
 test('status media retry applies refreshed URLs only to the status that requested them', () => {
   assert.match(screen, /current\?\.id === requestedStatusId \? \{ \.\.\.current, media_url: refreshed \} : current/);
-  assert.match(screen, /if \(viewing\?\.id === requestedStatusId\) Alert\.alert/);
+  assert.match(screen, /if \(viewing\?\.id === requestedStatusId\) showAppAlert/);
 });
 
 
