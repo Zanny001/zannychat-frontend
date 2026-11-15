@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Header from '../components/Header';
@@ -17,7 +18,7 @@ export default function JoinGroupScreen({ navigation, route }) {
     setBusy(true); setError('');
     try {
       await acceptGroupInvite(value);
-      Alert.alert('Group joined', 'You are now a member. Open Chats to find the group.', [{ text: 'Open chats', onPress: () => navigation.navigate('Main', { screen: 'Chats' }) }]);
+      showAppAlert('Group joined', 'You are now a member. Open Chats to find the group.', [{ text: 'Open chats', onPress: () => navigation.navigate('Main', { screen: 'Chats' }) }]);
     } catch (err) { setError(err?.message || 'This invite could not be accepted.'); }
     finally { setBusy(false); }
   };
