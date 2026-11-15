@@ -61,8 +61,8 @@ The supplied audit names 46 screens. Status below distinguishes design-reference
 | Screen | Reference coverage | Current audit status |
 |---|---|---|
 | AuthRequiredScreen | Welcome pattern | Source reviewed |
-| CallHistoryScreen | Calls mockup | Source review pending |
-| CallScreen | Call mockup | Source review pending |
+| CallHistoryScreen | Calls mockup | Source reviewed |
+| CallScreen | Calls mockup | Source reviewed |
 | ChannelsScreen | Chats/Status patterns | Source reviewed |
 | ChatAppearanceScreen | Appearance mockup | Source reviewed |
 | ChatFoldersScreen | Chats/Conversation patterns | Source reviewed |
