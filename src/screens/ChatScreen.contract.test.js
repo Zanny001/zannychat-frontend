@@ -39,3 +39,13 @@ test('deleted-message tombstones can be removed by either participant', () => {
   assert.doesNotMatch(deleteAction, /\.\.\.\(isMineMessage\(sheetMessage\)\s*\?/);
   assert.match(screen, /performDeleteMessage\(deleteMessageTarget, 'me'\)/);
 });
+
+test('message composer keeps a distinct moderate input surface and balanced control sizing', () => {
+  const inputBar = fs.readFileSync(new URL('../components/InputBar.js', import.meta.url), 'utf8');
+  assert.match(inputBar, /backgroundColor: hexToRgba\(colors\.surfaceElevated, 0\.78\)/);
+  assert.match(inputBar, /borderColor: hexToRgba\(colors\.primary, 0\.24\)/);
+  assert.match(inputBar, /minHeight: 44/);
+  assert.match(inputBar, /width: 42, height: 42/);
+  assert.match(inputBar, /maxHeight: 96/);
+  assert.match(inputBar, /textAlignVertical: 'center'/);
+});
