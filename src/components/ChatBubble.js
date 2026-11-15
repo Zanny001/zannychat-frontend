@@ -169,7 +169,7 @@ function VideoMessageContent({ uri, isMine, onSave }) {
   return (
     <View style={{ width: 232, height: 174, borderRadius: radii.sm, overflow: 'hidden', backgroundColor: '#080808' }}>
       <VideoView player={player} nativeControls contentFit="contain" style={{ width: '100%', height: '100%' }} />
-      <TouchableOpacity onPress={() => onSave?.(uri, 'video')} style={{ position: 'absolute', top: 8, right: 8, width: 48, height: 48, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.62)' }} accessibilityRole="button" accessibilityLabel="Save video to device">
+      <TouchableOpacity onPress={() => onSave?.(uri, 'video')} style={{ position: 'absolute', top: 8, right: 8, width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.62)' }} accessibilityRole="button" accessibilityLabel="Save video to device">
         <Ionicons name="download-outline" size={18} color="#fff" />
       </TouchableOpacity>
     </View>
@@ -255,7 +255,7 @@ export default function ChatBubble({
         >
           <View>
             <Image source={{ uri: message.mediaUrl }} style={[styles.image, { borderRadius: radii.sm }]} resizeMode="cover" />
-            <TouchableOpacity onPress={() => onSaveMedia?.(message.mediaUrl, 'image')} style={{ position: 'absolute', top: 8, right: 8, width: 48, height: 48, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.62)' }} accessibilityRole="button" accessibilityLabel="Save image to device">
+            <TouchableOpacity onPress={() => onSaveMedia?.(message.mediaUrl, 'image')} style={{ position: 'absolute', top: 8, right: 8, width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.62)' }} accessibilityRole="button" accessibilityLabel="Save image to device">
               <Ionicons name="download-outline" size={18} color="#fff" />
             </TouchableOpacity>
           </View>
@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
   },
   fileIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   voiceRow: { flexDirection: 'row', alignItems: 'center', minWidth: 0, maxWidth: '100%', paddingVertical: 4 },
-  playButton: { width: 48, height: 48, minWidth: 48, minHeight: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  playButton: { width: 48, height: 48, minWidth: 48, minHeight: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   waveTrack: { height: 4, borderRadius: 2, overflow: 'hidden' },
   waveFill: { height: 4, borderRadius: 2 },
 });
