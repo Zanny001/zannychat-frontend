@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
   participantList: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 22 },
   participantChip: { maxWidth: '100%', flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: StyleSheet.hairlineWidth, borderRadius: 18, paddingVertical: 7, paddingHorizontal: 10 },
   participantName: { fontSize: 12, fontWeight: '600', maxWidth: 180 },
-  controls: { flexDirection: 'row', justifyContent: 'center', gap: 14, padding: 18, paddingBottom: 26 },
+  controls: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 12, padding: 14, paddingBottom: 22 },
   control: { minWidth: 76, minHeight: 72, borderRadius: 24, alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 10 },
   controlLabel: { fontSize: 11, fontWeight: '700' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28 },
