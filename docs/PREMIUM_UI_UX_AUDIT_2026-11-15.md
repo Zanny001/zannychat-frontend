@@ -28,7 +28,7 @@ The inbox conversation row already uses a compact, accessible `Pressable` rather
 | Area | Finding | Severity | Disposition |
 |---|---|---:|---|
 | Message composer | The text-entry surface used a very faint border (4.5% primary text opacity) and a low-opacity surface tint, making the field visually disappear into the composer background in some themes. | Medium | Improved on this branch with a clearer theme-derived surface and border. |
-| Composer controls | Send control was 38×38 while the input field had no matching 44-point minimum. The controls looked visually underweighted relative to the composer. | Medium | Balanced to a 42×42 visual control with a 44-point input surface; existing hit-slop retained. |
+| Composer controls | Send control was 38×38 while the input field had no matching 48-point minimum. The controls looked visually underweighted relative to the composer. | Medium | Balanced to a 48×48 send control and 48-point input surface; existing hit-slop retained. |
 | Composer text | The multiline field used a 120-point parent maximum but no explicit text vertical alignment and could grow too tall relative to the row. | Low | Text field now caps at 96 points and vertically centers on Android. |
 | Inbox density | Conversation rows are already compact and avoid nested glass cards. | Positive | Preserve; do not reintroduce card-per-row styling. |
 | Shared header | Header title already has flexible width and one-line truncation; back control is at least 44 points. | Positive | Preserve existing responsive title behavior. |
@@ -72,7 +72,7 @@ The inbox conversation row already uses a compact, accessible `Pressable` rather
 ## Additional verified issue and remediation — New Chat
 
 - The contact directory previously wrapped the entire row in one `TouchableOpacity` and placed the favorite `TouchableOpacity` inside it. Nested pressables can produce ambiguous/propagating presses, so tapping the star could also trigger the row's open-chat/share action.
-- Replaced the per-contact elevated glass card with a compact 76-point row and subtle divider. The main contact action and favorite action are now sibling controls, with the favorite control retaining a 44-point target and its own accessible selected/disabled state.
+- Replaced the per-contact elevated glass card with a compact 76-point row and subtle divider. The main contact action and favorite action are now sibling controls, with the favorite control retaining a 48-point target and its own accessible selected/disabled state.
 - Added `src/screens/NewChatScreen.contract.test.js` to protect the row density, sibling interaction structure and favorite target size.
 
 ## Additional verified issue and remediation — Chats filters
@@ -84,7 +84,7 @@ The inbox conversation row already uses a compact, accessible `Pressable` rather
 ## Additional verified issues and remediation — Chats header and search
 
 - The camera, drafts and new-chat header controls were 40×40, 40×40 and 34×34 respectively. These are visually compact but undersized as standalone touch targets.
-- Standardized the three controls to 44×44, increased the search surface to a balanced 48-point minimum, and gave the Moments “See all” action a 44-point interaction height.
+- Standardized the three controls to 44×44, increased the search surface to a balanced 48-point minimum, and gave the Moments “See all” action a 48-point interaction height.
 - Extended the Chats layout contract to protect these dimensions.
 
 ## Additional responsive finding and remediation — New Chat quick actions
