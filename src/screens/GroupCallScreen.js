@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Platform, SafeAreaView, StatusBar, StyleSheet, Text, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -60,7 +61,7 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
       await room.localParticipant.setMicrophoneEnabled(muted);
       setMuted(!muted);
     } catch (_) {
-      Alert.alert('Microphone unavailable', 'Check microphone permission and try again.');
+      showAppAlert('Microphone unavailable', 'Check microphone permission and try again.');
     }
   };
   const toggleCamera = async () => {
@@ -69,7 +70,7 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
       setCameraOff(!cameraOff);
       setIsVideo(cameraOff);
     } catch (_) {
-      Alert.alert('Camera unavailable', 'Check camera permission and try again.');
+      showAppAlert('Camera unavailable', 'Check camera permission and try again.');
     }
   };
 
@@ -82,20 +83,20 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
       const outputs = await AudioSession.getAudioOutputs();
       const choices = ['speaker', 'earpiece'].filter((output) => outputs.includes(output));
       if (!choices.length) {
-        Alert.alert('Audio output', 'No alternate audio output is currently available.');
+        showAppAlert('Audio output', 'No alternate audio output is currently available.');
         return;
       }
-      Alert.alert('Audio output', 'Choose where call audio should play.', [
+      showAppAlert('Audio output', 'Choose where call audio should play.', [
         ...choices.map((output) => ({
           text: output === 'speaker' ? 'Speaker' : 'Phone earpiece',
           onPress: () => AudioSession.selectAudioOutput(output).catch(() => {
-            Alert.alert('Audio output unavailable', 'The selected audio output could not be activated.');
+            showAppAlert('Audio output unavailable', 'The selected audio output could not be activated.');
           }),
         })),
         { text: 'Cancel', style: 'cancel' },
       ]);
     } catch (_) {
-      Alert.alert('Audio output unavailable', 'Could not load available audio outputs.');
+      showAppAlert('Audio output unavailable', 'Could not load available audio outputs.');
     }
   };
 
