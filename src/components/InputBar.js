@@ -175,6 +175,7 @@ export default function InputBar({
             hitSlop={10}
             accessibilityLabel="Cancel reply"
             accessibilityRole="button"
+            style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}
           >
             <Ionicons name="close" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -190,7 +191,7 @@ export default function InputBar({
           </ScrollView>
           <ScrollView style={{ maxHeight: 150 }} contentContainerStyle={styles.emojiGrid}>
             {EMOJI_CATEGORIES[emojiCategory].emojis.map((emoji, index) => (
-              <TouchableOpacity key={`${emoji}-${index}`} onPress={() => { handleChange(text + emoji); }} accessibilityRole="button" accessibilityLabel={`Insert ${emoji}`} hitSlop={8} style={styles.emojiCell}><Text style={{ fontSize: 25 }}>{emoji}</Text></TouchableOpacity>
+              <TouchableOpacity key={`${emoji}-${index}`} onPress={() => { handleChange(text + emoji); }} accessibilityRole="button" accessibilityLabel={`Insert ${emoji}`} style={styles.emojiCell}><Text style={{ fontSize: 25 }}>{emoji}</Text></TouchableOpacity>
             ))}
           </ScrollView>
         </View>
@@ -308,5 +309,5 @@ const styles = StyleSheet.create({
   emojiPanel: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 8, paddingBottom: 6 },
   emojiCategory: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 18, paddingHorizontal: 6 },
   emojiGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 6, paddingTop: 6 },
-  emojiCell: { width: '12.5%', minWidth: 32, minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingVertical: 5 },
+  emojiCell: { width: '16.6667%', minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingVertical: 5 },
 });
