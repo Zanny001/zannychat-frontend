@@ -289,6 +289,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [showParticipants, setShowParticipants] = useState(false);
   const [guestRequests, setGuestRequests] = useState([]);
   const [showGuestRequests, setShowGuestRequests] = useState(false);
+  const seenGuestRequestIds = useRef(new Set());
   const [guestApproved, setGuestApproved] = useState(false);
   const [guestRequestStatus, setGuestRequestStatus] = useState('none');
   const [floatingReactions, setFloatingReactions] = useState([]);
@@ -417,10 +418,12 @@ export default function LiveStreamScreen({ route, navigation }) {
         const result = await backendFetch(`/live/${stream.id}/guest-requests`);
         if (!active) return;
         const incoming = Array.isArray(result?.requests) ? result.requests : [];
+        const hasNewRequest = incoming.some((item) => !seenGuestRequestIds.current.has(item.user_id));
+        incoming.forEach((item) => seenGuestRequestIds.current.add(item.user_id));
         setGuestRequests(incoming);
-        // Keep new requests visible on the creator's stage without requiring
-        // them to discover and open a separate panel or rely on push delivery.
-        if (incoming.length) setShowGuestRequests(true);
+        // Surface each new request once; allow the creator to switch to other
+        // stage controls without the poll repeatedly stealing panel focus.
+        if (hasNewRequest) setShowGuestRequests(true);
       } catch (_) {}
     };
     refreshGuestRequests();
