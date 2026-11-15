@@ -182,3 +182,40 @@ The source scan covered these families:
 - No Supabase schema, function, RLS policy, or data changes are part of this UI-only phase.
 - No deployment is claimed.
 - Full audit completion is not claimed. Remaining work includes source review of all pending screens, modal/drawer/action-sheet states, small/large phone and tablet layouts, keyboard/scroll behaviour, theme contrast across every surface, and real-device QA (including Android 10/11).
+
+
+## CI and preview checkpoint — 2026-11-15 (latest commit 1436467795eae3093c741668e3ca4ff15a17d8a0)
+
+### Verified on this commit
+- `Premium status and LIVE quality` workflow run 634 completed successfully. Its frontend-quality job passed `npm ci`, Expo web export, Expo Android export, unit tests, call-recovery tests, native call-receiver tests, release audit, contract audit, and integrity tests.
+- `Advanced calling client checks` workflow run 824 is still in progress at this checkpoint. npm dependency vulnerability audit, Expo config/prebuild for Android, and Android `compileDebugKotlin` completed successfully. The compile-only APK assembly step was still running; later artifact verification, iOS prebuild/CallKit verification, web/Android exports, and further tests were pending. Its placeholder-Firebase APK is explicitly not suitable for installation or device QA.
+- Commit status checks report Netlify deploy-preview success and Vercel success. These are preview/check statuses only; they do not establish a production deployment or production-domain cutover.
+- Pull request review-thread query returned no inline review threads at this checkpoint.
+- PR #85 remains draft and unmerged.
+
+### Current changed-file scope
+- `docs/ui-ux-premium-audit.md`
+- `src/components/ChatBubble.js`
+- `src/components/GlassCard.js`
+- `src/components/Header.js`
+- `src/screens/LiveStreamHeaderLayout.contract.test.js`
+- `src/screens/LiveStreamScreen.js`
+- `src/screens/PremiumDesignSystem.contract.test.js`
+- `src/theme/colors.js`
+- `src/utils/mediaPreviewSizing.js`
+- `src/utils/mediaPreviewSizing.test.js`
+
+### Next steps / release gates
+1. Poll workflow run 824 until completion; inspect and repair any failing step, then record its final result.
+2. Continue detailed source and interaction audits for the remaining 46 registered screens in route families; route presence is not acceptance evidence.
+3. Continue shared Header/navigation/composer and chat utility visual refinement with focused tests; preserve all six navigation destinations and all existing product behaviour.
+4. Review responsive previews and actual browser layouts at phone/tablet/desktop widths, then test keyboard, focus order, screen-reader labels, reduced motion, light/dark/high-contrast and text scaling.
+5. Perform real-device QA on Android 10/11 and a modern Android device. The CI placeholder APK is not an installable QA artifact.
+6. Keep PR #85 draft until all required automated checks and relevant QA gates pass. Do not merge or claim production deployment from preview statuses.
+7. No Supabase changes are indicated by this UI-only pass; keep schema, functions, RLS and production data untouched absent a concrete verified dependency.
+
+### Outstanding / not verified
+- Final result of calling workflow run 824 at this checkpoint.
+- Full per-screen source, visual and interaction audit; modal, drawer, empty, loading and error states.
+- Physical-device and keyboard/accessibility acceptance.
+- Production deployment and production-domain verification.
