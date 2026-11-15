@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Linking, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
@@ -15,11 +16,11 @@ function showScreenMessage(title, message, onContinue) {
   }
 
   if (onContinue) {
-    Alert.alert(title, message, [
+    showAppAlert(title, message, [
       { text: 'Continue', onPress: onContinue },
     ]);
   } else {
-    Alert.alert(title, message);
+    showAppAlert(title, message);
   }
 }
 
