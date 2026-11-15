@@ -23,7 +23,7 @@ const COPY = {
 };
 
 export default function AuthRequiredScreen({ navigation, route }) {
-  const { colors, typography, spacing, radii } = useTheme();
+  const { colors, radii } = useTheme();
   const copy = COPY[route?.name] || {
     title: 'Sign in to continue',
     body: 'Authenticate to continue to the ZannyChat link you opened.',
