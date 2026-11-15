@@ -202,7 +202,7 @@ export default function CallScreen({ route, navigation }) {
           setErrorText('');
           return;
         }
-        if ((state === 'disconnected' || state === 'failed') && isCaller && currentStatus === 'accepted' && !iceRestartInProgress.current) {
+        if ((state === 'disconnected' || state === 'failed') && currentStatus === 'accepted' && !iceRestartInProgress.current) {
           iceRestartInProgress.current = true;
           try {
             pc.restartIce?.();
