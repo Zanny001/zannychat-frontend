@@ -61,3 +61,8 @@ test('native group calls expose speaker and earpiece output selection', () => {
   assert.ok(screen.includes('AudioSession.selectAudioOutput(output)'));
   assert.ok(screen.includes('Choose audio output'));
 });
+
+
+test('group-call controls wrap safely when audio routing and invitations are visible together', () => {
+  assert.ok(screen.includes("flexWrap: 'wrap'"));
+});
