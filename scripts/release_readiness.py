@@ -35,6 +35,7 @@ try:
     netlify_config = root / "netlify.toml"
     netlify_config_text = netlify_config.read_text() if netlify_config.is_file() else ""
     check("Netlify SPA history fallback serves client-side deep links", netlify_config.is_file() and 'from = "/*"' in netlify_config_text and 'to = "/index.html"' in netlify_config_text and "status = 200" in netlify_config_text, "Netlify must rewrite app routes to the Expo index.html shell")
+    check("Netlify defines baseline browser security headers", all(header in netlify_config_text for header in ("X-Content-Type-Options = \"nosniff\"", "Referrer-Policy = \"strict-origin-when-cross-origin\"", "X-Frame-Options = \"DENY\"", "Permissions-Policy", "frame-ancestors 'none'", "Strict-Transport-Security")), "hosted web app must include anti-sniffing, clickjacking, referrer, permissions and HSTS headers")
     backend_entry = (backend / "src" / "index.js").read_text()
     security_test = backend / "tests" / "securityHeaders.test.cjs"
     check("Backend disables fingerprinting and defines baseline response security headers", "app.disable('x-powered-by')" in backend_entry and "X-Content-Type-Options" in backend_entry and "X-Frame-Options" in backend_entry and "Referrer-Policy" in backend_entry and "Cache-Control" in backend_entry and "Strict-Transport-Security" in backend_entry and security_test.is_file(), "API security headers must be present and regression-tested")
