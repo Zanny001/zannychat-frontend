@@ -41,9 +41,13 @@ test('LIVE creators can delete replays and ended broadcasts from their managemen
   assert.match(replay, /Delete this LIVE replay/);
 });
 
-test('profile username save verifies the database value and updates the editor state', () => {
-  assert.match(api, /const \{ data: confirmed, error: confirmError \}/);
-  assert.match(api, /confirmed\?\.username/);
+test('profile username save re-reads through the owner-only RPC and updates the editor state', () => {
+  const updateStart = api.indexOf('export async function updateProfile');
+  const updateEnd = api.indexOf('const PROFILE_DETAIL_DEFAULTS', updateStart);
+  const updateBody = api.slice(updateStart, updateEnd);
+  assert.ok(updateBody.includes('return getCurrentUser()'));
+  assert.equal(updateBody.includes('.select('), false);
+  assert.ok(api.includes("rpc('get_my_profile')"));
   assert.match(editProfile, /const savedProfile = await updateProfile/);
   assert.match(editProfile, /setUsername\(savedProfile\?\.username/);
 });
