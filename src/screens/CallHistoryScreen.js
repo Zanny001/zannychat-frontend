@@ -120,7 +120,7 @@ export default function CallHistoryScreen({ navigation }) {
               <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Recent calls</Text>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>Your call activity, kept in one place</Text>
             </View>
-            <TouchableOpacity onPress={() => load(true)} disabled={refreshing || loading} accessibilityRole="button" accessibilityLabel="Refresh call history" style={{ width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.13), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.28) }}>
+            <TouchableOpacity onPress={() => load(true)} disabled={refreshing || loading} accessibilityRole="button" accessibilityLabel="Refresh call history" style={{ width: 48, height: 48, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.13), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.28) }}>
               {refreshing ? <ActivityIndicator size="small" color={colors.primary} /> : <Ionicons name="refresh" size={19} color={colors.primary} />}
             </TouchableOpacity>
           </View>
@@ -128,7 +128,7 @@ export default function CallHistoryScreen({ navigation }) {
           {error ? (
             <GlassCard tintAlpha={0.42}>
               <Text accessibilityRole="alert" style={[typography.body, { color: colors.danger }]}>{error}</Text>
-              <TouchableOpacity onPress={() => load(true)} accessibilityRole="button" accessibilityLabel="Retry loading call history" style={{ minHeight: 44, justifyContent: 'center', marginTop: spacing.xs }}>
+              <TouchableOpacity onPress={() => load(true)} accessibilityRole="button" accessibilityLabel="Retry loading call history" style={{ minHeight: 48, justifyContent: 'center', marginTop: spacing.xs }}>
                 <Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text>
               </TouchableOpacity>
             </GlassCard>
@@ -167,13 +167,13 @@ export default function CallHistoryScreen({ navigation }) {
                     <Text style={[typography.small, { color: colors.textSecondary }]} numberOfLines={1}>{formatDate(item.created_at)}{item.durationSeconds ? ` · ${formatDuration(item.durationSeconds)}` : ''}</Text>
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <TouchableOpacity onPress={() => redialCall(item, peerUserId, 'audio')} accessibilityRole="button" accessibilityLabel={'Call ' + (item.participantName || 'contact') + ' again'} style={{ width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.13) }}>
+                    <TouchableOpacity onPress={() => redialCall(item, peerUserId, 'audio')} accessibilityRole="button" accessibilityLabel={'Call ' + (item.participantName || 'contact') + ' again'} style={{ width: 48, height: 48, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.13) }}>
                       <Ionicons name="call" size={17} color={colors.primary} />
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => redialCall(item, peerUserId, 'video')} accessibilityRole="button" accessibilityLabel={'Video call ' + (item.participantName || 'contact') + ' again'} style={{ width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.accent || colors.primary, 0.13) }}>
+                    <TouchableOpacity onPress={() => redialCall(item, peerUserId, 'video')} accessibilityRole="button" accessibilityLabel={'Video call ' + (item.participantName || 'contact') + ' again'} style={{ width: 48, height: 48, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.accent || colors.primary, 0.13) }}>
                       <Ionicons name="videocam" size={17} color={colors.accent || colors.primary} />
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => removeCall(item)} disabled={deletingCallId === item.id} accessibilityRole="button" accessibilityLabel={'Delete call record with ' + (item.participantName || 'contact')} accessibilityState={{ disabled: deletingCallId === item.id }} style={{ width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.danger, 0.12) }}>
+                    <TouchableOpacity onPress={() => removeCall(item)} disabled={deletingCallId === item.id} accessibilityRole="button" accessibilityLabel={'Delete call record with ' + (item.participantName || 'contact')} accessibilityState={{ disabled: deletingCallId === item.id }} style={{ width: 48, height: 48, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.danger, 0.12) }}>
                       {deletingCallId === item.id ? <ActivityIndicator size="small" color={colors.danger} /> : <Ionicons name="trash-outline" size={17} color={colors.danger} />}
                     </TouchableOpacity>
                   </View>
