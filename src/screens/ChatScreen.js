@@ -90,7 +90,7 @@ function DraftVideoPreview({ uri }) {
   return <VideoView player={player} nativeControls contentFit="contain" style={{ width: '100%', height: '100%' }} />;
 }
 
-const MAX_FILE_SIZE = 25_000_000; // Exact storage.buckets.file_size_limit (25,000,000 bytes).
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // Exact chat-media Storage limit (26,214,400 bytes).
 const MESSAGE_PAGE_SIZE = 30;
 
 const DAY_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
