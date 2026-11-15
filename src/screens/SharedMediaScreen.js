@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SafeAreaView, ScrollView, View, Text, TextInput, TouchableOpacity, Image, ActivityIndicator, Linking, Alert, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -103,14 +104,14 @@ export default function SharedMediaScreen({ route, navigation }) {
       }
       await Linking.openURL(parsed.toString());
     } catch (_) {
-      Alert.alert('Link unavailable', 'This link could not be opened safely.');
+      showAppAlert('Link unavailable', 'This link could not be opened safely.');
     }
   }
 
   async function openAttachment(item) {
     const safeUrl = getSafeSharedMediaUrl(item?.mediaUrl);
     if (!safeUrl) {
-      Alert.alert('Attachment unavailable', 'This attachment has an invalid or expired address.');
+      showAppAlert('Attachment unavailable', 'This attachment has an invalid or expired address.');
       return;
     }
     if (item.mediaType === 'image') {
@@ -120,7 +121,7 @@ export default function SharedMediaScreen({ route, navigation }) {
     try {
       await Linking.openURL(safeUrl);
     } catch (_) {
-      Alert.alert('Unable to open file', 'Try again when you have a connection.');
+      showAppAlert('Unable to open file', 'Try again when you have a connection.');
     }
   }
 
