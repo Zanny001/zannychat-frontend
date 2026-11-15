@@ -7,7 +7,9 @@
 - Product version at baseline: `1.2.243`
 - Stack: Expo SDK 57, React Native 0.86.3, React 19
 - Scope priority: visual interfaces, moderate container proportions, typography, density, accessibility, responsive behavior and premium consistency.
-- This is an in-progress source audit. It is not a claim that all 45 navigation experiences have received visual/device sign-off.
+- This is an in-progress source audit across 49 screen implementation files / approximately 45 navigation experiences. It is not a claim that all screens have received visual/device sign-off.
+- The audit is being delivered in isolated, draft pull requests (#76–#83) so changes remain reviewable and no unverified UI work is merged or deployed.
+- Current CI status: the premium UI/unit workflow has passed for PRs #76–#82 after correcting stale 44-point assertions; the separate native calling client workflow is still running. PR #83 validation is in progress.
 
 ## Confirmed product foundation
 
@@ -63,7 +65,7 @@ The inbox conversation row already uses a compact, accessible `Pressable` rather
 - Do not introduce new Supabase schema changes for visual-only work.
 - Do not claim end-to-end encryption unless a real audited E2E protocol is implemented.
 - Do not add expensive always-on blur, glow or animation to compensate for weak hierarchy.
-- Keep 44-point minimum interactive targets where feasible and provide accessible labels/states.
+- Use 48 dp minimum targets for Android interactive controls and 44 pt for iOS where feasible; preserve accessible labels/states and 8 dp spacing where layouts permit. WCAG 2.2 AA web pointer minimum is 24×24 CSS px; the 44×44 enhanced target remains the stricter design goal.
 - Do not deploy or merge this branch until tests and review are complete.
 - Track every screen as incomplete until its layout, interactions, accessibility and regression behavior are verified.
 
@@ -90,3 +92,42 @@ The inbox conversation row already uses a compact, accessible `Pressable` rather
 - The Find friends, Scan QR and New group shortcuts shared a fixed, non-wrapping horizontal row. Their combined intrinsic widths could exceed the available content width on smaller phones.
 - Enabled wrapping and gave each action a consistent flexible basis, with a 44-point minimum content height. This preserves the quick-action hierarchy while allowing the third action to move to a second row when necessary.
 - Added a narrow-screen layout contract.
+
+## Expanded screen audit — messaging collections and shared media
+
+- Saved Messages and Pinned Messages had clear-search, remove/unpin and open-message actions with inconsistent or implicit hit regions. These are now normalized to 48-point targets; excessive empty-state vertical padding is reduced from 72 to 48 points without removing explanatory content.
+- Draft deletion and continuation actions now have explicit minimum dimensions. Forward-recipient rows have a consistent moderate 64-point card height. Chat Folder choices, inputs, save/cancel and edit/delete actions use 48-point baselines.
+- Shared Media tabs and retry actions now use 48-point targets. The photo grid remains two-column and aspect-ratio constrained rather than stretching into oversized media cards.
+- Regression contracts are included in PR #77.
+
+## Expanded screen audit — calls and LIVE
+
+- LIVE Hub controls previously mixed 38, 42 and 44-point dimensions. Primary profile/refresh, invite, replay and filter actions now use 48-point targets.
+- Native LIVE top-bar, camera/microphone and reaction controls and web LIVE action/moderation controls now have consistent 48-point hit areas.
+- The main LIVE stage remains capped at 560×315 (16:9); group-call tiles remain bounded, including the web 9:16 participant tile cap of 330 points. The audit intentionally avoids making the video stage wider/taller merely to enlarge controls.
+- Call-screen add-participant controls are now 48×48. Audio/video call controls and participant tile sizing remain unchanged.
+- Regression contracts are included in PR #78.
+
+## Expanded screen audit — community, Stories, events and polls
+
+- Channels/community feed buttons, reaction chips, moderation actions, post actions and directory filters now use 48-point minimums. Quick-emoji controls have larger hit regions while retaining compact visual icons.
+- Status/Stories publishing, audience selection, status navigation, reaction, privacy and reply actions now use 48-point targets. Icon-only delete/mute actions now have explicit hit areas.
+- Event and poll fields, RSVP/vote actions, retries, multi-select controls and pagination actions now use 48-point minimums.
+- Shared touch-target regression logic now counts controls at 44 points or larger, so increasing a control to 48 no longer causes a false test failure.
+- Regression contracts are included in PRs #79 and #80.
+
+## Expanded screen audit — profiles, utility flows and shared components
+
+- Own-profile actions, profile save/preview controls and peer full-size-photo close control now use 48-point targets (PR #81).
+- Call History previously used 34×34 audio redial, video redial and delete buttons plus a 42×42 refresh button. These are now 48×48 while preserving all three actions; retry and other utility/group controls are normalized to 48 points (PR #82).
+- Shared Header back, chat media save/play, Action Sheet reaction and Call Invite Picker close/search/invite controls are now 48-point targets. Action Sheet reactions wrap on narrow screens instead of forcing a horizontal overflow (PR #83).
+- The design system itself is retained: theme palettes, dynamic typography, glass surfaces, reduced-motion and platform blur fallbacks are not being replaced with hard-coded one-off styling.
+
+## Remaining audit and release gates
+
+1. Complete CI on all draft branches, including Android compile-only, iOS prebuild/CallKit patch verification, web/Android exports, unit, call-recovery, release, contract and integrity checks.
+2. Reconcile/merge the isolated PRs only after their required checks are green and there are no overlapping/conflicting changes.
+3. Run representative visual QA at 320, 360, 390, 430 and tablet widths, plus web desktop/mobile widths. Validate keyboard/safe-area behavior, long names, large text, RTL where supported, and reduced motion.
+4. Test on a real Android device (including Android 10/11 blur fallback) and a supported iOS device; verify camera/mic permissions, audio route, call invite, media save, LIVE guest controls, status reactions, and profile image upload.
+5. Verify production deployment/preview domains and backend connectivity only after merge approval. No production deployment has been performed as part of this source audit.
+
