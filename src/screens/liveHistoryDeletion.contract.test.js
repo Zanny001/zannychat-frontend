@@ -45,7 +45,8 @@ test('profile username save re-reads through the owner-only RPC and updates the 
   const updateStart = api.indexOf('export async function updateProfile');
   const updateEnd = api.indexOf('const PROFILE_DETAIL_DEFAULTS', updateStart);
   const updateBody = api.slice(updateStart, updateEnd);
-  assert.ok(updateBody.includes('return getCurrentUser()'));
+  assert.ok(updateBody.includes('const savedProfile = await getCurrentUser()'));
+  assert.ok(updateBody.includes('could not be confirmed as saved'));
   assert.equal(updateBody.includes('.select('), false);
   assert.ok(api.includes("rpc('get_my_profile')"));
   assert.match(editProfile, /const savedProfile = await updateProfile/);
