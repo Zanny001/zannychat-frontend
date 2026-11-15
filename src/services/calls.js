@@ -133,6 +133,7 @@ export async function listCallHistory(limit = 100) {
   const peerIds = [...new Set(rows.map((row) => row.caller_id === userId ? row.callee_id : row.caller_id).filter(Boolean))];
   let profilesById = {};
   if (peerIds.length) {
+    // Profile names are intentionally not client-readable; use the viewer-scoped directory RPC.
     const { data: profiles, error: profileError } = await supabase.rpc(
       'get_conversation_profile_directory',
       { p_user_ids: peerIds },
