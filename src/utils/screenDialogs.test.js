@@ -11,7 +11,8 @@ test('screens route alerts through the cross-platform dialog helper', () => {
   const violations = [];
   for (const name of files) {
     const source = fs.readFileSync(path.join(root, name), 'utf8');
-    if (/Alert\.alert\(/.test(source)) violations.push(name + ': direct Alert.alert');
+    const executable = source.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
+    if (/Alert\.alert\(/.test(executable)) violations.push(name + ': direct Alert.alert');
     if (/showAppAlert\(/.test(source) && !/import \{[^}]*showAppAlert[^}]*\} from ['"]\.\.\/utils\/appDialogs['"]/.test(source)) {
       violations.push(name + ': missing showAppAlert import');
     }
