@@ -32,6 +32,18 @@ export default function App() {
   const [fontsLoaded, fontError] = useAppFonts();
   const [fontFallbackReady, setFontFallbackReady] = useState(false);
   const [initialRoute, setInitialRoute] = useState(null);
+  const [startupDeadlineReached, setStartupDeadlineReached] = useState(false);
+
+  // Final fallback if an unexpected native startup dependency stalls before
+  // session restoration or font fallback can resolve the first route.
+  useEffect(() => {
+    const startupDeadline = setTimeout(() => {
+      console.error('App startup exceeded 12 seconds; continuing with safe defaults.');
+      setStartupDeadlineReached(true);
+      setInitialRoute((currentRoute) => currentRoute || 'Onboarding');
+    }, 12000);
+    return () => clearTimeout(startupDeadline);
+  }, []);
 
   // Keep the web app renderable if the browser's font runtime stalls.
   useEffect(() => {
@@ -191,7 +203,7 @@ export default function App() {
     return () => subscription.remove();
   }, []);
 
-  const appReady = (fontsLoaded || !!fontError || fontFallbackReady) && initialRoute !== null;
+  const appReady = (fontsLoaded || !!fontError || fontFallbackReady || startupDeadlineReached) && initialRoute !== null;
 
   const onLayoutRootView = useCallback(async () => {
     if (appReady) {
