@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as MediaLibrary from 'expo-media-library/legacy';
@@ -54,8 +55,8 @@ async function saveStatusMedia(uri, kind) {
   if (!uri) return;
   try {
     await saveMediaToLibrary({ uri, kind, FileSystem, MediaLibrary, prefix: 'zannychat-status' });
-    Alert.alert('Saved to your library', `${kind === 'video' ? 'Video' : 'Image'} saved successfully.`);
-  } catch (error) { Alert.alert('Could not save media', error?.message || 'Please try again.'); }
+    showAppAlert('Saved to your library', `${kind === 'video' ? 'Video' : 'Image'} saved successfully.`);
+  } catch (error) { showAppAlert('Could not save media', error?.message || 'Please try again.'); }
 }
 
 export default function StatusUpdatesScreen({ navigation, route }) {
@@ -171,7 +172,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
     const next = adjustStatusDuration(statusDurations, kind, delta);
     setStatusDurations(next);
     AsyncStorage.setItem('zannychat.status-duration-preferences.v1', JSON.stringify(next)).catch(() => {
-      Alert.alert('Duration not saved', 'This duration will apply for this session, but local storage was unavailable.');
+      showAppAlert('Duration not saved', 'This duration will apply for this session, but local storage was unavailable.');
     });
   }, [statusDurations]);
 
@@ -325,14 +326,14 @@ export default function StatusUpdatesScreen({ navigation, route }) {
     } catch (e) {
       const message = e?.message || 'Please try again.';
       setPublishError(message);
-      if (Platform.OS !== 'web') Alert.alert('Could not publish status', message);
+      if (Platform.OS !== 'web') showAppAlert('Could not publish status', message);
     } finally { setSaving(false); }
   };
 
   const openStatus = useCallback(async (item) => {
     if (!isStatusActiveAt(item)) {
       setViewing(null);
-      Alert.alert('Status expired', 'This status is no longer available. Refresh the status feed to see current updates.');
+      showAppAlert('Status expired', 'This status is no longer available. Refresh the status feed to see current updates.');
       return;
     }
     setViewing(item);
@@ -397,7 +398,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
       setMediaLoadError((current) => viewing?.id === requestedStatusId ? false : current);
     } catch (e) {
       // Do not show an old request's failure over a different status the user opened.
-      if (viewing?.id === requestedStatusId) Alert.alert('Media unavailable', e?.message || 'Please check your connection and try again.');
+      if (viewing?.id === requestedStatusId) showAppAlert('Media unavailable', e?.message || 'Please check your connection and try again.');
     } finally {
       mediaRetryLockRef.current = false;
       setRetryingMedia(false);
@@ -435,7 +436,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
     seenStatusIdsRef.current = next;
     setSeenStatusIds(next);
     AsyncStorage.setItem('zannychat.status-seen.v1', JSON.stringify(next)).catch(() => {
-      Alert.alert('Read state not saved', 'Statuses are marked viewed for this session, but local storage was unavailable.');
+      showAppAlert('Read state not saved', 'Statuses are marked viewed for this session, but local storage was unavailable.');
     });
   }, [statuses]);
 
@@ -449,15 +450,15 @@ export default function StatusUpdatesScreen({ navigation, route }) {
       setRepliesHasMore(page.hasMore);
       setReplyCursor(page.nextBefore);
       try { const names = await resolveStatusUserNames(page.rows.map((reply) => reply.sender_id)); setStatusUserNames((old) => ({ ...old, ...names })); } catch { /* Keep the ID fallback if profile lookup is unavailable. */ }
-    } catch (e) { Alert.alert('Could not load older replies', e?.message || 'Please try again.'); }
+    } catch (e) { showAppAlert('Could not load older replies', e?.message || 'Please try again.'); }
     finally { replyPageLockRef.current = false; setLoadingOlderReplies(false); }
   };
 
   const submitReply = async () => {
     if (!viewing || viewing.is_own || !replyText.trim()) return;
     setSendingReply(true);
-    try { await sendStatusReply(viewing.id, replyText); setReplyText(''); Alert.alert('Reply sent', 'Your reply was sent privately to the status owner.'); }
-    catch (e) { Alert.alert('Could not send reply', e?.message || 'Please try again.'); }
+    try { await sendStatusReply(viewing.id, replyText); setReplyText(''); showAppAlert('Reply sent', 'Your reply was sent privately to the status owner.'); }
+    catch (e) { showAppAlert('Could not send reply', e?.message || 'Please try again.'); }
     finally { setSendingReply(false); }
   };
 
@@ -471,19 +472,19 @@ export default function StatusUpdatesScreen({ navigation, route }) {
       const activeIds = statuses.filter((row) => isStatusActiveAt(row)).map((row) => row.id);
       setReactions(await listStatusReactions(activeIds));
     } catch (e) {
-      Alert.alert('Could not react', e?.message || 'Please try again.');
+      showAppAlert('Could not react', e?.message || 'Please try again.');
     } finally {
       reactionLocksRef.current.delete(statusId);
       setReactingStatusIds((old) => old.filter((id) => id !== statusId));
     }
   };
 
-  const muteOwner = (item) => Alert.alert('Mute this account’s statuses?', 'Their statuses will be hidden from your list until you unmute them. This does not block messages.', [
+  const muteOwner = (item) => showAppAlert('Mute this account’s statuses?', 'Their statuses will be hidden from your list until you unmute them. This does not block messages.', [
     { text: 'Cancel', style: 'cancel' },
-    { text: 'Mute statuses', onPress: async () => { try { await muteStatusUser(item.user_id); setMutedUsers((old) => old.some((row) => row.muted_user_id === item.user_id) ? old : [{ muted_user_id: item.user_id, created_at: new Date().toISOString() }, ...old]); setStatuses((old) => old.filter((row) => row.user_id !== item.user_id)); } catch (e) { Alert.alert('Could not mute statuses', e?.message || 'Please try again.'); } } },
+    { text: 'Mute statuses', onPress: async () => { try { await muteStatusUser(item.user_id); setMutedUsers((old) => old.some((row) => row.muted_user_id === item.user_id) ? old : [{ muted_user_id: item.user_id, created_at: new Date().toISOString() }, ...old]); setStatuses((old) => old.filter((row) => row.user_id !== item.user_id)); } catch (e) { showAppAlert('Could not mute statuses', e?.message || 'Please try again.'); } } },
   ]);
 
-  const unmuteOwner = async (userId) => { try { await unmuteStatusUser(userId); setMutedUsers((old) => old.filter((row) => row.muted_user_id !== userId)); await refresh(); } catch (e) { Alert.alert('Could not unmute statuses', e?.message || 'Please try again.'); } };
+  const unmuteOwner = async (userId) => { try { await unmuteStatusUser(userId); setMutedUsers((old) => old.filter((row) => row.muted_user_id !== userId)); await refresh(); } catch (e) { showAppAlert('Could not unmute statuses', e?.message || 'Please try again.'); } };
 
   const loadPrivacyContacts = async () => {
     setPrivacyMode('exclude');
@@ -492,7 +493,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
     setPrivacyModalOpen(true);
     setPrivacyBusy(true);
     try { const [contacts, excluded] = await Promise.all([listStatusContacts(), listStatusExclusions()]); setPrivacyContacts(contacts); setExcludedUsers(excluded); setPrivacyLoadError(''); }
-    catch (e) { const failed = getPrivacyLoadFailureState('exclude', e); setPrivacyContacts(failed.contacts); setExcludedUsers(failed.exclusions); setPrivacyLoadError(failed.error); Alert.alert('Could not load privacy contacts', failed.error); }
+    catch (e) { const failed = getPrivacyLoadFailureState('exclude', e); setPrivacyContacts(failed.contacts); setExcludedUsers(failed.exclusions); setPrivacyLoadError(failed.error); showAppAlert('Could not load privacy contacts', failed.error); }
     finally { setPrivacyBusy(false); }
   };
 
@@ -509,7 +510,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
       setPrivacyLoadError('');
       const allowedIds = new Set(filterEligibleStatusAudienceContacts(contacts, exclusions).map((contact) => contact.id));
       setSelectedAudienceIds((old) => old.filter((id) => allowedIds.has(id)));
-    } catch (e) { const failed = getPrivacyLoadFailureState('select', e); setPrivacyContacts(failed.contacts); setExcludedUsers(failed.exclusions); setSelectedAudienceIds(failed.selectedAudienceIds); setPrivacyLoadError(failed.error); Alert.alert('Could not load contacts', failed.error); }
+    } catch (e) { const failed = getPrivacyLoadFailureState('select', e); setPrivacyContacts(failed.contacts); setExcludedUsers(failed.exclusions); setSelectedAudienceIds(failed.selectedAudienceIds); setPrivacyLoadError(failed.error); showAppAlert('Could not load contacts', failed.error); }
     finally { setPrivacyBusy(false); }
   };
 
@@ -530,7 +531,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
       if (!currentlyExcluded) setSelectedAudienceIds((old) => removeExcludedStatusAudienceIds(old, [contact.id]));
       await refresh();
     } catch (e) {
-      Alert.alert('Could not update Story privacy', e?.message || 'Please try again.');
+      showAppAlert('Could not update Story privacy', e?.message || 'Please try again.');
     } finally {
       setPrivacyBusy(false);
     }
@@ -540,7 +541,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
     if (privacyBusy || privacyLoadError) return;
     const visibleContacts = filterStatusContacts(privacyContacts, privacySearch);
     const changes = planStatusExclusionChanges(visibleContacts, excludedUsers, shouldExclude);
-    if (!changes.length) { Alert.alert('Story privacy', shouldExclude ? 'All matching contacts are already excluded.' : 'No matching contacts are currently excluded.'); return; }
+    if (!changes.length) { showAppAlert('Story privacy', shouldExclude ? 'All matching contacts are already excluded.' : 'No matching contacts are currently excluded.'); return; }
     setPrivacyBusy(true);
     let succeeded = 0;
     try {
@@ -552,16 +553,16 @@ export default function StatusUpdatesScreen({ navigation, route }) {
       setExcludedUsers(latest);
       if (shouldExclude) setSelectedAudienceIds((old) => removeExcludedStatusAudienceIds(old, latest));
       await refresh();
-      if (succeeded === changes.length) Alert.alert('Story privacy updated', `${succeeded} contact${succeeded === 1 ? '' : 's'} ${shouldExclude ? 'excluded' : 'allowed'}.`);
-      else Alert.alert('Partially updated', `${succeeded} of ${changes.length} changes succeeded. Review the current list and try again for any remaining contacts.`);
+      if (succeeded === changes.length) showAppAlert('Story privacy updated', `${succeeded} contact${succeeded === 1 ? '' : 's'} ${shouldExclude ? 'excluded' : 'allowed'}.`);
+      else showAppAlert('Partially updated', `${succeeded} of ${changes.length} changes succeeded. Review the current list and try again for any remaining contacts.`);
     } catch (e) {
-      Alert.alert('Could not finish bulk update', e?.message || 'Refresh the privacy list and try again.');
+      showAppAlert('Could not finish bulk update', e?.message || 'Refresh the privacy list and try again.');
     } finally { setPrivacyBusy(false); }
   };
 
-  const remove = (item) => Alert.alert('Delete status?', 'This removes your status immediately.', [
+  const remove = (item) => showAppAlert('Delete status?', 'This removes your status immediately.', [
     { text: 'Cancel', style: 'cancel' },
-    { text: 'Delete', style: 'destructive', onPress: async () => { try { await deleteStatus(item.id); setStatuses((old) => old.filter((s) => s.id !== item.id)); } catch (e) { Alert.alert('Could not delete status', e?.message || 'Please try again.'); } } },
+    { text: 'Delete', style: 'destructive', onPress: async () => { try { await deleteStatus(item.id); setStatuses((old) => old.filter((s) => s.id !== item.id)); } catch (e) { showAppAlert('Could not delete status', e?.message || 'Please try again.'); } } },
   ]);
 
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
