@@ -17,3 +17,14 @@ test('profile editor uses cross-platform alerts and navigates back only after su
   assert.doesNotMatch(editor, /Alert\.alert\(/);
   assert.match(editor, /showAppAlert\('Profile saved',[\s\S]*?onDismiss: \(\) => navigation\.goBack\(\)/);
 });
+
+test('web alert actions are selectable and invoke the original button callback', () => {
+  assert.match(dialogs, /globalThis\.prompt/);
+  assert.match(dialogs, /buttons\[selectedIndex\]\.onPress\?\.\(\)/);
+  assert.match(dialogs, /Enter the number of your choice/);
+});
+
+test('native alert button arrays and cancellation options are preserved', () => {
+  assert.match(dialogs, /Alert\.alert\(title, message, buttons \|\| \[\{ text: 'OK', onPress: finish \}\]/);
+  assert.match(dialogs, /cancelable: options\.cancelable \?\? !buttons/);
+});
