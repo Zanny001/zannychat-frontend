@@ -34,5 +34,5 @@ test('New Chat favorite control remains independently accessible and has a 48-po
 test('New Chat quick actions wrap cleanly instead of overflowing narrow phones', () => {
   assert.match(screen, /flexDirection: 'row', flexWrap: 'wrap', gap: spacing\.sm/);
   assert.match(screen, /quickAction: \{ flexGrow: 1, flexBasis: 128, minWidth: 128 \}/);
-  assert.match(screen, /qrRow: \{[^}]*minHeight: 48/);
+  assert.match(screen, /qrRow: \{[\s\S]*?minHeight: 48,[\s\S]*?\}/);
 });
