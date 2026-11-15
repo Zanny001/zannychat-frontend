@@ -238,7 +238,6 @@ export default function CallScreenWeb({ route, navigation }) {
 
         if (
           (state === 'disconnected' || state === 'failed') &&
-          isCaller &&
           currentStatus === 'accepted' &&
           !iceRestartInProgressRef.current
         ) {
