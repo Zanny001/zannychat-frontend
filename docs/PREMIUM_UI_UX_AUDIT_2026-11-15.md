@@ -66,3 +66,9 @@ The inbox conversation row already uses a compact, accessible `Pressable` rather
 - Keep 44-point minimum interactive targets where feasible and provide accessible labels/states.
 - Do not deploy or merge this branch until tests and review are complete.
 - Track every screen as incomplete until its layout, interactions, accessibility and regression behavior are verified.
+
+## Additional verified issue and remediation — New Chat
+
+- The contact directory previously wrapped the entire row in one `TouchableOpacity` and placed the favorite `TouchableOpacity` inside it. Nested pressables can produce ambiguous/propagating presses, so tapping the star could also trigger the row's open-chat/share action.
+- Replaced the per-contact elevated glass card with a compact 76-point row and subtle divider. The main contact action and favorite action are now sibling controls, with the favorite control retaining a 44-point target and its own accessible selected/disabled state.
+- Added `src/screens/NewChatScreen.contract.test.js` to protect the row density, sibling interaction structure and favorite target size.
