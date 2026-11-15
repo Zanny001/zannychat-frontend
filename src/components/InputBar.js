@@ -246,8 +246,8 @@ export default function InputBar({
             style={[
               styles.inputWrap,
               {
-                backgroundColor: hexToRgba(colors.surface, 0.32),
-                borderColor: hexToRgba(colors.textPrimary, 0.045),
+                backgroundColor: hexToRgba(colors.surfaceElevated, 0.78),
+                borderColor: hexToRgba(colors.primary, 0.24),
                 borderRadius: radii.pill,
               },
             ]}
@@ -260,7 +260,7 @@ export default function InputBar({
               placeholderTextColor={colors.textSecondary}
               underlineColorAndroid="transparent"
               selectionColor={colors.primary}
-              style={[typography.body, { color: colors.textPrimary, flex: 1, minHeight: 38, paddingVertical: 9 }]}
+              style={[typography.body, { color: colors.textPrimary, flex: 1, minHeight: 40, maxHeight: 96, paddingVertical: 8, textAlignVertical: 'center' }]}
               multiline
               accessibilityLabel={editing ? 'Edit message text' : 'Message text'}
             />
@@ -287,9 +287,9 @@ export default function InputBar({
 const styles = StyleSheet.create({
   wrap: { borderTopWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   draftStatus: { flexDirection: 'row', alignItems: 'center', paddingTop: 5, paddingBottom: 1 },
-  row: { flexDirection: 'row', alignItems: 'flex-end' },
-  inputWrap: { flex: 1, minWidth: 0, paddingHorizontal: 14, marginHorizontal: 6, maxHeight: 120, borderWidth: StyleSheet.hairlineWidth },
-  sendBtn: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' },
+  row: { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
+  inputWrap: { flex: 1, minWidth: 0, minHeight: 44, paddingHorizontal: 12, marginHorizontal: 2, maxHeight: 104, borderWidth: 1, justifyContent: 'center' },
+  sendBtn: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)' },
   replyBar: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
   recordingIndicator: {
     flex: 1,
