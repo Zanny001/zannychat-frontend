@@ -389,3 +389,14 @@ The source scan covered these families:
 - Supabase Auth security advisor reports leaked-password protection is disabled.
 - Current Supabase organization plan was verified as `free`. Current Supabase documentation states built-in leaked-password protection (HaveIBeenPwned Pwned Passwords API integration) is available on Pro and above, so it cannot be enabled in the current plan without a paid upgrade.
 - No plan upgrade or paid service was initiated. Keep the existing minimum 8-character password validation and do not claim breached-password screening is active. A future no-cost alternative would require a carefully designed server-side k-anonymity check; do not send raw passwords or full password hashes to a third party.
+
+
+## Supabase Storage privacy review — 2026-11-16
+
+- Read-only inspection found five buckets: `avatars` (public), `chat-media` (private), `live-replays` (private), `private-avatars` (private), and `status-media` (private), each with explicit size/MIME limits.
+- `chat-media` reads require conversation membership by storage path; uploads use the private upload validator.
+- `private-avatars` reads use `can_view_profile_avatar`; owner-only upload/update/delete rules are scoped to the user's UUID folder.
+- `status-media` reads require a matching status row/path and `can_view_status`; uploads use the status-media path validator and deletion is owner-scoped.
+- `avatars` is intentionally public for public-profile avatars; upload/update policies use `private.can_upload_public_avatar`, and the profile trigger blocks a public avatar pointer when profile/photo visibility is restricted. Restricted photos use `private-avatars`.
+- `live-replays` is private and has no direct authenticated object policy; replay access is mediated through authenticated backend playback URLs. This matches the app's intended access path.
+- No Storage policy or bucket change was made. Runtime tests with multiple accounts are still required to prove visibility and deletion behavior at the object API boundary.
