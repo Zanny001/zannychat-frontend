@@ -393,7 +393,7 @@ export default function LiveStreamScreen({ route, navigation }) {
         if (active) setConnectionLoading(false);
       });
     return () => { active = false; };
-  }, [streamId]);
+  }, [streamId, connection?.stream?.id, connection?.token, connection?.livekitUrl]);
 
   const refreshReplay = useCallback(async () => {
     if (!stream?.id || !creatorMode || !replayEnabled) return;
@@ -741,7 +741,7 @@ export default function LiveStreamScreen({ route, navigation }) {
     navigation.navigate('LiveReplay', { replay: { ...replay, streamTitle: stream?.title || 'LIVE replay' } });
   };
 
-  if (!connection || !stream) return <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}><Text style={{ color: colors.textPrimary }}>This LIVE room is unavailable.</Text></SafeAreaView>;
+  if (!connection || !stream) return <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}><ActivityIndicator color={colors.primary} /><Text style={{ color: colors.textPrimary, marginTop: 12 }}>{connectionLoading ? 'Connecting to LIVE…' : error || 'This LIVE room is unavailable.'}</Text></SafeAreaView>;
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#100F18' }}>
       <StatusBar barStyle="light-content" />
