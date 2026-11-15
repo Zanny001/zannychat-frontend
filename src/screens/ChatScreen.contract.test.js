@@ -29,3 +29,14 @@ test('invalid files already in the retry queue are removed instead of retried fo
   assert.match(screen, /const removed = await removePendingAttachment\(myUserId, conversation\.id, item\.id\)/);
   assert.match(screen, /await removePreservedAttachment\(FileSystem, item\)/);
 });
+
+
+test('deleted-message tombstones can be removed by either participant', () => {
+  const start = screen.indexOf('const messageOptions');
+  const end = screen.indexOf('const messageActions', start);
+  const block = screen.slice(start, end > start ? end : start + 5000);
+  assert.match(block, /key: 'delete'/);
+  assert.match(block, /label: sheetMessage\.deletedAt \? 'Remove deleted message' : isMineMessage\(sheetMessage\) \? 'Delete' : 'Delete for me'/);
+  assert.doesNotMatch(block, /\.\.\.\(isMineMessage\(sheetMessage\)\s*\?/);
+  assert.match(screen, /performDeleteMessage\(deleteMessageTarget, 'me'\)/);
+});
