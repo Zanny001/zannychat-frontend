@@ -113,6 +113,18 @@ export default function NotificationsScreen({ navigation }) {
     }
   }
 
+  const pushDetail = !SUPABASE_ENABLED
+    ? 'Requires a connected account and backend.'
+    : !prefs.pushEnabled
+      ? 'Off — this account has no registered push tokens.'
+      : pushRegistrationState === 'registered'
+        ? 'Registered on this device; new messages can reach it.'
+        : pushRegistrationState === 'not_registered'
+          ? 'Enabled in settings, but this device is not registered yet.'
+          : pushRegistrationState === 'removal_failed'
+            ? 'Token removal could not be confirmed. Retry turning push off.'
+            : 'Enabled in settings; device registration has not yet been confirmed.';
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Notifications" onBack={() => navigation.goBack()} />
