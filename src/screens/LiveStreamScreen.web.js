@@ -119,6 +119,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [guestStatus, setGuestStatus] = useState('none');
   const [guestApproved, setGuestApproved] = useState(false);
   const [guestRequests, setGuestRequests] = useState([]);
+  const seenGuestRequestIds = useRef(new Set());
   const [reports, setReports] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [panel, setPanel] = useState('');
@@ -311,8 +312,10 @@ export default function LiveStreamScreen({ route, navigation }) {
         const result = await backendFetch(`/live/${stream.id}/guest-requests`);
         if (!active) return;
         const incoming = Array.isArray(result?.requests) ? result.requests : [];
+        const hasNewRequest = incoming.some((item) => !seenGuestRequestIds.current.has(item.user_id));
+        incoming.forEach((item) => seenGuestRequestIds.current.add(item.user_id));
         setGuestRequests(incoming);
-        if (incoming.length) setPanel('guestRequests');
+        if (hasNewRequest) setPanel('guestRequests');
       } catch (_) {}
     };
     refreshGuestRequests();
