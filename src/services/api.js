@@ -800,30 +800,39 @@ export async function completePasswordReset(callbackUrl, newPassword) {
 }
 
 
-// Permanently delete the authenticated account. Password re-authentication is
-// required on-device, and the backend independently checks the fresh JWT
-// auth_time claim before invoking the Supabase admin deletion API.
+// Permanently delete the authenticated account. Email/password users can
+// reauthenticate with their password; OAuth users reauthenticate with their
+// provider first. The backend independently enforces a fresh JWT auth_time.
 export async function deleteAccount(currentPassword) {
   if (!SUPABASE_ENABLED || !BACKEND_ENABLED) {
     throw new Error('Account deletion requires a configured Supabase project and backend.');
   }
-  if (typeof currentPassword !== 'string' || !currentPassword) {
-    throw new Error('Enter your current password to continue.');
+  if (currentPassword != null && typeof currentPassword !== 'string') {
+    throw new Error('The password verification value is invalid.');
   }
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData?.user?.email) {
     throw new Error('Your session has expired. Sign in again before deleting your account.');
   }
-  const { error: reauthError } = await supabase.auth.signInWithPassword({
-    email: normalizeEmail(userData.user.email),
-    password: currentPassword,
-  });
-  if (reauthError) throw new Error('Password verification failed. Check your password and try again.');
+  if (currentPassword) {
+    const { error: reauthError } = await supabase.auth.signInWithPassword({
+      email: normalizeEmail(userData.user.email),
+      password: currentPassword,
+    });
+    if (reauthError) throw new Error('Password verification failed. Check your password and try again.');
+  }
 
-  await backendFetch('/account/delete', {
-    method: 'POST',
-    body: JSON.stringify({ confirmation: 'DELETE' }),
-  });
+  try {
+    await backendFetch('/account/delete', {
+      method: 'POST',
+      body: JSON.stringify({ confirmation: 'DELETE' }),
+    });
+  } catch (error) {
+    if (/verify your password again|verify your password/i.test(error?.message || '')) {
+      throw new Error('Your session is no longer recent enough. Re-verify with your sign-in provider, return here, and confirm deletion within five minutes.');
+    }
+    throw error;
+  }
   // Account is already removed server-side. Clean this account's local
   // unsent drafts before dropping the local session; cleanup is best-effort
   // and never turns a successful server deletion into a reported failure.
