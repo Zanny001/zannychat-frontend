@@ -292,7 +292,7 @@ export default function GroupCallScreenWeb({ route, navigation }) {
     const channel = supabase.channel(`direct-livekit-call-web:${directCallId}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'call_sessions', filter: `id=eq.${directCallId}` }, (event) => {
         const next = event?.new;
-        if (!active || !next) return;
+        if (!active || !next || endedRef.current) return;
         if (next.group_room_id) {
           endedRef.current = true;
           navigation.replace('GroupCall', {
