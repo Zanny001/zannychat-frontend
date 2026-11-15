@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useState } from 'react';
 import { startGoogleOAuth } from '../services/googleAuth';
 import {
@@ -26,7 +27,7 @@ function showMessage(title, message) {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     window.alert(`${title}\n\n${message}`);
   } else {
-    Alert.alert(title, message);
+    showAppAlert(title, message);
   }
 }
 
