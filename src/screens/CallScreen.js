@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { DeviceEventEmitter, ActivityIndicator, Alert, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -425,7 +426,7 @@ export default function CallScreen({ route, navigation }) {
       }
       setSpeakerOn(next);
     } catch (_) {
-      Alert.alert('Audio route unavailable', 'ZannyChat could not change the audio output. Check your connected audio devices and try again.');
+      showAppAlert('Audio route unavailable', 'ZannyChat could not change the audio output. Check your connected audio devices and try again.');
     }
   };
   useEffect(() => {
@@ -546,7 +547,7 @@ export default function CallScreen({ route, navigation }) {
         <Text style={[typography.body, styles.phase, { color: secondaryForeground }]}>{phase === 'Connected' ? formatTime(seconds) : phase}</Text>
         {networkNotice ? <Text style={[typography.small, styles.networkNotice, { color: immersiveVideo ? '#F2D28B' : colors.warning }]}>{networkNotice}</Text> : null}
         {errorText ? <Text style={[typography.small, styles.error, { color: immersiveVideo ? '#FFB8C0' : colors.danger }]}>{errorText}</Text> : null}
-        {phase === 'Unavailable' ? <TouchableOpacity onPress={() => Alert.alert('Call unavailable', errorText || 'Please try again.')} accessibilityRole="button" accessibilityLabel="Show call connection details" style={[styles.retry, { backgroundColor: immersiveVideo ? 'rgba(255,255,255,0.12)' : colors.primary, borderRadius: 12 }]}><Text style={[typography.small, styles.retryText, { color: immersiveVideo ? '#FFFFFF' : colors.onPrimary }]}>Call details</Text></TouchableOpacity> : null}
+        {phase === 'Unavailable' ? <TouchableOpacity onPress={() => showAppAlert('Call unavailable', errorText || 'Please try again.')} accessibilityRole="button" accessibilityLabel="Show call connection details" style={[styles.retry, { backgroundColor: immersiveVideo ? 'rgba(255,255,255,0.12)' : colors.primary, borderRadius: 12 }]}><Text style={[typography.small, styles.retryText, { color: immersiveVideo ? '#FFFFFF' : colors.onPrimary }]}>Call details</Text></TouchableOpacity> : null}
         {phase !== 'Connected' && phase !== 'Unavailable' ? <ActivityIndicator style={{ marginTop: 18 }} color={foreground} /> : null}
       </View>
       <View style={styles.bottom}>
