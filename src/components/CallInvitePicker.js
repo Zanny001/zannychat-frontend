@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Avatar from './Avatar';
 import { useTheme } from '../theme/ThemeContext';
 import { supabase } from '../services/supabaseClient';
 import { backendFetch } from '../services/backendClient';
@@ -154,13 +155,10 @@ export default function CallInvitePicker({
             contentContainerStyle={styles.results}
             renderItem={({ item }) => {
               const displayName = item.name || item.username || 'ZannyChat member';
-              const initial = String(displayName).trim().slice(0, 1).toUpperCase() || '?';
               const busy = invitingId === item.id;
               return (
                 <View style={[styles.personRow, { borderBottomColor: colors.border }]}>
-                  <View style={[styles.avatar, { backgroundColor: item.avatar_color || colors.primary }]}>
-                    <Text style={styles.avatarText}>{initial}</Text>
-                  </View>
+                  <Avatar name={displayName} color={item.avatar_color || colors.primary} size={42} />
                   <View style={styles.personCopy}>
                     <Text numberOfLines={1} style={[styles.personName, { color: colors.textPrimary }]}>{displayName}</Text>
                     <Text numberOfLines={1} style={[typography.small, { color: colors.textSecondary }]}>@{item.username || 'member'}</Text>
@@ -214,9 +212,9 @@ const styles = StyleSheet.create({
   },
   headingCopy: { flex: 1, gap: 4 },
   closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -231,9 +229,9 @@ const styles = StyleSheet.create({
   },
   searchInput: { flex: 1, minWidth: 0, fontSize: 15, paddingVertical: 10 },
   searchButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -246,19 +244,11 @@ const styles = StyleSheet.create({
     gap: 11,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
   personCopy: { flex: 1, minWidth: 0, gap: 3 },
   personName: { fontSize: 14, fontWeight: '700' },
   inviteButton: {
     minWidth: 68,
-    minHeight: 34,
+    minHeight: 48,
     borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',

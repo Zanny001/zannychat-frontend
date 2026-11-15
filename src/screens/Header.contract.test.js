@@ -11,8 +11,8 @@ test('shared header controls use accessible Pressable interactions', () => {
   assert.ok(header.includes('accessibilityLabel="Go back"'));
 });
 
-test('shared header back control meets the 44-point touch target and shows pressed feedback', () => {
-  assert.ok(header.includes('minWidth: 44'));
-  assert.ok(header.includes('minHeight: 44'));
+test('shared header back control meets the 48-point touch target and shows pressed feedback', () => {
+  assert.ok(header.includes('minWidth: 48'));
+  assert.ok(header.includes('minHeight: 48'));
   assert.ok(header.includes('pressed && { backgroundColor: hexToRgba(colors.primary, 0.12) }'));
 });

@@ -3,6 +3,15 @@ import { View, Text, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 
+function readableForeground(color, fallback) {
+  const hex = typeof color === 'string' ? color.trim().replace(/^#/, '') : '';
+  if (!/^[0-9a-fA-F]{6}$/.test(hex)) return fallback;
+  const channels = [0, 2, 4].map((offset) => parseInt(hex.slice(offset, offset + 2), 16) / 255);
+  const linear = channels.map((value) => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+  const luminance = 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+  return luminance > 0.179 ? '#111827' : '#FFFFFF';
+}
+
 function initials(name = '') {
   return name
     .split(' ')
@@ -17,8 +26,10 @@ function initials(name = '') {
 // to load (a broken link shouldn't leave a blank circle). isGroup
 // swaps the online dot for a people-icon badge — a group has no single
 // online/offline state to show.
-export default function Avatar({ name, color = '#6C5CE7', size = 48, online, imageUrl, isGroup }) {
+export default function Avatar({ name, color, size = 48, online, imageUrl, isGroup }) {
   const { colors } = useTheme();
+  const avatarColor = color || colors.primary;
+  const avatarTextColor = !color || color === colors.primary ? colors.onPrimary : readableForeground(avatarColor, colors.onPrimary);
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = Boolean(imageUrl) && !imageFailed;
 
@@ -42,13 +53,13 @@ export default function Avatar({ name, color = '#6C5CE7', size = 48, online, ima
         <View
           style={[
             styles.circle,
-            { width: size, height: size, borderRadius: size / 2, backgroundColor: color },
+            { width: size, height: size, borderRadius: size / 2, backgroundColor: avatarColor },
           ]}
         >
           {isGroup ? (
-            <Ionicons name="people" size={size * 0.46} color="#FFFFFF" />
+            <Ionicons name="people" size={size * 0.46} color={avatarTextColor} />
           ) : (
-            <Text style={[styles.initials, { fontSize: size * 0.38 }]}>{initials(name)}</Text>
+            <Text style={[styles.initials, { fontSize: size * 0.38, color: avatarTextColor }]}>{initials(name)}</Text>
           )}
         </View>
       )}
@@ -95,7 +106,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   initials: {
-    color: '#FFFFFF',
     fontFamily: 'SpaceGrotesk_700Bold',
   },
   statusDot: {
