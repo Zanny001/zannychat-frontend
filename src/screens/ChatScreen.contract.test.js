@@ -46,7 +46,9 @@ test('message composer keeps a distinct moderate input surface and balanced cont
   assert.match(inputBar, /borderColor: hexToRgba\(colors\.primary, 0\.24\)/);
   assert.match(inputBar, /minHeight: 48/);
   assert.match(inputBar, /width: 48, height: 48/);
-  assert.match(inputBar, /accessibilityLabel="Send voice message"/);\n  assert.match(inputBar, /accessibilityLabel=\{text\.trim\(\) \? \(editing \? 'Confirm edit' : 'Send message'\) : 'Record a voice message'\}/);\n  assert.ok((inputBar.match(/hitSlop=\{6\}/g) || []).length >= 3, 'recording send, text send, and emoji controls retain their intended hit slop');
+  assert.match(inputBar, /accessibilityLabel="Send voice message"/);
+  assert.match(inputBar, /accessibilityLabel=\{text\.trim\(\) \? \(editing \? 'Confirm edit' : 'Send message'\) : 'Record a voice message'\}/);
+  assert.ok((inputBar.match(/hitSlop=\{6\}/g) || []).length >= 3, 'recording send, text send, and emoji controls retain their intended hit slop');
   assert.match(inputBar, /maxHeight: 96/);
   assert.match(inputBar, /textAlignVertical: 'center'/);
 });
