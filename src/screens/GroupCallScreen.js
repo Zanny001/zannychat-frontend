@@ -466,7 +466,7 @@ export default function GroupCallScreen({ route, navigation }) {
           onClose={() => setInvitePickerVisible(false)}
           onInvite={invitePerson}
           conversationId={connection.room.conversation_id || conversationId}
-          roomId={connection.roomId}
+          roomId={directCallId ? null : connection.roomId}
           filterToConversationMembers={!directCallId && !connection.room.source_call_id}
           excludeIds={participantIds}
           title="Add people to call"
