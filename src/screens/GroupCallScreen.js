@@ -9,7 +9,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 import CallInvitePicker from '../components/CallInvitePicker';
 import { updateCallStatus } from '../services/calls';
-import { endNativeCall, fulfillNativeIncomingConnected, reportNativeCallEnded, reportNativeOutgoingConnected } from '../services/nativeCallSystem';
+import { endNativeCall, fulfillNativeIncomingConnected, reportNativeCallEnded, reportNativeOutgoingConnected, setNativeMuted } from '../services/nativeCallSystem';
 
 function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onParticipantsChange, endLabel, nativeCallId, nativeRequestId, isCaller, onRoomConnected, directCall }) {
   const room = useRoomContext();
@@ -48,7 +48,7 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
     const onReconnected = () => setConnectionState('Connected');
     const onDisconnected = () => setConnectionState('Disconnected');
     room.on(RoomEvent.Connected, onConnected);
-    if (room.state === 'connected') setConnectionState('Connected');
+    if (room.state === 'connected') { setConnectionState('Connected'); onRoomConnected?.(); }
     room.on(RoomEvent.Reconnecting, onReconnecting);
     room.on(RoomEvent.Reconnected, onReconnected);
     room.on(RoomEvent.Disconnected, onDisconnected);
@@ -70,9 +70,11 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
   }, [nativeCallId, room]);
 
   const toggleMute = async () => {
+    const next = !muted;
     try {
-      await room.localParticipant.setMicrophoneEnabled(muted);
-      setMuted(!muted);
+      await room.localParticipant.setMicrophoneEnabled(!next);
+      if (nativeCallId) setNativeMuted(nativeCallId, next).catch(() => {});
+      setMuted(next);
     } catch (_) {
       Alert.alert('Microphone unavailable', 'Check microphone permission and try again.');
     }
@@ -394,7 +396,7 @@ export default function GroupCallScreen({ route, navigation }) {
     const channel = supabase.channel(`direct-livekit-call:${directCallId}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'call_sessions', filter: `id=eq.${directCallId}` }, (event) => {
         const next = event?.new;
-        if (!active || !next) return;
+        if (!active || !next || endingRef.current) return;
         if (next.group_room_id) {
           endingRef.current = true;
           navigation.replace('GroupCall', {
