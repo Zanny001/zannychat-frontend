@@ -23,7 +23,7 @@ const COPY = {
 };
 
 export default function AuthRequiredScreen({ navigation, route }) {
-  const { colors, radii } = useTheme();
+  const { colors, typography, spacing, radii } = useTheme();
   const copy = COPY[route?.name] || {
     title: 'Sign in to continue',
     body: 'Authenticate to continue to the ZannyChat link you opened.',
@@ -39,8 +39,8 @@ export default function AuthRequiredScreen({ navigation, route }) {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={styles.container}>
-        <Text style={[styles.brand, { color: colors.primary }]}>ZANNYCHAT</Text>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>{validLink ? copy.title : 'This link is incomplete'}</Text>
+        <Text style={[typography.caption, styles.brand, { color: colors.primary }]}>ZANNYCHAT</Text>
+        <Text style={[typography.title, styles.title, { color: colors.textPrimary }]}>{validLink ? copy.title : 'This link is incomplete'}</Text>
         <Text style={[styles.body, { color: colors.textSecondary }]}>
           {validLink ? copy.body : 'Ask the sender to share a fresh link, then open it again.'}
         </Text>
@@ -48,6 +48,7 @@ export default function AuthRequiredScreen({ navigation, route }) {
           <>
             <TouchableOpacity
               accessibilityRole="button"
+              accessibilityLabel="Sign in to continue to this link"
               onPress={() => continueTo('Login')}
               style={[styles.primaryButton, { backgroundColor: colors.primary, borderRadius: radii?.lg || 18 }]}
             >
@@ -55,6 +56,7 @@ export default function AuthRequiredScreen({ navigation, route }) {
             </TouchableOpacity>
             <TouchableOpacity
               accessibilityRole="button"
+              accessibilityLabel="Create an account to continue to this link"
               onPress={() => continueTo('Signup')}
               style={[styles.secondaryButton, { borderColor: colors.border, borderRadius: radii?.lg || 18 }]}
             >
@@ -70,7 +72,7 @@ export default function AuthRequiredScreen({ navigation, route }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  container: { flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', justifyContent: 'center', paddingHorizontal: 28, paddingVertical: 36 },
+  container: { flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', justifyContent: 'center', paddingHorizontal: spacing.lg, paddingVertical: spacing.xl || spacing.lg },
   brand: { fontSize: 12, fontWeight: '900', letterSpacing: 2.4, marginBottom: 20 },
   title: { fontSize: 28, lineHeight: 34, fontWeight: '800', marginBottom: 12 },
   body: { fontSize: 15, lineHeight: 23, marginBottom: 28 },
