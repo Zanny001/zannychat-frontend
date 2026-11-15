@@ -165,7 +165,7 @@ export default function PrivacySecurityScreen({ navigation }) {
       Alert.alert('Re-authentication required', 'Sign in again with your account provider before deleting your account.');
       return;
     }
-    if (googleReauthMismatch && !deletePassword) {
+    if (googleReauthMismatch) {
       Alert.alert('Google account mismatch', 'The Google account used for verification does not match the account you are deleting. Sign back into the original account.');
       return;
     }
