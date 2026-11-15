@@ -4,8 +4,8 @@ import fs from 'node:fs';
 
 const screen = fs.readFileSync(new URL('./ChatScreen.js', import.meta.url), 'utf8');
 
-test('chat picker enforces the same exact 25,000,000-byte limit as Storage', () => {
-  assert.match(screen, /const MAX_FILE_SIZE = 25_000_000/);
+test('chat picker enforces the same exact 25 MiB limit as Storage', () => {
+  assert.match(screen, /const MAX_FILE_SIZE = 25 * 1024 * 1024/);
 });
 
 test('permanent attachment type and size failures are not queued for transient retry', () => {
