@@ -8,7 +8,8 @@ const webSource = fs.readFileSync(path.join(__dirname, 'CallScreen.web.js'), 'ut
 for (const [platform, source] of [['native', nativeSource], ['web', webSource]]) {
   test(`${platform} call screen lets either participant recover a failed ICE connection`, () => {
     const restartStart = source.indexOf('pc.oniceconnectionstatechange');
-    const restartEnd = source.indexOf('const processSignal', restartStart);
+    const processSignalEnd = source.indexOf('const processSignal', restartStart);
+    const restartEnd = processSignalEnd > restartStart ? processSignalEnd : source.indexOf('const maybeStartOffer', restartStart);
     assert.notEqual(restartStart, -1);
     assert.notEqual(restartEnd, -1);
     const restartHandler = source.slice(restartStart, restartEnd);
