@@ -85,7 +85,7 @@ test('removed web guests remain viewers after LiveKit publishing permission is r
 
 test('web LIVE creator sees incoming guest requests in an automatically refreshed actionable panel', () => {
   assert.ok(web.includes("setInterval(refreshGuestRequests, 3500)"));
-  assert.ok(web.includes("if (incoming.length) setPanel('guestRequests')"));
+  assert.ok(web.includes("if (hasNewRequest) setPanel('guestRequests')"));
   assert.ok(web.includes('Guest requests ('));
   assert.ok(web.includes("reviewGuestRequest(item.user_id, 'accepted')"));
   assert.ok(web.includes("reviewGuestRequest(item.user_id, 'declined')"));
