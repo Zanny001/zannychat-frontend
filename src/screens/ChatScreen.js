@@ -91,6 +91,14 @@ function DraftVideoPreview({ uri }) {
 }
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // Exact chat-media Storage limit (26,214,400 bytes).
+
+function isPermanentAttachmentUploadError(error) {
+  if (['UNSUPPORTED_MEDIA_TYPE', 'FILE_TOO_LARGE'].includes(error?.code)) return true;
+  const status = Number(error?.statusCode ?? error?.status ?? error?.response?.status);
+  if ([400, 403, 404, 413, 415, 422].includes(status)) return true;
+  const message = String(error?.message || error?.error || '').toLowerCase();
+  return /invalidmime|unsupported mime|mime type.*not|file size.*limit|payload too large|row-level security|access denied|not authorized/.test(message);
+}
 const MESSAGE_PAGE_SIZE = 30;
 
 const DAY_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -682,7 +690,7 @@ export default function ChatScreen({ route, navigation }) {
   }
 
   async function queueAttachmentRetry(item, error) {
-    if (error?.code === 'UNSUPPORTED_MEDIA_TYPE' || error?.code === 'FILE_TOO_LARGE') {
+    if (isPermanentAttachmentUploadError(error)) {
       Alert.alert('Attachment cannot be uploaded', error.message || 'Choose a supported file under 25 MB.');
       return;
     }
