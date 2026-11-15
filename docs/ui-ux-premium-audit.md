@@ -444,3 +444,10 @@ The source scan covered these families:
 - Latest premium workflow run 653 failed because the old composer contract expected the previous translucent input style. The assertion was updated in `ChatScreen.contract.test.js` to the new surface, border, radius and height values. No new workflow run has been returned for the subsequent commits, so neither this repair nor the notification changes are CI-verified.
 - Vercel still reports the team's build-rate-limit failure. No successful deployment of the latest branch head is confirmed.
 - The app has received first-pass source review across all 46 registered screens; visual/responsive, keyboard, accessibility, runtime and physical-device acceptance remain outstanding.
+
+
+## Static regression-contract verification — 2026-11-16
+
+- Retrieved the current branch source through GitHub and manually evaluated the key contract predicates in the connected execution environment. The following all returned true: composer raised surface/20px radius/52px minimum height; updated legacy composer assertion; ten-minute account-deletion reauthentication copy; privacy contract presence; startup push preference guard; push-token upsert error handling; awaited notification registration and honest UI status; and presence of the notification contract test.
+- This is a targeted static check of source text and test expectations only. It is not equivalent to executing `npm run test:unit`, Expo exports, the calling workflow, or a device-level push test.
+- Latest PR head remains `d5345569fa1ebb07d0386fd40766a08dbc6754a5`; no new Actions run has been returned. Vercel remains build-rate-limited.
