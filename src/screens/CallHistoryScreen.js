@@ -157,7 +157,7 @@ export default function CallHistoryScreen({ navigation }) {
             return (
               <GlassCard key={item.id} tintAlpha={0.28} noPadding>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.sm }}>
-                  <Avatar name={item.participantName} color={item.avatarColor || colors.primary} size={50} />
+                  <Avatar name={item.participantName} color={item.avatarColor || colors.primary} imageUrl={item.participantAvatarUrl} size={50} />
                   <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
                     <Text style={[typography.bodyStrong, { color: colors.textPrimary }]} numberOfLines={1}>{item.participantName || 'ZannyChat contact'}</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, minWidth: 0 }}>
