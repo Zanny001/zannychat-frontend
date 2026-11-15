@@ -105,7 +105,7 @@ test('web LIVE actions expose labels, disabled state and accessible touch target
   assert.match(liveScreen, /accessibilityRole="button"/);
   assert.match(liveScreen, /accessibilityLabel=\{accessibilityLabel \|\| label\}/);
   assert.match(liveScreen, /accessibilityState=\{\{ disabled \}\}/);
-  assert.match(liveScreen, /minHeight: 44/);
+  assert.match(liveScreen, /minHeight: (?:44|48)/);
   assert.match(liveScreen, /accessibilityLabel="Hide comment"/);
   assert.match(liveScreen, /accessibilityLabel="LIVE chat message"/);
   assert.match(liveScreen, /accessibilityLabel=\{'Send ' \+ reaction \+ ' reaction'\}/);
