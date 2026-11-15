@@ -289,23 +289,30 @@ export default function GroupCallScreenWeb({ route, navigation }) {
   useEffect(() => {
     if (!directCallId || !supabase) return undefined;
     let active = true;
+    const handleCallUpdate = (next) => {
+      if (!active || !next || endedRef.current) return;
+      if (next.group_room_id) {
+        endedRef.current = true;
+        navigation.replace('GroupCall', {
+          roomId: next.group_room_id,
+          conversationId: next.conversation_id || conversationId,
+          conversationName: 'Group call',
+          callType: next.call_type || callType,
+        });
+      } else if (['declined', 'cancelled', 'ended', 'missed', 'failed'].includes(next.status)) {
+        endedRef.current = true;
+        navigation.goBack();
+      }
+    };
     const channel = supabase.channel(`direct-livekit-call-web:${directCallId}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'call_sessions', filter: `id=eq.${directCallId}` }, (event) => {
-        const next = event?.new;
-        if (!active || !next || endedRef.current) return;
-        if (next.group_room_id) {
-          endedRef.current = true;
-          navigation.replace('GroupCall', {
-            roomId: next.group_room_id,
-            conversationId: next.conversation_id || conversationId,
-            conversationName: 'Group call',
-            callType: next.call_type || callType,
-          });
-        } else if (['declined', 'cancelled', 'ended', 'missed', 'failed'].includes(next.status)) {
-          endedRef.current = true;
-          navigation.goBack();
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'call_sessions', filter: `id=eq.${directCallId}` }, (event) => handleCallUpdate(event?.new))
+      .subscribe((channelStatus) => {
+        if (channelStatus === 'SUBSCRIBED') {
+          supabase.from('call_sessions').select('id,conversation_id,call_type,status,group_room_id')
+            .eq('id', directCallId).maybeSingle()
+            .then(({ data }) => { if (data) handleCallUpdate(data); }).catch(() => {});
         }
-      }).subscribe();
+      });
     return () => { active = false; supabase.removeChannel(channel); };
   }, [callType, conversationId, directCallId, navigation]);
 
