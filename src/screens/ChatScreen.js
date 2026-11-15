@@ -90,7 +90,7 @@ function DraftVideoPreview({ uri }) {
   return <VideoView player={player} nativeControls contentFit="contain" style={{ width: '100%', height: '100%' }} />;
 }
 
-const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB — enforced server-side too since 0006 (storage.buckets.file_size_limit)
+const MAX_FILE_SIZE = 25_000_000; // Exact storage.buckets.file_size_limit (25,000,000 bytes).
 const MESSAGE_PAGE_SIZE = 30;
 
 const DAY_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -682,6 +682,10 @@ export default function ChatScreen({ route, navigation }) {
   }
 
   async function queueAttachmentRetry(item, error) {
+    if (error?.code === 'UNSUPPORTED_MEDIA_TYPE' || error?.code === 'FILE_TOO_LARGE') {
+      Alert.alert('Attachment cannot be uploaded', error.message || 'Choose a supported file under 25 MB.');
+      return;
+    }
     const recovery = await preserveAttachmentForRetry(FileSystem, item, myUserId, conversation.id);
     const queuedItem = recovery.item;
     const saved = await savePendingAttachment(myUserId, conversation.id, queuedItem);
@@ -781,6 +785,18 @@ export default function ChatScreen({ route, navigation }) {
           else if (item.kind === 'file') uploaded = await uploadChatFile(conversation.id, item.uri, item.name, item.mimeType, item.size);
           else uploaded = await uploadVoiceNote(conversation.id, item.uri, item.durationSeconds);
         } catch (error) {
+          if (error?.code === 'UNSUPPORTED_MEDIA_TYPE' || error?.code === 'FILE_TOO_LARGE') {
+            const removed = await removePendingAttachment(myUserId, conversation.id, item.id);
+            if (removed) {
+              await removePreservedAttachment(FileSystem, item);
+              setPendingAttachments((items) => items.filter((entry) => entry.id !== item.id));
+            }
+            Alert.alert(
+              'Attachment cannot be uploaded',
+              `${error.message || 'Choose a supported file under 25 MB.'}${removed ? ' The invalid retry item was removed.' : ' Remove this item from the retry list.'}`
+            );
+            break;
+          }
           await recordAttachmentRetryFailure(myUserId, conversation.id, item.id, error);
           setPendingAttachments((items) => items.map((entry) => entry.id === item.id ? {
             ...entry,
