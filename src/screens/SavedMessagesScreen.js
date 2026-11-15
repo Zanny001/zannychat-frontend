@@ -47,13 +47,13 @@ export default function SavedMessagesScreen({ navigation }) {
           <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, minHeight: 48 }}>
             <Ionicons name="search-outline" size={19} color={colors.textSecondary} />
             <TextInput value={query} onChangeText={setQuery} placeholder="Search saved messages" placeholderTextColor={colors.textSecondary} style={[typography.body, { flex: 1, minWidth: 0, color: colors.textPrimary, marginLeft: spacing.sm, paddingVertical: 10 }]} accessibilityLabel="Search saved messages" returnKeyType="search" />
-            {query ? <TouchableOpacity onPress={() => setQuery('')} accessibilityRole="button" accessibilityLabel="Clear search"><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
+            {query ? <TouchableOpacity onPress={() => setQuery('')} accessibilityRole="button" accessibilityLabel="Clear search" style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
           </View>
         </GlassCard>
         <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Bookmarks stay on this device and do not sync. Private attachment links are never stored here.</Text>
       </View>
       {loading ? <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Loading saved messages…</Text></View> : error ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl }}><Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading saved messages" style={{ minHeight: 44, justifyContent: 'center', marginTop: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></View>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl }}><Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading saved messages" style={{ minHeight: 48, justifyContent: 'center', marginTop: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></View>
       ) : (
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl }}>
           {visible.map((item) => (
@@ -64,16 +64,16 @@ export default function SavedMessagesScreen({ navigation }) {
                   <Text style={[typography.bodyStrong, { color: colors.textPrimary }]} numberOfLines={1}>{item.conversation?.name || 'Conversation'}</Text>
                   <Text style={[typography.caption, { color: colors.textSecondary }]} numberOfLines={1}>{item.senderName || 'Saved message'}{item.createdAt ? ` · ${String(item.createdAt).slice(0, 10)}` : ''}</Text>
                 </View>
-                <TouchableOpacity onPress={() => remove(item)} accessibilityRole="button" accessibilityLabel="Remove saved message" hitSlop={8}><Ionicons name="bookmark" size={19} color={colors.accent} /></TouchableOpacity>
+                <TouchableOpacity onPress={() => remove(item)} accessibilityRole="button" accessibilityLabel="Remove saved message" hitSlop={8} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="bookmark" size={19} color={colors.accent} /></TouchableOpacity>
               </View>
               {item.text ? <Text style={[typography.body, { color: colors.textPrimary }]}>{item.text}</Text> : null}
               {item.attachment ? <Text style={[typography.caption, { color: colors.textSecondary }]}><Ionicons name="attach-outline" size={13} /> {item.attachment.name || (item.attachment.type === 'voice' ? 'Voice note' : 'Attachment')} · Open the conversation to access the original</Text> : null}
-              <TouchableOpacity onPress={() => navigation.navigate('Chat', { conversation: item.conversation, targetMessageId: item.messageId })} accessibilityRole="button" accessibilityLabel="Open saved message in conversation" style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', paddingVertical: 5 }}>
+              <TouchableOpacity onPress={() => navigation.navigate('Chat', { conversation: item.conversation, targetMessageId: item.messageId })} accessibilityRole="button" accessibilityLabel="Open saved message in conversation" style={{ minHeight: 48, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
                 <Text style={[typography.small, { color: colors.primary, fontWeight: '700' }]}>Open conversation</Text><Ionicons name="arrow-forward" size={15} color={colors.primary} style={{ marginLeft: 5 }} />
               </TouchableOpacity>
             </GlassCard>
           ))}
-          {!visible.length ? <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 72, paddingHorizontal: spacing.xl }}><View style={{ width: 64, height: 64, borderRadius: 22, backgroundColor: `${colors.primary}18`, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="bookmark-outline" size={29} color={colors.primary} /></View><Text style={[typography.bodyStrong, { color: colors.textPrimary, marginTop: spacing.md }]}>{query ? 'No matching bookmarks' : 'Nothing saved yet'}</Text><Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>{query ? 'Try a different search.' : 'Long-press a message in any chat and choose Save message to keep it close.'}</Text></View> : null}
+          {!visible.length ? <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 48, paddingHorizontal: spacing.xl }}><View style={{ width: 64, height: 64, borderRadius: 22, backgroundColor: `${colors.primary}18`, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="bookmark-outline" size={29} color={colors.primary} /></View><Text style={[typography.bodyStrong, { color: colors.textPrimary, marginTop: spacing.md }]}>{query ? 'No matching bookmarks' : 'Nothing saved yet'}</Text><Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>{query ? 'Try a different search.' : 'Long-press a message in any chat and choose Save message to keep it close.'}</Text></View> : null}
         </ScrollView>
       )}
     </SafeAreaView>
