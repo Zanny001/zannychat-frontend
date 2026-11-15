@@ -290,7 +290,7 @@ export default function ChatListScreen({ navigation }) {
       <View style={{ marginBottom: spacing.sm }}>
         <View style={styles.storyHeading}>
           <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Moments</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Updates')} accessibilityRole="button" accessibilityLabel="See all moments">
+          <TouchableOpacity onPress={() => navigation.navigate('Updates')} accessibilityRole="button" accessibilityLabel="See all moments" style={{ minHeight: 44, paddingHorizontal: 8, justifyContent: 'center' }}>
             <Text style={[typography.small, { color: colors.primary }]}>See all</Text>
           </TouchableOpacity>
         </View>
@@ -637,12 +637,12 @@ const styles = StyleSheet.create({
   storyRing: { width: 64, height: 64, borderRadius: 32, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   storyInnerRing: { borderWidth: 2, borderRadius: 30, padding: 2 },
   storyAdd: { position: 'absolute', right: -1, bottom: -1, width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  draftsBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  cameraBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 15, shadowOpacity: 0.34, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 5 },
+  draftsBtn: { width: 44, height: 44, minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  cameraBtn: { width: 44, height: 44, minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 15, shadowOpacity: 0.34, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 5 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   titleRow: { flexDirection: 'row', alignItems: 'center' },
-  newChatBtn: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
-  searchBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 9 },
+  newChatBtn: { width: 44, height: 44, minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  searchBar: { minHeight: 48, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 9 },
   filterPill: { minHeight: 44, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   demoPill: {
     flexDirection: 'row',
