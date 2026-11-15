@@ -7,7 +7,8 @@ import Header from '../components/Header';
 import Avatar from '../components/Avatar';
 import GlassCard from '../components/GlassCard';
 import { fetchBlockedUsers, unblockUser, changePassword, deleteAccount } from '../services/api';
-import { SUPABASE_ENABLED } from '../services/supabaseClient';
+import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
+import { startGoogleOAuth } from '../services/googleAuth';
 import { BACKEND_ENABLED } from '../services/backendClient';
 import GlassInput from '../components/GlassInput';
 import { validatePasswordChange } from '../utils/authValidation';
@@ -29,6 +30,8 @@ export default function PrivacySecurityScreen({ navigation }) {
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [authProviders, setAuthProviders] = useState({ email: true, google: false });
+  const [reauthenticatingGoogle, setReauthenticatingGoogle] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -37,6 +40,17 @@ export default function PrivacySecurityScreen({ navigation }) {
         .then(setBlocked)
         .catch(() => {})
         .finally(() => setLoading(false));
+      if (SUPABASE_ENABLED && supabase) {
+        supabase.auth.getUser().then(({ data, error }) => {
+          if (error || !data?.user) return;
+          const providers = new Set([
+            ...(Array.isArray(data.user.app_metadata?.providers) ? data.user.app_metadata.providers : []),
+            data.user.app_metadata?.provider,
+            ...(Array.isArray(data.user.identities) ? data.user.identities.map((identity) => identity.provider) : []),
+          ].filter(Boolean));
+          setAuthProviders({ email: providers.has('email'), google: providers.has('google') });
+        }).catch(() => {});
+      }
     }, [])
   );
 
@@ -81,17 +95,35 @@ export default function PrivacySecurityScreen({ navigation }) {
     }
   }
 
+  async function handleGoogleReauthForDeletion() {
+    if (!SUPABASE_ENABLED || !supabase || !authProviders.google) return;
+    setReauthenticatingGoogle(true);
+    try {
+      const result = await startGoogleOAuth(supabase, { prompt: 'select_account' });
+      if (result?.cancelled) return;
+      Alert.alert('Google verification complete', 'Return to Privacy & security and confirm account deletion within five minutes.');
+    } catch (error) {
+      Alert.alert("Couldn't verify with Google", error.message || 'Please try again.');
+    } finally {
+      setReauthenticatingGoogle(false);
+    }
+  }
+
   async function handleDeleteAccount() {
-    if (!SUPABASE_ENABLED) {
-      Alert.alert('Live account required', 'Account deletion is unavailable in demo mode. No account data has been deleted.');
+    if (!SUPABASE_ENABLED || !BACKEND_ENABLED) {
+      Alert.alert('Live account required', 'Account deletion requires your connected account and backend. No account data has been deleted.');
       return;
     }
     if (deleteConfirmation !== 'DELETE') {
       Alert.alert('Confirm account deletion', 'Type DELETE exactly to confirm this permanent action.');
       return;
     }
-    if (!deletePassword) {
+    if (authProviders.email && !authProviders.google && !deletePassword) {
       Alert.alert('Verify your password', 'Enter your current password to confirm account ownership.');
+      return;
+    }
+    if (!authProviders.email && !authProviders.google) {
+      Alert.alert('Re-authentication required', 'Sign in again with your account provider before deleting your account.');
       return;
     }
     Alert.alert(
@@ -105,7 +137,7 @@ export default function PrivacySecurityScreen({ navigation }) {
           onPress: async () => {
             setDeletingAccount(true);
             try {
-              await deleteAccount(deletePassword);
+              await deleteAccount(deletePassword || undefined);
               Alert.alert('Account deleted', 'Your ZannyChat account has been deleted.', [
                 { text: 'Continue', onPress: () => navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] }) },
               ]);
@@ -304,18 +336,36 @@ export default function PrivacySecurityScreen({ navigation }) {
             <Text style={[typography.heading, { color: colors.danger, marginLeft: spacing.sm }]}>Delete account</Text>
           </View>
           <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 20, marginBottom: spacing.md }]}>
-            This permanently removes your account and profile, deletes direct conversations and your messages, and removes your group memberships. Other group members keep their conversations. This cannot be undone. You must verify your current password.
+            This permanently removes your account and profile, deletes direct conversations and your messages, and removes your group memberships. Other group members keep their conversations. This cannot be undone. You must verify ownership with your password or sign-in provider.
           </Text>
-          <GlassInput
-            value={deletePassword}
-            onChangeText={setDeletePassword}
-            placeholder="Current password"
-            accessibilityLabel="Current password for account deletion"
-            textContentType="password"
-            autoComplete="current-password"
-            secureTextEntry
-            editable={!deletingAccount && SUPABASE_ENABLED && BACKEND_ENABLED}
-          />
+          {authProviders.email && (
+            <GlassInput
+              value={deletePassword}
+              onChangeText={setDeletePassword}
+              placeholder="Current password"
+              accessibilityLabel="Current password for account deletion"
+              textContentType="password"
+              autoComplete="current-password"
+              secureTextEntry
+              editable={!deletingAccount && SUPABASE_ENABLED && BACKEND_ENABLED}
+            />
+          )}
+          {authProviders.google && (
+            <View style={{ marginBottom: spacing.md }}>
+              <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 20, marginBottom: spacing.sm }]}>
+                Google accounts can verify ownership with Google instead of a local password. After verification, return here and confirm deletion within five minutes.
+              </Text>
+              <TouchableOpacity
+                onPress={handleGoogleReauthForDeletion}
+                disabled={reauthenticatingGoogle || deletingAccount || !BACKEND_ENABLED}
+                accessibilityRole="button"
+                accessibilityLabel="Re-verify account ownership with Google"
+                style={[styles.passwordButton, { backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border, opacity: reauthenticatingGoogle ? 0.6 : 1 }]}
+              >
+                <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{reauthenticatingGoogle ? 'Opening Google…' : 'Verify with Google'}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
           <GlassInput
             value={deleteConfirmation}
             onChangeText={setDeleteConfirmation}
