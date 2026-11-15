@@ -294,8 +294,8 @@ export default function NewChatScreen({ navigation, route }) {
           <GlassCard noPadding glow intensity={26} tintAlpha={0.42}>
             <View style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md }}>
               <Ionicons name="search-outline" size={19} color={colors.textSecondary} />
-              <TextInput value={memberSearch} onChangeText={setMemberSearch} placeholder="Search names or @username…" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search ZannyChat members" returnKeyType="search" autoCapitalize="none" style={[typography.body, { flex: 1, minWidth: 0, marginLeft: spacing.sm, color: colors.textPrimary, minHeight: 46 }]} />
-              {memberSearch ? <TouchableOpacity onPress={() => setMemberSearch('')} accessibilityRole="button" accessibilityLabel="Clear member search" style={{ minWidth: 40, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={20} color={colors.textSecondary} /></TouchableOpacity> : null}
+              <TextInput value={memberSearch} onChangeText={setMemberSearch} placeholder="Search names or @username…" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search ZannyChat members" returnKeyType="search" autoCapitalize="none" style={[typography.body, { flex: 1, minWidth: 0, marginLeft: spacing.sm, color: colors.textPrimary, minHeight: 48 }]} />
+              {memberSearch ? <TouchableOpacity onPress={() => setMemberSearch('')} accessibilityRole="button" accessibilityLabel="Clear member search" style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={20} color={colors.textSecondary} /></TouchableOpacity> : null}
             </View>
           </GlassCard>
           <View style={{ gap: spacing.sm }}>
@@ -303,7 +303,7 @@ export default function NewChatScreen({ navigation, route }) {
             <View style={{ flexDirection: 'row', gap: spacing.xs, flexWrap: 'wrap' }}>
               {[{ id: 'all', label: 'All members', icon: 'people-outline' }, { id: 'online', label: 'Online', icon: 'radio-button-on-outline' }, { id: 'favorites', label: 'Favorites', icon: 'star-outline' }].map((option) => {
                 const selected = activeFilter === option.id;
-                return <TouchableOpacity key={option.id} onPress={() => { setDirectoryFilter(option.id); setOnlineOnly(false); }} accessibilityRole="radio" accessibilityLabel={option.label} accessibilityState={{ checked: selected }} style={{ minHeight: 44, paddingHorizontal: spacing.md, borderRadius: 22, borderWidth: 1, borderColor: selected ? colors.accent : colors.border, backgroundColor: selected ? colors.surface : 'transparent', flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name={option.icon} size={16} color={selected ? colors.accent : colors.textSecondary} /><Text style={[typography.caption, { color: selected ? colors.accent : colors.textSecondary }]}>{option.label}</Text></TouchableOpacity>;
+                return <TouchableOpacity key={option.id} onPress={() => { setDirectoryFilter(option.id); setOnlineOnly(false); }} accessibilityRole="radio" accessibilityLabel={option.label} accessibilityState={{ checked: selected }} style={{ minHeight: 48, paddingHorizontal: spacing.md, borderRadius: 22, borderWidth: 1, borderColor: selected ? colors.accent : colors.border, backgroundColor: selected ? colors.surface : 'transparent', flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name={option.icon} size={16} color={selected ? colors.accent : colors.textSecondary} /><Text style={[typography.caption, { color: selected ? colors.accent : colors.textSecondary }]}>{option.label}</Text></TouchableOpacity>;
               })}
             </View>
           </View>
