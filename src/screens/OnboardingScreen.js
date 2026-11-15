@@ -22,7 +22,7 @@ export default function OnboardingScreen({ navigation }) {
       <View style={{ paddingHorizontal: spacing.lg }}>
         <Feature icon="lock-closed" text="Private by default — chat access is limited to approved participants" />
         <Feature icon="people" text="Group chats, voice notes & real attachments" />
-        <Feature icon="sparkles" text="Smart replies, translation & summaries" />
+        <Feature icon="sparkles" text="Smart replies & chat summaries when AI is enabled" />
         <Feature icon="color-palette" text="A theme that's actually got range" />
       </View>
 
