@@ -588,17 +588,24 @@ export async function getPrivateProfileAvatarUrl(userId, expiresIn = 3600) {
 // request. A hidden profile never falls back to a public legacy URL.
 export async function resolveProfileAvatarUrls(profiles = [], expiresIn = 3600) {
   if (!SUPABASE_ENABLED || !Array.isArray(profiles) || profiles.length === 0) return profiles || [];
-  const ids = [...new Set(profiles.map((profile) => profile?.id).filter(Boolean))].slice(0, 500);
+  const ids = [...new Set(profiles.map((profile) => profile?.id).filter(Boolean))];
   if (!ids.length) return profiles;
-  const { data, error } = await supabase.rpc('get_visible_profile_avatar_paths', { p_user_ids: ids });
-  if (error) {
-    if (isMissingRpcFunction(error, 'get_visible_profile_avatar_paths')) {
-      return profiles.map((profile) => ({ ...profile, avatarUrl: profile.avatar_url || profile.avatarUrl || null }));
+  const accessRows = [];
+  for (let start = 0; start < ids.length; start += 500) {
+    const { data, error } = await supabase.rpc('get_visible_profile_avatar_paths', { p_user_ids: ids.slice(start, start + 500) });
+    if (error) {
+      if (isMissingRpcFunction(error, 'get_visible_profile_avatar_paths')) {
+        return profiles.map((profile) => {
+          const avatarUrl = profile.avatar_url || profile.avatarUrl || null;
+          return { ...profile, avatar_url: avatarUrl, avatarUrl };
+        });
+      }
+      throw error;
     }
-    throw error;
+    accessRows.push(...(Array.isArray(data) ? data : []));
   }
-  const accessById = new Map((Array.isArray(data) ? data : []).map((entry) => [entry.user_id, entry]));
-  const pathEntries = (Array.isArray(data) ? data : []).filter((entry) =>
+  const accessById = new Map(accessRows.map((entry) => [entry.user_id, entry]));
+  const pathEntries = accessRows.filter((entry) =>
     entry?.can_view && typeof entry.avatar_path === 'string'
     && entry.avatar_path.startsWith(`${entry.user_id}/`)
     && !entry.avatar_path.includes('..')
@@ -1602,9 +1609,8 @@ export async function fetchBlockedUsers() {
       profile: MOCK_CONTACTS.find((c) => c.id === id) || { id, name: 'Unknown' },
     }));
   }
-  const blocked = Array.isArray((await backendFetch('/safety/blocked'))?.blocked)
-    ? (await backendFetch('/safety/blocked')).blocked
-    : [];
+  const result = await backendFetch('/safety/blocked');
+  const blocked = Array.isArray(result?.blocked) ? result.blocked : [];
   const profiles = blocked.map((entry) => entry?.profile).filter((profile) => profile?.id);
   const resolved = await resolveProfileAvatarUrls(profiles);
   const byId = new Map(resolved.map((profile) => [profile.id, profile]));
