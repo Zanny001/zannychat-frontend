@@ -10,7 +10,7 @@ test('Shared app header back action uses a consistent 48-point hit area', () => 
 
 test('Chat media save and voice playback controls are easy to activate', () => {
   const source = read('ChatBubble.js');
-  assert.match(source, /width: 48, height: 48, borderRadius: 17/);
+  assert.match(source, /width: 48, height: 48, borderRadius: 24/);
   assert.match(source, /playButton: \{ width: 48, height: 48, minWidth: 48, minHeight: 48/);
 });
 
