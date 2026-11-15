@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useCallback, useState } from 'react';
 import { SafeAreaView, ScrollView, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -53,13 +54,13 @@ export default function ChatFoldersScreen({ navigation }) {
       const isEditing = Boolean(editingId);
       const next = await saveChatFolder(userId, { id: editingId || `folder-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name: cleanName, rules, excluded, createdAt: folders.find((folder) => folder.id === editingId)?.createdAt || new Date().toISOString() });
       setFolders(next); setName(''); setRules(['unread']); setExcluded(['archived']); setEditingId(null);
-      Alert.alert(isEditing ? 'Folder updated' : 'Folder created', `${cleanName} is ready. It will appear in your Chats filters.`);
+      showAppAlert(isEditing ? 'Folder updated' : 'Folder created', `${cleanName} is ready. It will appear in your Chats filters.`);
     } catch (err) { setError(err?.message || 'Could not save this folder.'); }
     finally { setSaving(false); }
   };
   const edit = (folder) => { setEditingId(folder.id); setName(folder.name); setRules([...folder.rules]); setExcluded([...folder.excluded]); setError(''); };
   const cancelEdit = () => { setEditingId(null); setName(''); setRules(['unread']); setExcluded(['archived']); setError(''); };
-  const remove = (folder) => Alert.alert('Delete folder?', `Delete “${folder.name}”? Your chats and messages will not be deleted.`, [
+  const remove = (folder) => showAppAlert('Delete folder?', `Delete “${folder.name}”? Your chats and messages will not be deleted.`, [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Delete', style: 'destructive', onPress: async () => { const next = await deleteChatFolder(userId, folder.id); setFolders(next); } },
   ]);
