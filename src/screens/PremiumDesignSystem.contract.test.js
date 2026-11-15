@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { DEFAULT_MOOD_KEY, MOODS, resolveMoodColors, layout, spacing, radii } from '../theme/colors.js';
 
 function luminance(hex) {
@@ -47,4 +48,17 @@ test('shared layout tokens preserve the minimum mobile touch target and stepped 
   assert.equal(layout.controlHeight, 48);
   assert.deepEqual(spacing, { xxs: 2, xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 40 });
   assert.deepEqual(radii, { xs: 6, sm: 8, md: 14, lg: 20, xl: 28, pill: 999 });
+});
+
+
+test('chat composer uses a raised, readable, moderately rounded input surface', () => {
+  const source = readFileSync(new URL('../components/InputBar.js', import.meta.url), 'utf8');
+  assert.match(source, /backgroundColor: colors\.surfaceElevated/);
+  assert.match(source, /borderRadius: 20/);
+  assert.match(source, /minHeight: 52/);
+  assert.match(source, /accessibilityLabel={editing \? 'Edit message text' : 'Message text'}/);
+  // Keep the draft, edit, reply, emoji and voice-recording paths in the shared composer.
+  for (const feature of ['loadDraft(draftKey)', 'clearDraft(draftKey)', 'onCancelReply', 'onCancelEdit', 'onStartRecording', 'onStopRecording']) {
+    assert.ok(source.includes(feature), `composer must preserve ${feature}`);
+  }
 });
