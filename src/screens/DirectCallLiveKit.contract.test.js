@@ -57,3 +57,9 @@ test('direct call LiveKit rooms do not call group-only heartbeat or leave endpoi
   assert.match(webRoom, /!directCallId && !endedRef\.current/);
   assert.match(nativeRoom, /preserveAudioSessionRef/);
 });
+
+test('native call header reads video mode from parent-owned connection state, not child-only track variables', () => {
+  const header = nativeRoom.slice(nativeRoom.indexOf('<View style={styles.header}>'), nativeRoom.indexOf('</View>', nativeRoom.indexOf('<View style={styles.header}>')));
+  assert.match(header, /connection\?\.callType \|\| callType/);
+  assert.doesNotMatch(header, /\bisVideo\b|\btracks\b/);
+});
