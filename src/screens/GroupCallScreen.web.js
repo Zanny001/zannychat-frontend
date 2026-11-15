@@ -341,7 +341,7 @@ export default function GroupCallScreenWeb({ route, navigation }) {
       ) : (
         <View style={styles.audioStage}>
           <View style={[styles.audioOrb, { backgroundColor: colors.surface, borderColor: colors.border }]}><Ionicons name="people" size={44} color={colors.primary} /></View>
-          <Text style={[typography.title, { color: colors.textPrimary }]}>Voice conference</Text>
+          <Text style={[typography.title, { color: colors.textPrimary }]}>{directCallId ? 'Voice call' : 'Voice conference'}</Text>
           <Text style={[typography.small, { color: colors.textSecondary }]}>{participantIds.length || 1} participants connected</Text>
         </View>
       )}
