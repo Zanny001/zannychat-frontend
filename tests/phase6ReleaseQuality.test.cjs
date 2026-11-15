@@ -102,3 +102,8 @@ test('native auth session restoration is bounded and still allows late auth even
   assert.match(source, /authStateObserved/);
   assert.match(source, /if \(mounted && !authStateObserved\)/);
 });
+
+
+test('release CI audits the locked npm dependency graph for high-severity advisories', () => {
+  assert.match(workflow, /npm audit --audit-level=high/);
+});
