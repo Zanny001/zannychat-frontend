@@ -72,3 +72,9 @@ The inbox conversation row already uses a compact, accessible `Pressable` rather
 - The contact directory previously wrapped the entire row in one `TouchableOpacity` and placed the favorite `TouchableOpacity` inside it. Nested pressables can produce ambiguous/propagating presses, so tapping the star could also trigger the row's open-chat/share action.
 - Replaced the per-contact elevated glass card with a compact 76-point row and subtle divider. The main contact action and favorite action are now sibling controls, with the favorite control retaining a 44-point target and its own accessible selected/disabled state.
 - Added `src/screens/NewChatScreen.contract.test.js` to protect the row density, sibling interaction structure and favorite target size.
+
+## Additional verified issue and remediation — Chats filters
+
+- The Chats screen's All / Unread / Favorites / Groups / Archived chips had no explicit minimum height. Their content plus vertical padding could leave the interactive target below the 44-point baseline.
+- Raised the shared filter-pill container to a 44-point minimum and centered its label without increasing horizontal density.
+- Added `src/screens/ChatListScreen.contract.test.js` to protect touch height and selected-state accessibility.
