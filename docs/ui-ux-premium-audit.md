@@ -60,52 +60,52 @@ The supplied audit names 46 screens. Status below distinguishes design-reference
 
 | Screen | Reference coverage | Current audit status |
 |---|---|---|
-| AuthRequiredScreen | Welcome pattern | Pending source review |
+| AuthRequiredScreen | Welcome pattern | Source reviewed |
 | CallHistoryScreen | Calls mockup | Source review pending |
 | CallScreen | Call mockup | Source review pending |
-| ChannelsScreen | Chats/Status patterns | Pending source review |
+| ChannelsScreen | Chats/Status patterns | Source reviewed |
 | ChatAppearanceScreen | Appearance mockup | Source reviewed |
-| ChatFoldersScreen | Chats/Conversation patterns | Pending source review |
+| ChatFoldersScreen | Chats/Conversation patterns | Source reviewed |
 | ChatListScreen | Chats mockup | Source reviewed |
 | ChatScreen | Conversation mockup | Source reviewed |
-| ContactDiscoveryScreen | Chats/Conversation patterns | Pending source review |
-| CreateGroupScreen | Chats/Conversation patterns | Pending source review |
-| DataExportScreen | Profile/Appearance patterns | Pending source review |
-| DataStorageScreen | Profile/Appearance patterns | Pending source review |
-| DraftsScreen | Chats/Conversation patterns | Pending source review |
-| EditProfileScreen | Profile/Appearance patterns | Pending source review |
-| EventsScreen | Chats/Status patterns | Pending source review |
-| ForwardMessageScreen | Chats/Conversation patterns | Pending source review |
-| GroupCallScreen | LIVE/Call patterns | Pending source review |
-| GroupManagementScreen | Chats/Conversation patterns | Pending source review |
-| HelpScreen | Profile/Appearance patterns | Pending source review |
-| IncomingCallScreen | Call mockup | Pending source review |
-| JoinGroupScreen | Chats/Conversation patterns | Pending source review |
-| LiveCreatorProfileScreen | LIVE/Call patterns | Pending source review |
-| LiveHubScreen | LIVE mockup | Pending source review |
-| LiveReplayScreen | LIVE/Call patterns | Pending source review |
-| LiveStreamScreen | LIVE/Call patterns | Pending source review |
-| LoginScreen | Welcome mockup | Pending source review |
-| NewChatScreen | Chats/Conversation patterns | Pending source review |
-| NotificationsScreen | Profile/Appearance patterns | Pending source review |
-| OnboardingScreen | Welcome mockup | Pending source review |
-| OutgoingCallScreen | Call mockup | Pending source review |
-| PasswordRecoveryScreen | Welcome pattern | Pending source review |
-| PasswordResetScreen | Welcome pattern | Pending source review |
-| PeerProfileScreen | Profile/Appearance patterns | Pending source review |
-| PinnedMessagesScreen | Chats/Conversation patterns | Pending source review |
-| PollsScreen | Chats/Status patterns | Pending source review |
-| PrivacySecurityScreen | Profile/Appearance patterns | Pending source review |
+| ContactDiscoveryScreen | Chats/Conversation patterns | Source reviewed |
+| CreateGroupScreen | Chats/Conversation patterns | Source reviewed |
+| DataExportScreen | Profile/Appearance patterns | Source reviewed |
+| DataStorageScreen | Profile/Appearance patterns | Source reviewed |
+| DraftsScreen | Chats/Conversation patterns | Source reviewed |
+| EditProfileScreen | Profile/Appearance patterns | Source reviewed |
+| EventsScreen | Chats/Status patterns | Source reviewed |
+| ForwardMessageScreen | Chats/Conversation patterns | Source reviewed |
+| GroupCallScreen | LIVE/Call patterns | Source reviewed |
+| GroupManagementScreen | Chats/Conversation patterns | Source reviewed |
+| HelpScreen | Profile/Appearance patterns | Source reviewed |
+| IncomingCallScreen | Call mockup | Source reviewed |
+| JoinGroupScreen | Chats/Conversation patterns | Source reviewed |
+| LiveCreatorProfileScreen | LIVE/Call patterns | Source reviewed |
+| LiveHubScreen | LIVE mockup | Source reviewed |
+| LiveReplayScreen | LIVE/Call patterns | Source reviewed |
+| LiveStreamScreen | LIVE/Call patterns | Source reviewed |
+| LoginScreen | Welcome mockup | Source reviewed |
+| NewChatScreen | Chats/Conversation patterns | Source reviewed |
+| NotificationsScreen | Profile/Appearance patterns | Source reviewed |
+| OnboardingScreen | Welcome mockup | Source reviewed |
+| OutgoingCallScreen | Call mockup | Source reviewed |
+| PasswordRecoveryScreen | Welcome pattern | Source reviewed |
+| PasswordResetScreen | Welcome pattern | Source reviewed |
+| PeerProfileScreen | Profile/Appearance patterns | Source reviewed |
+| PinnedMessagesScreen | Chats/Conversation patterns | Source reviewed |
+| PollsScreen | Chats/Status patterns | Source reviewed |
+| PrivacySecurityScreen | Profile/Appearance patterns | Source reviewed |
 | ProfileScreen | Profile mockup | Source reviewed |
-| QRContactScreen | Chats/Conversation patterns | Pending source review |
-| SavedMessagesScreen | Chats/Conversation patterns | Pending source review |
-| ScheduledMessagesScreen | Chats/Conversation patterns | Pending source review |
-| SessionsScreen | Profile/Appearance patterns | Pending source review |
+| QRContactScreen | Chats/Conversation patterns | Source reviewed |
+| SavedMessagesScreen | Chats/Conversation patterns | Source reviewed |
+| ScheduledMessagesScreen | Chats/Conversation patterns | Source reviewed |
+| SessionsScreen | Profile/Appearance patterns | Source reviewed |
 | SettingsScreen | Profile/Appearance patterns | Source reviewed |
-| SharedMediaScreen | Chats/Conversation patterns | Pending source review |
-| SignupScreen | Welcome mockup | Pending source review |
+| SharedMediaScreen | Chats/Conversation patterns | Source reviewed |
+| SignupScreen | Welcome mockup | Source reviewed |
 | StatusUpdatesScreen | Status mockup | Source reviewed |
-| VerifyEmailScreen | Welcome pattern | Pending source review |
+| VerifyEmailScreen | Welcome pattern | Source reviewed |
 
 ## Implemented in this pass
 
@@ -274,3 +274,34 @@ The source scan covered these families:
 - The cancelled `client-quality` job from workflow run 824 was successfully queued for rerun via GitHub Actions (new job ID `132990314246`). It had previously passed npm audit, Android Expo prebuild and Android Kotlin compilation before cancellation during compile-only APK assembly.
 - The retry is queued, not yet passed. Check the rerun before changing the PR's readiness state.
 - Latest known commit before this note: `5b748e0ecfe24d9fef1360236b28c153332982c4`. Vercel reports build-rate-limit failure for that commit. No production deployment is confirmed.
+
+
+## Authentication, groups, social and account settings source-review checkpoint — 2026-11-16
+
+### Additional screens reviewed
+- Authentication and account entry: `AuthRequiredScreen`, `OnboardingScreen`, `LoginScreen`, `SignupScreen`, `PasswordRecoveryScreen`, `PasswordResetScreen`, and `VerifyEmailScreen`. Reviewed input semantics, loading guards, Google OAuth cancellation, generic password-recovery messaging, six-digit email OTP, resend, password-reset expiry messaging and auth-state navigation handoff.
+- Contact and groups: `ContactDiscoveryScreen`, `QRContactScreen`, `CreateGroupScreen`, `JoinGroupScreen`, `GroupManagementScreen`, and `PeerProfileScreen`. Reviewed permission gates, contact selection/privacy discoverability, QR scanning and invalid-code handling, group invite acceptance/revocation, membership/admin actions, metadata limits, profile quick actions and media navigation.
+- Messaging utilities and social: `ForwardMessageScreen`, `SavedMessagesScreen`, `PinnedMessagesScreen`, `ChatFoldersScreen`, `ChannelsScreen`, `EventsScreen`, and `PollsScreen`. Reviewed route handoffs, pagination/load-more, create/update/delete/vote/RSVP actions, invite controls, local-only bookmark/draft semantics, empty/error/retry states and accessibility labels on key controls.
+- Account and support: `PrivacySecurityScreen`, `DataStorageScreen`, `DataExportScreen`, `SessionsScreen`, `HelpScreen`, `ChatAppearanceScreen`, and `NotificationsScreen`. Reviewed account reauthentication and delete confirmation, session sign-out scope, personal-data export and share fallback, persisted local data controls, notification/quiet-hours settings, support contact handling and theme selection.
+- `LiveStreamScreen` was revisited for the creator/moderator action rail, stage overlays, floating reactions and guest controls.
+
+### Confirmed design / product observations
+- Account deletion is deliberately gated by exact `DELETE` confirmation and provider-appropriate ownership verification; it requires live Supabase and backend configuration. Keep this guard intact during UI redesign.
+- Personal data export requires a signed-in live account, pages message data in bounded batches, and excludes actual attachment files/private media URLs as described in its UI. It writes to temporary app storage and uses the platform share sheet; unsupported sharing is surfaced as an explicit error.
+- Saved-message removal is a local bookmark action and does not delete the original conversation message. Pinned-message removal unpins only. Draft deletion removes unsent local text only. These distinctions must remain clear in confirmation copy.
+- Group member/admin operations and invitation lifecycle are separately confirmed with server-backed actions; keep role, revoke, remove and leave confirmation semantics.
+- Events and polls include explicit migration-related errors. Their functionality must be validated against the production schema before claiming those features are live; no schema changes were made in this design pass.
+- QR scanner has a 300px camera frame and 190px guide. Validate small-device safe-area/viewport fit and camera permission UX on hardware before changing the scanner layout.
+
+### Follow-up risks / not yet verified
+- Notification settings persist the local master preference before invoking push-token register/unregister. The notification service intentionally catches expected permission/device/configuration failures and returns null, so a user can see the master preference enabled even when no push token is actually registered. This is a clarity/observability risk: UI should distinguish “preference enabled” from “push token successfully registered” and report permission/registration state without pretending the push service succeeded. No change made yet because this requires a coherent device-token state model and tests.
+- Browser notification permission is controlled by the browser; the app cannot silently revoke it. Preserve the explanatory copy and validate permission-denied/granted states in supported browsers.
+- Several account and auth screens use native `Alert` for confirmation/feedback. On web, confirm that the platform-specific alert implementation is consistent and keyboard-accessible; this static review did not test browser dialogs.
+- Events/Polls are conversation-scoped and their UI references specific migration versions in error copy. Confirm deployed migration state and RLS in a separate backend audit before production sign-off.
+- OAuth redirect, password reset, OTP, camera/QR, contact permissions, push registration, share sheet, session revocation and account deletion have not been exercised end-to-end with real accounts and devices.
+- Static review is not visual acceptance. All screen modules are now source-reviewed to a first-pass level, but each still needs systematic responsive visual and interaction-state QA; “source reviewed” does not mean “fully accepted.”
+
+### Updated coverage status
+- All 46 registered screen modules have now received at least a first-pass source review, including the additional groups above and the previously reviewed core Chats/Profile/Settings/Appearance/Status areas.
+- This closes the initial source-inventory pass only. It does **not** close per-screen modal/action-sheet/empty/loading/error state testing, responsive screenshots, keyboard/focus traversal, screen-reader verification, reduced-motion verification, real-device call/LIVE/QR/push testing, or backend schema/RLS acceptance.
+- No Supabase migration, production deploy, or merge was performed in this checkpoint.
