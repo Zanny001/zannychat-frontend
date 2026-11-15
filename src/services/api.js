@@ -457,9 +457,18 @@ export async function updateMyProfileDetails(details = {}) {
   if (currentDetailsError) throw currentDetailsError;
   const nextProfileVisibility = row.profile_visibility ?? currentDetails?.profile_visibility ?? 'everyone';
   const nextPhotoVisibility = row.photo_visibility ?? currentDetails?.photo_visibility ?? 'everyone';
-  await syncAvatarVisibility(authData.user.id, nextProfileVisibility, nextPhotoVisibility);
+  const needsPrivateAvatar = nextProfileVisibility !== 'everyone' || nextPhotoVisibility !== 'everyone';
+  // Tighten first when moving private: public objects are removed before the
+  // privacy setting is committed. When moving public, commit the preference
+  // first; a failed public copy then leaves the avatar hidden, never exposed.
+  if (needsPrivateAvatar) {
+    await syncAvatarVisibility(authData.user.id, nextProfileVisibility, nextPhotoVisibility);
+  }
   const { data, error } = await supabase.from('profile_details').upsert(row, { onConflict: 'user_id' }).select('*').single();
   if (error) throw error;
+  if (!needsPrivateAvatar) {
+    await syncAvatarVisibility(authData.user.id, nextProfileVisibility, nextPhotoVisibility);
+  }
   const saved = { ...PROFILE_DETAIL_DEFAULTS, ...data };
   saved.cover_image_url = saved.cover_path
     ? await getPrivateProfileCoverUrl(authData.user.id)
