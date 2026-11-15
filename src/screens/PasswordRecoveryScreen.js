@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
@@ -12,7 +13,7 @@ function showMessage(title, message) {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     window.alert(`${title}\n\n${message}`);
   } else {
-    Alert.alert(title, message);
+    showAppAlert(title, message);
   }
 }
 
