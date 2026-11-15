@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, ActivityIndicator, Switch, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -48,7 +49,7 @@ export default function SettingsScreen({ navigation }) {
     } catch (error) {
       const message = 'Could not sign out securely. Please retry when your connection is available.';
       if (Platform.OS === 'web' && typeof window !== 'undefined') window.alert(message);
-      else Alert.alert('Sign out failed', message);
+      else showAppAlert('Sign out failed', message);
     }
   }
 
