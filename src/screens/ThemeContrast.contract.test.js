@@ -129,7 +129,7 @@ test('create-group screen exposes accessible selection controls and complete con
   assert.match(createGroup, /loadingContacts/);
   assert.match(createGroup, /contactsError/);
   assert.match(createGroup, /No contacts available to add yet/);
-  assert.match(createGroup, /minHeight: 48/);
+  assert.match(createGroup, /minHeight: 49/);
 });
 
 test('interactive controls keep 44-point minimum touch targets on high-traffic screens', () => {
@@ -320,7 +320,7 @@ function interactiveOpeningTags(source) {
 
 test('every interactive control in every screen file has an explicit accessible name and role', () => {
   const screenFiles = readdirSync(screenDirectory).filter((name) => name.endsWith('Screen.js') || name.endsWith('Screen.web.js'));
-  assert.equal(screenFiles.length, 48, 'The audited screen inventory changed; review the screen count before updating this contract.');
+  assert.equal(screenFiles.length, 49, 'The audited screen inventory changed; review the screen count before updating this contract.');
   const violations = [];
   let totalControls = 0;
   for (const file of screenFiles) {
