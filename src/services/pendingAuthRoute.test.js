@@ -7,7 +7,7 @@ test('pending auth route preserves only allowlisted scalar link parameters', () 
     name: 'LiveStream',
     params: {
       streamId: 'stream-123',
-      creatorMode: true,
+      creatorMode: 'true',
       connection: { token: 'must-not-be-persisted' },
     },
   }), true);
