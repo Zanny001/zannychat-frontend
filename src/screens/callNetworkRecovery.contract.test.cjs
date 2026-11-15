@@ -34,3 +34,14 @@ for (const [platform, source] of [['native', nativeSource], ['web', webSource]])
     assert.match(source, /endingRef\.current/);
   });
 }
+
+
+for (const [platform, source] of [['native', nativeSource], ['web', webSource]]) {
+  test(`${platform} call ends after a prolonged unrecovered network disconnect`, () => {
+    assert.match(source, /setTimeout\(async \(\) => \{/);
+    assert.match(source, /\}, 120_000\)/);
+    assert.match(source, /updateCallStatus\(current\.id, 'ended'\)/);
+    assert.match(source, /navigation\.goBack\(\)/);
+    assert.match(source, /clearTimeout\(disconnectTimerRef\.current\)/);
+  });
+}
