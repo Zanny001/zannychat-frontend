@@ -305,7 +305,12 @@ export async function updateProfile({ name, status, username }) {
 
   if (error?.code === '23505') throw new Error('That username is already taken. Try another one.');
   if (error) throw error;
-  return getCurrentUser();
+  const savedProfile = await getCurrentUser();
+  if (normalizedUsername !== undefined
+      && String(savedProfile?.username || '').trim().toLowerCase() !== normalizedUsername) {
+    throw new Error('Your username change could not be confirmed as saved. Please try again.');
+  }
+  return savedProfile;
 }
 
 const PROFILE_DETAIL_DEFAULTS = Object.freeze({
