@@ -27,3 +27,10 @@ test('Google reauthentication asks the provider to select and verify an account'
   assert.match(googleAuth, /queryParams: \{ prompt \}/);
   assert.match(googleAuth, /redirectTo: getOAuthRedirectUrl\(\)/);
 });
+
+
+test('Google account deletion copy matches the ten-minute reauthentication window', () => {
+  assert.match(screen, /ACCOUNT_DELETE_REAUTH_TTL_MS = 10 \* 60 \* 1000/);
+  assert.equal((screen.match(/within ten minutes/g) || []).length, 2);
+  assert.doesNotMatch(screen, /within five minutes/);
+});
