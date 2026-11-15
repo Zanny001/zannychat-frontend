@@ -26,7 +26,7 @@ test('New Chat favorite action is a sibling of the open-chat action, never neste
   assert.ok(rowEnd > favoriteIndex, 'both controls must remain inside the same row');
 });
 
-test('New Chat favorite control remains independently accessible and has a 44-point target', () => {
+test('New Chat favorite control remains independently accessible and has a 48-point target', () => {
   assert.match(screen, /favoriteButton: \{ minWidth: 48, minHeight: 48/);
   assert.match(screen, /accessibilityState=\{\{ selected: favoriteIds\.includes\(item\.id\), disabled: isBusy \}\}/);
 });
