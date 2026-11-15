@@ -331,3 +331,12 @@ The source scan covered these families:
 - Updated both instructions in `PrivacySecurityScreen.js` to say ten minutes, matching the actual expiry.
 - Added a regression assertion to `PrivacySecurity.contract.test.js` verifying the 10-minute TTL, both matching user-facing strings, and absence of the stale five-minute copy.
 - Change is committed to the PR branch. Automated test execution is pending; do not mark this test passed until CI runs successfully.
+
+
+## Supabase auth/profile trigger verification — 2026-11-16
+
+- Read-only inspection of the connected Supabase project's `auth.users` triggers confirms `on_auth_user_created` invokes `public.handle_new_user()` after every auth-user insert.
+- The current database function reads `name`, `full_name`, or `display_name` from auth user metadata, falls back to `ZannyChat User`, derives a valid username base, appends the first eight hexadecimal characters of the auth UUID, and inserts the profile row. On profile-ID conflict it fills a blank/legacy name and fills a blank username without overwriting a non-empty existing username.
+- This trigger is the server-side username bootstrap path for both email and Google OAuth signups; the frontend Google OAuth flow correctly relies on the auth-state listener rather than creating a second profile row.
+- This confirms the auto-username mechanism exists in the live database; it does not prove every historical user already has a username or that all OAuth metadata variants supply a display name. The function's explicit fallbacks cover absent name metadata.
+- No Supabase migration or data change was needed. Do not query or expose real users' personal profile data for this check.
