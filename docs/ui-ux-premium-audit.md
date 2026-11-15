@@ -374,3 +374,11 @@ The source scan covered these families:
 
 ### Product completeness note
 - Settings explicitly marks the Zero-Knowledge Vault as “COMING SOON” and says it is not built yet. This is an acknowledged unimplemented feature, not a broken switch. Do not market or represent it as shipped until end-to-end encryption-at-rest/key management, recovery, threat model and cross-device flows exist.
+
+
+## Sensitive write-path validation checkpoint — 2026-11-16
+
+- Reviewed the live `messages` UPDATE policy together with column grants: authenticated clients can update only `text` and `edited_at`; they cannot update `conversation_id`, `sender_id`, media pointers, reply target, timestamps or deletion marker. This prevents the apparent row-policy concern of moving a message into another conversation. Message deletion is handled by the separately guarded `delete_message` RPC.
+- Reviewed the `call_sessions` write trigger: immutable call identity/conversation/type/expiry fields are guarded, actors must be participants (or service role), and status transitions are explicitly constrained (callee accept/decline, caller cancel, participant end, expiry-to-missed). Group-room attachment is separately restricted to the call service and validated against the source call/conversation.
+- Reviewed `call_signals` insert trigger: sender must equal `auth.uid()`, call must be accepted and within the renegotiation window, recipient must be the other call participant, allowed signal types are enumerated, and per-sender rate is bounded.
+- These checks explain why broad-looking table-level UPDATE policies are constrained by column grants and triggers. No RLS or database changes were required.
