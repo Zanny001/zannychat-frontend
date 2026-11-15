@@ -104,7 +104,6 @@ export function createSecureAuthStorage({
     typeof secureStore.deleteItemAsync !== 'function' ||
     !legacyStorage ||
     typeof legacyStorage.getItem !== 'function' ||
-    typeof legacyStorage.setItem !== 'function' ||
     typeof legacyStorage.removeItem !== 'function'
   ) {
     throw new TypeError('Secure auth storage requires SecureStore and legacy storage adapters.');
@@ -112,6 +111,10 @@ export function createSecureAuthStorage({
   if (!Number.isSafeInteger(chunkBytes) || chunkBytes < 256 || chunkBytes > DEFAULT_CHUNK_BYTES) {
     throw new RangeError(`Secure auth chunk size must be between 256 and ${DEFAULT_CHUNK_BYTES} bytes.`);
   }
+
+  const secureOptions = secureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY === undefined
+    ? undefined
+    : { keychainAccessible: secureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY };
 
   async function readManifest(key) {
     const raw = await secureStore.getItemAsync(makeManifestKey(key));
@@ -161,7 +164,7 @@ export function createSecureAuthStorage({
       generationSequence += 1;
       const generation = `${Date.now().toString(36)}-${generationSequence.toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
       for (let index = 0; index < chunks.length; index += 1) {
-        await secureStore.setItemAsync(makeChunkKey(key, generation, index), chunks[index]);
+        await secureStore.setItemAsync(makeChunkKey(key, generation, index), chunks[index], secureOptions);
       }
 
       const nextManifest = {
@@ -170,7 +173,7 @@ export function createSecureAuthStorage({
         count: chunks.length,
         byteLength,
       };
-      await secureStore.setItemAsync(makeManifestKey(key), JSON.stringify(nextManifest));
+      await secureStore.setItemAsync(makeManifestKey(key), JSON.stringify(nextManifest), secureOptions);
 
       try {
         await legacyStorage.removeItem(key);
