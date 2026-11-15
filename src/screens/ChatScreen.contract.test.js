@@ -39,3 +39,16 @@ test('deleted-message tombstones can be removed by either participant', () => {
   assert.doesNotMatch(deleteAction, /\.\.\.\(isMineMessage\(sheetMessage\)\s*\?/);
   assert.match(screen, /performDeleteMessage\(deleteMessageTarget, 'me'\)/);
 });
+
+test('message composer keeps a distinct moderate input surface and balanced control sizing', () => {
+  const inputBar = fs.readFileSync(new URL('../components/InputBar.js', import.meta.url), 'utf8');
+  assert.match(inputBar, /backgroundColor: hexToRgba\(colors\.surfaceElevated, 0\.78\)/);
+  assert.match(inputBar, /borderColor: hexToRgba\(colors\.primary, 0\.24\)/);
+  assert.match(inputBar, /minHeight: 48/);
+  assert.match(inputBar, /width: 48, height: 48/);
+  assert.match(inputBar, /accessibilityLabel="Send voice message"/);
+  assert.match(inputBar, /accessibilityLabel=\{text\.trim\(\) \? \(editing \? 'Confirm edit' : 'Send message'\) : 'Record a voice message'\}/);
+  assert.ok((inputBar.match(/hitSlop=\{6\}/g) || []).length >= 3, 'recording send, text send, and emoji controls retain their intended hit slop');
+  assert.match(inputBar, /maxHeight: 96/); // keep multiline composer growth bounded
+  assert.match(inputBar, /textAlignVertical: 'center'/);
+});

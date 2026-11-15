@@ -294,8 +294,8 @@ export default function NewChatScreen({ navigation, route }) {
           <GlassCard noPadding glow intensity={26} tintAlpha={0.42}>
             <View style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md }}>
               <Ionicons name="search-outline" size={19} color={colors.textSecondary} />
-              <TextInput value={memberSearch} onChangeText={setMemberSearch} placeholder="Search names or @username…" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search ZannyChat members" returnKeyType="search" autoCapitalize="none" style={[typography.body, { flex: 1, minWidth: 0, marginLeft: spacing.sm, color: colors.textPrimary, minHeight: 46 }]} />
-              {memberSearch ? <TouchableOpacity onPress={() => setMemberSearch('')} accessibilityRole="button" accessibilityLabel="Clear member search" style={{ minWidth: 40, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={20} color={colors.textSecondary} /></TouchableOpacity> : null}
+              <TextInput value={memberSearch} onChangeText={setMemberSearch} placeholder="Search names or @username…" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search ZannyChat members" returnKeyType="search" autoCapitalize="none" style={[typography.body, { flex: 1, minWidth: 0, marginLeft: spacing.sm, color: colors.textPrimary, minHeight: 48 }]} />
+              {memberSearch ? <TouchableOpacity onPress={() => setMemberSearch('')} accessibilityRole="button" accessibilityLabel="Clear member search" style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={20} color={colors.textSecondary} /></TouchableOpacity> : null}
             </View>
           </GlassCard>
           <View style={{ gap: spacing.sm }}>
@@ -303,14 +303,14 @@ export default function NewChatScreen({ navigation, route }) {
             <View style={{ flexDirection: 'row', gap: spacing.xs, flexWrap: 'wrap' }}>
               {[{ id: 'all', label: 'All members', icon: 'people-outline' }, { id: 'online', label: 'Online', icon: 'radio-button-on-outline' }, { id: 'favorites', label: 'Favorites', icon: 'star-outline' }].map((option) => {
                 const selected = activeFilter === option.id;
-                return <TouchableOpacity key={option.id} onPress={() => { setDirectoryFilter(option.id); setOnlineOnly(false); }} accessibilityRole="radio" accessibilityLabel={option.label} accessibilityState={{ checked: selected }} style={{ minHeight: 44, paddingHorizontal: spacing.md, borderRadius: 22, borderWidth: 1, borderColor: selected ? colors.accent : colors.border, backgroundColor: selected ? colors.surface : 'transparent', flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name={option.icon} size={16} color={selected ? colors.accent : colors.textSecondary} /><Text style={[typography.caption, { color: selected ? colors.accent : colors.textSecondary }]}>{option.label}</Text></TouchableOpacity>;
+                return <TouchableOpacity key={option.id} onPress={() => { setDirectoryFilter(option.id); setOnlineOnly(false); }} accessibilityRole="radio" accessibilityLabel={option.label} accessibilityState={{ checked: selected }} style={{ minHeight: 48, paddingHorizontal: spacing.md, borderRadius: 22, borderWidth: 1, borderColor: selected ? colors.accent : colors.border, backgroundColor: selected ? colors.surface : 'transparent', flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name={option.icon} size={16} color={selected ? colors.accent : colors.textSecondary} /><Text style={[typography.caption, { color: selected ? colors.accent : colors.textSecondary }]}>{option.label}</Text></TouchableOpacity>;
               })}
             </View>
           </View>
-          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-            <TouchableOpacity onPress={() => navigation.navigate('ContactDiscovery')} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Find friends by phone"><GlassCard contentStyle={styles.qrRow}><Ionicons name="people-outline" size={18} color={colors.accent} /><Text style={[typography.caption, { color: colors.textPrimary, marginLeft: 6 }]}>Find friends</Text></GlassCard></TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('QRContact')} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Connect by QR code"><GlassCard contentStyle={styles.qrRow}><Ionicons name="qr-code-outline" size={18} color={colors.accent} /><Text style={[typography.caption, { color: colors.textPrimary, marginLeft: 6 }]}>Scan QR</Text></GlassCard></TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('CreateGroup')} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="New group"><GlassCard contentStyle={styles.qrRow}><Ionicons name="people-outline" size={18} color={colors.accent} /><Text style={[typography.caption, { color: colors.textPrimary, marginLeft: 6 }]}>New group</Text></GlassCard></TouchableOpacity>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+            <TouchableOpacity style={styles.quickAction} onPress={() => navigation.navigate('ContactDiscovery')} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Find friends by phone"><GlassCard contentStyle={styles.qrRow}><Ionicons name="people-outline" size={18} color={colors.accent} /><Text style={[typography.caption, { color: colors.textPrimary, marginLeft: 6 }]}>Find friends</Text></GlassCard></TouchableOpacity>
+            <TouchableOpacity style={styles.quickAction} onPress={() => navigation.navigate('QRContact')} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Connect by QR code"><GlassCard contentStyle={styles.qrRow}><Ionicons name="qr-code-outline" size={18} color={colors.accent} /><Text style={[typography.caption, { color: colors.textPrimary, marginLeft: 6 }]}>Scan QR</Text></GlassCard></TouchableOpacity>
+            <TouchableOpacity style={styles.quickAction} onPress={() => navigation.navigate('CreateGroup')} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="New group"><GlassCard contentStyle={styles.qrRow}><Ionicons name="people-outline" size={18} color={colors.accent} /><Text style={[typography.caption, { color: colors.textPrimary, marginLeft: 6 }]}>New group</Text></GlassCard></TouchableOpacity>
           </View>
         </View>
       )}
@@ -410,24 +410,15 @@ export default function NewChatScreen({ navigation, route }) {
             const isBusy = openingChatId !== null || sendingId !== null;
 
             return (
-              <TouchableOpacity
-                onPress={() =>
-                  isShareMode ? shareContact(item) : startChat(item)
-                }
-                activeOpacity={0.7}
-                disabled={isBusy}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  isShareMode
-                    ? `Share contact ${item.name}`
-                    : `Open chat with ${item.name}`
-                }
-                accessibilityState={{ disabled: isBusy }}
-              >
-                <GlassCard
-                  style={{ marginBottom: spacing.sm }}
-                  contentStyle={styles.row}
-                  intensity={26}
+              <View style={[styles.contactRow, { borderBottomColor: colors.borderSubtle }]}>
+                <TouchableOpacity
+                  onPress={() => isShareMode ? shareContact(item) : startChat(item)}
+                  activeOpacity={0.72}
+                  disabled={isBusy}
+                  accessibilityRole="button"
+                  accessibilityLabel={isShareMode ? `Share contact ${item.name}` : `Open chat with ${item.name}`}
+                  accessibilityState={{ disabled: isBusy }}
+                  style={styles.contactMain}
                 >
                   <Avatar
                     name={item.name}
@@ -435,22 +426,27 @@ export default function NewChatScreen({ navigation, route }) {
                     imageUrl={item.avatarUrl}
                     online={item.online}
                   />
-
                   <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm, marginRight: spacing.xs }}>
-                    <Text style={[typography.body, { color: colors.textPrimary }]} numberOfLines={1}>{item.name}</Text>
+                    <Text style={[typography.bodyStrong, { color: colors.textPrimary }]} numberOfLines={1}>{item.name}</Text>
                     {item.username ? <Text style={[typography.caption, { color: colors.textSecondary }]} numberOfLines={1}>@{item.username}</Text> : null}
                   </View>
+                  {(isOpening || isSending) ? <ActivityIndicator size="small" color={colors.textSecondary} /> : null}
+                </TouchableOpacity>
 
-                  {!isShareMode && <TouchableOpacity onPress={() => toggleFavorite(item.id)} accessibilityRole="button" accessibilityLabel={favoriteIds.includes(item.id) ? `Remove ${item.name} from favorites` : `Add ${item.name} to favorites`} accessibilityState={{ selected: favoriteIds.includes(item.id) }} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name={favoriteIds.includes(item.id) ? 'star' : 'star-outline'} size={20} color={favoriteIds.includes(item.id) ? colors.gold : colors.textSecondary} /></TouchableOpacity>}
-
-                  {(isOpening || isSending) && (
-                    <ActivityIndicator
-                      size="small"
-                      color={colors.textSecondary}
-                    />
-                  )}
-                </GlassCard>
-              </TouchableOpacity>
+                {!isShareMode ? (
+                  <TouchableOpacity
+                    onPress={() => toggleFavorite(item.id)}
+                    disabled={isBusy}
+                    accessibilityRole="button"
+                    accessibilityLabel={favoriteIds.includes(item.id) ? `Remove ${item.name} from favorites` : `Add ${item.name} to favorites`}
+                    accessibilityState={{ selected: favoriteIds.includes(item.id), disabled: isBusy }}
+                    style={styles.favoriteButton}
+                    hitSlop={4}
+                  >
+                    <Ionicons name={favoriteIds.includes(item.id) ? 'star' : 'star-outline'} size={20} color={favoriteIds.includes(item.id) ? colors.gold : colors.textSecondary} />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
             );
           }}
         />
@@ -463,15 +459,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minWidth: 0,
-  },
+  contactRow: { minHeight: 76, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
+  contactMain: { flex: 1, minWidth: 0, minHeight: 52, flexDirection: 'row', alignItems: 'center' },
+  favoriteButton: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', marginLeft: 4 },
   qrRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: 48,
   },
+  quickAction: { flexGrow: 1, flexBasis: 128, minWidth: 128 },
   qrIcon: {
     width: 36,
     height: 36,

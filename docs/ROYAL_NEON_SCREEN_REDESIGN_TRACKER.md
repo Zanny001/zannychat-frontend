@@ -134,3 +134,19 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 - Further high-priority action audit: all interactive controls in the native LiveStream, LiveHub, GroupCall, Call, StatusUpdates and Chat screen files now expose explicit accessible names; Channels management, subscription, moderation, publishing, report and invitation actions were also labelled. Dynamic labels announce the target person/channel/report where appropriate.
 - Regression assertions now cover native LIVE moderation/discovery, call fallback, channel management, status publishing/privacy and chat outbox/media recovery controls.
 - These are source-level accessibility fixes and contract tests, not visual sign-off. The individual screen entries remain [~].
+
+## Premium UI/UX audit continuation — 15 Nov 2026
+
+- Created a dedicated audit branch `audit/premium-ui-ux-2026-11-15`; no production branch or deployment has been changed.
+- Added `docs/PREMIUM_UI_UX_AUDIT_2026-11-15.md` with verified source findings, severity, current remediations and the screen-by-screen continuation plan.
+- Refined the shared message composer: clearer theme-aware input surface, stronger but restrained border, 44-point input minimum, 42-point send control and a 96-point multiline cap.
+- Added a ChatScreen contract test for composer surface contrast and proportion.
+- Chats/Main and the remaining route inventory are still incomplete pending visual, interaction, accessibility and regression validation. The source-level audit must not be treated as device-level sign-off.
+
+- NewChat contact results now use moderate divider-based rows instead of a glass card for every contact. The favorite action is a separate sibling control rather than a nested pressable, preventing the star action from unintentionally triggering the row's open-chat/share action. A dedicated regression contract was added.
+
+- Chats filter chips now enforce a 44-point minimum touch height and centered content; a contract protects the target and selected-state accessibility.
+
+- Chats header camera, drafts and new-chat actions are now 44×44; search has a 48-point minimum surface and the Moments “See all” action has a 44-point target. Regression assertions cover the dimensions.
+
+- NewChat quick actions now wrap on narrow viewports rather than forcing all three cards into a single row; each action retains a 44-point minimum content height and a responsive width basis.
