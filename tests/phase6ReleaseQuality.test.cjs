@@ -72,6 +72,7 @@ test('release readiness validates the timestamped attachment cleanup claim bindi
   assert.match(source, /cleanup_claim_migrations/);
   assert.match(source, /q\.conversation_id/);
   assert.match(source, /conversation-prefix collisions/);
+  assert.match(source, /Netlify defines baseline browser security headers/);
 });
 
 test('Netlify deploy applies baseline browser security headers', () => {
