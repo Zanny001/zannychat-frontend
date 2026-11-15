@@ -5,8 +5,8 @@ import fs from 'node:fs';
 const screen = fs.readFileSync(new URL('./ChatListScreen.js', import.meta.url), 'utf8');
 
 test('inbox filter chips keep a 44-point minimum touch height with centered labels', () => {
-  assert.match(screen, /filterPill: \\{ minHeight: 44/);
-  assert.match(screen, /filterPill: \\{[^}]*alignItems: 'center'[^}]*justifyContent: 'center'/);
+  assert.match(screen, /filterPill: \{ minHeight: 44/);
+  assert.match(screen, /filterPill: \{[^}]*alignItems: 'center'[^}]*justifyContent: 'center'/);
 });
 
 test('inbox filters expose the selected state to assistive technology', () => {
