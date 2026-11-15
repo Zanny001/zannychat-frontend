@@ -37,6 +37,15 @@ test('Status video picker exports H.264 720p and upload supports MP4 plus QuickT
   assert.ok(service.includes('Choose an MP4 or MOV video.'));
 });
 
+test('Status photo publishing supports native HEIC/HEIF and GIF picker formats', () => {
+  for (const mime of ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif']) {
+    assert.ok(service.includes(`'${mime}'`));
+  }
+  assert.ok(service.includes('Choose a JPG, PNG, WebP, GIF, HEIC, or HEIF photo.'));
+  assert.ok(service.includes("'image/heic': 'heic'"));
+  assert.ok(service.includes("'image/heif': 'heif'"));
+});
+
 test('Expo metadata points at the current production backend hostname', () => {
   assert.ok(appConfig.includes('https://zannychat-backend-1.onrender.com'));
   assert.equal(appConfig.includes('https://zannychat-backend.onrender.com'), false);
