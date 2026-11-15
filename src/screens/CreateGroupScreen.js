@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -59,7 +60,7 @@ export default function CreateGroupScreen({ navigation }) {
       const conversation = await createGroupConversation(selectedIds, name.trim(), memberProfiles);
       navigation.replace('Chat', { conversation });
     } catch (err) {
-      Alert.alert("Couldn't create group", err.message || 'Please try again.');
+      showAppAlert("Couldn't create group", err.message || 'Please try again.');
     } finally {
       setCreating(false);
     }
