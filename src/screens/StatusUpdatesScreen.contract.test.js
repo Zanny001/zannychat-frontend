@@ -29,6 +29,14 @@ test('Status publishing keeps the server-timed RPC and existing media publishing
 });
 
 
+test('Status video picker exports H.264 720p and upload supports MP4 plus QuickTime MOV', () => {
+  assert.ok(screen.includes('videoExportPreset: ImagePicker.VideoExportPreset.H264_1280x720'));
+  assert.ok(service.includes("'video/quicktime'"));
+  assert.ok(service.includes("'video/mp4'"));
+  assert.ok(service.includes('video.${extension}'));
+  assert.ok(service.includes('Choose an MP4 or MOV video.'));
+});
+
 test('Expo metadata points at the current production backend hostname', () => {
   assert.ok(appConfig.includes('https://zannychat-backend-1.onrender.com'));
   assert.equal(appConfig.includes('https://zannychat-backend.onrender.com'), false);
