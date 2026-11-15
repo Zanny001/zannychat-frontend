@@ -8,3 +8,14 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Baseline browser security headers for the hosted Expo web app.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "DENY"
+    Permissions-Policy = "camera=(self), microphone=(self), geolocation=(self)"
+    Content-Security-Policy = "frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+    Strict-Transport-Security = "max-age=31536000"

@@ -42,3 +42,68 @@ test('native release CI protects main and compiles Android native code', () => {
   assert.match(workflow, /expo export --platform android/);
   assert.match(workflow, /npm run audit:contract/);
 });
+
+
+test('Android compile-only artifact is not mislabeled as physical-device QA', () => {
+  assert.match(workflow, /zannychat-android-compile-only-not-for-install/);
+  assert.match(workflow, /not suitable for installation or physical-device QA/i);
+  assert.doesNotMatch(workflow, /Upload Android debug APK and checksum for physical-device QA/);
+});
+
+test('Android release has an explicit positive version code', () => {
+  assert.equal(app.expo.android.package, 'com.zannychat.app');
+  assert.equal(app.expo.android.versionCode, 243);
+});
+
+test('production Android build is manual, credential-gated and never auto-submits', () => {
+  const releaseWorkflow = fs.readFileSync(path.join(root, '.github/workflows/android-production-build.yml'), 'utf8');
+  assert.match(releaseWorkflow, /workflow_dispatch/);
+  assert.match(releaseWorkflow, /secrets\.EXPO_TOKEN/);
+  assert.match(releaseWorkflow, /secrets\.GOOGLE_SERVICES_JSON_BASE64/);
+  assert.match(releaseWorkflow, /Firebase config is not a valid production config/);
+  assert.match(releaseWorkflow, /eas-cli@27\.9\.0/);
+  assert.match(releaseWorkflow, /--profile production/);
+  assert.doesNotMatch(releaseWorkflow, /--auto-submit|build:submit|submit --platform/i);
+  assert.match(releaseWorkflow, /confirm_release/);
+});
+
+test('release readiness validates the timestamped attachment cleanup claim binding', () => {
+  const source = fs.readFileSync(path.join(root, 'scripts/release_readiness.py'), 'utf8');
+  assert.match(source, /cleanup_claim_migrations/);
+  assert.match(source, /q\.conversation_id/);
+  assert.match(source, /conversation-prefix collisions/);
+  assert.match(source, /Netlify defines baseline browser security headers/);
+});
+
+test('Netlify deploy applies baseline browser security headers', () => {
+  const source = fs.readFileSync(path.join(root, 'netlify.toml'), 'utf8');
+  assert.match(source, /X-Content-Type-Options = "nosniff"/);
+  assert.match(source, /Referrer-Policy = "strict-origin-when-cross-origin"/);
+  assert.match(source, /X-Frame-Options = "DENY"/);
+  assert.match(source, /Permissions-Policy = "camera=\(self\), microphone=\(self\), geolocation=\(self\)"/);
+  assert.match(source, /frame-ancestors 'none'/);
+});
+
+
+test('startup has a hard deadline fallback for unexpected font or auth initialization stalls', () => {
+  const source = fs.readFileSync(path.join(root, 'App.js'), 'utf8');
+  assert.match(source, /startupDeadlineReached/);
+  assert.match(source, /startup exceeded 12 seconds/i);
+  assert.match(source, /setInitialRoute\(\(currentRoute\) => currentRoute \|\| 'Onboarding'\)/);
+  assert.match(source, /fontFallbackReady \|\| startupDeadlineReached/);
+  assert.match(source, /clearTimeout\(startupDeadline\)/);
+});
+
+
+test('native auth session restoration is bounded and still allows late auth events to recover', () => {
+  const source = fs.readFileSync(path.join(root, 'App.js'), 'utf8');
+  assert.match(source, /SESSION_RESTORE_TIMEOUT_MS = 8000/);
+  assert.match(source, /Promise\.race\(\[/);
+  assert.match(source, /authStateObserved/);
+  assert.match(source, /if \(mounted && !authStateObserved\)/);
+});
+
+
+test('release CI audits the locked npm dependency graph for high-severity advisories', () => {
+  assert.match(workflow, /npm audit --audit-level=high/);
+});
