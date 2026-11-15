@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -71,7 +72,7 @@ export default function ContactDiscoveryScreen({ navigation }) {
       const next = await setPhoneDiscoverability(!settings.discoverable);
       if (!screenActive.current || screenEpoch.current !== requestEpoch) return;
       setSettings((old) => ({ ...old, ...next }));
-      Alert.alert(next.discoverable ? 'Phone discovery enabled' : 'Phone discovery disabled', next.discoverable ? 'Other ZannyChat members can find your public profile when their selected contacts include your verified phone number.' : 'Your phone lookup entry has been removed.');
+      showAppAlert(next.discoverable ? 'Phone discovery enabled' : 'Phone discovery disabled', next.discoverable ? 'Other ZannyChat members can find your public profile when their selected contacts include your verified phone number.' : 'Your phone lookup entry has been removed.');
     } catch (err) { if (screenActive.current && screenEpoch.current === requestEpoch) setError(err?.message || 'Could not update privacy settings.'); }
     finally { if (screenActive.current && screenEpoch.current === requestEpoch) setSaving(false); }
   }
@@ -125,7 +126,7 @@ export default function ContactDiscoveryScreen({ navigation }) {
     try {
       const conversation = await createConversation(profile.id, profile);
       navigation.replace('Chat', { conversation });
-    } catch (err) { Alert.alert('Could not start chat', err?.message || 'Please try again.'); }
+    } catch (err) { showAppAlert('Could not start chat', err?.message || 'Please try again.'); }
   }
 
   return (
