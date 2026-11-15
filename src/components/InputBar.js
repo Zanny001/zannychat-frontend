@@ -41,7 +41,7 @@ export default function InputBar({
   onCancelRecording,
   draftKey,
 }) {
-  const { colors, spacing, radii, typography, resolvedMode } = useTheme();
+  const { colors, spacing, typography, resolvedMode } = useTheme();
   // Preserve the glass tint without forcing unsupported blur on older Android.
   const supportsBackdropBlur = Platform.OS !== 'android' || Number(Platform.Version) >= 31;
   const [text, setText] = useState('');
@@ -252,7 +252,6 @@ export default function InputBar({
                 backgroundColor: colors.surfaceElevated,
                 borderColor: hexToRgba(colors.primary, 0.32),
                 borderRadius: 20,
-                borderWidth: 1,
               },
             ]}
           >
