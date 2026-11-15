@@ -381,7 +381,7 @@ export default function ChatListScreen({ navigation }) {
         <View style={{ marginHorizontal: spacing.md, marginBottom: spacing.sm, padding: spacing.sm, borderRadius: radii.md || 12, borderWidth: 1, borderColor: colors.danger, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center' }}>
           <Ionicons name="alert-circle-outline" size={18} color={colors.danger} />
           <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textPrimary, flex: 1, minWidth: 0, marginHorizontal: spacing.sm }]}>{conversationActionError}</Text>
-          <TouchableOpacity onPress={() => setConversationActionError('')} accessibilityRole="button" accessibilityLabel="Dismiss chat action error" style={{ minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}>
+          <TouchableOpacity onPress={() => setConversationActionError('')} accessibilityRole="button" accessibilityLabel="Dismiss chat action error" style={{ minHeight: 48, minWidth: 48, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="close" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
@@ -411,7 +411,7 @@ export default function ChatListScreen({ navigation }) {
           ) : loadMoreError ? (
             <View style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.md, alignItems: 'center' }}>
               <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.sm }]}>{loadMoreError}</Text>
-              <TouchableOpacity onPress={handleLoadMore} accessibilityRole="button" accessibilityLabel="Retry loading older chats" style={{ minHeight: 44, paddingHorizontal: spacing.lg, justifyContent: 'center', borderRadius: radii.pill, borderWidth: 1, borderColor: colors.border }}>
+              <TouchableOpacity onPress={handleLoadMore} accessibilityRole="button" accessibilityLabel="Retry loading older chats" style={{ minHeight: 48, paddingHorizontal: spacing.lg, justifyContent: 'center', borderRadius: radii.pill, borderWidth: 1, borderColor: colors.border }}>
                 <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Retry loading older chats</Text>
               </TouchableOpacity>
             </View>
@@ -431,7 +431,7 @@ export default function ChatListScreen({ navigation }) {
                 </View>
                 <Text accessibilityRole="header" style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: spacing.xs, textAlign: 'center' }]}>Your chats couldn't load</Text>
                 <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.md }]}>{loadError}</Text>
-                <TouchableOpacity onPress={() => load().catch(() => {})} accessibilityRole="button" accessibilityLabel="Retry loading chats" style={{ minHeight: 44, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radii.pill, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
+                <TouchableOpacity onPress={() => load().catch(() => {})} accessibilityRole="button" accessibilityLabel="Retry loading chats" style={{ minHeight: 48, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radii.pill, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Try again</Text>
                 </TouchableOpacity>
               </>
@@ -442,7 +442,7 @@ export default function ChatListScreen({ navigation }) {
                 </View>
                 <Text accessibilityRole="header" style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: spacing.xs }]}>No matches found</Text>
                 <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.md }]}>Try another name, group, or message keyword.</Text>
-                <TouchableOpacity onPress={() => setQuery('')} accessibilityRole="button" accessibilityLabel="Clear chat search" style={{ minHeight: 44, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.border, justifyContent: 'center' }}>
+                <TouchableOpacity onPress={() => setQuery('')} accessibilityRole="button" accessibilityLabel="Clear chat search" style={{ minHeight: 48, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.border, justifyContent: 'center' }}>
                   <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Clear search</Text>
                 </TouchableOpacity>
               </>
@@ -454,7 +454,7 @@ export default function ChatListScreen({ navigation }) {
                 <Text accessibilityRole="header" style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: spacing.xs }]}>{activeFilter === 'all' ? 'Your conversations start here' : `No ${activeFilter} chats yet`}</Text>
                 <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.md }]}>{activeFilter === 'all' ? 'Start a private conversation or create a group. Your chats will appear here.' : 'Try another filter, or start a conversation to build your chat list.'}</Text>
                 {activeFilter === 'all' ? (
-                  <TouchableOpacity onPress={() => navigation.navigate('NewChat')} accessibilityRole="button" accessibilityLabel="Start your first chat" style={{ minHeight: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.lg, borderRadius: radii.pill, backgroundColor: colors.primary }}>
+                  <TouchableOpacity onPress={() => navigation.navigate('NewChat')} accessibilityRole="button" accessibilityLabel="Start your first chat" style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.lg, borderRadius: radii.pill, backgroundColor: colors.primary }}>
                     <Ionicons name="add" size={19} color={colors.onPrimary} />
                     <Text style={[typography.bodyStrong, { color: colors.onPrimary, marginLeft: spacing.xs }]}>Start a chat</Text>
                   </TouchableOpacity>
