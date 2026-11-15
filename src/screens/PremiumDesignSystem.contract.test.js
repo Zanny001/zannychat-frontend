@@ -24,14 +24,21 @@ test('Crown Aurora is the stable default ZannyChat palette', () => {
   );
 });
 
-test('Crown Aurora dark and light semantic text pairs meet WCAG AA normal-text contrast', () => {
-  for (const mode of ['dark', 'light']) {
-    const colors = resolveMoodColors(MOODS.royalNeon, mode, false);
-    assert.ok(contrast(colors.textPrimary, colors.background) >= 4.5, `${mode} primary text`);
-    assert.ok(contrast(colors.textSecondary, colors.background) >= 4.5, `${mode} secondary text`);
-    assert.ok(contrast(colors.onPrimary, colors.primary) >= 4.5, `${mode} primary action label`);
-    assert.ok(contrast(colors.onAccent, colors.accent) >= 4.5, `${mode} accent label`);
-    assert.ok(contrast(colors.bubbleMineText, colors.bubbleMine) >= 4.5, `${mode} outgoing bubble`);
+test('every selectable mood maintains WCAG AA semantic contrast in light and dark modes', () => {
+  for (const mood of Object.values(MOODS)) {
+    for (const mode of ['dark', 'light']) {
+      for (const highContrast of [false, true]) {
+        const colors = resolveMoodColors(mood, mode, highContrast);
+        const context = `${mood.key}/${mode}/highContrast=${highContrast}`;
+        for (const surface of [colors.background, colors.surface, colors.surfaceAlt]) {
+          assert.ok(contrast(colors.textPrimary, surface) >= 4.5, `${context} primary text on ${surface}`);
+          assert.ok(contrast(colors.textSecondary, surface) >= 4.5, `${context} secondary text on ${surface}`);
+        }
+        assert.ok(contrast(colors.onPrimary, colors.primary) >= 4.5, `${context} primary action label`);
+        assert.ok(contrast(colors.onAccent, colors.accent) >= 4.5, `${context} accent label`);
+        assert.ok(contrast(colors.bubbleMineText, colors.bubbleMine) >= 4.5, `${context} outgoing bubble`);
+      }
+    }
   }
 });
 
