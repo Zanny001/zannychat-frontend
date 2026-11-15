@@ -20,16 +20,18 @@ export async function completeGoogleOAuthCallback(supabase, callbackUrl) {
   try { return await exchange; } catch (error) { callbackExchanges.delete(callback.code); throw error; }
 }
 
-export async function startGoogleOAuth(supabase) {
+export async function startGoogleOAuth(supabase, { prompt } = {}) {
   if (!supabase?.auth?.signInWithOAuth) {
     throw new Error('Supabase authentication is not available.');
   }
+
+  const reauthQueryParams = prompt ? { queryParams: { prompt } } : {};
 
   // Preserve the current website redirect and Supabase-managed web flow.
   if (Platform.OS === 'web') {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: getOAuthRedirectUrl() },
+      options: { redirectTo: getOAuthRedirectUrl(), ...reauthQueryParams },
     });
     if (error) throw error;
     return { started: true };
@@ -41,6 +43,7 @@ export async function startGoogleOAuth(supabase) {
     options: {
       redirectTo,
       skipBrowserRedirect: true,
+      ...reauthQueryParams,
     },
   });
 

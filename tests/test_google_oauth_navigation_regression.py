@@ -12,7 +12,9 @@ class GoogleOAuthNavigationRegressionTests(unittest.TestCase):
             self.assertNotIn('https://zannychat.netlify.app', source, name)
 
         helper = (ROOT / 'src/services/googleAuth.js').read_text()
-        self.assertIn("options: { redirectTo: getOAuthRedirectUrl() }", helper)
+        self.assertIn("redirectTo: getOAuthRedirectUrl()", helper)
+        self.assertIn("...reauthQueryParams", helper)
+        self.assertIn("const reauthQueryParams = prompt ? { queryParams: { prompt } } : {}", helper)
         self.assertIn("Linking.createURL('auth/callback')", helper)
 
     def test_web_redirect_uses_current_origin_and_native_scheme(self):
