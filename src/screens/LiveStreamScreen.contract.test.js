@@ -200,3 +200,12 @@ test('changing a viewer token to an approved guest token does not mark the parti
   assert.ok(screen.includes("navigation.addListener('beforeRemove'"));
   assert.ok(screen.includes('navigation.setParams({ connection: nextConnection, creatorMode: false })'));
 });
+
+
+test('native and web LIVE sessions renew participant presence and support stale reconnect', () => {
+  assert.ok(screen.includes("`/live/${stream.id}/heartbeat`"));
+  assert.ok(screen.includes('setInterval(heartbeat, 30_000)'));
+  const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(web.includes("`/live/${stream.id}/heartbeat`"));
+  assert.ok(web.includes('setInterval(heartbeat, 30_000)'));
+});
