@@ -20,7 +20,7 @@ import VoIPPushRegistrar from './src/components/VoIPPushRegistrar';
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // Keep startup recoverable when auth storage or its initialisation stalls.
-const SESSION_RESTORE_TIMEOUT_MS = 12000;
+const SESSION_RESTORE_TIMEOUT_MS = 8000;
 const FONT_LOAD_FALLBACK_MS = 8000;
 
 function ThemedStatusBar() {
