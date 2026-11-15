@@ -408,3 +408,11 @@ The source scan covered these families:
 - Backend `.github/workflows/scheduled-messages.yml` exists and schedules the delivery, message-attachment cleanup, and call-invitation notification jobs every five minutes. It expects GitHub Actions secrets `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
 - The workflow definition is present, but secret availability and recent successful scheduled workflow runs were not verifiable through the connected GitHub actions tools in this pass. Do not claim scheduled delivery is operational until the workflow run history and secret configuration are confirmed.
 - Backend `render.yaml` defines only the web service; the scheduled worker is designed to run through GitHub Actions rather than a continuously running Render worker. No Render service was changed.
+
+
+## Composer contract CI failure and repair — 2026-11-16
+
+- The latest premium workflow run 653 completed both Expo web and Android exports successfully, then failed in `npm run test:unit` at the existing `ChatScreen.contract.test.js` assertion. The implementation had intentionally moved from the old translucent `hexToRgba(surfaceElevated, 0.78)` pill to a solid `surfaceElevated` surface with 0.32 primary border, 20px radius and 52px minimum height, but the older contract still asserted the previous values.
+- Updated `ChatScreen.contract.test.js` to assert the new composer design tokens while retaining the 48px send action, accessible labels, bounded multiline input and voice-recording controls.
+- The new contract in `PremiumDesignSystem.contract.test.js` also checks that draft, reply, edit and recording paths remain present.
+- Repair commit: `becae1846d512743c0ce2987b327145b48222063`. The PR head is updated to this commit and remains draft/unmerged. A fresh CI run has not yet appeared in the workflow query; the repair is not yet test-verified.
