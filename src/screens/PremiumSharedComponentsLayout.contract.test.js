@@ -26,3 +26,12 @@ test('Call invitation sheet close, search and invite actions use 48-point contro
   assert.match(source, /searchButton: \{[\s\S]*?width: 48,\s*height: 48/);
   assert.match(source, /inviteButton: \{[\s\S]*?minHeight: 48/);
 });
+
+test('Avatar fallback follows the active theme palette and preserves foreground contrast', () => {
+  const source = read('Avatar.js');
+  assert.match(source, /const avatarColor = color \|\| colors\.primary/);
+  assert.match(source, /const avatarTextColor = !color \|\| color === colors\.primary \? colors\.onPrimary/);
+  assert.match(source, /function readableForeground\(color, fallback\)/);
+  assert.match(source, /luminance > 0\.179 \? '#111827' : '#FFFFFF'/);
+  assert.doesNotMatch(source, /color = '#6C5CE7'/);
+});
