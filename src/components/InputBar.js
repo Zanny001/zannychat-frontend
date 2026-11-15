@@ -157,6 +157,7 @@ export default function InputBar({
             hitSlop={10}
             accessibilityLabel="Cancel editing"
             accessibilityRole="button"
+            style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}
           >
             <Ionicons name="close" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -189,7 +190,7 @@ export default function InputBar({
           </ScrollView>
           <ScrollView style={{ maxHeight: 150 }} contentContainerStyle={styles.emojiGrid}>
             {EMOJI_CATEGORIES[emojiCategory].emojis.map((emoji, index) => (
-              <TouchableOpacity key={`${emoji}-${index}`} onPress={() => { handleChange(text + emoji); }} accessibilityRole="button" accessibilityLabel={`Insert ${emoji}`} style={styles.emojiCell}><Text style={{ fontSize: 25 }}>{emoji}</Text></TouchableOpacity>
+              <TouchableOpacity key={`${emoji}-${index}`} onPress={() => { handleChange(text + emoji); }} accessibilityRole="button" accessibilityLabel={`Insert ${emoji}`} hitSlop={8} style={styles.emojiCell}><Text style={{ fontSize: 25 }}>{emoji}</Text></TouchableOpacity>
             ))}
           </ScrollView>
         </View>
@@ -200,7 +201,7 @@ export default function InputBar({
           <TouchableOpacity
             onPress={onCancelRecording}
             hitSlop={8}
-            style={{ padding: 6 }}
+            style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}
             accessibilityLabel="Discard voice recording"
             accessibilityRole="button"
           >
@@ -232,14 +233,14 @@ export default function InputBar({
           <TouchableOpacity
             onPress={onAttach}
             hitSlop={8}
-            style={{ padding: 6 }}
+            style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}
             accessibilityLabel="Attach a photo, file, or contact"
             accessibilityRole="button"
           >
             <Ionicons name="add-circle-outline" size={26} color={colors.textSecondary} />
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => setEmojiOpen((open) => !open)} hitSlop={6} style={{ padding: 5 }} accessibilityRole="button" accessibilityLabel={emojiOpen ? 'Close emoji picker' : 'Open emoji picker'}>
+          <TouchableOpacity onPress={() => setEmojiOpen((open) => !open)} hitSlop={6} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }} accessibilityRole="button" accessibilityLabel={emojiOpen ? 'Close emoji picker' : 'Open emoji picker'}>
             <Text style={{ fontSize: 23 }}>{emojiOpen ? '⌨️' : '😊'}</Text>
           </TouchableOpacity>
 
@@ -261,7 +262,7 @@ export default function InputBar({
               placeholderTextColor={colors.textSecondary}
               underlineColorAndroid="transparent"
               selectionColor={colors.primary}
-              style={[typography.body, { color: colors.textPrimary, flex: 1, minHeight: 40, maxHeight: 96, paddingVertical: 8, textAlignVertical: 'center' }]}
+              style={[typography.body, { color: colors.textPrimary, flex: 1, minHeight: 48, maxHeight: 96, paddingVertical: 8, textAlignVertical: 'center' }]}
               multiline
               accessibilityLabel={editing ? 'Edit message text' : 'Message text'}
             />
@@ -291,7 +292,7 @@ const styles = StyleSheet.create({
   draftStatus: { flexDirection: 'row', alignItems: 'center', paddingTop: 5, paddingBottom: 1 },
   row: { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
   inputWrap: { flex: 1, minWidth: 0, minHeight: 48, paddingHorizontal: 12, marginHorizontal: 2, maxHeight: 104, borderWidth: 1, justifyContent: 'center' },
-  sendBtn: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)' },
+  sendBtn: { width: 48, height: 48, minWidth: 48, minHeight: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)' },
   replyBar: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
   recordingIndicator: {
     flex: 1,
@@ -305,7 +306,7 @@ const styles = StyleSheet.create({
   },
   recordingDot: { width: 8, height: 8, borderRadius: 4 },
   emojiPanel: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 8, paddingBottom: 6 },
-  emojiCategory: { minWidth: 38, height: 36, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 18, paddingHorizontal: 6 },
+  emojiCategory: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 18, paddingHorizontal: 6 },
   emojiGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 6, paddingTop: 6 },
-  emojiCell: { width: '12.5%', minWidth: 32, alignItems: 'center', justifyContent: 'center', paddingVertical: 5 },
+  emojiCell: { width: '12.5%', minWidth: 32, minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingVertical: 5 },
 });
