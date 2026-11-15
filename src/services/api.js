@@ -587,10 +587,10 @@ export async function uploadAvatar(localUri, mimeType = 'image/jpeg') {
   const { data: authData } = await supabase.auth.getUser();
   const userId = authData?.user?.id;
   if (!userId) throw new Error('Not signed in');
-  const safeMimeType = ['image/jpeg', 'image/png', 'image/webp'].includes(String(mimeType).toLowerCase())
+  const safeMimeType = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'].includes(String(mimeType).toLowerCase())
     ? String(mimeType).toLowerCase()
     : 'image/jpeg';
-  const extension = ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' })[safeMimeType];
+  const extension = ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic', 'image/heif': 'heif' })[safeMimeType];
   const path = `${userId}/avatar-${Date.now()}.${extension}`;
   const arrayBuffer = await readUploadArrayBuffer(localUri);
   assertProfileMediaSize(arrayBuffer);
