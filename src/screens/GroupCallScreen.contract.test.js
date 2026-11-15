@@ -42,3 +42,12 @@ test('group call UI avoids claiming end-to-end or secure-room guarantees', () =>
   assert.equal(screen.includes('secure call room'), false);
   assert.ok(screen.includes('Everyone in the room can hear you'));
 });
+
+
+test('native and web group calls renew participant leases and recover stale disconnects', () => {
+  assert.ok(screen.includes("`/group-calls/${connection.roomId}/heartbeat`"));
+  assert.ok(screen.includes('setInterval(heartbeat, 30_000)'));
+  const web = fs.readFileSync(new URL('./GroupCallScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(web.includes("`/group-calls/${connection.roomId}/heartbeat`"));
+  assert.ok(web.includes('setInterval(heartbeat, 30_000)'));
+});
