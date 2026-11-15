@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Linking, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -40,13 +41,13 @@ export default function HelpScreen({ navigation }) {
   async function handleContact() {
     const supportEmail = (process.env.EXPO_PUBLIC_SUPPORT_EMAIL || '').trim();
     if (!supportEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(supportEmail)) {
-      Alert.alert('Support contact unavailable', 'A support email has not been configured for this build.');
+      showAppAlert('Support contact unavailable', 'A support email has not been configured for this build.');
       return;
     }
     try {
       await Linking.openURL(`mailto:${supportEmail}?subject=ZannyChat%20support`);
     } catch (err) {
-      Alert.alert('No mail app', 'No email app is set up on this device.');
+      showAppAlert('No mail app', 'No email app is set up on this device.');
     }
   }
 
