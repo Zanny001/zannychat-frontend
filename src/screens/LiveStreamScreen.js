@@ -370,7 +370,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       setError('This LIVE link is incomplete. Reopen it from LIVE Hub.');
       return undefined;
     }
-    if (connection?.stream?.id === streamId && connection?.token && connection?.livekitUrl) {
+    if (initialConnection?.stream?.id === streamId && initialConnection?.token && initialConnection?.livekitUrl) {
       setConnectionLoading(false);
       return undefined;
     }
@@ -393,7 +393,7 @@ export default function LiveStreamScreen({ route, navigation }) {
         if (active) setConnectionLoading(false);
       });
     return () => { active = false; };
-  }, [streamId, connection?.stream?.id, connection?.token, connection?.livekitUrl]);
+  }, [streamId]);
 
   const refreshReplay = useCallback(async () => {
     if (!stream?.id || !creatorMode || !replayEnabled) return;
