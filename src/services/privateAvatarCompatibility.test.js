@@ -83,6 +83,19 @@ test('current user, chat directory, contacts, QR lookup and search resolve avata
   assert.match(api, /const resolved = await resolveProfileAvatarUrls\(Array\.isArray\(data\) \? data : \[\]\)/);
 });
 
+test('profile avatar and cover uploads enforce the 10 MiB bucket limit and preserve native HEIC/HEIF', () => {
+  assert.match(api, /const MAX_PROFILE_MEDIA_BYTES = 10 \* 1024 \* 1024/);
+  assert.match(api, /function assertProfileMediaSize/);
+  const coverStart = api.indexOf('export async function uploadProfileCover');
+  const coverEnd = api.indexOf('\n}', coverStart) + 2;
+  const avatarStart = api.indexOf('export async function uploadAvatar');
+  const avatarEnd = api.indexOf('\n}', avatarStart) + 2;
+  assert.match(api.slice(coverStart, coverEnd), /assertProfileMediaSize\(arrayBuffer\)/);
+  assert.match(api.slice(avatarStart, avatarEnd), /assertProfileMediaSize\(arrayBuffer\)/);
+  assert.match(api.slice(avatarStart, avatarEnd), /image\/heic/);
+  assert.match(api.slice(avatarStart, avatarEnd), /image\/heif/);
+});
+
 test('peer profile waits for viewer-authorized avatar resolution before displaying the photo', () => {
   assert.match(peer, /resolveProfileAvatarUrls\(\[\{ \.\.\.participant, id: userId \}\]\)/);
   assert.match(peer, /avatarResolutionComplete \? getSafeProfilePhotoUrl\(resolvedAvatarUrl\) : null/);
