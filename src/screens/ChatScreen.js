@@ -1243,24 +1243,20 @@ export default function ChatScreen({ route, navigation }) {
         ...(display.isGroup && isMineMessage(sheetMessage) && !sheetMessage.deletedAt && !String(sheetMessage.id).startsWith('temp-')
           ? [{ key: 'receipts', label: 'View message status', icon: 'people-outline', onPress: () => handleShowGroupReceiptDetails(sheetMessage) }]
           : []),
-        ...(isMineMessage(sheetMessage)
-          ? [
-              {
-                key: 'delete',
-                label: sheetMessage.deletedAt ? 'Remove deleted message' : 'Delete',
-                icon: 'trash-outline',
-                destructive: true,
-                onPress: () => {
-                  setActiveSheet(null);
-                  if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
-                    confirmDeleteMessage(sheetMessage);
-                  } else {
-                    setTimeout(() => confirmDeleteMessage(sheetMessage), 350);
-                  }
-                },
-              },
-            ]
-          : []),
+        {
+          key: 'delete',
+          label: sheetMessage.deletedAt ? 'Remove deleted message' : isMineMessage(sheetMessage) ? 'Delete' : 'Delete for me',
+          icon: 'trash-outline',
+          destructive: true,
+          onPress: () => {
+            setActiveSheet(null);
+            if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
+              confirmDeleteMessage(sheetMessage);
+            } else {
+              setTimeout(() => confirmDeleteMessage(sheetMessage), 350);
+            }
+          },
+        },
         ...(!isMineMessage(sheetMessage) && !display.isGroup
           ? [
               {
