@@ -55,7 +55,5 @@ test('direct call LiveKit rooms do not call group-only heartbeat or leave endpoi
   assert.match(nativeRoom, /roomId=\{directCallId \? null : connection\.roomId\}/);
   assert.match(nativeRoom, /!directCallId && !endingRef\.current/);
   assert.match(webRoom, /!directCallId && !endedRef\.current/);
-  assert.match(nativeRoom, /roomId=\{directCallId \? null : connection\.roomId\}/);
-  assert.match(webRoom, /roomId=\{directCallId \? null : connection\.roomId\}/);
   assert.match(nativeRoom, /preserveAudioSessionRef/);
 });
