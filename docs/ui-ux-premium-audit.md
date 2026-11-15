@@ -382,3 +382,10 @@ The source scan covered these families:
 - Reviewed the `call_sessions` write trigger: immutable call identity/conversation/type/expiry fields are guarded, actors must be participants (or service role), and status transitions are explicitly constrained (callee accept/decline, caller cancel, participant end, expiry-to-missed). Group-room attachment is separately restricted to the call service and validated against the source call/conversation.
 - Reviewed `call_signals` insert trigger: sender must equal `auth.uid()`, call must be accepted and within the renegotiation window, recipient must be the other call participant, allowed signal types are enumerated, and per-sender rate is bounded.
 - These checks explain why broad-looking table-level UPDATE policies are constrained by column grants and triggers. No RLS or database changes were required.
+
+
+## Authentication hardening plan constraint — 2026-11-16
+
+- Supabase Auth security advisor reports leaked-password protection is disabled.
+- Current Supabase organization plan was verified as `free`. Current Supabase documentation states built-in leaked-password protection (HaveIBeenPwned Pwned Passwords API integration) is available on Pro and above, so it cannot be enabled in the current plan without a paid upgrade.
+- No plan upgrade or paid service was initiated. Keep the existing minimum 8-character password validation and do not claim breached-password screening is active. A future no-cost alternative would require a carefully designed server-side k-anonymity check; do not send raw passwords or full password hashes to a third party.
