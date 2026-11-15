@@ -148,3 +148,5 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 - Chats filter chips now enforce a 44-point minimum touch height and centered content; a contract protects the target and selected-state accessibility.
 
 - Chats header camera, drafts and new-chat actions are now 44×44; search has a 48-point minimum surface and the Moments “See all” action has a 44-point target. Regression assertions cover the dimensions.
+
+- NewChat quick actions now wrap on narrow viewports rather than forcing all three cards into a single row; each action retains a 44-point minimum content height and a responsive width basis.
