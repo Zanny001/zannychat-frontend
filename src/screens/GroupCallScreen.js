@@ -9,7 +9,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 import CallInvitePicker from '../components/CallInvitePicker';
 
-function GroupRoomContent({ callType, onEnd, onAddPeople, canInvite, onParticipantsChange, endLabel }) {
+function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onParticipantsChange, endLabel }) {
   const room = useRoomContext();
   const { colors, typography } = useTheme();
   const cameraTracks = useTracks([Track.Source.Camera]);
@@ -23,6 +23,19 @@ function GroupRoomContent({ callType, onEnd, onAddPeople, canInvite, onParticipa
   useEffect(() => {
     onParticipantsChange?.(participants.map((participant) => participant.identity));
   }, [participants, onParticipantsChange]);
+
+  useEffect(() => {
+    if (connectionState !== 'Connected' || !roomId) return undefined;
+    let active = true;
+    const heartbeat = () => {
+      if (!active || room.state !== 'connected') return;
+      backendFetch(`/group-calls/${roomId}/heartbeat`, { method: 'POST' })
+        .catch((error) => { if (active) console.warn('[group-calls] presence heartbeat failed:', error?.message || error); });
+    };
+    heartbeat();
+    const interval = setInterval(heartbeat, 30_000);
+    return () => { active = false; clearInterval(interval); };
+  }, [connectionState, room, roomId]);
 
   useEffect(() => {
     const onConnected = () => setConnectionState('Connected');
@@ -178,16 +191,6 @@ export default function GroupCallScreen({ route, navigation }) {
   const handleParticipantsChange = useCallback((ids) => setParticipantIds(ids), []);
 
   useEffect(() => {
-    if (!connection?.roomId) return undefined;
-    let active = true;
-    const heartbeat = () => backendFetch(`/group-calls/${connection.roomId}/heartbeat`, { method: 'POST' })
-      .catch((error) => { if (active) console.warn('[group-calls] presence heartbeat failed:', error?.message || error); });
-    heartbeat();
-    const interval = setInterval(heartbeat, 30_000);
-    return () => { active = false; clearInterval(interval); };
-  }, [connection?.roomId]);
-
-  useEffect(() => {
     let active = true;
     AudioSession.startAudioSession().catch(() => {});
     const connect = async () => {
@@ -301,7 +304,7 @@ export default function GroupCallScreen({ route, navigation }) {
         </View>
       ) : connection ? (
         <LiveKitRoom serverUrl={connection.livekitUrl} token={connection.token} connect={true} audio={true} video={connection.callType === 'video'} options={{ adaptiveStream: true, dynacast: true }}>
-          <GroupRoomContent callType={connection.callType} onEnd={endCall} onAddPeople={() => setInvitePickerVisible(true)} canInvite={canInvite} onParticipantsChange={handleParticipantsChange} endLabel={canEnd ? 'End call' : 'Leave'} />
+          <GroupRoomContent roomId={connection.roomId} callType={connection.callType} onEnd={endCall} onAddPeople={() => setInvitePickerVisible(true)} canInvite={canInvite} onParticipantsChange={handleParticipantsChange} endLabel={canEnd ? 'End call' : 'Leave'} />
         </LiveKitRoom>
       ) : null}
       {connection?.room ? (
