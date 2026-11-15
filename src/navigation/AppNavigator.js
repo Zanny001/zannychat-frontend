@@ -15,6 +15,7 @@ import SignupScreen from '../screens/SignupScreen';
 import PasswordRecoveryScreen from '../screens/PasswordRecoveryScreen';
 import VerifyEmailScreen from '../screens/VerifyEmailScreen';
 import PasswordResetScreen from '../screens/PasswordResetScreen';
+import AuthRequiredScreen from '../screens/AuthRequiredScreen';
 import ChatListScreen from '../screens/ChatListScreen';
 import StatusUpdatesScreen from '../screens/StatusUpdatesScreen';
 import ChannelsScreen from '../screens/ChannelsScreen';
@@ -58,6 +59,7 @@ import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { getCallParticipantName, getCallSessionById, subscribeToIncomingCalls, updateCallStatus } from '../services/calls';
 import { clearNativeCallMapping, getNativeCallMapping, initializeNativeCallSystem, reportIncomingCallIfNeeded, reportNativeCallEnded } from '../services/nativeCallSystem';
 import { completeGoogleOAuthCallback } from '../services/googleAuth';
+import { takePendingAuthRoute } from './pendingAuthRoute';
 
 // Lets code outside the component tree (the push-notification tap
 // handler in App.js) trigger navigation — the standard React
@@ -222,8 +224,30 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
   // from the auth callback races React Navigation's conditional screen removal.
   useEffect(() => {
     if (!SUPABASE_ENABLED || !navigationRef.isReady()) return;
-    const currentRoute = navigationRef.getCurrentRoute()?.name;
+    const currentRouteState = navigationRef.getCurrentRoute();
+    const currentRoute = currentRouteState?.name;
+    const requiredLinkParams = { QRContact: 'userId', JoinGroup: 'token', LiveStream: 'streamId', LiveReplay: 'replayId' };
+    if (Object.prototype.hasOwnProperty.call(requiredLinkParams, currentRoute)) {
+      if (isAuthenticated) {
+        const pendingRoute = takePendingAuthRoute();
+        if (pendingRoute?.name === currentRoute && !currentRouteState?.params?.[requiredLinkParams[currentRoute]]) {
+          const routes = [{ name: 'Main' }, pendingRoute];
+          navigationRef.resetRoot({ index: routes.length - 1, routes });
+        }
+      }
+      return;
+    }
     if (!isAuthenticated && ['PasswordRecovery', 'PasswordReset'].includes(currentRoute)) return;
+
+    if (isAuthenticated) {
+      const pendingRoute = takePendingAuthRoute();
+      if (pendingRoute) {
+        const routes = [{ name: 'Main' }, pendingRoute];
+        navigationRef.resetRoot({ index: routes.length - 1, routes });
+        return;
+      }
+    }
+
     const targetRoute = isAuthenticated ? 'Main' : 'Onboarding';
     if (currentRoute !== targetRoute) {
       navigationRef.resetRoot({ index: 0, routes: [{ name: targetRoute }] });
@@ -412,13 +436,17 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
   };
 
   return (
-    <NavigationContainer ref={navigationRef} onReady={() => { if (pendingIncomingRef.current) { const pending = pendingIncomingRef.current; pendingIncomingRef.current = null; navigationRef.navigate('IncomingCall', pending); } }} theme={navTheme} linking={{ prefixes: ['zannychat://'], config: { screens: { PasswordReset: 'reset-password', JoinGroup: 'join-group', QRContact: 'contact/:userId' } } }}>
+    <NavigationContainer ref={navigationRef} onReady={() => { if (pendingIncomingRef.current) { const pending = pendingIncomingRef.current; pendingIncomingRef.current = null; navigationRef.navigate('IncomingCall', pending); } }} theme={navTheme} linking={{ prefixes: ['zannychat://'], config: { screens: { PasswordReset: 'reset-password', JoinGroup: 'join-group', QRContact: 'contact/:userId', LiveStream: 'LiveStream', LiveReplay: 'LiveReplay' } } }}>
       <RootStack.Navigator screenOptions={{ headerShown: false }} initialRouteName={initialRouteName}>
         {(!SUPABASE_ENABLED || !isAuthenticated) && <RootStack.Group navigationKey="guest">
           <RootStack.Screen name="Onboarding" component={OnboardingScreen} />
           <RootStack.Screen name="Login" component={LoginScreen} />
           <RootStack.Screen name="Signup" component={SignupScreen} />
           <RootStack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
+          {SUPABASE_ENABLED && !isAuthenticated ? <RootStack.Screen name="QRContact" component={AuthRequiredScreen} /> : null}
+          {SUPABASE_ENABLED && !isAuthenticated ? <RootStack.Screen name="JoinGroup" component={AuthRequiredScreen} /> : null}
+          {SUPABASE_ENABLED && !isAuthenticated ? <RootStack.Screen name="LiveStream" component={AuthRequiredScreen} /> : null}
+          {SUPABASE_ENABLED && !isAuthenticated ? <RootStack.Screen name="LiveReplay" component={AuthRequiredScreen} /> : null}
         </RootStack.Group>}
         <RootStack.Screen name="PasswordRecovery" component={PasswordRecoveryScreen} />
         <RootStack.Screen name="PasswordReset" component={PasswordResetScreen} />
