@@ -152,7 +152,7 @@ export default function LiveHubScreen({ navigation, route }) {
       const result = await backendFetch('/live/invite-candidates');
       setInviteCandidates(Array.isArray(result?.candidates) ? result.candidates : []);
     } catch (e) {
-      Alert.alert('Contacts unavailable', e?.message || 'Could not load people from your chats.');
+      showAppAlert('Contacts unavailable', e?.message || 'Could not load people from your chats.');
     } finally {
       setLoadingCandidates(false);
     }
@@ -165,10 +165,10 @@ export default function LiveHubScreen({ navigation, route }) {
   };
 
   const startLive = async () => {
-    if (!title.trim()) return Alert.alert('Add a title', 'Give your LIVE stream a short title first.');
+    if (!title.trim()) return showAppAlert('Add a title', 'Give your LIVE stream a short title first.');
     const invitees = [...new Set(selectedInvitees)];
     if (visibility === 'private' && invitees.length === 0) {
-      return Alert.alert('Add invitees', 'Choose at least one person from your existing chats.');
+      return showAppAlert('Add invitees', 'Choose at least one person from your existing chats.');
     }
     setBusy(true);
     setError('');
@@ -206,7 +206,7 @@ export default function LiveHubScreen({ navigation, route }) {
     } catch (e) {
       const message = e?.message || 'The media service may not be configured yet.';
       setError(`Could not start LIVE: ${message}`);
-      if (Platform.OS !== 'web') Alert.alert('Could not start LIVE', message);
+      if (Platform.OS !== 'web') showAppAlert('Could not start LIVE', message);
     } finally {
       setBusy(false);
       setStartStage('');
@@ -219,7 +219,7 @@ export default function LiveHubScreen({ navigation, route }) {
       const connection = await backendFetch('/live/' + stream.id + '/join', { method: 'POST' });
       navigation.navigate('LiveStream', { connection, creatorMode: connection.role === 'creator' });
     } catch (e) {
-      Alert.alert('Could not join LIVE', e?.message || 'This stream may have ended or requires an invitation.');
+      showAppAlert('Could not join LIVE', e?.message || 'This stream may have ended or requires an invitation.');
     } finally {
       setBusy(false);
     }
@@ -238,7 +238,7 @@ export default function LiveHubScreen({ navigation, route }) {
         await refresh();
       }
     } catch (e) {
-      Alert.alert('Could not update follow', e?.message || 'Please try again.');
+      showAppAlert('Could not update follow', e?.message || 'Please try again.');
     } finally {
       setBusy(false);
     }
