@@ -85,7 +85,12 @@ function Action({ colors, label, accessibilityLabel, onPress, disabled = false, 
 
 export default function LiveStreamScreen({ route, navigation }) {
   const { colors, typography } = useTheme();
-  const connection = route.params?.connection;
+  const initialConnection = route.params?.connection && typeof route.params.connection === 'object'
+    ? route.params.connection
+    : null;
+  const streamId = route.params?.streamId || initialConnection?.stream?.id || null;
+  const [connection, setConnection] = useState(initialConnection);
+  const [connectionLoading, setConnectionLoading] = useState(Boolean(streamId && !initialConnection));
   const stream = connection?.stream;
   const creatorMode = Boolean(route.params?.creatorMode || connection?.role === 'creator');
   const [demotedToViewer, setDemotedToViewer] = useState(false);
@@ -157,6 +162,45 @@ export default function LiveStreamScreen({ route, navigation }) {
   }, [creatorMode, replayEnabled, stream?.id, replay?.status, refreshReplay]);
 
   useEffect(() => {
+    if (!streamId) {
+      setConnectionLoading(false);
+      setError('This LIVE link is incomplete. Reopen it from LIVE Hub.');
+      setStatus('Unable to connect');
+      return undefined;
+    }
+    if (connection?.stream?.id === streamId && connection?.token && connection?.livekitUrl) {
+      setConnectionLoading(false);
+      return undefined;
+    }
+    let active = true;
+    setConnection(null);
+    setConnectionLoading(true);
+    setError('');
+    backendFetch(`/live/${streamId}/join`, { method: 'POST' })
+      .then((nextConnection) => {
+        if (!nextConnection?.stream?.id || nextConnection.stream.id !== streamId
+            || !nextConnection?.token || !nextConnection?.livekitUrl) {
+          throw new Error('The server did not return a complete LIVE room connection.');
+        }
+        if (active) setConnection(nextConnection);
+      })
+      .catch((joinError) => {
+        if (active) {
+          setError(joinError?.message || 'Could not join this LIVE stream.');
+          setStatus('Unable to connect');
+        }
+      })
+      .finally(() => {
+        if (active) setConnectionLoading(false);
+      });
+    return () => { active = false; };
+  }, [streamId, connection?.stream?.id, connection?.token, connection?.livekitUrl]);
+
+  useEffect(() => {
+    if (connectionLoading) {
+      setStatus('Connecting…');
+      return undefined;
+    }
     if (!stream?.id || !connection?.livekitUrl || !connection?.token) {
       setError('This LIVE room is missing its secure connection details.');
       setStatus('Unable to connect');
@@ -363,8 +407,16 @@ export default function LiveStreamScreen({ route, navigation }) {
     finally { setBusy(false); }
   };
   const react = async (reaction = 'heart') => {
-    try { await backendFetch(`/live/${stream.id}/react`, { method: 'POST', body: JSON.stringify({ reaction }) }); }
-    catch (err) { setError(err?.message || 'Reaction not sent.'); }
+    if (!stream?.id) {
+      setError('The LIVE room is still connecting. Please try again.');
+      return;
+    }
+    try {
+      const result = await backendFetch(`/live/${stream.id}/react`, { method: 'POST', body: JSON.stringify({ reaction }) });
+      if (result?.accepted) await refreshComments();
+    } catch (err) {
+      setError(err?.message || 'Reaction not sent.');
+    }
   };
   const removeFloatingReaction = useCallback((reactionId) => {
     setFloatingReactions((current) => current.filter((item) => item.id !== reactionId));
@@ -387,7 +439,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       if (next?.role !== 'guest' || !next?.canPublish) throw new Error('Guest access has not been approved.');
       setDemotedToViewer(false);
       setStageNotice('');
-      navigation.setParams({ connection: next, creatorMode: false });
+      setConnection(next);
     } catch (err) { setError(err?.message || 'Could not join as guest.'); }
   };
   const hideComment = async (id) => {
