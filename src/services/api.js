@@ -119,6 +119,7 @@ function normalizeMessage(row) {
 // policy confirms they belong to the conversation. Local mock URIs and other
 // non-Supabase URLs are passed through unchanged.
 const CHAT_MEDIA_BUCKET = 'chat-media';
+const MAX_CHAT_MEDIA_BYTES = 25 * 1024 * 1024;
 const CHAT_MEDIA_SIGNED_URL_TTL_SECONDS = 24 * 60 * 60;
 
 function isSafeChatMediaPath(path) {
@@ -1472,6 +1473,7 @@ export async function uploadChatImage(conversationId, localUri, mimeType = 'imag
   const path = `${conversationId}/${Date.now()}-${Math.round(Math.random() * 1e6)}.${extension}`;
 
   const arrayBuffer = await readUploadArrayBuffer(localUri);
+  if (arrayBuffer.byteLength > MAX_CHAT_MEDIA_BYTES) throw new Error('Chat attachments are limited to 25 MB. Choose a smaller file.');
   const { error } = await supabase.storage
     .from('chat-media')
     .upload(path, arrayBuffer, { contentType: mimeType });
@@ -1483,10 +1485,13 @@ export async function uploadChatImage(conversationId, localUri, mimeType = 'imag
 export async function uploadChatFile(conversationId, localUri, fileName, mimeType, size) {
   if (!SUPABASE_ENABLED) return { url: localUri, name: fileName, size };
 
+  const declaredSize = Number(size);
+  if (Number.isFinite(declaredSize) && declaredSize > MAX_CHAT_MEDIA_BYTES) throw new Error('Chat attachments are limited to 25 MB. Choose a smaller file.');
   const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
   const path = `${conversationId}/${Date.now()}-${safeName}`;
 
   const arrayBuffer = await readUploadArrayBuffer(localUri);
+  if (arrayBuffer.byteLength > MAX_CHAT_MEDIA_BYTES) throw new Error('Chat attachments are limited to 25 MB. Choose a smaller file.');
   const { error } = await supabase.storage
     .from('chat-media')
     .upload(path, arrayBuffer, { contentType: mimeType || 'application/octet-stream' });
@@ -1501,6 +1506,7 @@ export async function uploadVoiceNote(conversationId, localUri, durationSeconds)
   const path = `${conversationId}/${Date.now()}-voice.m4a`;
 
   const arrayBuffer = await readUploadArrayBuffer(localUri);
+  if (arrayBuffer.byteLength > MAX_CHAT_MEDIA_BYTES) throw new Error('Voice notes are limited to 25 MB. Record a shorter note.');
   const { error } = await supabase.storage
     .from('chat-media')
     .upload(path, arrayBuffer, { contentType: 'audio/m4a' });
