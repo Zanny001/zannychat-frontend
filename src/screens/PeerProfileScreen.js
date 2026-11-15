@@ -240,6 +240,6 @@ const styles = StyleSheet.create({
   photoViewerBackdrop: { flex: 1, backgroundColor: '#000000', justifyContent: 'center' },
   photoViewerHeader: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2, minHeight: 76, paddingTop: 18, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   photoViewerName: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', flex: 1, marginRight: 16 },
-  photoViewerClose: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.14)' },
+  photoViewerClose: { width: 48, height: 48, minWidth: 48, minHeight: 48, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.14)' },
   photoViewerImage: { width: '100%', height: '100%' },
 });
