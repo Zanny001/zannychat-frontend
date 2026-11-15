@@ -65,8 +65,8 @@ export default function ForwardMessageScreen({ navigation, route }) {
           contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.lg, flexGrow: 1 }}
           ListEmptyComponent={<Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl }]}>No other chats available to forward to.</Text>}
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => forwardTo(item)} disabled={Boolean(sendingId)} accessibilityRole="button" accessibilityLabel={`Forward message to ${item.participant?.name || item.name || 'group chat'}`} accessibilityState={{ disabled: Boolean(sendingId), busy: sendingId === item.id }} activeOpacity={0.8}>
-              <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity onPress={() => forwardTo(item)} disabled={Boolean(sendingId)} style={{ minHeight: 64 }} accessibilityRole="button" accessibilityLabel={`Forward message to ${item.participant?.name || item.name || 'group chat'}`} accessibilityState={{ disabled: Boolean(sendingId), busy: sendingId === item.id }} activeOpacity={0.8}>
+              <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={{ minHeight: 64, flexDirection: 'row', alignItems: 'center' }}>
                 <Avatar name={item.participant?.name || item.name || 'Group'} color={item.participant?.avatarColor || colors.primary} imageUrl={item.participant?.avatarUrl} />
                 <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm }}>
                   <Text style={[typography.bodyStrong, { color: colors.textPrimary }]} numberOfLines={1}>{item.participant?.name || item.name || 'Group chat'}</Text>

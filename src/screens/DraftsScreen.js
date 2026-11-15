@@ -88,7 +88,7 @@ export default function DraftsScreen({ navigation }) {
         ) : error && drafts.length === 0 ? (
           <GlassCard>
             <Text accessibilityRole="alert" style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{error}</Text>
-            <TouchableOpacity onPress={load} accessibilityRole="button" accessibilityLabel="Retry loading drafts" style={{ minHeight: 44, alignSelf: 'center', marginTop: spacing.md, backgroundColor: colors.primary, borderRadius: radii.pill, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}><Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Try again</Text></TouchableOpacity>
+            <TouchableOpacity onPress={load} accessibilityRole="button" accessibilityLabel="Retry loading drafts" style={{ minHeight: 48, alignSelf: 'center', marginTop: spacing.md, backgroundColor: colors.primary, borderRadius: radii.pill, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}><Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Try again</Text></TouchableOpacity>
           </GlassCard>
         ) : drafts.length === 0 ? (
           <View style={{ alignItems: 'center', paddingHorizontal: spacing.xl, paddingVertical: spacing.xxl }}>
@@ -105,7 +105,7 @@ export default function DraftsScreen({ navigation }) {
           return (
             <GlassCard key={draft.id} style={{ marginBottom: spacing.sm }}>
               <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                <TouchableOpacity onPress={() => openDraft(draft)} accessibilityRole="button" accessibilityLabel={`Continue draft for ${title}`} style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start' }}>
+                <TouchableOpacity onPress={() => openDraft(draft)} accessibilityRole="button" accessibilityLabel={`Continue draft for ${title}`} style={{ flex: 1, minHeight: 64, flexDirection: 'row', alignItems: 'flex-start' }}>
                   <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: `${colors.accent}18`, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.accent} /></View>
                   <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.md }}>
                     <Text style={[typography.bodyStrong, { color: colors.textPrimary }]} numberOfLines={1}>{title}</Text>
@@ -113,7 +113,7 @@ export default function DraftsScreen({ navigation }) {
                     <Text style={[typography.caption, { color: colors.primary, marginTop: spacing.sm }]}>{updatedLabel(draft.updatedAt).toUpperCase()}  ·  CONTINUE DRAFT</Text>
                   </View>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => confirmDelete(draft)} accessibilityRole="button" accessibilityLabel={`Delete draft for ${title}`} hitSlop={8} style={{ padding: spacing.xs, marginLeft: spacing.xs }}><Ionicons name="trash-outline" size={18} color={colors.danger} /></TouchableOpacity>
+                <TouchableOpacity onPress={() => confirmDelete(draft)} accessibilityRole="button" accessibilityLabel={`Delete draft for ${title}`} hitSlop={8} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', marginLeft: spacing.xs }}><Ionicons name="trash-outline" size={18} color={colors.danger} /></TouchableOpacity>
               </View>
             </GlassCard>
           );
