@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -30,13 +31,13 @@ export default function EventsScreen({ navigation, route }) {
       const normalized = normalizeEvent({ title, description, location, startsAt: new Date(startsAt).toISOString() });
       await createConversationEvent(conversationId, normalized);
       setTitle(''); setDescription(''); setStartsAt(''); setLocation(''); await refresh();
-      Alert.alert('Event created', 'Conversation members can now RSVP.');
-    } catch (e) { Alert.alert('Could not create event', e?.message || 'Enter a valid future date and time.'); }
+      showAppAlert('Event created', 'Conversation members can now RSVP.');
+    } catch (e) { showAppAlert('Could not create event', e?.message || 'Enter a valid future date and time.'); }
     finally { setSaving(false); }
   };
   const respond = async (event, response) => {
     try { await respondToConversationEvent(event.id, response); await refresh(); }
-    catch (e) { Alert.alert('Could not save RSVP', e?.message || 'Please try again.'); }
+    catch (e) { showAppAlert('Could not save RSVP', e?.message || 'Please try again.'); }
   };
   const fieldStyle = [typography.body, { color: colors.textPrimary, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.md, minWidth: 0, width: '100%' }];
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
