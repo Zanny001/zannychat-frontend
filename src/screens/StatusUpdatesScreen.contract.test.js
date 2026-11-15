@@ -56,3 +56,15 @@ test('Status view receipts use conflict-ignore upsert so repeated opens stay ide
   assert.ok(service.includes("{ onConflict: 'status_id,viewer_id', ignoreDuplicates: true }"));
   assert.equal(service.includes(".from('status_views').insert("), false);
 });
+
+test('My status ring prioritizes the signed-in profile photo over the latest story media', () => {
+  assert.ok(screen.includes("import { getCurrentUser } from '../services/api';"));
+  assert.ok(screen.includes('getCurrentUser()'));
+  assert.ok(screen.includes('setMyProfile(profile)'));
+  const start = screen.indexOf('accessibilityLabel="Open or create your status"');
+  const end = screen.indexOf('</TouchableOpacity>', start);
+  const ownStatus = screen.slice(start, end);
+  assert.ok(start >= 0 && end > start);
+  assert.ok(ownStatus.indexOf('myProfile?.avatarUrl') >= 0);
+  assert.ok(ownStatus.indexOf('myProfile?.avatarUrl') < ownStatus.indexOf('ownStatusGroup?.latest?.media_url'));
+});
