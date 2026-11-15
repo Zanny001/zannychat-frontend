@@ -142,3 +142,5 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 - Refined the shared message composer: clearer theme-aware input surface, stronger but restrained border, 44-point input minimum, 42-point send control and a 96-point multiline cap.
 - Added a ChatScreen contract test for composer surface contrast and proportion.
 - Chats/Main and the remaining route inventory are still incomplete pending visual, interaction, accessibility and regression validation. The source-level audit must not be treated as device-level sign-off.
+
+- NewChat contact results now use moderate divider-based rows instead of a glass card for every contact. The favorite action is a separate sibling control rather than a nested pressable, preventing the star action from unintentionally triggering the row's open-chat/share action. A dedicated regression contract was added.
