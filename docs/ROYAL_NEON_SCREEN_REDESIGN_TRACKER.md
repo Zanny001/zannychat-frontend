@@ -134,3 +134,11 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 - Further high-priority action audit: all interactive controls in the native LiveStream, LiveHub, GroupCall, Call, StatusUpdates and Chat screen files now expose explicit accessible names; Channels management, subscription, moderation, publishing, report and invitation actions were also labelled. Dynamic labels announce the target person/channel/report where appropriate.
 - Regression assertions now cover native LIVE moderation/discovery, call fallback, channel management, status publishing/privacy and chat outbox/media recovery controls.
 - These are source-level accessibility fixes and contract tests, not visual sign-off. The individual screen entries remain [~].
+
+## Premium UI/UX audit continuation — 15 Nov 2026
+
+- Created a dedicated audit branch `audit/premium-ui-ux-2026-11-15`; no production branch or deployment has been changed.
+- Added `docs/PREMIUM_UI_UX_AUDIT_2026-11-15.md` with verified source findings, severity, current remediations and the screen-by-screen continuation plan.
+- Refined the shared message composer: clearer theme-aware input surface, stronger but restrained border, 44-point input minimum, 42-point send control and a 96-point multiline cap.
+- Added a ChatScreen contract test for composer surface contrast and proportion.
+- Chats/Main and the remaining route inventory are still incomplete pending visual, interaction, accessibility and regression validation. The source-level audit must not be treated as device-level sign-off.
