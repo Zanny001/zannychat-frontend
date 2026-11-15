@@ -37,6 +37,27 @@ test('private avatar access is checked before deleting the legacy copy', () => {
   assert.ok(privateSync >= 0 && save > privateSync && publicSync > save);
 });
 
+test('visibility changes use the server-verified RPC instead of direct table writes', () => {
+  const start = api.indexOf('export async function updateMyProfileDetails');
+  const end = api.indexOf('\n}', start) + 2;
+  const body = api.slice(start, end);
+  assert.match(body, /visibilityChanged/);
+  assert.match(body, /delete rowToSave\.profile_visibility/);
+  assert.match(body, /delete rowToSave\.photo_visibility/);
+  assert.match(body, /rpc\('update_my_profile_visibility'/);
+  assert.ok(body.indexOf('syncAvatarVisibility(authData.user.id, nextProfileVisibility, nextPhotoVisibility)') < body.indexOf("rpc('update_my_profile_visibility'"));
+});
+
+test('privacy cutover removes every legacy public avatar object, including orphaned uploads', () => {
+  const start = api.indexOf('async function removeLegacyPublicAvatar');
+  const end = api.indexOf('\n}', start) + 2;
+  const body = api.slice(start, end);
+  assert.match(body, /bucket\.list\(userId, \{ limit: 1000, offset \}\)/);
+  assert.match(body, /paths\.add/);
+  assert.match(body, /bucket\.remove\(allPaths\.slice\(start, start \+ 1000\)\)/);
+  assert.match(body, /update\(\{ avatar_url: null \}\)/);
+});
+
 test('making a profile public restores its legacy URL for older clients', () => {
   const start = api.indexOf('async function ensureLegacyPublicAvatar');
   const end = api.indexOf('\n}', start) + 2;
