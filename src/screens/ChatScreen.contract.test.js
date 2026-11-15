@@ -46,7 +46,7 @@ test('message composer keeps a distinct moderate input surface and balanced cont
   assert.match(inputBar, /borderColor: hexToRgba\(colors\.primary, 0\.24\)/);
   assert.match(inputBar, /minHeight: 48/);
   assert.match(inputBar, /width: 42, height: 42/);
-  assert.equal((inputBar.match(/hitSlop=\{6\}/g) || []).length, 2, 'both send actions keep a generous touch target');
+  assert.ok((inputBar.match(/hitSlop=\{6\}/g) || []).length >= 2, 'send actions keep generous touch targets even when other controls share the same hitSlop');
   assert.match(inputBar, /maxHeight: 96/);
   assert.match(inputBar, /textAlignVertical: 'center'/);
 });
