@@ -156,7 +156,7 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
           <View style={[styles.audioOrb, { backgroundColor: colors.primary, shadowColor: colors.primary, borderColor: hexToRgba(colors.onPrimary, 0.28) }]}>
             <Ionicons name="people" size={46} color={colors.onPrimary || '#FFFFFF'} />
           </View>
-          <Text style={[styles.audioTitle, typography.title, { color: colors.textPrimary }]}>Group audio call</Text>
+          <Text style={[styles.audioTitle, typography.title, { color: colors.textPrimary }]}>{directCall ? 'Voice call' : 'Group audio call'}</Text>
           <Text style={[styles.audioHint, typography.body, { color: colors.textSecondary }]}>Everyone in the room can hear you when your microphone is on.</Text>
           <View style={styles.participantList}>
             {participants.map((participant) => (
@@ -240,6 +240,7 @@ export default function GroupCallScreen({ route, navigation }) {
   const endingRef = useRef(false);
   const connectionRef = useRef(null);
   const nativeConnectedRef = useRef(false);
+  const preserveAudioSessionRef = useRef(false);
   const handleParticipantsChange = useCallback((ids) => setParticipantIds(ids), []);
 
   useEffect(() => {
@@ -290,7 +291,7 @@ export default function GroupCallScreen({ route, navigation }) {
     connect();
     return () => {
       active = false;
-      AudioSession.stopAudioSession();
+      if (!preserveAudioSessionRef.current) AudioSession.stopAudioSession();
       const current = connectionRef.current;
       if (current?.roomId && !directCallId && !endingRef.current) {
         backendFetch(`/group-calls/${current.roomId}/leave`, { method: 'POST' }).catch(() => {});
@@ -337,6 +338,7 @@ export default function GroupCallScreen({ route, navigation }) {
           body: JSON.stringify({ userIds: [person.id], callType: connection?.callType || callType }),
         });
         if (!result?.room?.id) throw new Error('Could not upgrade this call to a conference.');
+        preserveAudioSessionRef.current = true;
         navigation.replace('GroupCall', {
           roomId: result.room.id,
           connection: result,
@@ -403,6 +405,7 @@ export default function GroupCallScreen({ route, navigation }) {
       if (!active || !next || endingRef.current) return;
       if (next.group_room_id) {
         endingRef.current = true;
+        preserveAudioSessionRef.current = true;
         navigation.replace('GroupCall', {
           roomId: next.group_room_id,
           conversationId: next.conversation_id || conversationId,
