@@ -226,14 +226,9 @@ export async function publishVideoStatus(asset, caption = '', audience = 'contac
   const blob = await readPickedStatusBlob(asset);
   if (!blob || blob.size < 1 || blob.size > 50 * 1024 * 1024) throw new Error('Video must be 50 MiB or smaller.');
   const assetName = String(asset.fileName || asset.name || asset.uri || '').toLowerCase();
-  const suppliedMime = String(blob.type || asset.mimeType || '').toLowerCase();
-  const mime = suppliedMime === 'video/mp4' || suppliedMime === 'video/quicktime'
-    ? suppliedMime
-    : assetName.endsWith('.mov')
-      ? 'video/quicktime'
-      : assetName.endsWith('.mp4')
-        ? 'video/mp4'
-        : '';
+  const mimeCandidates = [blob.type, asset.mimeType].map((value) => String(value || '').toLowerCase());
+  const mime = mimeCandidates.find((value) => value === 'video/mp4' || value === 'video/quicktime')
+    || (assetName.endsWith('.mov') ? 'video/quicktime' : assetName.endsWith('.mp4') ? 'video/mp4' : '');
   const extension = mime === 'video/quicktime' ? 'mov' : mime === 'video/mp4' ? 'mp4' : null;
   if (!extension) throw new Error('Choose an MP4 or MOV video. Other video formats are not supported yet.');
   const captionText = String(caption || '').trim().slice(0, STATUS_TEXT_LIMIT);
