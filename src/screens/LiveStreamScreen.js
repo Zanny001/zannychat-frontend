@@ -418,6 +418,10 @@ export default function LiveStreamScreen({ route, navigation }) {
         const result = await backendFetch(`/live/${stream.id}/guest-requests`);
         if (!active) return;
         const incoming = Array.isArray(result?.requests) ? result.requests : [];
+        const incomingIds = new Set(incoming.map((item) => item.user_id));
+        seenGuestRequestIds.current.forEach((userId) => {
+          if (!incomingIds.has(userId)) seenGuestRequestIds.current.delete(userId);
+        });
         const hasNewRequest = incoming.some((item) => !seenGuestRequestIds.current.has(item.user_id));
         incoming.forEach((item) => seenGuestRequestIds.current.add(item.user_id));
         setGuestRequests(incoming);
