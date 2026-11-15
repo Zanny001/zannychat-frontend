@@ -30,3 +30,9 @@ test('New Chat favorite control remains independently accessible and has a 44-po
   assert.match(screen, /favoriteButton: \{ minWidth: 44, minHeight: 44/);
   assert.match(screen, /accessibilityState=\{\{ selected: favoriteIds\.includes\(item\.id\), disabled: isBusy \}\}/);
 });
+
+test('New Chat quick actions wrap cleanly instead of overflowing narrow phones', () => {
+  assert.match(screen, /flexDirection: 'row', flexWrap: 'wrap', gap: spacing\.sm/);
+  assert.match(screen, /quickAction: \{ flexGrow: 1, flexBasis: 128, minWidth: 128 \}/);
+  assert.match(screen, /qrRow: \{[^}]*minHeight: 44/);
+});
