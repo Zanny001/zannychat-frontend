@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Image,
-  Platform, Alert, ActivityIndicator, ScrollView, Switch, Modal,
+  Platform, ActivityIndicator, ScrollView, Switch, Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../theme/ThemeContext';
+import { showAppAlert } from '../utils/appDialogs';
 import Header from '../components/Header';
 import Avatar from '../components/Avatar';
 import GlassInput from '../components/GlassInput';
@@ -121,7 +122,7 @@ export default function EditProfileScreen({ navigation }) {
       setAvatarUrl(u?.avatarUrl || u?.avatar_url || null);
       setDetails({ ...DEFAULT_DETAILS, ...(d || {}) });
     }).catch((err) => {
-      if (active) Alert.alert('Profile unavailable', err?.message || 'Please try again.');
+      if (active) showAppAlert('Profile unavailable', err?.message || 'Please try again.');
     });
     return () => { active = false; };
   }, []);
@@ -168,22 +169,22 @@ export default function EditProfileScreen({ navigation }) {
 
   async function handleSave() {
     if (saving) return;
-    if (!name.trim()) return Alert.alert('Name required', 'Enter a display name before saving.');
+    if (!name.trim()) return showAppAlert('Name required', 'Enter a display name before saving.');
     const normalizedUsername = username.trim().replace(/^@/, '').toLowerCase();
     if (!normalizedUsername) {
-      return Alert.alert('Username required', 'Your ZannyChat username helps other people find you.');
+      return showAppAlert('Username required', 'Your ZannyChat username helps other people find you.');
     }
     if (!/^[a-z0-9_]{3,24}$/.test(normalizedUsername)) {
-      return Alert.alert('Invalid username', 'Use 3–24 letters, numbers or underscores.');
+      return showAppAlert('Invalid username', 'Use 3–24 letters, numbers or underscores.');
     }
     if (!validateBirthday(details.birthday)) {
-      return Alert.alert('Invalid birthday', 'Enter a real date in YYYY-MM-DD format. Birthday cannot be in the future.');
+      return showAppAlert('Invalid birthday', 'Enter a real date in YYYY-MM-DD format. Birthday cannot be in the future.');
     }
     if (!validateWebsite(details.website)) {
-      return Alert.alert('Invalid website', 'Enter a valid website address, such as example.com or https://example.com.');
+      return showAppAlert('Invalid website', 'Enter a valid website address, such as example.com or https://example.com.');
     }
     if (uploadingPhoto || uploadingCover) {
-      return Alert.alert('Please wait', 'Your profile photo or cover is still uploading.');
+      return showAppAlert('Please wait', 'Your profile photo or cover is still uploading.');
     }
 
     setSaving(true);
@@ -197,15 +198,13 @@ export default function EditProfileScreen({ navigation }) {
       setStatus(savedProfile?.status || status.trim());
       const savedDetails = await updateMyProfileDetails({ ...details, birthday: details.birthday || null });
       setDetails({ ...DEFAULT_DETAILS, ...(savedDetails || {}) });
-      Alert.alert('Profile saved', 'Your name, username and profile information have been saved.', [
-        { text: 'Done', onPress: () => navigation.goBack() },
-      ]);
+      showAppAlert('Profile saved', 'Your name, username and profile information have been saved.', { onDismiss: () => navigation.goBack() });
     } catch (err) {
       const message = String(err?.message || 'Please try again.');
       const friendly = /duplicate|unique/i.test(message)
         ? 'That username is already taken. Choose another.'
         : message;
-      Alert.alert(
+      showAppAlert(
         profileIdentitySaved ? 'Some changes were saved' : "Couldn't save profile",
         profileIdentitySaved
           ? `Your name and username were saved, but the additional profile information could not be saved. ${friendly} Please try again.`
