@@ -1,3 +1,4 @@
+import { showAppAlert } from '../utils/appDialogs';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,14 +28,14 @@ export default function SessionsScreen({ navigation }) {
     }
     getSessionSecurityInfo()
       .then((value) => { if (active) setSession(value); })
-      .catch((error) => { if (active) Alert.alert('Could not load session', error?.message || 'Please try again.'); })
+      .catch((error) => { if (active) showAppAlert('Could not load session', error?.message || 'Please try again.'); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []));
 
   async function endSession(scope) {
     const global = scope === 'global';
-    Alert.alert(
+    showAppAlert(
       global ? 'Sign out on all devices?' : 'Sign out on this device?',
       global
         ? 'ZannyChat will ask your account to revoke its other sessions too. Devices may remain usable until their existing access tokens expire, depending on token validation and refresh behavior.'
@@ -47,7 +48,7 @@ export default function SessionsScreen({ navigation }) {
             if (global) await signOutEverywhere(); else await signOutThisDevice();
             // The auth-state listener switches to the guest route group after sign-out.
           } catch (error) {
-            Alert.alert('Could not sign out', error?.message || 'Please retry when your connection is available.');
+            showAppAlert('Could not sign out', error?.message || 'Please retry when your connection is available.');
           } finally { setBusy(false); }
         } },
       ]
