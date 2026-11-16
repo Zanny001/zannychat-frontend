@@ -57,26 +57,8 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: gradle
-      # Compile native Kotlin sources and build a CI-only artifact with placeholder Firebase config.
-      # This artifact is compile-only and is not suitable for installation or physical-device QA.
+      # Compile Kotlin/native Android sources. This validates compilation only; it is not device QA.
       - run: cd android && ./gradlew :app:compileDebugKotlin
-      - name: Assemble Android compile-only APK (placeholder Firebase)
-        timeout-minutes: 20
-        run: cd android && ./gradlew :app:assembleDebug --no-daemon --max-workers=2
-      - name: Verify and checksum Android debug APK
-        run: |
-          APK=android/app/build/outputs/apk/debug/app-debug.apk
-          test -s "$APK"
-          sha256sum "$APK" | tee "$APK.sha256"
-      - name: Upload Android compile-only artifact (not installable for QA)
-        uses: actions/upload-artifact@v4
-        with:
-          name: zannychat-android-compile-only-not-for-install
-          path: |
-            android/app/build/outputs/apk/debug/app-debug.apk
-            android/app/build/outputs/apk/debug/app-debug.apk.sha256
-          if-no-files-found: error
-          retention-days: 7
       - run: npx expo prebuild --platform ios --no-install
       - name: Verify iOS native CallKit end-event patch
         run: |
