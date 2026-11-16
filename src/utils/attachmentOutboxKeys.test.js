@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getAttachmentOutboxStorageKey } from './attachmentOutboxKeys.js';
+import { getAttachmentOutboxStorageKey, getAttachmentOutboxStoragePrefix } from './attachmentOutboxKeys.js';
 
 test('attachment outbox keys encode delimiters to prevent user/conversation collisions', () => {
   const first = getAttachmentOutboxStorageKey('user:alpha', 'room');
@@ -15,7 +15,6 @@ test('attachment outbox keys reject missing conversations and normalize malforme
   assert.equal(getAttachmentOutboxStorageKey('user\uD800', 'room'), 'zannychat:attachment-outbox:v1:user%EF%BF%BD:room');
 });
 
-import { getAttachmentOutboxStoragePrefix } from './attachmentOutboxKeys.js';
 
 test('attachment outbox prefix is isolated to the encoded account', () => {
   assert.equal(getAttachmentOutboxStoragePrefix('user:alpha'), 'zannychat:attachment-outbox:v1:user%3Aalpha:');
