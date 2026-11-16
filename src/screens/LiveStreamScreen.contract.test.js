@@ -294,3 +294,9 @@ test('LIVE creator-only controls derive from the authenticated server role, neve
   assert.equal(screen.includes('route.params?.creatorMode || connection?.role'), false);
   assert.ok(screen.includes("const publisherMode = Boolean(creatorMode || (connection?.role === 'guest' && connection?.canPublish === true && !demotedToViewer));"));
 });
+
+
+test('native LIVE synchronizes initial camera and microphone controls with each server-issued publisher token', () => {
+  assert.ok(screen.includes('setCameraEnabled(publisherMode);'));
+  assert.ok(screen.includes('setMicrophoneEnabled(publisherMode);'));
+});
