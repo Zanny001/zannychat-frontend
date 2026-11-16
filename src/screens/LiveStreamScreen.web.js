@@ -253,12 +253,12 @@ export default function LiveStreamScreen({ route, navigation }) {
       }
     };
     const onTrackMuted = (publication, participant) => {
-      if (publication.source === Track.Source.Camera) {
+      if (!participant.isLocal && publication.source === Track.Source.Camera) {
         setRemoteVideoTracks((current) => current.filter((item) => item.participant.identity !== participant.identity));
       }
     };
     const onTrackUnmuted = (publication, participant) => {
-      if (publication.source === Track.Source.Camera && publication.track) {
+      if (!participant.isLocal && publication.source === Track.Source.Camera && publication.track) {
         setRemoteVideoTracks((current) => current.some((item) => item.track.sid === publication.track.sid)
           ? current
           : [...current, { track: publication.track, publication, participant }]);
