@@ -92,7 +92,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [connection, setConnection] = useState(initialConnection);
   const [connectionLoading, setConnectionLoading] = useState(Boolean(streamId && !initialConnection));
   const stream = connection?.stream;
-  const creatorMode = Boolean(route.params?.creatorMode || connection?.role === 'creator');
+  const creatorMode = connection?.role === 'creator';
   const [demotedToViewer, setDemotedToViewer] = useState(false);
   const [stageNotice, setStageNotice] = useState('');
   const publisherMode = Boolean(creatorMode || (connection?.role === 'guest' && connection?.canPublish && !demotedToViewer));
