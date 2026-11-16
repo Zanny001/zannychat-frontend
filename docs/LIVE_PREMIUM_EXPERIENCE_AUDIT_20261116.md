@@ -2,7 +2,7 @@
 
 ## Scope and evidence standard
 
-This audit reviews the current frontend LIVE hub, creator profile, native/web LIVE rooms and the authenticated backend LIVE routes. Existing code is evidence of implementation only; it is not proof of production operation. The separate reliability PR #86 addresses media lifecycle defects and must pass real two-account browser and two-device native acceptance before release.
+This audit reviews the current frontend LIVE hub, creator profile, native/web LIVE rooms and the authenticated backend LIVE routes. Existing code is evidence of implementation only; it is not proof of production operation. The reliability fixes in PR #86 are merged. Their source/contract checks passed, but real two-account browser and two-device native media acceptance remains a release gate.
 
 ## Existing product capabilities confirmed in source
 
@@ -25,10 +25,10 @@ This audit reviews the current frontend LIVE hub, creator profile, native/web LI
 | P2 | No source-backed category, scheduled event, PK, poll, gift or fan-club workflow is present in the inspected screens/routes. | These are meaningful engagement features, but must not be represented as working before service and safety design exist. | Plan categories/events first; defer PK, gifts, wallet, cash-out and fan-club economy until backend ledger, purchase verification, abuse controls and reconciliation are designed. |
 | P1 | Replay UI can display pending/failure states, but production audit found no replay records or stored objects at audit time. | A replay control does not prove the recording pipeline works. | Keep recording-to-webhook-to-storage-to-signed-playback acceptance as a release gate; show retryable failure states and avoid presenting unavailable rows as playable. |
 
-## Current implementation started in this branch
+## Current implementation now merged into main
 
-- Added local LIVE search across stream title, description and creator display-name fields.
-- Paired backend PR #109 adds `creator_name` to public and followed discovery results after existing visibility/block filtering; the frontend PR depends on that API change for creator-name search.
+- Frontend PR #87's LIVE discovery improvements are merged, including client-side search across the returned stream feed and combined filters.
+- The discovery API includes creator display names after the existing visibility/block filtering. Search remains client-side over the bounded response; it is not global search or pagination.
 - Search composes with existing All / Following / Public filters and does not alter backend permissions or widen visibility.
 - Collapsed the broadcast setup composer by default so discovery is the primary hub task; creators can expand the existing setup without losing any controls.
 - Creator profile replay rows now open only when status is `ready`; starting/recording/processing/failed states are labelled and non-navigable, preventing viewers from opening an unavailable replay.
@@ -40,7 +40,17 @@ Use Crown Aurora: deep void navy, restrained violet/cyan accents and crown-gold 
 
 ## Release and safety gates
 
-1. PR #86 reliability changes remain separate and unmerged until all CI and real-media acceptance gates pass.
+1. PR #86 reliability changes are merged; real-media acceptance must still pass before release.
 2. Search is client-side over the server response; it does not imply complete global search or pagination.
 3. No schema migration, RLS change, wallet balance, virtual gift purchase or cash-out is included in this premium pass.
 4. Verify web and native layouts, screen readers, empty states, large text, dark/light themes and narrow screens before merging.
+
+
+## Post-merge LIVE role and stage verification — 16 Nov 2026
+
+- Frontend PR #86 (media lifecycle, remote-track subscription and server-role integration), #87 (LIVE discovery) and #89 (Creator Studio) are merged.
+- Native and web LIVE derive creator controls from the server-issued `connection.role === 'creator'`; route parameters do not grant creator privileges. Guest publishing requires a server-issued guest role and `canPublish` permission. A demoted guest is returned to viewer mode.
+- Creator Studio and guest-request controls are creator-only. Guest camera/microphone controls are scoped to the guest's own local publisher. Viewer controls remain limited to viewing, reactions, comments, reporting and requesting guest access.
+- Native and web contract tests cover creator/guest role boundaries, track subscription, remote publisher stage layout, guest approval/demotion, moderation, replay controls, participant heartbeat and media lifecycle. These are automated source contracts, not proof of remote RTP delivery.
+- The current production LIVE replay snapshot contains zero replay rows and zero objects in the private replay bucket. A complete Egress-to-storage-to-playback test remains outstanding.
+- Creator Studio metrics are derived from the authenticated participant list and labelled “Viewers listed”; they are not total audience, reach, watch time, retention or earnings.

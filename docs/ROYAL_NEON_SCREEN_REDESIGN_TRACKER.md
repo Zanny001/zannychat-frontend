@@ -1,6 +1,6 @@
 # Royal Neon 5D screen redesign tracker
 
-Source of truth: the current `src/navigation/AppNavigator.js` route declarations. The root stack contains 41 routes; the Main tab navigator contains five tab destinations. `Channels` is also a root route, so count screens by unique component/experience rather than adding route counts blindly.
+Source of truth: the current `src/navigation/AppNavigator.js` route declarations. The root stack contains 43 routes; the Main tab navigator contains six tab destinations. `Channels` is shared between navigators, giving 48 unique navigation experiences.
 
 ## Current foundation
 
@@ -103,7 +103,7 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 - Theme accessibility tests now exercise danger-action foreground contrast across every built-in palette in both Light and Dark appearance.
 - Latest-head validation supersedes the earlier cancelled runs: the Premium status and LIVE quality workflow and Advanced calling client checks both passed on commit `73a292d` (13 Nov 2026). The run passed web export, Android Expo export, unit/call-recovery/native receiver tests, release/contract/integrity audits, Android Kotlin compilation, Android debug APK assembly and artifact upload, iOS prebuild, and the iOS CallKit end-event patch verification.
 - The Android QA APK artifact `zannychat-royal-neon-android-debug` was successfully uploaded (artifact ID `14010614222`, seven-day retention). It is a debug build with placeholder Firebase configuration; it is not a production release and has not yet been installed/validated on a physical device.
-- Route inventory is 41 root-stack routes plus five Main-tab destinations, with Channels shared between them: 45 unique navigation experiences. All screen component files (including web-specific call/LIVE screens) are covered by the shared-theme-hook contract test.
+- Current route inventory is 43 root-stack routes plus six Main-tab destinations, with Channels shared between them: 48 unique navigation experiences. The current main branch contains 46 registered screen modules and 49 implementation files when platform-specific variants are counted.
 - The screen entries remain `[~]` until their individual visual, interaction, accessibility and regression validation is complete. Remaining external/device gates include Android 10 performance and physical-device call/camera/push checks; iOS prebuild and source-level CallKit patch checks are not a substitute for an iOS device build/test.
 - The Figma design file was created, but its pages/components are still unpopulated because the Figma Starter-plan tool-call limit was reached. Do not represent the Figma handoff as finished.
 
@@ -122,11 +122,11 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 
 ## Screen-level accessibility audit — 13 Nov 2026
 
-- Inspected all 46 screen implementation files (45 unique navigation experiences plus web-specific call/LIVE variants) for theme-context use, interactive-control semantics, declared touch-target dimensions and hard-coded colours.
+- The earlier first-pass audit inspected 46 implementation files (45 unique navigation experiences plus web-specific call/LIVE variants) for theme-context use, interactive-control semantics, declared touch-target dimensions and hard-coded colours. The current inventory is larger and should be tracked by the 48 unique navigation experiences and 49 implementation files.
 - Raised undersized interactive targets to a 44-point minimum in StatusUpdates, Channels, Polls, ContactDiscovery, GroupManagement, LiveHub, NewChat and SharedMedia.
 - Added a regression contract to keep the updated high-traffic controls at or above the 44-point target baseline.
 - Earlier targeted fixes added explicit labels/disabled states to web LIVE actions, a larger accessible web group-call fallback action, and explicit Create Group selection/loading/error/empty states.
-- The source audit is not a visual/device sign-off. Each of the 45 navigation experiences remains [~] until its visual layout, state transitions, accessibility and regression behavior are validated on supported platforms.
+- The source audit is not a visual/device sign-off. Each of the 48 navigation experiences remains [~] until its visual layout, state transitions, accessibility and regression behavior are validated on supported platforms.
 - Latest source commits are awaiting fresh CI after the touch-target matcher correction. Do not treat earlier workflow results as validation of these new commits.
 
 - Follow-up accessibility pass: profile editing controls announce the active choice and upload busy/disabled state; Help support, call-history retry, drafts retry and Events publish/retry actions now have explicit accessible names and relevant disabled/busy state. Regression assertions cover these contracts.
@@ -162,7 +162,7 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 - Frontend PR #90 merged: auth sign-out revocation marker now persists in Keychain/Keystore as well as AsyncStorage; reinstall simulation is covered by a regression contract.
 - Frontend PR #91 merged: Crown Aurora shared design foundation, chat bubble/composer/glass/header refinements, responsive media sizing, notification opt-out persistence, privacy/account-deletion copy and contracts.
 - Earlier stacked PRs #85 and #88 were closed as superseded after their non-conflicting changes were reapplied on current main. Their older LIVE header hunk was intentionally omitted because PR #86 already contains a newer scrollable management rail.
-- PR #84 remains a draft for direct 1:1 LiveKit transport pending browser and physical-device audio/video acceptance.
+- Frontend PR #108 is merged with direct LiveKit transport, WebRTC/TURN fallback, native lifecycle handling and terminal-state-safe group promotion. Physical browser and Android/iOS device audio/video acceptance remains open.
 
 ### Current inventory — use this as the canonical count
 
@@ -235,3 +235,13 @@ The connected account is confirmed as an `OWNER` of the `ZannyChat` Hobby team, 
 - Saved Messages and Chat Folders are intentionally stored in account-keyed device-local AsyncStorage; they do not currently sync between devices. PR #98 extends permanent account deletion to remove both stores, in addition to drafts, pins, pending text/attachment outboxes, Status drafts and Channel drafts/recent-channel data.
 - Message drafts and pending outbox records are also device-local. Account-scoped keys prevent another signed-in account from reading them through the app, but AsyncStorage is not end-to-end encryption or secure hardware-backed storage.
 - Cross-device sync for saved messages/folders and encrypted outbox persistence remain separate product/security work; do not imply either capability is already available.
+
+
+## Reconciled security and calling checkpoint — 16 Nov 2026, 21:40 UTC
+
+- Frontend PR #108 is merged; both Advanced calling client and Premium status/LIVE workflows passed on its exact final head. This is automated/source acceptance only; physical Android/iOS and browser media acceptance remains open.
+- Backend PRs #125–#133 are merged. Production migrations `20261116195405` (message insert integrity), `20261116195939` (call signal server-time rate limit), `20261116203426` (activity timestamp triggers) and `20261116203635` (activity dispatch correction) are recorded in Supabase and reconciled to repository filenames.
+- The activity timestamp dispatcher correction was required after a post-apply source review found missing table branches in the first version. The corrective migration now explicitly handles all 14 attached tables and fails closed for unexpected trigger tables. Catalog verification confirms 14 attached triggers and no direct anon/authenticated EXECUTE.
+- A full public-schema scan found no authenticated-writable timestamp/date columns on tables lacking a BEFORE INSERT/UPDATE trigger.
+- The Vercel team is correctly identified as `team_P8IYvDiidDlhUHaQBe1RN1Wg` (ZannyChat, Hobby). Project creation through the connected API still returns 403. A one-time team authorization link was generated; owner approval must be completed before retrying. No Vercel project/deployment is claimed.
+- The next visual pass remains messaging-first. All 48 navigation experiences stay [~] until screen-level visual, keyboard, responsive, accessibility and supported-device checks are complete.
