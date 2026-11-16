@@ -115,7 +115,8 @@ test('LIVE stage actions are accessible and destructive guest removal requires c
 });
 
 test('stage panel shows the enforced guest capacity and retains moderator management', () => {
-  assert.ok(screen.includes('up to 5 guests'));
+  assert.ok(screen.includes('onStageGuestCount}/5'));
+  assert.ok(screen.includes('availableGuestSlots'));
   assert.ok(screen.includes('onSetModerator'));
 });
 
@@ -123,9 +124,11 @@ test('web LIVE creator stage manager has parity with native guest controls', () 
   const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.ok(webSource.includes('/guests/invite'));
   assert.ok(webSource.includes('/mute'));
-  assert.ok(webSource.includes('Manage LIVE stage'));
+  assert.ok(webSource.includes("label={panel === 'stage' ? 'Close Creator Studio' : 'Creator Studio'}"));
   assert.ok(webSource.includes('Remove guest'));
-  assert.ok(webSource.includes('up to 5 guests'));
+  assert.ok(webSource.includes("role === 'guest').length}/5</Text>"));
+  assert.ok(webSource.includes('Creator Studio'));
+  assert.ok(webSource.includes('Viewers listed'));
 });
 
 test('native and web LIVE screens synchronize the creator spotlight across participants', () => {
@@ -304,4 +307,48 @@ test('native and web LIVE synchronize camera and microphone controls with each s
   assert.ok(web.includes('setCamera(publisherMode);'));
   assert.ok(web.includes('setMic(publisherMode);'));
   assert.ok(web.includes("}, [connection?.token]);"));
+});
+
+
+test('LIVE creator stage labels host and guests distinctly on native and web tiles', () => {
+  assert.ok(screen.includes('creatorId={stream.creator_id}'));
+  assert.ok(screen.includes("spotlightVideo.participant.identity === creatorId ? 'HOST' : 'GUEST'"));
+  assert.ok(screen.includes("item.participant.identity === creatorId ? 'HOST' : 'GUEST'"));
+  const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(webSource.includes('creatorId={stream.creator_id}'));
+  assert.ok(webSource.includes("participant.identity === creatorId ? 'HOST' : 'GUEST'"));
+});
+
+test('LIVE creator Studio reports only measured joined viewers, guests and remaining guest slots', () => {
+  assert.ok(screen.includes("participants.filter((item) => item.joined && item.role === 'viewer').length"));
+  assert.ok(screen.includes("participants.filter((item) => item.joined && item.role === 'guest').length"));
+  assert.ok(screen.includes('const availableGuestSlots = Math.max(0, 5 - onStageGuestCount)'));
+  assert.ok(screen.includes('Creator Studio'));
+  assert.ok(screen.includes('Viewers listed'));
+  assert.ok(screen.includes('accessibilityLabel="Open Creator Studio"'));
+  const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(webSource.includes("participants.filter((item) => item.joined && item.role === 'viewer').length"));
+  assert.ok(webSource.includes("participants.filter((item) => item.joined && item.role === 'guest').length"));
+  assert.ok(webSource.includes('Creator Studio'));
+});
+
+
+test('Creator Studio refreshes joined audience and stage counts while open, then stops polling on close', () => {
+  assert.ok(screen.includes('if (!creatorMode || !showParticipants || !stream?.id) return undefined;'));
+  assert.ok(screen.includes('setInterval(refreshStudioParticipants, 15_000)'));
+  assert.ok(screen.includes('clearInterval(interval)'));
+  const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(webSource.includes("if (!creatorMode || panel !== 'stage' || !stream?.id) return undefined;"));
+  assert.ok(webSource.includes('setInterval(refreshStudioParticipants, 15_000)'));
+  assert.ok(webSource.includes('clearInterval(interval)'));
+});
+
+
+test('web Creator Studio can appoint and remove moderators with creator-only stage controls', () => {
+  const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(webSource.includes("const setModerator = async (userId, makeModerator)"));
+  assert.ok(webSource.includes("/moderators${makeModerator ? '' : `/${userId}`}"));
+  assert.ok(webSource.includes("method: makeModerator ? 'POST' : 'DELETE'"));
+  assert.ok(webSource.includes("label={item.moderator ? 'Remove moderator' : 'Make moderator'}"));
+  assert.ok(webSource.includes("panel === 'stage' && creatorMode"));
 });

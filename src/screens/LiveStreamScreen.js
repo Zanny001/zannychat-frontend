@@ -80,9 +80,12 @@ function FloatingReaction({ item, index, onComplete }) {
   );
 }
 
-function LiveMedia({ streamId, creatorMode, publisherMode, cameraEnabled, microphoneEnabled, onToggleCamera, onToggleMicrophone, moderatorMode, canManageGuests, canRequestGuest, guestApproved, guestRequestStatus, guestRequests, showGuestRequests, title, comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, floatingReactions, onRemoveFloatingReaction, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, onInviteGuest, onMuteGuest, onRemoveGuest, onSpotlightGuest, onDemoteToViewer, replayEnabled, replayStatus, replayBusy, onStartReplay, onStopReplay, onViewReplay, onRequestGuest, onJoinGuest, onToggleGuestRequests, onReviewGuestRequest, busy }) {
+function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnabled, microphoneEnabled, onToggleCamera, onToggleMicrophone, moderatorMode, canManageGuests, canRequestGuest, guestApproved, guestRequestStatus, guestRequests, showGuestRequests, title, comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, floatingReactions, onRemoveFloatingReaction, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, onInviteGuest, onMuteGuest, onRemoveGuest, onSpotlightGuest, onDemoteToViewer, replayEnabled, replayStatus, replayBusy, onStartReplay, onStopReplay, onViewReplay, onRequestGuest, onJoinGuest, onToggleGuestRequests, onReviewGuestRequest, busy }) {
   const { colors, typography } = useTheme();
   const room = useRoomContext();
+  const connectedViewerCount = participants.filter((item) => item.joined && item.role === 'viewer').length;
+  const onStageGuestCount = participants.filter((item) => item.joined && item.role === 'guest').length;
+  const availableGuestSlots = Math.max(0, 5 - onStageGuestCount);
   useEffect(() => {
     let active = true;
     const heartbeat = () => {
@@ -165,7 +168,7 @@ function LiveMedia({ streamId, creatorMode, publisherMode, cameraEnabled, microp
             <TouchableOpacity onPress={chooseNativeAudioOutput} accessibilityRole="button" accessibilityLabel="Choose LIVE audio output" style={{ backgroundColor: hexToRgba(colors.surface, 0.88), borderWidth: 1, borderColor: colors.border, minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, borderRadius: 13 }}>
               <Ionicons name="volume-high-outline" size={19} color={colors.textPrimary} />
             </TouchableOpacity>
-            {creatorMode && <TouchableOpacity onPress={onToggleParticipants} accessibilityRole="button" accessibilityLabel="Manage LIVE moderators" style={{ backgroundColor: hexToRgba(colors.surface, 0.88), borderWidth: 1, borderColor: colors.border, minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, borderRadius: 13 }}><Ionicons name="people-outline" size={19} color={colors.textPrimary} /></TouchableOpacity>}
+            {creatorMode && <TouchableOpacity onPress={onToggleParticipants} accessibilityRole="button" accessibilityLabel="Open Creator Studio" style={{ backgroundColor: hexToRgba(colors.surface, 0.88), borderWidth: 1, borderColor: colors.border, minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, borderRadius: 13 }}><Ionicons name="people-outline" size={19} color={colors.textPrimary} /></TouchableOpacity>}
             {creatorMode && canManageGuests && <TouchableOpacity onPress={onToggleGuestRequests} accessibilityRole="button" accessibilityLabel="Review guest requests" style={{ backgroundColor: hexToRgba(colors.surface, 0.88), borderWidth: 1, borderColor: colors.border, minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, borderRadius: 13 }}><Ionicons name="person-add-outline" size={19} color={colors.textPrimary} /></TouchableOpacity>}
             {creatorMode && replayEnabled && <TouchableOpacity onPress={replayStatus === 'ready' ? onViewReplay : replayStatus === 'recording' ? onStopReplay : onStartReplay} disabled={replayBusy || ['starting', 'processing'].includes(replayStatus)} accessibilityRole="button" accessibilityLabel={replayStatus === 'ready' ? 'Watch saved LIVE replay' : replayStatus === 'recording' ? 'Stop LIVE replay recording' : 'Start LIVE replay recording'} style={{ backgroundColor: hexToRgba(colors.surface, 0.88), borderWidth: 1, borderColor: replayStatus === 'recording' ? colors.danger : colors.border, minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, borderRadius: 13 }}>
               {replayBusy || ['starting', 'processing'].includes(replayStatus) ? <ActivityIndicator size="small" color={colors.accent} /> : <Ionicons name={replayStatus === 'ready' ? 'play-circle-outline' : replayStatus === 'recording' ? 'stop-circle-outline' : 'radio-button-on-outline'} size={19} color={replayStatus === 'recording' ? colors.danger : colors.accent} />}
@@ -179,6 +182,9 @@ function LiveMedia({ streamId, creatorMode, publisherMode, cameraEnabled, microp
               <VideoTrack trackRef={spotlightVideo} style={{ width: "100%", aspectRatio: 16 / 9, maxWidth: 560, maxHeight: 315, borderRadius: 18 }} />
               <View style={{ position: 'absolute', top: 10, left: 10, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, backgroundColor: colors.accent }}>
                 <Text style={{ color: colors.onAccent, fontWeight: '900', fontSize: 10, letterSpacing: 1 }}>SPOTLIGHT</Text>
+              </View>
+              <View style={{ position: 'absolute', top: 10, right: 10, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.72)' }}>
+                <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 9 }}>{spotlightVideo.participant.identity === creatorId ? 'HOST' : 'GUEST'}</Text>
               </View>
               <View style={{ position: 'absolute', left: 10, bottom: 10, maxWidth: '85%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.72)' }}>
                 <Text numberOfLines={1} style={[typography.caption, { color: '#FFFFFF' }]}>{spotlightVideo.participant.name || spotlightVideo.participant.identity}</Text>
@@ -195,6 +201,9 @@ function LiveMedia({ streamId, creatorMode, publisherMode, cameraEnabled, microp
               renderItem={({ item }) => (
                 <View style={{ flex: 1, minWidth: 0, margin: 4, borderRadius: 18, overflow: 'hidden', backgroundColor: '#211F2B' }}>
                   <VideoTrack trackRef={item} style={{ width: "100%", aspectRatio: 16 / 9, maxWidth: stageGridVideos.length === 1 && !spotlightVideo ? 560 : undefined, maxHeight: stageGridVideos.length === 1 && !spotlightVideo ? 315 : 180, borderRadius: 18 }} />
+                  <View style={{ position: 'absolute', top: 8, right: 8, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.72)' }}>
+                    <Text style={{ color: '#FFFFFF', fontSize: 9, fontWeight: '900' }}>{item.participant.identity === creatorId ? 'HOST' : 'GUEST'}</Text>
+                  </View>
                   <View style={{ position: 'absolute', left: 10, bottom: 10, maxWidth: '85%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.62)' }}>
                     <Text numberOfLines={1} style={[typography.caption, { color: '#FFFFFF' }]}>{item.participant.name || item.participant.identity}</Text>
                   </View>
@@ -214,7 +223,7 @@ function LiveMedia({ streamId, creatorMode, publisherMode, cameraEnabled, microp
               </Text>
               {audioOnlyParticipants.map((track) => (
                 <View key={track.participant.identity} style={{ marginTop: 10, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 14, backgroundColor: hexToRgba(colors.surface, 0.88), borderWidth: 1, borderColor: colors.border }}>
-                  <Text style={[typography.small, { color: '#FFFFFF' }]}>{track.participant.name || track.participant.identity} · Audio only</Text>
+                  <Text style={[typography.small, { color: '#FFFFFF' }]}>{track.participant.identity === creatorId ? 'HOST' : 'GUEST'} · {track.participant.name || track.participant.identity} · Audio only</Text>
                 </View>
               ))}
             </View>
@@ -226,7 +235,7 @@ function LiveMedia({ streamId, creatorMode, publisherMode, cameraEnabled, microp
                   <Text style={[typography.caption, { color: '#FFFFFF' }]}>{track.participant.name || track.participant.identity} · Audio only</Text>
                 </View>
               ))}
-              {hasLocalAudioOnly && <View style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: hexToRgba(colors.surface, 0.88), borderWidth: 1, borderColor: colors.border }}><Text style={[typography.caption, { color: '#FFFFFF' }]}>You · Audio only</Text></View>}
+              {hasLocalAudioOnly && <View style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: hexToRgba(colors.surface, 0.88), borderWidth: 1, borderColor: colors.border }}><Text style={[typography.caption, { color: '#FFFFFF' }]}>You · {creatorMode ? 'Host' : 'Guest'} · Audio only</Text></View>}
             </View>
           )}
           <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
@@ -257,8 +266,30 @@ function LiveMedia({ streamId, creatorMode, publisherMode, cameraEnabled, microp
           )} ListEmptyComponent={<Text style={{ color: colors.textSecondary, paddingVertical: 8 }}>Be the first to say hello.</Text>} />
         </View>
         {showParticipants && creatorMode && (
-          <View style={{ maxHeight: 190, marginHorizontal: 14, marginBottom: 8, padding: 10, borderRadius: 14, backgroundColor: hexToRgba(colors.surface, 0.94), borderWidth: 1, borderColor: colors.border }}>
-            <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: 6 }]}>Manage LIVE stage & moderators · up to 5 guests</Text>
+          <View style={{ maxHeight: 260, marginHorizontal: 14, marginBottom: 8, padding: 10, borderRadius: 14, backgroundColor: hexToRgba(colors.surface, 0.94), borderWidth: 1, borderColor: colors.border }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <View>
+                <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Creator Studio</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>Live audience and stage controls</Text>
+              </View>
+              <View style={{ paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, backgroundColor: hexToRgba(colors.accent, 0.14) }}>
+                <Text style={[typography.caption, { color: colors.accent, fontWeight: '800' }]}>HOST</Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 7, marginBottom: 10 }}>
+              <View style={{ flex: 1, minWidth: 0, padding: 9, borderRadius: 12, backgroundColor: colors.surface }}>
+                <Text style={[typography.heading, { color: colors.textPrimary }]}>{connectedViewerCount}</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>Viewers listed</Text>
+              </View>
+              <View style={{ flex: 1, minWidth: 0, padding: 9, borderRadius: 12, backgroundColor: colors.surface }}>
+                <Text style={[typography.heading, { color: colors.textPrimary }]}>{onStageGuestCount}/5</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>Guests on stage</Text>
+              </View>
+              <View style={{ flex: 1, minWidth: 0, padding: 9, borderRadius: 12, backgroundColor: colors.surface }}>
+                <Text style={[typography.heading, { color: colors.textPrimary }]}>{availableGuestSlots}</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>Open slots</Text>
+              </View>
+            </View>
             <FlatList keyboardShouldPersistTaps="handled" data={participants} keyExtractor={(item) => item.userId} renderItem={({ item }) => (
               <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, paddingVertical: 7, borderTopWidth: 1, borderTopColor: colors.border }}>
                 <Text numberOfLines={1} style={[typography.small, { color: colors.textPrimary, flex: 1, minWidth: 90 }]}>{item.name}{item.stage ? ' · On stage' : !item.joined ? ' · offline' : ''}</Text>
@@ -625,6 +656,25 @@ export default function LiveStreamScreen({ route, navigation }) {
     } catch (e) { Alert.alert('Participants unavailable', e?.message || 'Please try again.'); }
   };
 
+  useEffect(() => {
+    if (!creatorMode || !showParticipants || !stream?.id) return undefined;
+    let active = true;
+    const refreshStudioParticipants = () => {
+      backendFetch(`/live/${stream.id}/participants`)
+        .then((result) => {
+          if (active) setParticipants(Array.isArray(result?.participants) ? result.participants : []);
+        })
+        .catch((refreshError) => {
+          if (active) console.warn('[live] creator studio refresh failed:', refreshError?.message || refreshError);
+        });
+    };
+    const interval = setInterval(refreshStudioParticipants, 15_000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [creatorMode, showParticipants, stream?.id]);
+
   const loadGuestRequests = async () => {
     try {
       const result = await backendFetch(`/live/${stream.id}/guest-requests`);
@@ -771,7 +821,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       {stageNotice ? <Text accessibilityRole="status" style={{ color: colors.accent, paddingHorizontal: 12, paddingTop: 4 }}>{stageNotice}</Text> : null}
       {guestApproved && !publisherMode ? <Text accessibilityRole="status" style={{ color: colors.accent, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: colors.surface }}>The creator invited you to the LIVE stage. Tap “Join the stage” below to connect your camera and microphone.</Text> : null}
       <LiveKitRoom key={connection.token} serverUrl={connection.livekitUrl} token={connection.token} connect={true} audio={publisherMode} video={publisherMode} options={{ adaptiveStream: true, dynacast: true }} connectOptions={{ autoSubscribe: true }}>
-        <LiveMedia streamId={stream.id} creatorMode={creatorMode} publisherMode={publisherMode} cameraEnabled={cameraEnabled} microphoneEnabled={microphoneEnabled} onToggleCamera={toggleCamera} onToggleMicrophone={toggleMicrophone} moderatorMode={moderatorMode} canManageGuests={Boolean(stream.allow_guests)} canRequestGuest={canRequestGuest} guestRequests={guestRequests} showGuestRequests={showGuestRequests} title={stream.title} comments={comments} reports={reports} showReports={showReports} participants={participants} showParticipants={showParticipants} draft={draft} setDraft={setDraft} onComment={sendComment} onReact={react} floatingReactions={floatingReactions} onRemoveFloatingReaction={removeFloatingReaction} onReport={report} onHide={hideComment} onEnd={leave} onRequestGuest={requestGuest} guestApproved={guestApproved} guestRequestStatus={guestRequestStatus} onJoinGuest={joinAsGuest} onToggleGuestRequests={() => { setShowReports(false); setShowParticipants(false); showGuestRequests ? setShowGuestRequests(false) : loadGuestRequests(); }} onReviewGuestRequest={reviewGuestRequest} onToggleReports={() => { setShowParticipants(false); setShowGuestRequests(false); showReports ? setShowReports(false) : loadReports(); }} onReviewReport={reviewReport} onToggleParticipants={() => { setShowReports(false); setShowGuestRequests(false); showParticipants ? setShowParticipants(false) : loadParticipants(); }} onSetModerator={setModerator} onInviteGuest={inviteGuest} onMuteGuest={muteGuest} onRemoveGuest={removeGuest} onSpotlightGuest={spotlightGuest} onDemoteToViewer={handleDemotedToViewer} replayEnabled={replayEnabled} replayStatus={replay?.status || 'none'} replayBusy={replayBusy} onStartReplay={confirmStartReplay} onStopReplay={stopReplay} onViewReplay={viewReplay} busy={busy} />
+        <LiveMedia streamId={stream.id} creatorId={stream.creator_id} creatorMode={creatorMode} publisherMode={publisherMode} cameraEnabled={cameraEnabled} microphoneEnabled={microphoneEnabled} onToggleCamera={toggleCamera} onToggleMicrophone={toggleMicrophone} moderatorMode={moderatorMode} canManageGuests={Boolean(stream.allow_guests)} canRequestGuest={canRequestGuest} guestRequests={guestRequests} showGuestRequests={showGuestRequests} title={stream.title} comments={comments} reports={reports} showReports={showReports} participants={participants} showParticipants={showParticipants} draft={draft} setDraft={setDraft} onComment={sendComment} onReact={react} floatingReactions={floatingReactions} onRemoveFloatingReaction={removeFloatingReaction} onReport={report} onHide={hideComment} onEnd={leave} onRequestGuest={requestGuest} guestApproved={guestApproved} guestRequestStatus={guestRequestStatus} onJoinGuest={joinAsGuest} onToggleGuestRequests={() => { setShowReports(false); setShowParticipants(false); showGuestRequests ? setShowGuestRequests(false) : loadGuestRequests(); }} onReviewGuestRequest={reviewGuestRequest} onToggleReports={() => { setShowParticipants(false); setShowGuestRequests(false); showReports ? setShowReports(false) : loadReports(); }} onReviewReport={reviewReport} onToggleParticipants={() => { setShowReports(false); setShowGuestRequests(false); showParticipants ? setShowParticipants(false) : loadParticipants(); }} onSetModerator={setModerator} onInviteGuest={inviteGuest} onMuteGuest={muteGuest} onRemoveGuest={removeGuest} onSpotlightGuest={spotlightGuest} onDemoteToViewer={handleDemotedToViewer} replayEnabled={replayEnabled} replayStatus={replay?.status || 'none'} replayBusy={replayBusy} onStartReplay={confirmStartReplay} onStopReplay={stopReplay} onViewReplay={viewReplay} busy={busy} />
       </LiveKitRoom>
       {busy && <View style={{ position: 'absolute', top: '50%', alignSelf: 'center' }}><ActivityIndicator color={colors.accent} /></View>}
     </SafeAreaView>
