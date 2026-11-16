@@ -24,6 +24,8 @@ export default function NotificationsScreen({ navigation }) {
   const [quietStartDraft, setQuietStartDraft] = useState(getNotificationPrefs().quietHoursStart || '22:00');
   const [quietEndDraft, setQuietEndDraft] = useState(getNotificationPrefs().quietHoursEnd || '08:00');
   const [browserCallPermission, setBrowserCallPermission] = useState(() => Platform.OS === 'web' && typeof Notification !== 'undefined' ? Notification.permission : 'unsupported');
+  const [pushRegistrationState, setPushRegistrationState] = useState('unknown');
+  const [pushActionBusy, setPushActionBusy] = useState(false);
 
   useEffect(() => {
     loadNotificationPrefs().then((loaded) => {
@@ -56,12 +58,40 @@ export default function NotificationsScreen({ navigation }) {
   }
 
   async function handlePushToggle(value) {
-    await update({ pushEnabled: value });
-    if (!SUPABASE_ENABLED) return;
-    if (value) {
-      registerForPushNotifications();
-    } else {
-      unregisterPushNotifications();
+    if (pushActionBusy || !SUPABASE_ENABLED) return;
+    setPushActionBusy(true);
+    try {
+      if (value) {
+        await update({ pushEnabled: true });
+        const token = await registerForPushNotifications();
+        setPushRegistrationState(token ? 'registered' : 'not_registered');
+        if (!token) {
+          Alert.alert(
+            'Push not registered yet',
+            Platform.OS === 'web'
+              ? 'Remote push requires an installed native ZannyChat app. Browser incoming-call alerts are controlled separately above.'
+              : 'Allow notification permission and use an installed development build on a physical device. ZannyChat will retry registration when the app starts.',
+          );
+        }
+        return;
+      }
+
+      const removed = await unregisterPushNotifications();
+      if (!removed) {
+        setPushRegistrationState('removal_failed');
+        Alert.alert('Could not turn off push', 'ZannyChat could not confirm removal of your server push tokens. Your setting remains on; please try again.');
+        return;
+      }
+      await update({ pushEnabled: false });
+      setPushRegistrationState('disabled');
+    } catch (error) {
+      setPushRegistrationState(value ? 'not_registered' : 'removal_failed');
+      Alert.alert(
+        value ? 'Push setup incomplete' : 'Could not turn off push',
+        error?.message || 'Please check your connection and try again.',
+      );
+    } finally {
+      setPushActionBusy(false);
     }
   }
 
@@ -83,6 +113,18 @@ export default function NotificationsScreen({ navigation }) {
     }
   }
 
+  const pushDetail = !SUPABASE_ENABLED
+    ? 'Requires a connected account and backend.'
+    : !prefs.pushEnabled
+      ? 'Off — this account has no registered push tokens.'
+      : pushRegistrationState === 'registered'
+        ? 'Registered on this device; new messages can reach it.'
+        : pushRegistrationState === 'not_registered'
+          ? 'Enabled in settings, but this device is not registered yet.'
+          : pushRegistrationState === 'removal_failed'
+            ? 'Token removal could not be confirmed. Retry turning push off.'
+            : 'Enabled in settings; device registration has not yet been confirmed.';
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Notifications" onBack={() => navigation.goBack()} />
@@ -91,9 +133,9 @@ export default function NotificationsScreen({ navigation }) {
           <PrefRow
             icon="notifications-outline"
             label="Push notifications"
-            detail={SUPABASE_ENABLED ? 'New messages reach this device' : 'Requires a connected backend (demo mode)'}
+            detail={pushDetail}
             value={prefs.pushEnabled && SUPABASE_ENABLED}
-            disabled={!SUPABASE_ENABLED}
+            disabled={!SUPABASE_ENABLED || pushActionBusy}
             onValueChange={handlePushToggle}
           />
           {Platform.OS === 'web' ? (
