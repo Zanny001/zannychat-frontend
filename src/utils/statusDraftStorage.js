@@ -27,7 +27,9 @@ export async function readStatusDraft(storage, userId) {
   if (!storage || typeof storage.getItem !== 'function' || !key) return null;
   try {
     // Never attribute an old unscoped draft to whichever account signs in next.
-    if (typeof storage.removeItem === 'function') await storage.removeItem(LEGACY_STATUS_DRAFT_STORAGE_KEY);
+    if (typeof storage.removeItem === 'function') {
+      try { await storage.removeItem(LEGACY_STATUS_DRAFT_STORAGE_KEY); } catch { /* Never read or migrate the legacy key. */ }
+    }
     const raw = await storage.getItem(key);
     return raw ? normalizeStatusDraft(JSON.parse(raw)) : null;
   } catch { return null; }
@@ -42,7 +44,9 @@ export async function writeStatusDraft(storage, userId, value) {
       if (typeof storage.removeItem === 'function') await storage.removeItem(key);
       else await storage.setItem(key, '');
     } else await storage.setItem(key, JSON.stringify(draft));
-    if (typeof storage.removeItem === 'function') await storage.removeItem(LEGACY_STATUS_DRAFT_STORAGE_KEY);
+    if (typeof storage.removeItem === 'function') {
+      try { await storage.removeItem(LEGACY_STATUS_DRAFT_STORAGE_KEY); } catch { /* New account-scoped data is already persisted. */ }
+    }
     return true;
   } catch { return false; }
 }
