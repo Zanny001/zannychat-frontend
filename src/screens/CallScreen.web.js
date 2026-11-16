@@ -99,18 +99,37 @@ export default function CallScreenWeb({ route, navigation }) {
 
   const navigateToDirectLiveKit = useCallback(async (currentCall, connectionResult) => {
     if (!activeRef.current || endingRef.current || !currentCall?.id || !connectionResult?.token || !connectionResult?.livekitUrl || !connectionResult?.roomId || upgradeNavigatedRef.current) return false;
+    const { data: latestCall, error: latestCallError } = await supabase.from('call_sessions')
+      .select('id,conversation_id,call_type,status,group_room_id')
+      .eq('id', currentCall.id).maybeSingle();
+    if (!activeRef.current || endingRef.current) return false;
+    if (latestCallError || !latestCall) {
+      endingRef.current = true;
+      if (activeRef.current) setErrorText('Could not verify that this call is still active. Please start a new call.');
+      navigation.goBack();
+      return false;
+    }
+    if (latestCall.group_room_id) {
+      await navigateToConference({ id: latestCall.group_room_id, conversation_id: latestCall.conversation_id, call_type: latestCall.call_type });
+      return true;
+    }
+    if (latestCall.status !== 'accepted') {
+      endingRef.current = true;
+      navigation.goBack();
+      return false;
+    }
     upgradeNavigatedRef.current = true;
     endingRef.current = true;
     navigation.replace('GroupCall', {
       directCallId: currentCall.id,
-      directCall: currentCall,
+      directCall: { ...currentCall, ...latestCall },
       connection: connectionResult,
-      conversationId: currentCall.conversation_id || conversationId,
+      conversationId: latestCall.conversation_id || conversationId,
       conversationName: participantName,
-      callType: currentCall.call_type || activeCallType,
+      callType: latestCall.call_type || activeCallType,
     });
     return true;
-  }, [activeCallType, conversationId, navigation, participantName]);
+  }, [activeCallType, conversationId, navigation, navigateToConference, participantName]);
 
   const endCall = useCallback(async (reason = 'ended') => {
     if (endingRef.current) return;
@@ -216,6 +235,12 @@ export default function CallScreenWeb({ route, navigation }) {
           if (await navigateToDirectLiveKit(liveCall, liveKitConnection)) return;
           if (!activeRef.current || endingRef.current) return;
         } catch (liveKitError) {
+          const { data: latestCall, error: stateError } = await supabase.from('call_sessions').select('id,conversation_id,call_type,status,group_room_id').eq('id', liveCall.id).maybeSingle();
+          if (!stateError && (!latestCall || latestCall.status !== 'accepted' || latestCall.group_room_id)) {
+            if (latestCall?.group_room_id) await navigateToConference({ id: latestCall.group_room_id, conversation_id: latestCall.conversation_id, call_type: latestCall.call_type });
+            else { endingRef.current = true; navigation.goBack(); }
+            return;
+          }
           console.warn('[calls] LiveKit direct transport unavailable; retaining WebRTC fallback:', liveKitError?.message || liveKitError);
         }
       }
@@ -377,11 +402,18 @@ export default function CallScreenWeb({ route, navigation }) {
               if (await navigateToDirectLiveKit(next, liveKitConnection)) return;
               if (!activeRef.current || endingRef.current) return;
             } catch (liveKitError) {
+              const { data: latestCall, error: stateError } = await supabase.from('call_sessions').select('id,conversation_id,call_type,status,group_room_id').eq('id', next.id).maybeSingle();
+              if (!stateError && (!latestCall || latestCall.status !== 'accepted' || latestCall.group_room_id)) {
+                if (latestCall?.group_room_id) await navigateToConference({ id: latestCall.group_room_id, conversation_id: latestCall.conversation_id, call_type: latestCall.call_type });
+                else { endingRef.current = true; navigation.goBack(); }
+                return;
+              }
               console.warn('[calls] LiveKit direct transport unavailable; retaining WebRTC fallback:', liveKitError?.message || liveKitError);
             }
             maybeStartOffer();
           })();
         } else if (isTerminalCallStatus(next.status)) {
+          endingRef.current = true;
           setPhase(next.status === 'declined' ? 'Call declined' : next.status === 'missed' ? 'No answer' : 'Call ended');
           setTimeout(() => { if (activeRef.current) navigation.goBack(); }, 700);
         }
