@@ -141,6 +141,9 @@ export default function ChatScreen({ route, navigation }) {
   const compactHeader = windowWidth < 480;
   const ultraCompactHeader = windowWidth < 380;
   const [messages, setMessages] = useState([]);
+  const [loadingMessages, setLoadingMessages] = useState(true);
+  const [messageLoadError, setMessageLoadError] = useState('');
+  const [olderLoadError, setOlderLoadError] = useState('');
   const [chatCanvasKey, setChatCanvasKey] = useState('theme');
   const [hasMore, setHasMore] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
@@ -244,19 +247,25 @@ export default function ChatScreen({ route, navigation }) {
   }, [conversation.id]);
 
   const load = useCallback(async () => {
-    const { messages: data, hasMore: more } = await fetchMessages(conversation.id, { limit: MESSAGE_PAGE_SIZE });
-    data.forEach((m) => {
-      if (m.senderName) senderNamesRef.current[m.senderId] = m.senderName;
-    });
-    setMessages(data);
-    fetchMessageDeliveryState(conversation.id, data.map((message) => message.id))
-      .then((state) => setMessageDeliveryState((prev) => ({ ...prev, ...state }))).catch(() => {});
-    markMessagesDelivered(conversation.id, data, myUserId).catch(() => {});
-    setHasMore(more);
-    stickToBottom.current = true;
-    // Reactions ride along with the initial page — one query for all
-    // visible messages, then Realtime keeps them current.
-    fetchReactions(data.map((m) => m.id)).then(setReactions).catch(() => {});
+    setLoadingMessages(true);
+    setMessageLoadError('');
+    try {
+      const { messages: data, hasMore: more } = await fetchMessages(conversation.id, { limit: MESSAGE_PAGE_SIZE });
+      data.forEach((m) => {
+        if (m.senderName) senderNamesRef.current[m.senderId] = m.senderName;
+      });
+      setMessages(data);
+      fetchMessageDeliveryState(conversation.id, data.map((message) => message.id))
+        .then((state) => setMessageDeliveryState((prev) => ({ ...prev, ...state }))).catch(() => {});
+      markMessagesDelivered(conversation.id, data, myUserId).catch(() => {});
+      setHasMore(more);
+      stickToBottom.current = true;
+      fetchReactions(data.map((m) => m.id)).then(setReactions).catch(() => {});
+    } catch (error) {
+      setMessageLoadError(error?.message || 'Could not load messages. Check your connection and try again.');
+    } finally {
+      setLoadingMessages(false);
+    }
   }, [conversation.id, myUserId]);
 
   // Older-history pagination: explicit "load earlier" affordance rather
@@ -265,6 +274,7 @@ export default function ChatScreen({ route, navigation }) {
   const loadOlder = useCallback(async () => {
     if (loadingOlder || !hasMore || messages.length === 0) return;
     setLoadingOlder(true);
+    setOlderLoadError('');
     stickToBottom.current = false;
     try {
       const oldest = messages[0]?.createdAtRaw;
@@ -287,8 +297,7 @@ export default function ChatScreen({ route, navigation }) {
         .then((more) => setReactions((prev) => ({ ...prev, ...more })))
         .catch(() => {});
     } catch (err) {
-      // A failed older-page fetch shouldn't take the screen down — the
-      // button just stays available for another attempt.
+      setOlderLoadError(err?.message || 'Could not load earlier messages. Please try again.');
     } finally {
       setLoadingOlder(false);
     }
@@ -1439,28 +1448,49 @@ export default function ChatScreen({ route, navigation }) {
             if (stickToBottom.current) listRef.current?.scrollToEnd({ animated: false });
           }}
           ListHeaderComponent={
-            hasMore ? (
-              <TouchableOpacity
-                onPress={loadOlder}
-                disabled={loadingOlder}
-                accessibilityLabel="Load earlier messages"
-                accessibilityRole="button"
-                style={{ alignSelf: 'center', marginBottom: spacing.sm }}
-              >
-                <View
-                  style={[
-                    styles.loadOlderPill,
-                    { borderColor: colors.border, backgroundColor: hexToRgba(colors.surface, 0.6), borderRadius: radii.pill },
-                  ]}
-                >
-                  {loadingOlder ? (
-                    <ActivityIndicator size="small" color={colors.textSecondary} />
-                  ) : (
-                    <Text style={[typography.small, { color: colors.textSecondary }]}>Load earlier messages</Text>
-                  )}
+            <View style={{ alignItems: 'center' }}>
+              {olderLoadError ? (
+                <View style={{ alignItems: 'center', paddingHorizontal: spacing.md, paddingBottom: spacing.sm }}>
+                  <Text accessibilityRole="alert" style={[typography.small, { color: colors.danger || colors.textSecondary, textAlign: 'center', marginBottom: 6 }]}>{olderLoadError}</Text>
+                  <TouchableOpacity onPress={loadOlder} disabled={loadingOlder} accessibilityLabel="Retry loading earlier messages" accessibilityRole="button" accessibilityState={{ disabled: loadingOlder }} style={[styles.loadOlderPill, { borderColor: colors.border, borderWidth: 1, borderRadius: radii.pill, minHeight: 48, justifyContent: 'center' }]}>
+                    <Text style={[typography.small, { color: colors.textPrimary }]}>Try again</Text>
+                  </TouchableOpacity>
                 </View>
-              </TouchableOpacity>
-            ) : null
+              ) : null}
+              {hasMore && !olderLoadError ? (
+                <TouchableOpacity
+                  onPress={loadOlder}
+                  disabled={loadingOlder}
+                  accessibilityLabel="Load earlier messages"
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: loadingOlder }}
+                  style={{ alignSelf: 'center', marginBottom: spacing.sm, minHeight: 48, justifyContent: 'center' }}
+                >
+                  <View style={[styles.loadOlderPill, { borderColor: colors.border, backgroundColor: hexToRgba(colors.surface, 0.6), borderRadius: radii.pill }]}>
+                    {loadingOlder ? <ActivityIndicator size="small" color={colors.textSecondary} /> : <Text style={[typography.small, { color: colors.textSecondary }]}>Load earlier messages</Text>}
+                  </View>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          }
+          ListEmptyComponent={
+            loadingMessages ? (
+              <View style={{ minHeight: 180, alignItems: 'center', justifyContent: 'center', padding: spacing.lg }}>
+                <ActivityIndicator color={colors.primary} />
+                <Text style={[typography.small, { color: colors.textSecondary, marginTop: spacing.sm }]}>Loading messages…</Text>
+              </View>
+            ) : messageLoadError ? (
+              <View style={{ minHeight: 180, alignItems: 'center', justifyContent: 'center', padding: spacing.lg }}>
+                <Text accessibilityRole="alert" style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.md }]}>{messageLoadError}</Text>
+                <TouchableOpacity onPress={load} accessibilityRole="button" accessibilityLabel="Retry loading messages" style={[styles.loadOlderPill, { borderColor: colors.border, borderWidth: 1, borderRadius: radii.pill, minHeight: 48, justifyContent: 'center' }]}>
+                  <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Try again</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={{ minHeight: 180, alignItems: 'center', justifyContent: 'center', padding: spacing.lg }}>
+                <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>No messages yet. Say hello to start the conversation.</Text>
+              </View>
+            )
           }
           renderItem={({ item }) => {
             if (item.type === 'day') {

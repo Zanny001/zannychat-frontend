@@ -53,3 +53,20 @@ test('message composer keeps a distinct moderate input surface and balanced cont
   assert.match(inputBar, /maxHeight: 96/); // keep multiline composer growth bounded
   assert.match(inputBar, /textAlignVertical: 'center'/);
 });
+
+
+test('initial message history failures render an accessible retry instead of a blank chat', () => {
+  assert.match(screen, /const \[loadingMessages, setLoadingMessages\] = useState\(true\)/);
+  assert.match(screen, /const \[messageLoadError, setMessageLoadError\] = useState\(''\)/);
+  assert.match(screen, /setMessageLoadError\(error\?\.message \|\| 'Could not load messages/);
+  assert.match(screen, /ListEmptyComponent=\{/);
+  assert.match(screen, /accessibilityLabel="Retry loading messages"/);
+  assert.match(screen, /No messages yet\. Say hello to start the conversation\./);
+});
+
+test('older history pagination failures retain a visible accessible retry action', () => {
+  assert.match(screen, /const \[olderLoadError, setOlderLoadError\] = useState\(''\)/);
+  assert.match(screen, /setOlderLoadError\(err\?\.message \|\| 'Could not load earlier messages/);
+  assert.match(screen, /accessibilityLabel="Retry loading earlier messages"/);
+  assert.match(screen, /hasMore && !olderLoadError/);
+});
