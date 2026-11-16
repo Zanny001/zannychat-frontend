@@ -633,7 +633,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
       </View>
       <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Create a story</Text>
-        <Text style={[typography.caption, { color: colors.textSecondary }]}>{statusDraftSaved ? 'Draft saved on this device' : 'Text drafts save automatically on this device'} · selected media is not saved in drafts</Text>
+        <Text style={[typography.caption, { color: colors.textSecondary }]}>{!myProfile?.id ? 'Sign in to create a status' : !statusDraftReady ? 'Loading your saved draft…' : statusDraftSaved ? 'Draft saved on this device' : 'Text drafts save automatically on this device'} · selected media is not saved in drafts</Text>
         <TextInput ref={statusTextInputRef} editable={statusComposerReady && !saving} value={text} onChangeText={(v) => setText(v.slice(0, STATUS_TEXT_LIMIT))} placeholder="What would you like to share?" placeholderTextColor={colors.textSecondary} multiline maxLength={STATUS_TEXT_LIMIT} accessibilityLabel="Status text" style={[typography.body, { color: colors.textPrimary, minHeight: 92, width: '100%', textAlignVertical: 'top', borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.md }]} />
         <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'right' }]}>{text.length}/{STATUS_TEXT_LIMIT}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' }}>
