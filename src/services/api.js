@@ -1,5 +1,8 @@
 import { normalizeEmail, parseRecoveryCallback } from '../utils/authValidation';
 import { Platform } from 'react-native';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import Constants from 'expo-constants';
 import { getOAuthRedirectUrl, getPasswordRecoveryRedirectUrl } from '../utils/oauthRedirect';
 import { getSafeMessageSendError } from '../utils/safeMessagingError';
 import { retryTransient } from '../utils/retry';
@@ -17,6 +20,7 @@ import { supabase, SUPABASE_ENABLED, SUPABASE_URL } from './supabaseClient';
 import { backendFetch, BACKEND_ENABLED } from './backendClient';
 import { getActiveVoipPushToken, getActiveApnsAlertToken } from './voipPushTokenState';
 import { isMissingRpcFunction } from './rpcErrors';
+import { deletePushTokenRows } from './pushTokenCleanup';
 import {
   CURRENT_USER,
   MOCK_CONTACTS,
@@ -881,6 +885,34 @@ export async function getSessionSecurityInfo() {
   };
 }
 
+async function removeExpoPushTokensBeforeSignOut(scope) {
+  if (!SUPABASE_ENABLED || !supabase) return;
+  try {
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError) throw authError;
+    const userId = authData?.user?.id;
+    if (!userId) return;
+
+    if (scope === 'global') {
+      await deletePushTokenRows({ supabase, userId });
+      return;
+    }
+
+    // Local sign-out must remove only this device's Expo token. If token
+    // resolution fails, fail closed rather than deleting every device token.
+    if (!Device.isDevice) return;
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId || Constants.easConfig?.projectId;
+    if (!projectId) return;
+    const { data: token, error: tokenError } = await Notifications.getExpoPushTokenAsync({ projectId });
+    if (tokenError) throw tokenError;
+    if (!token) return;
+    await deletePushTokenRows({ supabase, userId, expoPushToken: token });
+  } catch (error) {
+    // Push cleanup is best-effort; never trap a user in an authenticated session.
+    console.warn('[push] Expo token cleanup during sign-out failed:', error?.message || error);
+  }
+}
+
 async function removeVoipTokensBeforeSignOut(scope) {
   if (!BACKEND_ENABLED || !SUPABASE_ENABLED) return;
   try {
@@ -910,6 +942,7 @@ async function removeVoipTokensBeforeSignOut(scope) {
 
 export async function signOutThisDevice() {
   if (!SUPABASE_ENABLED || !supabase) throw new Error('Session management requires a connected account.');
+  await removeExpoPushTokensBeforeSignOut('local');
   await removeVoipTokensBeforeSignOut('local');
   const { error } = await supabase.auth.signOut({ scope: 'local' });
   if (error) throw error;
@@ -918,6 +951,7 @@ export async function signOutThisDevice() {
 
 export async function signOutEverywhere() {
   if (!SUPABASE_ENABLED || !supabase) throw new Error('Session management requires a connected account.');
+  await removeExpoPushTokensBeforeSignOut('global');
   await removeVoipTokensBeforeSignOut('global');
   const { error } = await supabase.auth.signOut({ scope: 'global' });
   if (error) throw error;
@@ -927,6 +961,7 @@ export async function signOutEverywhere() {
 export async function signOut() {
   if (!SUPABASE_ENABLED || !supabase) return;
   // Settings logout is device-local; global revocation is explicit in Devices & sessions.
+  await removeExpoPushTokensBeforeSignOut('local');
   await removeVoipTokensBeforeSignOut('local');
   const { error } = await supabase.auth.signOut({ scope: 'local' });
   if (error) throw error;
