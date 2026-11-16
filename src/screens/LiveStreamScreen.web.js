@@ -50,7 +50,7 @@ function FloatingReaction({ item, index, onComplete }) {
   );
 }
 
-function RemoteVideoTile({ track, colors, spotlight = false, single = false }) {
+function RemoteVideoTile({ track, participant, colors, spotlight = false, single = false }) {
   const containerRef = useRef(null);
   useEffect(() => {
     const element = track.attach();
@@ -70,7 +70,7 @@ function RemoteVideoTile({ track, colors, spotlight = false, single = false }) {
       <View ref={containerRef} collapsable={false} style={{ width: '100%', height: '100%' }} />
       {spotlight && <View style={{ position: 'absolute', top: 8, left: 8, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: colors.accent }}><Text style={{ color: colors.onAccent, fontWeight: '900', fontSize: 10 }}>SPOTLIGHT</Text></View>}
       <View style={{ position: 'absolute', left: 8, bottom: 8, maxWidth: '88%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.65)' }}>
-        <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>{track.participant.name || track.participant.identity}</Text>
+        <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>{participant.name || participant.identity}</Text>
       </View>
     </View>
   );
@@ -104,7 +104,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const remoteAudioRef = useRef(null);
   const [remoteVideoTracks, setRemoteVideoTracks] = useState([]);
   const [remoteAudioParticipants, setRemoteAudioParticipants] = useState([]);
-  const audioOnlyParticipants = remoteAudioParticipants.filter((participant) => !remoteVideoTracks.some((track) => track.participant.identity === participant.identity));
+  const audioOnlyParticipants = remoteAudioParticipants.filter((participant) => !remoteVideoTracks.some((entry) => entry.participant.identity === participant.identity));
   const endedRef = useRef(false);
   const [status, setStatus] = useState('Connecting…');
   useEffect(() => { setDemotedToViewer(false); setStageNotice(''); }, [connection?.token]);
@@ -223,26 +223,54 @@ export default function LiveStreamScreen({ route, navigation }) {
       }
       target.appendChild(element);
     };
-    const onSubscribed = (track) => {
+    const onSubscribed = (track, publication, participant) => {
       if (track.kind === Track.Kind.Video) {
-        setRemoteVideoTracks((current) => current.some((item) => item.sid === track.sid) ? current : [...current, track]);
+        setRemoteVideoTracks((current) => current.some((item) => item.track.sid === track.sid)
+          ? current
+          : [...current, { track, publication, participant }]);
       } else if (track.kind === Track.Kind.Audio) {
         attach(track, remoteAudioRef.current);
-        if (!track.participant.isLocal) {
-          setRemoteAudioParticipants((current) => current.some((item) => item.identity === track.participant.identity)
-            ? current
-            : [...current, { identity: track.participant.identity, name: track.participant.name || track.participant.identity }]);
-        }
+        setRemoteAudioParticipants((current) => current.some((item) => item.identity === participant.identity)
+          ? current
+          : [...current, { identity: participant.identity, name: participant.name || participant.identity }]);
       }
     };
-    const onUnsubscribed = (track) => {
+    const onUnsubscribed = (track, publication, participant) => {
       if (track.kind === Track.Kind.Video) {
-        setRemoteVideoTracks((current) => current.filter((item) => item.sid !== track.sid));
+        setRemoteVideoTracks((current) => current.filter((item) => item.track.sid !== track.sid));
       }
-      if (track.kind === Track.Kind.Audio && !track.participant.isLocal) {
-        setRemoteAudioParticipants((current) => current.filter((item) => item.identity !== track.participant.identity));
+      if (track.kind === Track.Kind.Audio) {
+        setRemoteAudioParticipants((current) => current.filter((item) => item.identity !== participant.identity));
       }
       track.detach();
+    };
+    const onUnpublished = (publication, participant) => {
+      if (publication.source === Track.Source.Camera) {
+        setRemoteVideoTracks((current) => current.filter((item) => item.participant.identity !== participant.identity));
+      }
+      if (publication.source === Track.Source.Microphone) {
+        setRemoteAudioParticipants((current) => current.filter((item) => item.identity !== participant.identity));
+      }
+    };
+    const onTrackMuted = (publication, participant) => {
+      if (publication.source === Track.Source.Camera) {
+        setRemoteVideoTracks((current) => current.filter((item) => item.participant.identity !== participant.identity));
+      }
+    };
+    const onTrackUnmuted = (publication, participant) => {
+      if (publication.source === Track.Source.Camera && publication.track) {
+        setRemoteVideoTracks((current) => current.some((item) => item.track.sid === publication.track.sid)
+          ? current
+          : [...current, { track: publication.track, publication, participant }]);
+      }
+    };
+    const onParticipantDisconnected = (participant) => {
+      setRemoteVideoTracks((current) => current.filter((item) => item.participant.identity !== participant.identity));
+      setRemoteAudioParticipants((current) => current.filter((item) => item.identity !== participant.identity));
+    };
+    const onTrackSubscriptionFailed = (trackSid, participant) => {
+      if (!active) return;
+      setError('Could not receive media from ' + (participant?.name || participant?.identity || 'a LIVE participant') + '. Check the connection and try rejoining.');
     };
     const onLocalPublished = (publication) => {
       if (publication.source === Track.Source.Camera && publication.videoTrack && localRef.current) {
@@ -253,6 +281,11 @@ export default function LiveStreamScreen({ route, navigation }) {
 
     room.on(RoomEvent.TrackSubscribed, onSubscribed);
     room.on(RoomEvent.TrackUnsubscribed, onUnsubscribed);
+    room.on(RoomEvent.TrackUnpublished, onUnpublished);
+    room.on(RoomEvent.TrackMuted, onTrackMuted);
+    room.on(RoomEvent.TrackUnmuted, onTrackUnmuted);
+    room.on(RoomEvent.ParticipantDisconnected, onParticipantDisconnected);
+    room.on(RoomEvent.TrackSubscriptionFailed, onTrackSubscriptionFailed);
     room.on(RoomEvent.ParticipantAttributesChanged, () => setRemoteVideoTracks((current) => [...current]));
     room.on(RoomEvent.LocalTrackPublished, onLocalPublished);
     room.on(RoomEvent.ParticipantPermissionsChanged, (_previousPermissions, participant) => {
@@ -268,7 +301,7 @@ export default function LiveStreamScreen({ route, navigation }) {
     room.on(RoomEvent.Disconnected, () => active && setStatus('Disconnected'));
     (async () => {
       try {
-        await room.connect(connection.livekitUrl, connection.token);
+        await room.connect(connection.livekitUrl, connection.token, { autoSubscribe: true });
         if (!active) return;
         if (publisherModeRef.current) {
           setStatus('Starting camera and microphone…');
@@ -555,27 +588,41 @@ export default function LiveStreamScreen({ route, navigation }) {
     {guestApproved && !publisherMode && <Text accessibilityRole="status" style={[typography.caption, { color: colors.accent, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: colors.surface }]}>The creator invited you to the LIVE stage. Tap “Join the stage” below to connect your camera and microphone.</Text>}
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 20 }}>
       <View style={{ minHeight: 220, marginHorizontal: 12, borderRadius: 18, overflow: 'hidden', backgroundColor: '#050509', position: 'relative' }}>
-        {publisherMode && <View ref={localRef} collapsable={false} style={{ width: '100%', minHeight: 220 }} />}
-        {!remoteVideoTracks.length && !publisherMode && !audioOnlyParticipants.length && <Text style={{ color: colors.textSecondary, textAlign: 'center', padding: 12 }}>If the creator is not on screen yet, their video will appear here.</Text>}
-        {!remoteVideoTracks.length && (audioOnlyParticipants.length > 0 || localAudioOnly) && (
-          <View style={{ alignItems: 'center', padding: 18 }}>
-            <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 17 }}>LIVE audio is on</Text>
-            <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 6 }}>The stage is continuing with microphones while cameras are off.</Text>
-          </View>
-        )}
-        {!!remoteVideoTracks.length && (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'stretch', gap: 8, padding: 8 }}>
-            {[...remoteVideoTracks].sort((a, b) => Number(b.participant.attributes?.zannychat_spotlight === 'true') - Number(a.participant.attributes?.zannychat_spotlight === 'true')).map((track) => <RemoteVideoTile key={track.sid} track={track} colors={colors} spotlight={track.participant.attributes?.zannychat_spotlight === 'true'} single={remoteVideoTracks.length === 1} />)}
-          </View>
-        )}
-        {(audioOnlyParticipants.length > 0 || localAudioOnly) && (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, padding: 8 }}>
-            {audioOnlyParticipants.map((participant) => <View key={participant.identity} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
-              <Text style={{ color: colors.textPrimary, fontSize: 12 }}>{participant.name} · Audio only</Text>
-            </View>)}
-            {localAudioOnly && <View style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}><Text style={{ color: colors.textPrimary, fontSize: 12 }}>You · Audio only</Text></View>}
-          </View>
-        )}
+        {(() => {
+          const videoTileCount = remoteVideoTracks.length + (publisherMode ? 1 : 0);
+          return (
+            <>
+              {!videoTileCount && !audioOnlyParticipants.length && !localAudioOnly && <Text style={{ color: colors.textSecondary, textAlign: 'center', padding: 12 }}>Waiting for the creator's video. It will appear here when their camera is on.</Text>}
+              {!videoTileCount && (audioOnlyParticipants.length > 0 || localAudioOnly) && (
+                <View style={{ alignItems: 'center', padding: 18 }}>
+                  <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 17 }}>LIVE audio is on</Text>
+                  <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 6 }}>The stage is continuing with microphones while cameras are off.</Text>
+                </View>
+              )}
+              {!!videoTileCount && (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'stretch', gap: 8, padding: 8 }}>
+                  {publisherMode && (
+                    <View style={{ width: videoTileCount === 1 ? '100%' : '48%', maxWidth: videoTileCount === 1 ? 560 : 520, minWidth: videoTileCount === 1 ? 0 : 140, aspectRatio: 16 / 9, borderRadius: 16, overflow: 'hidden', backgroundColor: '#050509', borderWidth: 1, borderColor: colors.accent }}>
+                      <View ref={localRef} collapsable={false} style={{ width: '100%', height: '100%' }} />
+                      {!camera && <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: '#111019' }}><Text style={{ color: '#FFFFFF', fontWeight: '800' }}>Camera off</Text></View>}
+                      <View style={{ position: 'absolute', left: 8, bottom: 8, maxWidth: '88%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.65)' }}>
+                        <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>{creatorMode ? 'You · Creator' : 'You · Guest'}</Text>
+                      </View>
+                    </View>
+                  )}
+                  {[...remoteVideoTracks].sort((a, b) => Number(b.participant.attributes?.zannychat_spotlight === 'true') - Number(a.participant.attributes?.zannychat_spotlight === 'true')).map((item) => <RemoteVideoTile key={item.track.sid} track={item.track} participant={item.participant} colors={colors} spotlight={item.participant.attributes?.zannychat_spotlight === 'true'} single={videoTileCount === 1} />)}
+                </View>
+              )}
+              {audioOnlyParticipants.length > 0 && (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, padding: 8 }}>
+                  {audioOnlyParticipants.map((participant) => <View key={participant.identity} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+                    <Text style={{ color: colors.textPrimary, fontSize: 12 }}>{participant.name} · Audio only</Text>
+                  </View>)}
+                </View>
+              )}
+            </>
+          );
+        })()}
         <View ref={remoteAudioRef} collapsable={false} style={{ width: 1, height: 1, opacity: 0 }} />
         <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
           {floatingReactions.map((item, index) => (
