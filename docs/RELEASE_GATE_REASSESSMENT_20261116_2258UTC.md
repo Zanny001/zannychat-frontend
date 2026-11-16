@@ -33,6 +33,7 @@ The existing `vercel.json` also rewrites every path to `/index.html`, uses `npm 
 - A fresh team-consent request was generated on 2026-11-17. The team owner must open the current one-time link supplied in this conversation, review the permissions and approve. It expires after ten minutes.
 - Project creation previously returned HTTP 403. Do not retry project creation until approval is completed.
 - The GitHub commit currently reports a Vercel status check as pending, but a direct Vercel deployment-history query for the exact commit returned zero records and lookup of the check's deployment identifier returned 404. Treat this as an unresolved/stale integration check, not as evidence of a preview deployment.
+- Subsequent GitHub commit statuses on the new push-token PRs report the Vercel check as failed with the target `upgradeToPro=build-rate-limit`. The team still lists zero linked projects and exact-commit deployment history returns zero records. This is an external Vercel build-rate-limit/plan gate, not a frontend test failure; no paid upgrade was initiated under the ₦0 constraint.
 - No Vercel project, alias, preview deployment, or production deployment is claimed by this addendum.
 
 ## Release gates that remain open
