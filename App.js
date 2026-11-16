@@ -16,6 +16,7 @@ import {
 } from './src/services/notifications';
 import AppNavigator, { navigationRef } from './src/navigation/AppNavigator';
 import VoIPPushRegistrar from './src/components/VoIPPushRegistrar';
+import { createPushRegistrationCoordinator } from './src/services/pushRegistrationCoordinator';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -67,15 +68,14 @@ export default function App() {
   useEffect(() => {
     let mounted = true;
     let authSubscription = null;
-    let pushRegistrationStarted = false;
     let authStateObserved = false;
+    const pushRegistration = createPushRegistrationCoordinator(registerForPushNotifications);
 
-    function registerPushOnce() {
-      if (pushRegistrationStarted) return;
-      pushRegistrationStarted = true;
-      // This can be reached by both SIGNED_IN and the initial getSession result.
-      // Keep the permission prompt/token upsert from running twice on OAuth return.
-      Promise.resolve(registerForPushNotifications()).catch((error) => {
+    function registerPushOnce(userId) {
+      if (!userId) return;
+      // The initial session snapshot and SIGNED_IN event can race. The
+      // coordinator deduplicates within one account but allows account changes.
+      pushRegistration.registerForUser(userId).catch((error) => {
         console.warn('Push registration could not start:', error?.message || error);
       });
     }
@@ -110,12 +110,13 @@ export default function App() {
         }
         if (session) {
           setInitialRoute(isWebRecoveryCallback ? 'PasswordReset' : 'Main');
-          // Only a new sign-in should redirect from an auth screen. Token refreshes
-          // must never reset a user's active chat/call/navigation stack.
-          if (event === 'SIGNED_IN') {
-            registerPushOnce();
+          // Register the token for the authenticated account. This also handles
+          // an account switch without reusing the previous account's guard.
+          if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+            registerPushOnce(session.user?.id);
           }
         } else if (event === 'SIGNED_OUT') {
+          pushRegistration.reset();
           setInitialRoute('Onboarding');
         } else if (event === 'INITIAL_SESSION') {
           // Resolve the unauthenticated initial state even if getSession fails.
@@ -159,8 +160,8 @@ export default function App() {
         setInitialRoute(isWebRecoveryCallback ? 'PasswordReset' : session ? 'Main' : 'Onboarding');
       }
 
-      if (session) {
-        registerPushOnce();
+      if (session && !authStateObserved) {
+        registerPushOnce(session.user?.id);
       }
 
       // Remove OAuth tokens from the URL only after session restoration.
