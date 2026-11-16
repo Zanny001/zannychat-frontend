@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Platform, SafeAreaView, StatusBar, StyleSheet, Text, Pressable, View } from 'react-native';
+import { ActivityIndicator, Alert, DeviceEventEmitter, FlatList, Platform, SafeAreaView, StatusBar, StyleSheet, Text, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AudioSession, LiveKitRoom, VideoTrack, isTrackReference, useRoomContext, useTracks, useParticipants } from '@livekit/react-native';
 import { RoomEvent, Track } from 'livekit-client';
@@ -8,8 +8,10 @@ import { supabase } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 import CallInvitePicker from '../components/CallInvitePicker';
+import { updateCallStatus } from '../services/calls';
+import { endNativeCall, fulfillNativeIncomingConnected, reportNativeCallEnded, reportNativeOutgoingConnected, setNativeMuted } from '../services/nativeCallSystem';
 
-function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onParticipantsChange, endLabel }) {
+function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onParticipantsChange, endLabel, nativeCallId, nativeRequestId, isCaller, onRoomConnected, directCall }) {
   const room = useRoomContext();
   const { colors, typography } = useTheme();
   const cameraTracks = useTracks([Track.Source.Camera]);
@@ -38,12 +40,15 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
   }, [connectionState, room, roomId]);
 
   useEffect(() => {
-    const onConnected = () => setConnectionState('Connected');
+    const onConnected = () => {
+      setConnectionState('Connected');
+      onRoomConnected?.();
+    };
     const onReconnecting = () => setConnectionState('Reconnecting…');
     const onReconnected = () => setConnectionState('Connected');
     const onDisconnected = () => setConnectionState('Disconnected');
     room.on(RoomEvent.Connected, onConnected);
-    if (room.state === 'connected') setConnectionState('Connected');
+    if (room.state === 'connected') { setConnectionState('Connected'); onRoomConnected?.(); }
     room.on(RoomEvent.Reconnecting, onReconnecting);
     room.on(RoomEvent.Reconnected, onReconnected);
     room.on(RoomEvent.Disconnected, onDisconnected);
@@ -53,12 +58,23 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
       room.off(RoomEvent.Reconnected, onReconnected);
       room.off(RoomEvent.Disconnected, onDisconnected);
     };
-  }, [room]);
+  }, [room, onRoomConnected]);
+
+  useEffect(() => {
+    if (!nativeCallId) return undefined;
+    const subscription = DeviceEventEmitter.addListener('zannychat:native-call-muted', ({ id, isMuted }) => {
+      if (id !== nativeCallId) return;
+      room.localParticipant.setMicrophoneEnabled(!isMuted).then(() => setMuted(Boolean(isMuted))).catch(() => {});
+    });
+    return () => subscription.remove();
+  }, [nativeCallId, room]);
 
   const toggleMute = async () => {
+    const next = !muted;
     try {
-      await room.localParticipant.setMicrophoneEnabled(muted);
-      setMuted(!muted);
+      await room.localParticipant.setMicrophoneEnabled(!next);
+      if (nativeCallId) setNativeMuted(nativeCallId, next).catch(() => {});
+      setMuted(next);
     } catch (_) {
       Alert.alert('Microphone unavailable', 'Check microphone permission and try again.');
     }
@@ -140,7 +156,7 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
           <View style={[styles.audioOrb, { backgroundColor: colors.primary, shadowColor: colors.primary, borderColor: hexToRgba(colors.onPrimary, 0.28) }]}>
             <Ionicons name="people" size={46} color={colors.onPrimary || '#FFFFFF'} />
           </View>
-          <Text style={[styles.audioTitle, typography.title, { color: colors.textPrimary }]}>Group audio call</Text>
+          <Text style={[styles.audioTitle, typography.title, { color: colors.textPrimary }]}>{directCall ? 'Voice call' : 'Group audio call'}</Text>
           <Text style={[styles.audioHint, typography.body, { color: colors.textSecondary }]}>Everyone in the room can hear you when your microphone is on.</Text>
           <View style={styles.participantList}>
             {participants.map((participant) => (
@@ -212,7 +228,7 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
 }
 
 export default function GroupCallScreen({ route, navigation }) {
-  const { conversationId, conversationName = 'Group', callType = 'audio', roomId = null, connection: initialConnection = null } = route.params || {};
+  const { conversationId, conversationName = 'Group', callType = 'audio', roomId = null, directCallId = null, directCall = null, nativeCallId = null, nativeRequestId = null, isCaller = false, connection: initialConnection = null } = route.params || {};
   const { colors, resolvedMode, typography } = useTheme();
   const [connection, setConnection] = useState(null);
   const [errorText, setErrorText] = useState('');
@@ -223,6 +239,8 @@ export default function GroupCallScreen({ route, navigation }) {
   const [participantIds, setParticipantIds] = useState([]);
   const endingRef = useRef(false);
   const connectionRef = useRef(null);
+  const nativeConnectedRef = useRef(false);
+  const preserveAudioSessionRef = useRef(false);
   const handleParticipantsChange = useCallback((ids) => setParticipantIds(ids), []);
 
   useEffect(() => {
@@ -231,7 +249,22 @@ export default function GroupCallScreen({ route, navigation }) {
     const connect = async () => {
       try {
         let result;
-        if (roomId) {
+        if (directCallId) {
+          result = initialConnection?.callId === directCallId && initialConnection?.token && initialConnection?.livekitUrl
+            ? initialConnection
+            : await backendFetch(`/calls/${directCallId}/livekit-token`, { method: 'POST' });
+          const sourceCall = directCall || {};
+          result = {
+            ...result,
+            room: {
+              id: directCallId,
+              conversation_id: sourceCall.conversation_id || conversationId,
+              host_user_id: sourceCall.caller_id,
+              source_call_id: directCallId,
+              call_type: result.callType || sourceCall.call_type || callType,
+            },
+          };
+        } else if (roomId) {
           result = initialConnection?.room?.id === roomId && initialConnection?.token && initialConnection?.livekitUrl
             ? initialConnection
             : await backendFetch(`/group-calls/${roomId}/join`, { method: 'POST' });
@@ -243,10 +276,10 @@ export default function GroupCallScreen({ route, navigation }) {
           });
         }
         if (active) {
-          const connected = { ...result, roomId: result.room.id, callType: result.room.call_type || callType };
+          const connected = { ...result, roomId: result.roomId || result.room.id, callType: result.callType || result.room.call_type || callType };
           connectionRef.current = connected;
           setConnection(connected);
-        } else if (result?.room?.id) {
+        } else if (result?.room?.id && !directCallId) {
           await backendFetch(`/group-calls/${result.room.id}/leave`, { method: 'POST' }).catch(() => {});
         }
       } catch (error) {
@@ -258,18 +291,23 @@ export default function GroupCallScreen({ route, navigation }) {
     connect();
     return () => {
       active = false;
-      AudioSession.stopAudioSession();
+      if (!preserveAudioSessionRef.current) AudioSession.stopAudioSession();
       const current = connectionRef.current;
-      if (current?.roomId && !endingRef.current) {
+      if (current?.roomId && !directCallId && !endingRef.current) {
         backendFetch(`/group-calls/${current.roomId}/leave`, { method: 'POST' }).catch(() => {});
       }
     };
-  }, [conversationId, roomId, initialConnection]);
+  }, [conversationId, roomId, directCallId, directCall, initialConnection]);
 
   useEffect(() => {
     if (!connection?.room) return undefined;
     let active = true;
     (async () => {
+      if (directCallId) {
+        setCanInvite(true);
+        setCanEnd(true);
+        return;
+      }
       const { data: auth } = await supabase.auth.getUser();
       const userId = auth?.user?.id;
       if (!active || !userId) return;
@@ -289,9 +327,31 @@ export default function GroupCallScreen({ route, navigation }) {
       setCanEnd(manager);
     })().catch(() => {});
     return () => { active = false; };
-  }, [connection?.room?.id, conversationId]);
+  }, [connection?.room?.id, conversationId, directCallId]);
 
   const invitePerson = async (person) => {
+    if (directCallId) {
+      endingRef.current = true;
+      try {
+        const result = await backendFetch(`/group-calls/upgrade/${directCallId}`, {
+          method: 'POST',
+          body: JSON.stringify({ userIds: [person.id], callType: connection?.callType || callType }),
+        });
+        if (!result?.room?.id) throw new Error('Could not upgrade this call to a conference.');
+        preserveAudioSessionRef.current = true;
+        navigation.replace('GroupCall', {
+          roomId: result.room.id,
+          connection: result,
+          conversationId: result.room.conversation_id || conversationId,
+          conversationName: 'Group call',
+          callType: result.room.call_type || callType,
+        });
+      } catch (error) {
+        endingRef.current = false;
+        throw error;
+      }
+      return;
+    }
     await backendFetch(`/group-calls/${connection.roomId}/invite`, {
       method: 'POST',
       body: JSON.stringify({ userIds: [person.id] }),
@@ -303,15 +363,76 @@ export default function GroupCallScreen({ route, navigation }) {
     if (!connection) { navigation.goBack(); return; }
     endingRef.current = true;
     try {
-      await backendFetch(`/group-calls/${connection.roomId}/${canEnd ? 'end' : 'leave'}`, { method: 'POST' });
+      if (directCallId) {
+        await updateCallStatus(directCallId, 'ended');
+        if (nativeCallId) await endNativeCall(nativeCallId).catch(() => {});
+      } else {
+        await backendFetch(`/group-calls/${connection.roomId}/${canEnd ? 'end' : 'leave'}`, { method: 'POST' });
+      }
     } catch (error) {
-      // Let unmount cleanup retry the participant leave if the end request fails.
+      // Let unmount cleanup retry a group participant leave if needed.
       endingRef.current = false;
       setErrorText(error?.message || 'The call could not be ended on the server. Leaving this device now.');
     } finally {
       navigation.goBack();
     }
   };
+
+  const handleRoomConnected = useCallback(() => {
+    if (nativeConnectedRef.current) return;
+    if (isCaller && nativeCallId) {
+      nativeConnectedRef.current = true;
+      reportNativeOutgoingConnected(nativeCallId).catch(() => {});
+    } else if (nativeRequestId) {
+      nativeConnectedRef.current = true;
+      fulfillNativeIncomingConnected(nativeRequestId).catch(() => {});
+    }
+  }, [isCaller, nativeCallId, nativeRequestId]);
+
+  useEffect(() => {
+    if (!directCallId || !supabase) return undefined;
+    let active = true;
+    const heartbeat = () => supabase.rpc('heartbeat_call_session', { p_call_id: directCallId })
+      .then(({ error }) => {
+        if (active && error && /expired|unauthorized|participant/i.test(error.message || '')) {
+          setErrorText('This call session expired. Please start a new call.');
+          updateCallStatus(directCallId, 'ended').catch(() => {});
+        }
+      }).catch(() => {});
+    heartbeat();
+    const timer = setInterval(heartbeat, 30_000);
+    const handleCallUpdate = (next) => {
+      if (!active || !next || endingRef.current) return;
+      if (next.group_room_id) {
+        endingRef.current = true;
+        preserveAudioSessionRef.current = true;
+        navigation.replace('GroupCall', {
+          roomId: next.group_room_id,
+          conversationId: next.conversation_id || conversationId,
+          conversationName: 'Group call',
+          callType: next.call_type || callType,
+        });
+      } else if (['declined', 'cancelled', 'ended', 'missed', 'failed'].includes(next.status)) {
+        endingRef.current = true;
+        if (nativeCallId) reportNativeCallEnded(nativeCallId, 'remoteEnded').catch(() => {});
+        navigation.goBack();
+      }
+    };
+    const channel = supabase.channel(`direct-livekit-call:${directCallId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'call_sessions', filter: `id=eq.${directCallId}` }, (event) => handleCallUpdate(event?.new))
+      .subscribe((channelStatus) => {
+        if (channelStatus === 'SUBSCRIBED') {
+          supabase.from('call_sessions').select('id,conversation_id,call_type,status,group_room_id')
+            .eq('id', directCallId).maybeSingle()
+            .then(({ data }) => { if (data) handleCallUpdate(data); }).catch(() => {});
+        }
+      });
+    return () => {
+      active = false;
+      clearInterval(timer);
+      supabase.removeChannel(channel);
+    };
+  }, [callType, conversationId, directCallId, navigation, nativeCallId]);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
@@ -320,7 +441,7 @@ export default function GroupCallScreen({ route, navigation }) {
         <Text style={[styles.brand, typography.small, { color: colors.primary }]}>ZannyChat</Text>
         <Text style={[styles.title, typography.title, { color: colors.textPrimary }]} numberOfLines={1}>{conversationName}</Text>
         <Text style={[styles.subtitle, typography.caption, { color: colors.textSecondary }]}>
-          {isVideo || tracks.length > 0 ? 'Group video call' : 'Group audio call'}
+          {(connection?.callType || callType) === 'video' ? 'Group video call' : 'Group audio call'}
         </Text>
       </View>
       {busy ? (
@@ -339,7 +460,7 @@ export default function GroupCallScreen({ route, navigation }) {
         </View>
       ) : connection ? (
         <LiveKitRoom serverUrl={connection.livekitUrl} token={connection.token} connect={true} audio={true} video={connection.callType === 'video'} options={{ adaptiveStream: true, dynacast: true }}>
-          <GroupRoomContent roomId={connection.roomId} callType={connection.callType} onEnd={endCall} onAddPeople={() => setInvitePickerVisible(true)} canInvite={canInvite} onParticipantsChange={handleParticipantsChange} endLabel={canEnd ? 'End call' : 'Leave'} />
+          <GroupRoomContent roomId={directCallId ? null : connection.roomId} callType={connection.callType} onEnd={endCall} onAddPeople={() => setInvitePickerVisible(true)} canInvite={canInvite} onParticipantsChange={handleParticipantsChange} endLabel={canEnd ? 'End call' : 'Leave'} nativeCallId={nativeCallId} nativeRequestId={nativeRequestId} isCaller={isCaller} onRoomConnected={handleRoomConnected} directCall={Boolean(directCallId)} />
         </LiveKitRoom>
       ) : null}
       {connection?.room ? (
@@ -348,8 +469,8 @@ export default function GroupCallScreen({ route, navigation }) {
           onClose={() => setInvitePickerVisible(false)}
           onInvite={invitePerson}
           conversationId={connection.room.conversation_id || conversationId}
-          roomId={connection.roomId}
-          filterToConversationMembers={!connection.room.source_call_id}
+          roomId={directCallId ? null : connection.roomId}
+          filterToConversationMembers={!directCallId && !connection.room.source_call_id}
           excludeIds={participantIds}
           title="Add people to call"
         />
