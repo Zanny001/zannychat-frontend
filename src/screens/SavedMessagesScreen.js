@@ -19,7 +19,8 @@ export default function SavedMessagesScreen({ navigation }) {
   const visible = useMemo(() => filterSavedMessages(items, query), [items, query]);
 
   const refresh = useCallback(async () => {
-    setLoading(true); setError('');
+    setLoading(true);
+    setError('');
     try {
       const user = await getCurrentUser();
       const id = user?.id || 'me';
