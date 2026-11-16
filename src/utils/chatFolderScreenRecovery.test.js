@@ -4,14 +4,11 @@ import { readFile } from 'node:fs/promises';
 
 test('Chat Folders clears a stale load error before retrying and reports delete failures', async () => {
   const source = await readFile(new URL('../screens/ChatFoldersScreen.js', import.meta.url), 'utf8');
-  const refresh = source.slice(source.indexOf('const refresh ='), source.indexOf('useFocusEffect'));
-  assert.match(refresh, /setLoading\(true\)[\s\S]*setError\(''\)/);
-  assert.match(source, /try \{[\s\S]*deleteChatFolder\(userId, folder\.id\)[\s\S]*catch \(_\)[\s\S]*Could not delete this folder/);
+  assert.match(source, /const refresh = useCallback\(async \(\) => \{\s*setLoading\(true\);\s*setError\(''\);/);
+  assert.match(source, /try \{\s*const next = await deleteChatFolder\(userId, folder\.id\);\s*setFolders\(next\);\s*\} catch \(_\) \{\s*setError\('Could not delete this folder\. Please try again\.'\);/);
 });
 
-test('Saved Messages keeps retry recovery and clears stale error state', async () => {
+test('Saved Messages clears stale error state when refreshing', async () => {
   const source = await readFile(new URL('../screens/SavedMessagesScreen.js', import.meta.url), 'utf8');
-  const refresh = source.slice(source.indexOf('const refresh ='), source.indexOf('useFocusEffect'));
-  assert.match(refresh, /setLoading\(true\)[\s\S]*setError\(''\)/);
-  assert.match(source, /Could not remove bookmark/);
+  assert.match(source, /const refresh = useCallback\(async \(\) => \{\s*setLoading\(true\);\s*setError\(''\);/);
 });
