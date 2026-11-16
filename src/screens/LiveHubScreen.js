@@ -8,6 +8,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 import { confirmAction, showAppAlert } from '../utils/appDialogs';
 import GlassCard from '../components/GlassCard';
+import { filterLiveStreams } from '../utils/liveDiscovery';
 
 const VISIBILITIES = [
   { value: 'public', label: 'Public' },
@@ -46,6 +47,8 @@ export default function LiveHubScreen({ navigation, route }) {
   const [error, setError] = useState('');
   const [startStage, setStartStage] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showComposer, setShowComposer] = useState(false);
   const handledLiveNotificationRef = useRef(null);
 
   const refreshPendingReplays = useCallback(async () => {
@@ -75,10 +78,10 @@ export default function LiveHubScreen({ navigation, route }) {
     }
   }, [replays]);
 
-  const visibleStreams = streams.filter((item) => {
-    if (activeFilter === 'following') return followingIds.includes(item.creator_id);
-    if (activeFilter === 'public') return item.visibility === 'public';
-    return true;
+  const visibleStreams = filterLiveStreams(streams, {
+    filter: activeFilter,
+    followingIds,
+    query: searchQuery,
   });
 
   const refresh = useCallback(async () => {
@@ -305,6 +308,11 @@ export default function LiveHubScreen({ navigation, route }) {
               </View>
               <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 29, marginTop: spacing.md }]}>Your stage. Your people.</Text>
               <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs, lineHeight: 22 }]}>Go live, bring your community together, and invite trusted guests on stage.</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.md, minHeight: 50, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.md }}>
+                <Ionicons name="search" size={19} color={colors.textSecondary} />
+                <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder="Search LIVE titles or creators" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search LIVE titles or creators" returnKeyType="search" style={{ flex: 1, minWidth: 0, color: colors.textPrimary, paddingVertical: spacing.sm, paddingHorizontal: spacing.sm }} />
+                {!!searchQuery && <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear LIVE search" style={{ width: 36, height: 40, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={19} color={colors.textSecondary} /></TouchableOpacity>}
+              </View>
               <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>
                 <View style={{ flex: 1, borderRadius: radii.md, padding: spacing.sm, backgroundColor: colors.surface }}>
                   <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{streams.length}</Text>
@@ -322,7 +330,7 @@ export default function LiveHubScreen({ navigation, route }) {
             </View>
 
             <GlassCard glow style={{ marginHorizontal: spacing.md, marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.md }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              <TouchableOpacity onPress={() => setShowComposer((value) => !value)} accessibilityRole="button" accessibilityLabel="Toggle LIVE broadcast setup" accessibilityState={{ expanded: showComposer }} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                 <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: hexToRgba(colors.danger, 0.12), alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="videocam" size={22} color={colors.danger} />
                 </View>
@@ -331,10 +339,12 @@ export default function LiveHubScreen({ navigation, route }) {
                   <Text style={[typography.caption, { color: colors.textSecondary }]}>Set the mood before you go live</Text>
                 </View>
                 <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, backgroundColor: hexToRgba(colors.danger, 0.1) }}>
-                  <Text style={[typography.caption, { color: colors.danger, fontWeight: '800' }]}>LIVE</Text>
+                  <Text style={[typography.caption, { color: colors.danger, fontWeight: '800' }]}>{showComposer ? 'CLOSE' : 'SET UP'}</Text>
                 </View>
-              </View>
+                <Ionicons name={showComposer ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
 
+              {showComposer && <>
               <TextInput value={title} onChangeText={(v) => setTitle(v.slice(0, 80))} maxLength={80} placeholder="What are you going live about?" placeholderTextColor={colors.textSecondary} accessibilityLabel="LIVE stream title" style={fieldStyle} />
               <TextInput value={description} onChangeText={(v) => setDescription(v.slice(0, 500))} maxLength={500} multiline placeholder="Add a description so people know what to expect…" placeholderTextColor={colors.textSecondary} accessibilityLabel="LIVE stream description" style={[fieldStyle, { minHeight: 76, textAlignVertical: 'top' }]} />
 
@@ -388,6 +398,7 @@ export default function LiveHubScreen({ navigation, route }) {
                 <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>{busy ? 'Connecting…' : 'Go LIVE'}</Text>
               </TouchableOpacity>
               {!!startStage && <Text accessibilityRole="status" style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>{startStage}</Text>}
+              </>}
             </GlassCard>
 
             {invitations.length > 0 && (
@@ -535,7 +546,7 @@ export default function LiveHubScreen({ navigation, route }) {
             </View>
             <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>No LIVE streams in this view</Text>
             <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', lineHeight: 19 }]}>
-              {activeFilter === 'following' ? 'Follow creators to see their broadcasts here.' : 'Start a broadcast or check back when your community is live.'}
+              {searchQuery.trim() ? 'Try a different title or creator name, or clear your search.' : activeFilter === 'following' ? 'Follow creators to see their broadcasts here.' : 'Start a broadcast or check back when your community is live.'}
             </Text>
           </GlassCard>
         ) : null}

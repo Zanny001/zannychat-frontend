@@ -36,8 +36,10 @@ test('LIVE hub uses the shared premium theme and supports focused discovery filt
   assert.ok(screen.includes("import { useTheme } from '../theme/ThemeContext'"));
   assert.ok(screen.includes("import GlassCard from '../components/GlassCard'"));
   assert.ok(screen.includes("const STREAM_FILTERS"));
-  assert.ok(screen.includes("activeFilter === 'following'"));
-  assert.ok(screen.includes("activeFilter === 'public'"));
+  assert.ok(screen.includes("import { filterLiveStreams } from '../utils/liveDiscovery'"));
+  assert.ok(screen.includes('const visibleStreams = filterLiveStreams(streams'));
+  assert.ok(screen.includes('filter: activeFilter'));
+  assert.ok(screen.includes('followingIds'));
   assert.ok(screen.includes('Your stage. Your people.'));
 });
 
@@ -90,4 +92,13 @@ test('Go LIVE primary button uses its semantic foreground color for all palette 
   assert.ok(screen.includes('<ActivityIndicator color={colors.onPrimary} />'));
   assert.ok(screen.includes('name="radio" size={20} color={colors.onPrimary}'));
   assert.ok(screen.includes("{ color: colors.onPrimary }]}>{busy ? 'Connecting…' : 'Go LIVE'}"));
+});
+
+
+test('LIVE hub prioritizes discovery and keeps broadcast setup available in a collapsed panel', () => {
+  assert.ok(screen.includes('const [showComposer, setShowComposer] = useState(false)'));
+  assert.ok(screen.includes('setShowComposer((value) => !value)'));
+  assert.ok(screen.includes('{showComposer && <>'));
+  assert.ok(screen.includes('Search LIVE titles or creators'));
+  assert.ok(screen.includes('Clear LIVE search'));
 });
