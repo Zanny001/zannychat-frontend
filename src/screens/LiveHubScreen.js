@@ -107,6 +107,7 @@ export default function LiveHubScreen({ navigation, route }) {
       setError('');
     } catch (e) {
       setError(e?.message || 'LIVE discovery is unavailable.');
+      setReplayError('LIVE replays could not be refreshed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -430,7 +431,7 @@ export default function LiveHubScreen({ navigation, route }) {
               </View>
             )}
 
-            {(replays.length > 0 || !!replayError || !loading) && (
+            {(replays.length > 0 || !!replayError || (!loading && !error)) && (
               <View style={{ paddingHorizontal: spacing.md, marginBottom: spacing.md, gap: spacing.sm }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
                   <Ionicons name="play-circle" size={19} color={colors.primary} />
