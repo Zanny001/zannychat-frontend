@@ -6,7 +6,7 @@ concurrency:
 
 on:
   push:
-    branches: [main, feat/advanced-calling-live-1.2.241]
+    branches: [main, feat/advanced-calling-live-1.2.241, feat/live-premium-stage-studio]
   pull_request:
     branches: [main, feat/advanced-calling-live-1.2.241]
 
