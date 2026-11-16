@@ -78,9 +78,10 @@ class GoogleOAuthNavigationRegressionTests(unittest.TestCase):
 
     def test_token_refresh_does_not_reset_navigation_and_push_is_deduplicated(self):
         source = (ROOT / 'App.js').read_text()
-        self.assertIn("if (event === 'SIGNED_IN')", source)
-        self.assertIn('registerPushOnce()', source)
-        self.assertIn('let pushRegistrationStarted = false', source)
+        self.assertIn("event === 'SIGNED_IN' || event === 'INITIAL_SESSION'", source)
+        self.assertIn('registerPushOnce(session.user?.id)', source)
+        self.assertIn('createPushRegistrationCoordinator(registerForPushNotifications)', source)
+        self.assertIn('pushRegistration.reset()', source)
         self.assertIn('!authStateObserved', source)
         self.assertIn('if (mounted && !authStateObserved)', source)
         self.assertNotIn("event === 'TOKEN_REFRESHED'))", source)

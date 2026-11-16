@@ -39,7 +39,7 @@ Notifications.setNotificationHandler({
 // IMPORTANT: remote push requires a physical device AND a development
 // build — it does not work in Expo Go on Android (SDK 53+) or in
 // Snack's Web/iframe preview at all. See the frontend README.
-export async function registerForPushNotifications() {
+export async function registerForPushNotifications(expectedUserId = null) {
   try {
     await Notifications.setNotificationCategoryAsync('incoming-call', [
       { identifier: 'ANSWER_CALL', buttonTitle: 'Answer', options: { opensAppToForeground: true } },
@@ -95,13 +95,13 @@ export async function registerForPushNotifications() {
     const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
     const { data: authData, error: authError } = await supabase.auth.getUser();
     if (authError) throw authError;
-    if (!authData?.user) return null;
+    if (!authData?.user || (expectedUserId && authData.user.id !== expectedUserId)) return null;
 
     const { error: tokenError } = await supabase
       .from('push_tokens')
       .upsert(
         {
-          user_id: authData.user.id,
+          user_id: expectedUserId || authData.user.id,
           expo_push_token: token,
           platform: Platform.OS,
           updated_at: new Date().toISOString(),
