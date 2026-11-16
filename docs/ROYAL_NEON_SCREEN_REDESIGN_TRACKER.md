@@ -223,3 +223,8 @@ The deployed web CSP in `vercel.json` and `netlify.toml` currently sets `frame-a
 ### Next screen-by-screen pass
 
 The next interface implementation target is the Chat screen, followed by New Chat, Forward Message, Saved Messages, Drafts, Pinned Messages, Chat Folders, Shared Media and Chat Appearance. Keep the canonical 48 navigation experiences / 46 registered screen modules inventory; do not truncate work to the old 36-screen estimate. Each screen remains open until its real interaction states, responsive widths, keyboard/safe-area behavior, light/dark and custom palettes, accessibility and supported-platform runtime behavior are verified.
+
+
+### Vercel permission verification
+
+The connected account is confirmed as an `OWNER` of the `ZannyChat` Hobby team, but the team currently returns zero projects. Both the Vercel project-create and Git-linked project-create operations returned HTTP 403 `forbidden` for `zannychat`. The Vercel CLI fallback is not available in the connected execution environment. No project or deployment was created. This is not a missing team-owner role; project creation must be completed in the Vercel dashboard or through the owner's authenticated CLI, then the project can be inspected/configured here.
