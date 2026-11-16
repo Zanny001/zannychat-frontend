@@ -98,6 +98,9 @@ test('direct LiveKit transition revalidates the accepted call and handles concur
     assert.match(navigate, /latestCall\.status !== 'accepted'/);
     assert.match(navigate, /latestCall\.group_room_id/);
     assert.match(navigate, /if \(!activeRef\.current \|\| endingRef\.current\) return false/);
+    assert.ok(navigate.indexOf("if (latestCall.status !== 'accepted')") < navigate.indexOf("if (latestCall.group_room_id)"));
+    assert.match(source, /if \(!stateError && \(!latestCall \|\| latestCall\.status !== 'accepted'\)\)/);
+    assert.ok(source.indexOf("if (!stateError && (!latestCall || latestCall.status !== 'accepted'))") < source.indexOf("if (!stateError && latestCall.group_room_id)"));
     assert.match(source, /const \{ data: latestCall, error: stateError \} = await supabase\.from\('call_sessions'\)/);
   }
   assert.match(nativeCall, /if \(isTerminalCallStatus\(next\.status\)\) \{\s*endingRef\.current = true;/);
