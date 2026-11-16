@@ -23,6 +23,10 @@ The application has substantial implemented functionality, but the current evide
 | Frontend #89 — LIVE Creator Studio | Merged | Rebased implementation from #88 is already in main: creator-only participant metrics, host/guest labels, guest capacity and native/web controls. Runtime acceptance remains outstanding. |
 | Frontend #87 — LIVE discovery | Merged | Search/filter and replay-ready navigation improvements are in main. Search is limited to the returned feed, not global/paginated search. |
 | Frontend #91 — Crown Aurora foundation | Merged | Premium visual foundation and source-level UI/UX audit/tracker are in main. Individual screen visual/device sign-off remains incomplete. |
+| Frontend #90 — native auth sign-out revocation | Merged | Revocation marker persists in Keychain/Keystore and AsyncStorage; reinstall simulation is covered by a contract. |
+| Frontend #93 — account-scoped drafts/outbox cleanup | Merged | Status drafts and pending local outboxes are isolated/cleared by account on deletion. |
+| Frontend #95 — privacy-aware story avatars | Merged | Contact story avatars use privacy-filtered profile projections and private signed URLs where appropriate. |
+| Frontend #98 — saved/folder cleanup | Merged | Deleted-account local Saved Messages and Chat Folders are cleared; these features remain device-local. |
 | Frontend #88 — original stacked Creator Studio PR | Closed, not merged | Superseded by rebased PR #89; do not reopen. |
 | Frontend #84 — direct-call LiveKit client | Open draft | Automated client checks were in progress on the latest observed run; physical-device/browser calling acceptance remains outstanding. |
 | Frontend #102 — permanent message retry failures (rebased) | Open draft | API attempts same-ID recovery after SQLSTATE 23505. An earlier Premium workflow failed one stale source-contract assertion; corrected in commit b30c5ac, fresh CI result not yet observed. |
@@ -55,6 +59,8 @@ The application has substantial implemented functionality, but the current evide
 ## Workstream D — Security and privacy
 
 **Production SQL inventory:** 67 public SECURITY DEFINER functions inspected. Zero have unpinned search_path, zero grant EXECUTE to PUBLIC, and zero grant EXECUTE to anon. Twenty-eight are executable by authenticated users; sampled bodies bind authorization to auth.uid(), conversation membership, ownership, visibility and/or block relationships. This is a positive baseline, not a complete penetration test.
+
+**RLS and storage inventory:** sampled live catalog shows RLS enabled on the audited public tables; zero anon table privileges were found. Twenty-six RLS-protected tables grant at least one direct operation to authenticated users, with policies scoped to ownership, conversation membership, participant identity or eligible status audience. Call-session UPDATE has broad column grants, but its SECURITY DEFINER trigger validates immutable identity fields and enforces the call state machine. Six storage buckets exist: only `avatars` is public; `chat-media`, `status-media`, `live-replays` and `private-avatars` are private. LIVE replay objects have no direct client storage policies, consistent with service-role-only upload/playback signing. Storage policy definitions for chat media, private avatars and status media include conversation membership, owner path and audience authorization checks.
 
 **Advisor items:** leaked-password protection is disabled; enablement needs an Auth configuration change and confirmation that it is available in the current plan. Advisor reports for RLS-enabled tables without policies are consistent with backend-only tables where direct anon/authenticated grants are absent; do not add broad policies to silence the advisor. Review all authenticated SECURITY DEFINER functions individually and retain regression tests.
 
