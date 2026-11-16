@@ -27,8 +27,10 @@ This audit reviews the current frontend LIVE hub, creator profile, native/web LI
 
 ## Current implementation started in this branch
 
-- Added local LIVE search across stream title, description and creator display-name fields already returned by the API.
+- Added local LIVE search across stream title, description and creator display-name fields.
+- Paired backend PR #109 adds `creator_name` to public and followed discovery results after existing visibility/block filtering; the frontend PR depends on that API change for creator-name search.
 - Search composes with existing All / Following / Public filters and does not alter backend permissions or widen visibility.
+- Collapsed the broadcast setup composer by default so discovery is the primary hub task; creators can expand the existing setup without losing any controls.
 - Added automated tests for case-insensitive search, creator names, combined filters and empty/malformed input.
 
 ## Design direction
