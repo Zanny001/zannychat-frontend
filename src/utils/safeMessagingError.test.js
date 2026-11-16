@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { getSafeMessageSendError } from './safeMessagingError.js';
 
 test('message send errors map known permission and stale-reference failures to safe guidance', () => {
@@ -40,4 +41,12 @@ test('network and unknown transient failures remain eligible for bounded retry',
   assert.equal(isPermanentMessageSendError(new Error('fetch failed')), false);
   assert.equal(isPermanentMessageSendError({ code: '08006', message: 'connection failure' }), false);
   assert.equal(isPermanentMessageSendError({ message: 'Message could not be saved. Please try again.' }), false);
+});
+
+
+test('message API preserves the database error code while replacing sensitive error details', async () => {
+  const api = await readFile(new URL('../services/api.js', import.meta.url), 'utf8');
+  assert.match(api, /const safeError = new Error\(getSafeMessageSendError\(error\)\)/);
+  assert.match(api, /if \(typeof error\?\.code === 'string'\) safeError\.code = error\.code/);
+  assert.doesNotMatch(api, /throw error;\s*\/\/ Do not expose raw Postgres errors/);
 });
