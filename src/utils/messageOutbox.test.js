@@ -68,7 +68,7 @@ test('chat screen surfaces queue persistence failure instead of showing an unque
   const source = await readFile(new URL('../screens/ChatScreen.js', import.meta.url), 'utf8');
   assert.match(source, /let queued = false/);
   assert.match(source, /queued = await savePendingMessage/);
-  assert.match(source, /if \(queued\) \{/);
+  assert.match(source, /if \(queued\) setPendingOutbox\(/);
   assert.match(source, /pending-message queue is full or local storage is unavailable/);
 });
 
