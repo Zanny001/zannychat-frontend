@@ -273,7 +273,7 @@ test('LIVE navigation attempts are intercepted and use the same confirmed exit h
 
 
 test('native LIVE viewers explicitly auto-subscribe to creator and guest media tracks', () => {
-  assert.ok(screen.includes('options={{ adaptiveStream: true, dynacast: true, autoSubscribe: true }}'));
+  assert.ok(screen.includes('options={{ adaptiveStream: true, dynacast: true }} connectOptions={{ autoSubscribe: true }}'));
 });
 
 
@@ -286,4 +286,11 @@ test('native LIVE stage uses a premium horizontally scrollable action rail on co
   assert.equal(screen.includes('minWidth: 48, height: 44'), false);
   assert.ok(screen.includes("borderColor: hexToRgba(colors.accent, 0.28)"));
   assert.ok(screen.includes("accessibilityLabel={creatorMode ? 'End LIVE stream' : 'Leave LIVE stream'}"));
+});
+
+
+test('LIVE creator-only controls derive from the authenticated server role, never navigation params', () => {
+  assert.ok(screen.includes("const creatorMode = connection?.role === 'creator';"));
+  assert.equal(screen.includes('route.params?.creatorMode || connection?.role'), false);
+  assert.ok(screen.includes("const publisherMode = Boolean(creatorMode || (connection?.role === 'guest' && connection?.canPublish === true && !demotedToViewer));"));
 });
