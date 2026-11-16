@@ -86,3 +86,18 @@ export function isMessageRetryDue(message, now = Date.now()) {
   const delayMs = Math.min(5 * 60 * 1000, 5000 * (2 ** Math.min(attempts, 6)));
   return now - lastAttempt >= delayMs;
 }
+
+
+/** Remove all queued text for one account after permanent account deletion. */
+export async function clearPendingMessagesForUser(userId) {
+  if (!userId) return false;
+  const prefix = getMessageOutboxStoragePrefix(userId);
+  try {
+    const keys = (await AsyncStorage.getAllKeys()).filter((key) => key.startsWith(prefix));
+    await Promise.all(keys.map((key) => serializeByKey(key, async () => {
+      await AsyncStorage.removeItem(key);
+      return true;
+    })));
+    return true;
+  } catch (_) { return false; }
+}
