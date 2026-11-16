@@ -6,9 +6,9 @@ concurrency:
 
 on:
   push:
-    branches: [main, feat/advanced-calling-live-1.2.241, feat/live-premium-stage-studio]
+    branches: [main, feat/advanced-calling-live-1.2.241, fix/livekit-remote-track-participant-stage]
   pull_request:
-    branches: [main, feat/advanced-calling-live-1.2.241]
+    branches: [main, feat/advanced-calling-live-1.2.241, fix/livekit-remote-track-participant-stage]
 
 jobs:
   client-quality:
