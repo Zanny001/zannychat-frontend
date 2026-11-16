@@ -13,7 +13,6 @@ export default function LiveReplayScreen({ route, navigation }) {
   const replayId = replay?.id || route.params?.replayId;
   const [playbackUrl, setPlaybackUrl] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
-  const [currentUserId, setCurrentUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
@@ -21,16 +20,6 @@ export default function LiveReplayScreen({ route, navigation }) {
     instance.loop = false;
     instance.muted = false;
   });
-
-  useEffect(() => {
-    let active = true;
-    getCurrentUser().then((user) => {
-      if (active) setCurrentUserId(user?.id || null);
-    }).catch(() => {
-      if (active) setCurrentUserId(null);
-    });
-    return () => { active = false; };
-  }, []);
 
   useEffect(() => {
     let active = true;
