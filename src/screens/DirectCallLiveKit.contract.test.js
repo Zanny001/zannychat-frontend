@@ -63,3 +63,15 @@ test('native call header reads video mode from parent-owned connection state, no
   assert.match(header, /connection\?\.callType \|\| callType/);
   assert.doesNotMatch(header, /\bisVideo\b|\btracks\b/);
 });
+
+
+test('late LiveKit token responses cannot resurrect a call after the user ends or leaves it', () => {
+  for (const source of [nativeCall, webCall]) {
+    const navigate = source.slice(source.indexOf('const navigateToDirectLiveKit'), source.indexOf('const endCall', source.indexOf('const navigateToDirectLiveKit')));
+    assert.match(navigate, /!activeRef\.current \|\| endingRef\.current/);
+    const end = source.slice(source.indexOf('const endCall'), source.indexOf('useEffect', source.indexOf('const endCall')));
+    assert.match(end, /if \(endingRef\.current\) return/);
+    assert.match(end, /endingRef\.current = true/);
+    assert.match(end, /if \(!endStatePersisted\) endingRef\.current = false/);
+  }
+});
