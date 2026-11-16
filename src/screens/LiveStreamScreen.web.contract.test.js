@@ -8,7 +8,7 @@ const native = fs.readFileSync(new URL('./LiveStreamScreen.js', import.meta.url)
 test('web LIVE connects to the browser LiveKit client using the server-issued URL and token', () => {
   assert.ok(web.includes("from 'livekit-client'"));
   assert.ok(web.includes('new Room({ adaptiveStream: true, dynacast: true })'));
-  assert.ok(web.includes('room.connect(connection.livekitUrl, connection.token)'));
+  assert.ok(web.includes('room.connect(connection.livekitUrl, connection.token, { autoSubscribe: true })'));
 });
 
 test('web LIVE publishers acquire and publish camera and microphone while viewers subscribe', () => {
@@ -48,10 +48,10 @@ test('native LIVE uses the React Native LiveKit SDK and toggles published tracks
 
 test('web LIVE renders each remote publisher in a labelled multi-participant stage grid', () => {
   assert.ok(web.includes('const [remoteVideoTracks, setRemoteVideoTracks] = useState([])'));
-  assert.ok(web.includes('setRemoteVideoTracks((current) => current.some((item) => item.sid === track.sid)'));
+  assert.ok(web.includes('setRemoteVideoTracks((current) => current.some((item) => item.track.sid === track.sid)'));
   assert.ok(web.includes('[...remoteVideoTracks].sort('));
-  assert.ok(web.includes('<RemoteVideoTile key={track.sid}'));
-  assert.ok(web.includes('track.participant.name || track.participant.identity'));
+  assert.ok(web.includes('<RemoteVideoTile key={item.track.sid}'));
+  assert.ok(web.includes('participant.name || participant.identity'));
 });
 
 test('web LIVE exposes all seven supported floating reaction choices', () => {
@@ -106,4 +106,60 @@ test('web LIVE route uses a stream ID and fetches its connection after navigatio
 
 test('web LIVE reactions refresh the server feed immediately after acceptance', () => {
   assert.ok(web.includes('if (result?.accepted) await refreshComments()'));
+});
+
+
+test('web LIVE uses the participant supplied by LiveKit TrackSubscribed instead of reading it from RemoteTrack', () => {
+  assert.ok(web.includes('const onSubscribed = (track, publication, participant) =>'));
+  assert.ok(web.includes('{ track, publication, participant }'));
+  assert.ok(web.includes('participant={item.participant}'));
+  assert.equal(web.includes('track.participant'), false);
+});
+
+test('web LIVE renders creator and remote guests together in one responsive stage', () => {
+  assert.ok(web.includes('const videoTileCount = remoteVideoTracks.length + (publisherMode ? 1 : 0)'));
+  assert.ok(web.includes('ref={localRef}'));
+  assert.ok(web.includes("creatorMode ? 'You · Creator' : 'You · Guest'"));
+  assert.ok(web.includes('<RemoteVideoTile key={item.track.sid}'));
+  assert.ok(web.includes('aspectRatio: 16 / 9'));
+});
+
+test('web LIVE keeps the stage accurate when remote cameras mute, unmute or unpublish', () => {
+  assert.ok(web.includes('const onUnpublished = (publication, participant) =>'));
+  assert.ok(web.includes('const onTrackMuted = (publication, participant) =>'));
+  assert.ok(web.includes('const onTrackUnmuted = (publication, participant) =>'));
+  assert.ok(web.includes('!participant.isLocal && publication.source === Track.Source.Camera'));
+  assert.ok(web.includes('room.on(RoomEvent.TrackUnpublished, onUnpublished)'));
+  assert.ok(web.includes('room.on(RoomEvent.TrackMuted, onTrackMuted)'));
+  assert.ok(web.includes('room.on(RoomEvent.TrackUnmuted, onTrackUnmuted)'));
+});
+
+test('web LIVE explicitly keeps automatic subscription enabled and surfaces failed remote subscriptions', () => {
+  assert.ok(web.includes('room.connect(connection.livekitUrl, connection.token, { autoSubscribe: true })'));
+  assert.ok(web.includes('RoomEvent.TrackSubscriptionFailed'));
+  assert.ok(web.includes('const onTrackSubscriptionFailed = (trackSid, participant) =>'));
+});
+
+
+test('web LIVE viewer presence heartbeat runs for connected waiting viewers and after reconnects', () => {
+  const heartbeatEffect = web.slice(web.indexOf("if (!stream?.id) return undefined;", web.indexOf("const refreshComments")), web.indexOf("const refreshComments"));
+  assert.ok(web.includes("roomRef.current?.state !== 'connected'"));
+  assert.ok(web.includes('room?.on(RoomEvent.Connected, heartbeat)'));
+  assert.ok(web.includes('room?.on(RoomEvent.Reconnected, heartbeat)'));
+  assert.ok(web.includes('room?.off(RoomEvent.Connected, heartbeat)'));
+  assert.ok(web.includes('room?.off(RoomEvent.Reconnected, heartbeat)'));
+  assert.ok(web.includes('setInterval(heartbeat, 30_000)'));
+});
+
+
+test('web LIVE creator-only controls derive from the authenticated server role, never navigation params', () => {
+  assert.ok(web.includes("const creatorMode = connection?.role === 'creator';"));
+  assert.equal(web.includes('route.params?.creatorMode || connection?.role'), false);
+  assert.ok(web.includes("const publisherMode = Boolean(creatorMode || (connection?.role === 'guest' && connection?.canPublish && !demotedToViewer));"));
+});
+
+
+test('web LIVE synchronizes initial camera and microphone controls with each server-issued publisher token', () => {
+  assert.ok(web.includes('setCamera(publisherMode);'));
+  assert.ok(web.includes('setMic(publisherMode);'));
 });

@@ -137,7 +137,7 @@ test('native and web LIVE screens synchronize the creator spotlight across parti
   assert.ok(webSource.includes("RoomEvent.ParticipantAttributesChanged"));
   assert.ok(webSource.includes('/spotlight'));
   assert.ok(webSource.includes('spotlightGuest'));
-  assert.ok(webSource.includes('spotlight={track.participant.attributes?.zannychat_spotlight'));
+  assert.ok(webSource.includes('spotlight={item.participant.attributes?.zannychat_spotlight'));
 });
 
 test('removed native guests are demoted to audience mode without disconnecting', () => {
@@ -181,7 +181,7 @@ test('LIVE video tiles use a responsive moderate 16:9 frame instead of oversized
   assert.ok(screen.includes("numColumns={stageGridVideos.length === 1 && !spotlightVideo ? 1 : 2}"));
   assert.ok(webSource.includes('aspectRatio: 16 / 9'));
   assert.ok(webSource.includes('maxWidth: spotlight || single ? 560 : 520'));
-  assert.ok(webSource.includes('single={remoteVideoTracks.length === 1}'));
+  assert.ok(webSource.includes('single={videoTileCount === 1}'));
   assert.ok(!webSource.includes('minHeight: spotlight ? 310 : 190'));
 });
 
@@ -209,7 +209,9 @@ test('native and web LIVE sessions renew participant presence and support stale 
   const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.ok(web.includes("`/live/${stream.id}/heartbeat`"));
   assert.ok(web.includes('setInterval(heartbeat, 30_000)'));
-  assert.ok(web.includes("status !== 'Connected'"));
+  assert.ok(web.includes("roomRef.current?.state !== 'connected'"));
+  assert.ok(web.includes('room?.on(RoomEvent.Connected, heartbeat)'));
+  assert.ok(web.includes('room?.on(RoomEvent.Reconnected, heartbeat)'));
 });
 
 
@@ -233,4 +235,73 @@ test('LIVE navigation serializes only a stable stream ID and fetches a fresh aut
 test('LIVE reactions refresh the server feed immediately after an accepted reaction', () => {
   assert.ok(screen.includes('if (result?.accepted) await refreshComments()'));
   assert.ok(screen.includes('if (!stream?.id)'));
+});
+
+
+test('LIVE end and leave failures do not silently navigate away from an active room', () => {
+  const leaveStart = screen.indexOf('  const leave = async () => {');
+  const leaveEnd = screen.indexOf('\n\n  const sendComment', leaveStart);
+  const leave = screen.slice(leaveStart, leaveEnd);
+  assert.ok(leave.includes('if (!stream?.id || endedRef.current || busy) return;'));
+  assert.ok(leave.includes('endedRef.current = true;'));
+  assert.ok(leave.includes('catch (error)'));
+  assert.ok(leave.includes('endedRef.current = false;'));
+  assert.ok(leave.includes("creatorMode ? 'Could not end LIVE' : 'Could not leave LIVE'"));
+  assert.ok(leave.indexOf('navigation.goBack()') < leave.indexOf('catch (error)') || leave.includes('navigation.goBack();\n    } catch (error)'));
+  const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  const webLeaveStart = web.indexOf('  const leave = async () => {');
+  const webLeaveEnd = web.indexOf('\n  const toggleCamera', webLeaveStart);
+  const webLeave = web.slice(webLeaveStart, webLeaveEnd);
+  assert.ok(webLeave.includes('endedRef.current = false;'));
+  assert.ok(webLeave.includes('catch (err)'));
+  assert.ok(webLeave.includes("roomRef.current?.disconnect()")); 
+  assert.ok(webLeave.indexOf('navigation.goBack()') < webLeave.indexOf('catch (err)') || webLeave.includes('navigation.goBack();\n    } catch (err)'));
+});
+
+
+test('LIVE navigation attempts are intercepted and use the same confirmed exit handler', () => {
+  assert.ok(screen.includes("navigation.addListener('beforeRemove', (event) => {"));
+  assert.ok(screen.includes('event.preventDefault();'));
+  assert.ok(screen.includes('leaveRef.current?.();'));
+  assert.ok(screen.includes('leaveRef.current = leave;'));
+  const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(web.includes("navigation.addListener('beforeRemove', (event) => {"));
+  assert.ok(web.includes('event.preventDefault();'));
+  assert.ok(web.includes('leaveRef.current?.();'));
+  assert.ok(web.includes('leaveRef.current = leave;'));
+});
+
+
+test('native LIVE viewers explicitly auto-subscribe to creator and guest media tracks', () => {
+  assert.ok(screen.includes('options={{ adaptiveStream: true, dynacast: true }} connectOptions={{ autoSubscribe: true }}'));
+});
+
+
+test('native LIVE stage uses a premium horizontally scrollable action rail on compact screens', () => {
+  assert.ok(screen.includes('ScrollView, StatusBar'));
+  assert.ok(screen.includes('showsHorizontalScrollIndicator={false}'));
+  assert.ok(screen.includes('paddingTop: 120'));
+  assert.ok(screen.includes('width: 48, height: 48'));
+  assert.ok(screen.includes('minWidth: 48, minHeight: 48'));
+  assert.equal(screen.includes('minWidth: 48, height: 44'), false);
+  assert.ok(screen.includes("borderColor: hexToRgba(colors.accent, 0.28)"));
+  assert.ok(screen.includes("accessibilityLabel={creatorMode ? 'End LIVE stream' : 'Leave LIVE stream'}"));
+});
+
+
+test('LIVE creator-only controls derive from the authenticated server role, never navigation params', () => {
+  assert.ok(screen.includes("const creatorMode = connection?.role === 'creator';"));
+  assert.equal(screen.includes('route.params?.creatorMode || connection?.role'), false);
+  assert.ok(screen.includes("const publisherMode = Boolean(creatorMode || (connection?.role === 'guest' && connection?.canPublish === true && !demotedToViewer));"));
+});
+
+
+test('native and web LIVE synchronize camera and microphone controls with each server-issued publisher token', () => {
+  const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(screen.includes('setCameraEnabled(publisherMode);'));
+  assert.ok(screen.includes('setMicrophoneEnabled(publisherMode);'));
+  assert.ok(screen.includes("}, [connection?.token]);"));
+  assert.ok(web.includes('setCamera(publisherMode);'));
+  assert.ok(web.includes('setMic(publisherMode);'));
+  assert.ok(web.includes("}, [connection?.token]);"));
 });

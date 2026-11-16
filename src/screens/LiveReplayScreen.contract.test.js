@@ -31,3 +31,11 @@ test('replay privacy copy reflects the original LIVE audience access rules', () 
   assert.ok(liveStream.includes("access follows this LIVE's audience settings"));
   assert.ok(liveStream.includes("access follows the stream's audience settings"));
 });
+
+
+test('LIVE replay deletion control is shown only to the authenticated creator', () => {
+  assert.ok(screen.includes("import { getCurrentUser } from '../services/api';"));
+  assert.ok(screen.includes('const [currentUserId, setCurrentUserId] = useState(null)'));
+  assert.ok(screen.includes('getCurrentUser().then((user) =>'));
+  assert.ok(screen.includes('replay?.creatorId && replay.creatorId === currentUserId'));
+});

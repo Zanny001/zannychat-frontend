@@ -3,6 +3,7 @@ import { ActivityIndicator, Platform, SafeAreaView, StatusBar, Text, TouchableOp
 import { Ionicons } from '@expo/vector-icons';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { backendFetch } from '../services/backendClient';
+import { getCurrentUser } from '../services/api';
 import { useTheme } from '../theme/ThemeContext';
 import { confirmAction, showAppAlert } from '../utils/appDialogs';
 
@@ -11,6 +12,7 @@ export default function LiveReplayScreen({ route, navigation }) {
   const replay = route.params?.replay;
   const replayId = replay?.id || route.params?.replayId;
   const [playbackUrl, setPlaybackUrl] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
@@ -18,6 +20,16 @@ export default function LiveReplayScreen({ route, navigation }) {
     instance.loop = false;
     instance.muted = false;
   });
+
+  useEffect(() => {
+    let active = true;
+    getCurrentUser().then((user) => {
+      if (active) setCurrentUserId(user?.id || null);
+    }).catch(() => {
+      if (active) setCurrentUserId(null);
+    });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -64,7 +76,7 @@ export default function LiveReplayScreen({ route, navigation }) {
           <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{replay?.streamTitle || 'LIVE replay'}</Text>
           <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>Secure replay · audience access rules apply · seven-day expiry</Text>
         </View>
-        {replay?.creatorId ? (
+        {replay?.creatorId && replay.creatorId === currentUserId ? (
           <TouchableOpacity onPress={async () => {
             const confirmed = await confirmAction({ title: 'Delete LIVE replay?', message: 'This permanently deletes the saved video.', confirmText: 'Delete' });
             if (!confirmed) return;

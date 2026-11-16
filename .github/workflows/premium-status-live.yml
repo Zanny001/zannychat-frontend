@@ -2,9 +2,9 @@ name: Premium status and LIVE quality
 
 on:
   push:
-    branches: [feat/premium-status-live-1.2.244]
+    branches: [feat/premium-status-live-1.2.244, fix/livekit-remote-track-participant-stage]
   pull_request:
-    branches: [main]
+    branches: [main, fix/livekit-remote-track-participant-stage]
 
 concurrency:
   group: premium-status-live-${{ github.ref }}
