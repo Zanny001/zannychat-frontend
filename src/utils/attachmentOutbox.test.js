@@ -31,3 +31,14 @@ test('chat screen records a failed retry instead of silently leaving it unchange
   assert.match(source, /recordAttachmentRetryFailure\(myUserId, conversation\.id, item\.id, error\)/);
   assert.match(source, /Attachment still waiting/);
 });
+
+
+test('account deletion clears only the deleted user’s pending attachment outbox', async () => {
+  const service = await readFile(new URL('../services/attachmentOutbox.js', import.meta.url), 'utf8');
+  const api = await readFile(new URL('../services/api.js', import.meta.url), 'utf8');
+  assert.match(service, /clearPendingAttachmentsForUser/);
+  assert.match(service, /getAttachmentOutboxStoragePrefix/);
+  assert.match(service, /AsyncStorage\.getAllKeys\(\)/);
+  assert.match(service, /key\.startsWith\(prefix\)/);
+  assert.match(api, /clearPendingAttachmentsForUser\(userData\.user\.id\)/);
+});
