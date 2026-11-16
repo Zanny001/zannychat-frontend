@@ -236,3 +236,24 @@ test('LIVE reactions refresh the server feed immediately after an accepted react
   assert.ok(screen.includes('if (result?.accepted) await refreshComments()'));
   assert.ok(screen.includes('if (!stream?.id)'));
 });
+
+
+test('LIVE end and leave failures do not silently navigate away from an active room', () => {
+  const leaveStart = screen.indexOf('  const leave = async () => {');
+  const leaveEnd = screen.indexOf('\n\n  const sendComment', leaveStart);
+  const leave = screen.slice(leaveStart, leaveEnd);
+  assert.ok(leave.includes('if (!stream?.id || endedRef.current || busy) return;'));
+  assert.ok(leave.includes('endedRef.current = true;'));
+  assert.ok(leave.includes('catch (error)'));
+  assert.ok(leave.includes('endedRef.current = false;'));
+  assert.ok(leave.includes("creatorMode ? 'Could not end LIVE' : 'Could not leave LIVE'"));
+  assert.ok(leave.indexOf('navigation.goBack()') < leave.indexOf('catch (error)') || leave.includes('navigation.goBack();\n    } catch (error)'));
+  const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  const webLeaveStart = web.indexOf('  const leave = async () => {');
+  const webLeaveEnd = web.indexOf('\n  const toggleCamera', webLeaveStart);
+  const webLeave = web.slice(webLeaveStart, webLeaveEnd);
+  assert.ok(webLeave.includes('endedRef.current = false;'));
+  assert.ok(webLeave.includes('catch (err)'));
+  assert.ok(webLeave.includes("roomRef.current?.disconnect()")); 
+  assert.ok(webLeave.indexOf('navigation.goBack()') < webLeave.indexOf('catch (err)') || webLeave.includes('navigation.goBack();\n    } catch (err)'));
+});
