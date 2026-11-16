@@ -332,14 +332,25 @@ export default function LiveStreamScreen({ route, navigation }) {
   }, [stream?.id, connection?.livekitUrl, connection?.token, creatorMode, connectionLoading]);
 
   useEffect(() => {
-    if (!stream?.id || status !== 'Connected') return undefined;
+    if (!stream?.id) return undefined;
     let active = true;
-    const heartbeat = () => backendFetch(`/live/${stream.id}/heartbeat`, { method: 'POST' })
-      .catch((error) => { if (active) console.warn('[live] presence heartbeat failed:', error?.message || error); });
+    const room = roomRef.current;
+    const heartbeat = () => {
+      if (!active || roomRef.current?.state !== 'connected') return;
+      backendFetch(`/live/${stream.id}/heartbeat`, { method: 'POST' })
+        .catch((error) => { if (active) console.warn('[live] presence heartbeat failed:', error?.message || error); });
+    };
     heartbeat();
+    room?.on(RoomEvent.Connected, heartbeat);
+    room?.on(RoomEvent.Reconnected, heartbeat);
     const interval = setInterval(heartbeat, 30_000);
-    return () => { active = false; clearInterval(interval); };
-  }, [stream?.id, status]);
+    return () => {
+      active = false;
+      clearInterval(interval);
+      room?.off(RoomEvent.Connected, heartbeat);
+      room?.off(RoomEvent.Reconnected, heartbeat);
+    };
+  }, [stream?.id, status, connection?.token]);
 
   const refreshComments = useCallback(async () => {
     if (!stream?.id) return;
