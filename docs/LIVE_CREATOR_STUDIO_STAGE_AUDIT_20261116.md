@@ -8,7 +8,7 @@ This increment is stacked on the LIVE media reliability branch so role labels an
 
 - Creator and guest video tiles carry explicit HOST / GUEST role chips on native and web clients. The creator identity comes from the joined stream's creator ID, not a client-supplied display mode.
 - The stage manager is presented as Creator Studio, with measured counts from the existing authenticated participants response:
-  - currently joined viewers;
+  - currently joined viewers returned in the participant list (the current endpoint caps the list at 500, so the label is explicitly 'Viewers listed', not total audience);
   - currently joined guest publishers on stage, against the existing five-guest limit;
   - remaining guest slots.
 - Existing invite, microphone mute, spotlight, removal and moderator actions remain in place.
