@@ -427,11 +427,19 @@ export default function LiveStreamScreen({ route, navigation }) {
   }, [creatorMode, stream?.id, stream?.allow_guests]);
 
   const leave = async () => {
-    if (!stream?.id || endedRef.current) return;
-    endedRef.current = true; setBusy(true);
-    try { await backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' }); }
-    catch (err) { setError(err?.message || 'Could not close the LIVE session.'); }
-    roomRef.current?.disconnect(); setBusy(false); navigation.goBack();
+    if (!stream?.id || endedRef.current || busy) return;
+    setBusy(true);
+    try {
+      await backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' });
+      endedRef.current = true;
+      roomRef.current?.disconnect();
+      setBusy(false);
+      navigation.goBack();
+    } catch (err) {
+      endedRef.current = false;
+      setBusy(false);
+      setError(err?.message || (creatorMode ? 'Could not end the LIVE session.' : 'Could not leave the LIVE session.'));
+    }
   };
   const toggleCamera = async () => {
     try { const next = !camera; await roomRef.current?.localParticipant.setCameraEnabled(next); setCamera(next); }
