@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { serializeByKey } from '../utils/serializeByKey';
 import { getAttachmentNextRetryAt } from '../utils/attachmentRetryPolicy';
-import { getAttachmentOutboxStorageKey } from '../utils/attachmentOutboxKeys';
+import { getAttachmentOutboxStorageKey, getAttachmentOutboxStoragePrefix } from '../utils/attachmentOutboxKeys';
 import { normalizePendingAttachments } from '../utils/normalizePendingAttachments';
 import { getSafeRetryError } from '../utils/safeRetryError';
 
