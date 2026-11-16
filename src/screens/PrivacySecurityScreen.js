@@ -184,8 +184,11 @@ export default function PrivacySecurityScreen({ navigation }) {
           onPress: async () => {
             setDeletingAccount(true);
             try {
-              await deleteAccount(deletePassword || undefined);
-              Alert.alert('Account deleted', 'Your ZannyChat account has been deleted.', [
+              const deletionResult = await deleteAccount(deletePassword || undefined);
+              const cleanupMessage = deletionResult?.localCleanupComplete
+                ? 'Your ZannyChat account has been deleted. Its local drafts and pending queue records were cleared.'
+                : 'Your ZannyChat account has been deleted, but some local drafts or pending queue records could not be cleared. Clear ZannyChat app storage on this device to remove any remaining local data.';
+              Alert.alert('Account deleted', cleanupMessage, [
                 { text: 'Continue', onPress: () => navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] }) },
               ]);
             } catch (error) {
