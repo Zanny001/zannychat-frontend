@@ -68,3 +68,10 @@ These logs are database/API evidence only. They do not contain LiveKit RTP/media
 - Real two-account browser testing and two-device native testing remain release gates.
 - No Supabase schema, data, RLS, or storage policy changes were made.
 - No production deployment or end-to-end media success is claimed.
+
+
+## Additional audit finding — viewer presence heartbeat
+
+A second confirmed browser defect was identified during the renewed review. The web heartbeat effect required the UI status to equal the exact string `Connected`, but viewers are assigned `Connected · waiting for the creator`. That meant connected waiting viewers skipped periodic presence heartbeats. The effect now checks the actual LiveKit room connection state, sends heartbeats on initial connection and reconnect, and removes its event listeners on cleanup. A regression contract was added.
+
+This fix improves participant presence accuracy; it does not itself establish that RTP media is flowing. Real viewer playback remains an acceptance gate.
