@@ -529,6 +529,25 @@ export default function LiveStreamScreen({ route, navigation }) {
       setPanel(panel === 'stage' ? '' : 'stage');
     } catch (err) { setError(err?.message || 'Could not load LIVE stage participants.'); }
   };
+
+  useEffect(() => {
+    if (!creatorMode || panel !== 'stage' || !stream?.id) return undefined;
+    let active = true;
+    const refreshStudioParticipants = () => {
+      backendFetch(`/live/${stream.id}/participants`)
+        .then((result) => {
+          if (active) setParticipants(Array.isArray(result?.participants) ? result.participants : []);
+        })
+        .catch((refreshError) => {
+          if (active) console.warn('[live] creator studio refresh failed:', refreshError?.message || refreshError);
+        });
+    };
+    const interval = setInterval(refreshStudioParticipants, 15_000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [creatorMode, panel, stream?.id]);
   const reviewGuestRequest = async (userId, statusValue) => {
     try {
       await backendFetch(`/live/${stream.id}/guest-requests/${userId}`, {
