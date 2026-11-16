@@ -11,7 +11,11 @@ function encodeKeyPart(value, fallback) {
   }
 }
 
+export function getMessageOutboxStoragePrefix(userId) {
+  return `zannychat:outbox:v1:${encodeKeyPart(userId, 'guest')}:`;
+}
+
 export function getMessageOutboxStorageKey(userId, conversationId) {
   if (conversationId == null || String(conversationId) === '') return null;
-  return `zannychat:outbox:v1:${encodeKeyPart(userId, 'guest')}:${encodeKeyPart(conversationId, '')}`;
+  return `${getMessageOutboxStoragePrefix(userId)}${encodeKeyPart(conversationId, '')}`;
 }
