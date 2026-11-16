@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { clearChannelPostDraft, saveChannelPostDraft } from './channelDraftStorage.js';
+import { clearChannelPostDraft, clearChannelPostDraftsForUser, saveChannelPostDraft } from './channelDraftStorage.js';
 
 function deferred() {
   let resolve;
@@ -46,4 +46,26 @@ test('invalid storage requests safely return false', async () => {
   assert.equal(await saveChannelPostDraft(null, 'key', 'draft'), false);
   assert.equal(await saveChannelPostDraft({ setItem() {} }, null, 'draft'), false);
   assert.equal(await clearChannelPostDraft({}, 'key'), false);
+});
+
+
+test('account deletion clears only that user’s channel drafts and recent channel list', async () => {
+  const values = new Map([
+    ['@zannychat/channel-post-draft/user-a/channel-1', 'private A draft'],
+    ['@zannychat/channel-post-draft/user-a/channel-2', 'private A draft 2'],
+    ['@zannychat/channel-post-draft/user-b/channel-1', 'private B draft'],
+    ['zannychat:recent-channels:user-a', '["channel-1"]'],
+    ['zannychat:recent-channels:user-b', '["channel-1"]'],
+  ]);
+  const storage = {
+    getAllKeys: async () => [...values.keys()],
+    multiRemove: async (keys) => keys.forEach((key) => values.delete(key)),
+    removeItem: async (key) => values.delete(key),
+  };
+  assert.equal(await clearChannelPostDraftsForUser(storage, 'user-a'), true);
+  assert.equal(values.has('@zannychat/channel-post-draft/user-a/channel-1'), false);
+  assert.equal(values.has('@zannychat/channel-post-draft/user-a/channel-2'), false);
+  assert.equal(values.has('zannychat:recent-channels:user-a'), false);
+  assert.equal(values.has('@zannychat/channel-post-draft/user-b/channel-1'), true);
+  assert.equal(values.has('zannychat:recent-channels:user-b'), true);
 });

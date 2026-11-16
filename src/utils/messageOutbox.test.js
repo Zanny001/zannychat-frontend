@@ -70,3 +70,14 @@ test('chat screen surfaces queue persistence failure instead of showing an unque
   assert.match(source, /if \(queued\) \{/);
   assert.match(source, /pending-message queue is full or local storage is unavailable/);
 });
+
+
+test('account deletion clears only the deleted user’s pending text outbox', async () => {
+  const service = await readFile(new URL('../services/messageOutbox.js', import.meta.url), 'utf8');
+  const api = await readFile(new URL('../services/api.js', import.meta.url), 'utf8');
+  assert.match(service, /clearPendingMessagesForUser/);
+  assert.match(service, /getMessageOutboxStoragePrefix/);
+  assert.match(service, /AsyncStorage\.getAllKeys\(\)/);
+  assert.match(service, /key\.startsWith\(prefix\)/);
+  assert.match(api, /clearPendingMessagesForUser\(userData\.user\.id\)/);
+});

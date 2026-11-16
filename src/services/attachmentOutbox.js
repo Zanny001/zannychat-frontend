@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { serializeByKey } from '../utils/serializeByKey';
 import { getAttachmentNextRetryAt } from '../utils/attachmentRetryPolicy';
-import { getAttachmentOutboxStorageKey } from '../utils/attachmentOutboxKeys';
+import { getAttachmentOutboxStorageKey, getAttachmentOutboxStoragePrefix } from '../utils/attachmentOutboxKeys';
 import { normalizePendingAttachments } from '../utils/normalizePendingAttachments';
 import { getSafeRetryError } from '../utils/safeRetryError';
 
@@ -63,4 +63,19 @@ export async function removePendingAttachment(userId, conversationId, id) {
       return true;
     } catch (_) { return false; }
   });
+}
+
+
+/** Remove all queued attachment metadata for one account after account deletion. */
+export async function clearPendingAttachmentsForUser(userId) {
+  if (!userId) return false;
+  const prefix = getAttachmentOutboxStoragePrefix(userId);
+  try {
+    const keys = (await AsyncStorage.getAllKeys()).filter((key) => key.startsWith(prefix));
+    await Promise.all(keys.map((key) => serializeByKey(key, async () => {
+      await AsyncStorage.removeItem(key);
+      return true;
+    })));
+    return true;
+  } catch (_) { return false; }
 }

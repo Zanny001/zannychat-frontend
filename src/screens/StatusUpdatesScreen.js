@@ -111,6 +111,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
   const ownStatusGroup = groupedStatuses.find((group) => group.latest?.is_own);
   const friendStatusGroups = groupedStatuses.filter((group) => !group.latest?.is_own);
   const discoverStatuses = statuses.filter((item) => !item.is_own && ['image', 'video'].includes(item.media_kind)).slice(0, 8);
+  const statusComposerReady = Boolean(myProfile?.id) && statusDraftReady;
 
   useEffect(() => {
     // The server query excludes expired rows, but an already-open screen can outlive
@@ -134,7 +135,17 @@ export default function StatusUpdatesScreen({ navigation, route }) {
 
   useEffect(() => {
     let active = true;
-    readStatusDraft(AsyncStorage).then((draft) => {
+    const userId = myProfile?.id;
+    setStatusDraftReady(false);
+    setStatusDraftSaved(false);
+    // Clear the previous account's in-memory draft before loading the new
+    // account's record; the old global key is never migrated across users.
+    setText('');
+    setAudience('contacts');
+    setExpiryHours(24);
+    setSelectedAudienceIds([]);
+    if (!userId) return () => { active = false; };
+    readStatusDraft(AsyncStorage, userId).then((draft) => {
       if (!active) return;
       if (draft) {
         setText(draft.text);
@@ -146,15 +157,15 @@ export default function StatusUpdatesScreen({ navigation, route }) {
       setStatusDraftReady(true);
     }).catch(() => { if (active) setStatusDraftReady(true); });
     return () => { active = false; };
-  }, []);
+  }, [myProfile?.id]);
 
   useEffect(() => {
-    if (!statusDraftReady) return;
+    if (!myProfile?.id || !statusDraftReady) return;
     const timer = setTimeout(() => {
-      writeStatusDraft(AsyncStorage, { text, audience, expiryHours, selectedAudienceIds }).then((saved) => setStatusDraftSaved(Boolean(saved && text.trim())));
+      writeStatusDraft(AsyncStorage, myProfile.id, { text, audience, expiryHours, selectedAudienceIds }).then((saved) => setStatusDraftSaved(Boolean(saved && text.trim())));
     }, 450);
     return () => clearTimeout(timer);
-  }, [statusDraftReady, text, audience, expiryHours, selectedAudienceIds]);
+  }, [myProfile?.id, statusDraftReady, text, audience, expiryHours, selectedAudienceIds]);
 
   useEffect(() => {
     let active = true;
@@ -330,7 +341,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
           ? await publishVideoStatus(video, normalized, audience, audienceRecipientIds, expiryHours)
           : await publishTextStatus(normalized, audience, audienceRecipientIds, expiryHours);
       setStatuses((old) => [item, ...old]); setText(''); setPhoto(null); setVideo(null);
-      await clearStatusDraft(AsyncStorage); setStatusDraftSaved(false);
+      await clearStatusDraft(AsyncStorage, myProfile?.id); setStatusDraftSaved(false);
       setPublishSuccess(`Status published successfully. It expires in ${expiryHours} hours.`);
     } catch (e) {
       const message = e?.message || 'Please try again.';
@@ -622,17 +633,17 @@ export default function StatusUpdatesScreen({ navigation, route }) {
       </View>
       <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Create a story</Text>
-        <Text style={[typography.caption, { color: colors.textSecondary }]}>{statusDraftSaved ? 'Draft saved on this device' : 'Text drafts save automatically on this device'} · selected media is not saved in drafts</Text>
-        <TextInput ref={statusTextInputRef} value={text} onChangeText={(v) => setText(v.slice(0, STATUS_TEXT_LIMIT))} placeholder="What would you like to share?" placeholderTextColor={colors.textSecondary} multiline maxLength={STATUS_TEXT_LIMIT} accessibilityLabel="Status text" style={[typography.body, { color: colors.textPrimary, minHeight: 92, width: '100%', textAlignVertical: 'top', borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.md }]} />
+        <Text style={[typography.caption, { color: colors.textSecondary }]}>{!myProfile?.id ? 'Sign in to create a status' : !statusDraftReady ? 'Loading your saved draft…' : statusDraftSaved ? 'Draft saved on this device' : 'Text drafts save automatically on this device'} · selected media is not saved in drafts</Text>
+        <TextInput ref={statusTextInputRef} editable={statusComposerReady && !saving} value={text} onChangeText={(v) => setText(v.slice(0, STATUS_TEXT_LIMIT))} placeholder="What would you like to share?" placeholderTextColor={colors.textSecondary} multiline maxLength={STATUS_TEXT_LIMIT} accessibilityLabel="Status text" style={[typography.body, { color: colors.textPrimary, minHeight: 92, width: '100%', textAlignVertical: 'top', borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.md }]} />
         <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'right' }]}>{text.length}/{STATUS_TEXT_LIMIT}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' }}>
-          <TouchableOpacity onPress={chooseCamera} accessibilityRole="button" accessibilityLabel="Take a status photo" style={{ flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.sm, minHeight: 48 }}>
+          <TouchableOpacity onPress={chooseCamera} disabled={!statusComposerReady} accessibilityRole="button" accessibilityLabel="Take a status photo" style={{ flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.sm, minHeight: 48 }}>
             <Ionicons name="camera-outline" size={18} color={colors.primary} />
             <Text style={[typography.small, { color: colors.textPrimary }]}>Camera</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={choosePhoto} accessibilityRole="button" accessibilityLabel="Add or change status photo" style={{ flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.sm, minHeight: 48 }}><Ionicons name="image-outline" size={18} color={colors.primary} /><Text style={[typography.small, { color: colors.textPrimary }]}>{photo ? 'Change photo' : 'Add photo'}</Text></TouchableOpacity>
-          {photo || video ? <TouchableOpacity onPress={() => { setPhoto(null); setVideo(null); }} accessibilityRole="button" accessibilityLabel="Remove selected status media"><Text style={[typography.small, { color: colors.textSecondary }]}>Remove media</Text></TouchableOpacity> : null}
-          <TouchableOpacity onPress={chooseVideo} accessibilityRole="button" accessibilityLabel="Add or change status video" style={{ flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.sm, minHeight: 48 }}><Ionicons name="videocam-outline" size={18} color={colors.primary} /><Text style={[typography.small, { color: colors.textPrimary }]}>{video ? 'Change video' : 'Add video'}</Text></TouchableOpacity>
+          <TouchableOpacity onPress={choosePhoto} disabled={!statusComposerReady} accessibilityRole="button" accessibilityLabel="Add or change status photo" style={{ flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.sm, minHeight: 48 }}><Ionicons name="image-outline" size={18} color={colors.primary} /><Text style={[typography.small, { color: colors.textPrimary }]}>{photo ? 'Change photo' : 'Add photo'}</Text></TouchableOpacity>
+          {photo || video ? <TouchableOpacity onPress={() => { setPhoto(null); setVideo(null); }} disabled={!statusComposerReady} accessibilityRole="button" accessibilityLabel="Remove selected status media"><Text style={[typography.small, { color: colors.textSecondary }]}>Remove media</Text></TouchableOpacity> : null}
+          <TouchableOpacity onPress={chooseVideo} disabled={!statusComposerReady} accessibilityRole="button" accessibilityLabel="Add or change status video" style={{ flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.sm, minHeight: 48 }}><Ionicons name="videocam-outline" size={18} color={colors.primary} /><Text style={[typography.small, { color: colors.textPrimary }]}>{video ? 'Change video' : 'Add video'}</Text></TouchableOpacity>
         </View>
         {photo ? <Image source={{ uri: photo.uri }} accessibilityLabel="Selected status photo preview" style={{ width: '100%', height: 190, borderRadius: radii.md }} resizeMode="cover" /> : null}
         {video ? <View style={{ padding: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border }}><Ionicons name="videocam" size={24} color={colors.primary} /><Text style={[typography.small, { color: colors.textPrimary, marginTop: 5 }]}>{video.fileName || 'Video selected'} · maximum 30 seconds / 50 MB</Text></View> : null}
@@ -640,15 +651,15 @@ export default function StatusUpdatesScreen({ navigation, route }) {
         {publishSuccess ? <Text accessibilityRole="status" style={[typography.caption, { color: colors.primary }]}>{publishSuccess}</Text> : null}
         <Text style={[typography.small, { color: colors.textSecondary }]}>Story lifetime</Text>
         <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', gap: spacing.xs }}>
-          {[6, 12, 24, 48].map((hours) => <TouchableOpacity key={hours} onPress={() => setExpiryHours(hours)} accessibilityRole="radio" accessibilityLabel={`Story expires after ${hours} hours`} accessibilityState={{ checked: expiryHours === hours }} style={{ flex: 1, minHeight: 48, borderRadius: radii.md, borderWidth: 1, borderColor: expiryHours === hours ? colors.primary : colors.border, backgroundColor: expiryHours === hours ? `${colors.primary}18` : colors.surface, alignItems: 'center', justifyContent: 'center' }}><Text style={[typography.small, { color: expiryHours === hours ? colors.primary : colors.textPrimary, fontWeight: expiryHours === hours ? '700' : '400' }]}>{hours}h</Text></TouchableOpacity>)}
+          {[6, 12, 24, 48].map((hours) => <TouchableOpacity key={hours} onPress={() => setExpiryHours(hours)} disabled={!statusComposerReady} accessibilityRole="radio" accessibilityLabel={`Story expires after ${hours} hours`} accessibilityState={{ checked: expiryHours === hours, disabled: !statusComposerReady }} style={{ flex: 1, minHeight: 48, borderRadius: radii.md, borderWidth: 1, borderColor: expiryHours === hours ? colors.primary : colors.border, backgroundColor: expiryHours === hours ? `${colors.primary}18` : colors.surface, alignItems: 'center', justifyContent: 'center' }}><Text style={[typography.small, { color: expiryHours === hours ? colors.primary : colors.textPrimary, fontWeight: expiryHours === hours ? '700' : '400' }]}>{hours}h</Text></TouchableOpacity>)}
         </View>
         <Text style={[typography.caption, { color: colors.textSecondary }]}>Your status will disappear from active feeds after {expiryHours} hours. Expiry is stored with the status and enforced by active-status queries.</Text>
         <Text style={[typography.small, { color: colors.textSecondary }]}>Who can see it?</Text>
         <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-          {[{ value: 'contacts', label: 'My contacts', icon: 'people-outline' }, { value: 'selected_contacts', label: 'Selected', icon: 'people-circle-outline' }, { value: 'only_me', label: 'Only me', icon: 'lock-closed-outline' }].map((option) => <TouchableOpacity key={option.value} onPress={() => setAudience(option.value)} accessibilityRole="radio" accessibilityLabel={option.label} accessibilityState={{ checked: audience === option.value }} style={{ flex: 1, minHeight: 48, borderRadius: radii.md, borderWidth: 1, borderColor: audience === option.value ? colors.primary : colors.border, backgroundColor: audience === option.value ? `${colors.primary}18` : colors.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xs }}><Ionicons name={option.icon} size={16} color={audience === option.value ? colors.primary : colors.textSecondary} /><Text style={[typography.small, { color: colors.textPrimary, marginLeft: 6 }]}>{option.label}</Text></TouchableOpacity>)}
+          {[{ value: 'contacts', label: 'My contacts', icon: 'people-outline' }, { value: 'selected_contacts', label: 'Selected', icon: 'people-circle-outline' }, { value: 'only_me', label: 'Only me', icon: 'lock-closed-outline' }].map((option) => <TouchableOpacity key={option.value} onPress={() => setAudience(option.value)} disabled={!statusComposerReady} accessibilityRole="radio" accessibilityLabel={option.label} accessibilityState={{ checked: audience === option.value, disabled: !statusComposerReady }} style={{ flex: 1, minHeight: 48, borderRadius: radii.md, borderWidth: 1, borderColor: audience === option.value ? colors.primary : colors.border, backgroundColor: audience === option.value ? `${colors.primary}18` : colors.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xs }}><Ionicons name={option.icon} size={16} color={audience === option.value ? colors.primary : colors.textSecondary} /><Text style={[typography.small, { color: colors.textPrimary, marginLeft: 6 }]}>{option.label}</Text></TouchableOpacity>)}
         </View>
-        {audience === 'selected_contacts' ? <View style={{ gap: spacing.xs }}><Text style={[typography.caption, { color: colors.textSecondary }]}>{selectedAudienceIds.length} selected contact{selectedAudienceIds.length === 1 ? '' : 's'} can see this status. Other contacts will not be able to view it.</Text><TouchableOpacity onPress={loadSelectedAudienceContacts} disabled={privacyBusy} accessibilityRole="button" accessibilityLabel="Choose status audience contacts" accessibilityState={{ disabled: privacyBusy, busy: privacyBusy }} style={{ minHeight: 48, justifyContent: 'center' }}><Text style={[typography.small, { color: colors.primary }]}>{privacyBusy ? 'Loading contacts…' : 'Choose contacts or group members'}</Text></TouchableOpacity></View> : null}
-        <TouchableOpacity onPress={publish} disabled={saving || (!text.trim() && !photo && !video) || (audience === 'selected_contacts' && selectedAudienceIds.length === 0)} accessibilityRole="button" accessibilityLabel="Publish status" accessibilityState={{ disabled: saving || (!text.trim() && !photo && !video) || (audience === 'selected_contacts' && selectedAudienceIds.length === 0), busy: saving }} style={{ minHeight: 48, borderRadius: radii.md, backgroundColor: saving || (!text.trim() && !photo && !video) || (audience === 'selected_contacts' && selectedAudienceIds.length === 0) ? colors.border : colors.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}>
+        {audience === 'selected_contacts' ? <View style={{ gap: spacing.xs }}><Text style={[typography.caption, { color: colors.textSecondary }]}>{selectedAudienceIds.length} selected contact{selectedAudienceIds.length === 1 ? '' : 's'} can see this status. Other contacts will not be able to view it.</Text><TouchableOpacity onPress={loadSelectedAudienceContacts} disabled={privacyBusy || !statusComposerReady} accessibilityRole="button" accessibilityLabel="Choose status audience contacts" accessibilityState={{ disabled: privacyBusy || !statusComposerReady, busy: privacyBusy }} style={{ minHeight: 48, justifyContent: 'center' }}><Text style={[typography.small, { color: colors.primary }]}>{privacyBusy ? 'Loading contacts…' : 'Choose contacts or group members'}</Text></TouchableOpacity></View> : null}
+        <TouchableOpacity onPress={publish} disabled={!statusComposerReady || saving || (!text.trim() && !photo && !video) || (audience === 'selected_contacts' && selectedAudienceIds.length === 0)} accessibilityRole="button" accessibilityLabel="Publish status" accessibilityState={{ disabled: !statusComposerReady || saving || (!text.trim() && !photo && !video) || (audience === 'selected_contacts' && selectedAudienceIds.length === 0), busy: saving }} style={{ minHeight: 48, borderRadius: radii.md, backgroundColor: !statusComposerReady || saving || (!text.trim() && !photo && !video) || (audience === 'selected_contacts' && selectedAudienceIds.length === 0) ? colors.border : colors.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}>
           {saving ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name="paper-plane-outline" size={17} color={colors.onPrimary} />}
           <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>{saving ? 'Publishing…' : 'Publish status'}</Text>
         </TouchableOpacity>

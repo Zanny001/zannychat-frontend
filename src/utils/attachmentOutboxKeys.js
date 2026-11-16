@@ -9,7 +9,11 @@ function encodeKeyPart(value, fallback) {
   }
 }
 
+export function getAttachmentOutboxStoragePrefix(userId) {
+  return `zannychat:attachment-outbox:v1:${encodeKeyPart(userId, 'guest')}:`;
+}
+
 export function getAttachmentOutboxStorageKey(userId, conversationId) {
   if (conversationId == null || String(conversationId) === '') return null;
-  return `zannychat:attachment-outbox:v1:${encodeKeyPart(userId, 'guest')}:${encodeKeyPart(conversationId, '')}`;
+  return `${getAttachmentOutboxStoragePrefix(userId)}${encodeKeyPart(conversationId, '')}`;
 }

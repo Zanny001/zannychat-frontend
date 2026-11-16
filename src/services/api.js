@@ -3,8 +3,13 @@ import { Platform } from 'react-native';
 import { getOAuthRedirectUrl, getPasswordRecoveryRedirectUrl } from '../utils/oauthRedirect';
 import { getSafeMessageSendError } from '../utils/safeMessagingError';
 import { retryTransient } from '../utils/retry';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { clearDraftsForUser } from './drafts';
 import { clearPinnedMessagesForUser } from './pinnedMessages';
+import { clearPendingMessagesForUser } from './messageOutbox';
+import { clearPendingAttachmentsForUser } from './attachmentOutbox';
+import { clearStatusDraft } from '../utils/statusDraftStorage';
+import { clearChannelPostDraftsForUser } from '../utils/channelDraftStorage';
 import { supabase, SUPABASE_ENABLED, SUPABASE_URL } from './supabaseClient';
 import { backendFetch, BACKEND_ENABLED } from './backendClient';
 import { getActiveVoipPushToken, getActiveApnsAlertToken } from './voipPushTokenState';
@@ -833,13 +838,27 @@ export async function deleteAccount(currentPassword) {
     }
     throw error;
   }
-  // Account is already removed server-side. Clean this account's local
-  // unsent drafts before dropping the local session; cleanup is best-effort
-  // and never turns a successful server deletion into a reported failure.
-  await clearDraftsForUser(userData.user.id).catch(() => false);
-  await clearPinnedMessagesForUser(userData.user.id).catch(() => false);
-  await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
-  return { deleted: true };
+  // Account is already removed server-side. Clear this account's drafts,
+  // pins, status/channel drafts and pending outbox records before dropping
+  // the local session. Cleanup is best-effort, but its result is reported so
+  // the user can clear app storage if the device storage adapter failed.
+  const cleanupResults = await Promise.all([
+    clearDraftsForUser(userData.user.id),
+    clearPinnedMessagesForUser(userData.user.id),
+    clearPendingMessagesForUser(userData.user.id),
+    clearPendingAttachmentsForUser(userData.user.id),
+    clearStatusDraft(AsyncStorage, userData.user.id),
+    clearChannelPostDraftsForUser(AsyncStorage, userData.user.id),
+  ].map((cleanup) => cleanup.catch(() => false)));
+  const localCleanupComplete = cleanupResults.every(Boolean);
+  let localSessionCleared = true;
+  try {
+    const signOutResult = await supabase.auth.signOut({ scope: 'local' });
+    localSessionCleared = !signOutResult?.error;
+  } catch {
+    localSessionCleared = false;
+  }
+  return { deleted: true, localCleanupComplete: localCleanupComplete && localSessionCleared };
 }
 
 export async function getSessionSecurityInfo() {

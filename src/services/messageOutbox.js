@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { serializeByKey } from '../utils/serializeByKey';
 import { MAX_PENDING_MESSAGES, normalizePendingMessages } from '../utils/normalizePendingMessages';
-import { getMessageOutboxStorageKey } from '../utils/messageOutboxKeys';
+import { getMessageOutboxStorageKey, getMessageOutboxStoragePrefix } from '../utils/messageOutboxKeys';
 import { getSafeRetryError, normalizeSafeRetryError } from '../utils/safeRetryError';
 
 const keyFor = getMessageOutboxStorageKey;
@@ -85,4 +85,19 @@ export function isMessageRetryDue(message, now = Date.now()) {
   if (lastAttempt > now) return true;
   const delayMs = Math.min(5 * 60 * 1000, 5000 * (2 ** Math.min(attempts, 6)));
   return now - lastAttempt >= delayMs;
+}
+
+
+/** Remove all queued text for one account after permanent account deletion. */
+export async function clearPendingMessagesForUser(userId) {
+  if (!userId) return false;
+  const prefix = getMessageOutboxStoragePrefix(userId);
+  try {
+    const keys = (await AsyncStorage.getAllKeys()).filter((key) => key.startsWith(prefix));
+    await Promise.all(keys.map((key) => serializeByKey(key, async () => {
+      await AsyncStorage.removeItem(key);
+      return true;
+    })));
+    return true;
+  } catch (_) { return false; }
 }
