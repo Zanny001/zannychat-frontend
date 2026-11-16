@@ -17,7 +17,7 @@ import { hexToRgba } from '../utils/color';
 import { filterConversations as filterChatList } from '../utils/filterConversations';
 import { filterByChatFolder } from '../utils/chatFolders';
 import { loadChatFolders } from '../services/chatFolders';
-import { listActiveStatuses, resolveStatusUserNames } from '../services/statusUpdates';
+import { listActiveStatuses, resolveStatusUserProfiles } from '../services/statusUpdates';
 import { readSeenStatusIds } from '../utils/statusSeen';
 import { buildStoryTrayGroups } from '../utils/storyTray';
 
@@ -101,8 +101,8 @@ export default function ChatListScreen({ navigation }) {
           listActiveStatuses(),
           readSeenStatusIds(AsyncStorage),
         ]);
-        const names = await resolveStatusUserNames(statuses.map((status) => status.user_id));
-        if (alive) setStoryGroups(buildStoryTrayGroups(statuses, names, seenIds));
+        const profiles = await resolveStatusUserProfiles(statuses.map((status) => status.user_id), user?.id);
+        if (alive) setStoryGroups(buildStoryTrayGroups(statuses, profiles, seenIds));
       } catch (_) {
         if (alive) setStoryGroups([]);
       }
@@ -308,7 +308,7 @@ export default function ChatListScreen({ navigation }) {
             <TouchableOpacity key={group.userId} onPress={() => navigation.navigate('Updates', { userId: group.userId })} accessibilityRole="button" accessibilityLabel={`Open moments from ${group.name}`} style={styles.storyItem}>
               <View style={[styles.storyRing, { borderColor: group.unseenCount > 0 ? colors.primary : colors.border, backgroundColor: group.unseenCount > 0 ? hexToRgba(colors.primary, 0.16) : colors.surface }]}>
                 <View style={[styles.storyInnerRing, { borderColor: colors.background }]}>
-                  <Avatar name={group.name} color={colors.accent} size={52} />
+                  <Avatar name={group.name} color={group.avatarColor || colors.accent} imageUrl={group.avatarUrl} online={onlineIds.has(group.userId) ? true : undefined} size={52} />
                 </View>
               </View>
               <Text numberOfLines={1} style={[typography.small, { color: colors.textSecondary, marginTop: 6 }]}>{group.name}</Text>
