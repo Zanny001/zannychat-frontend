@@ -87,3 +87,19 @@ test('late token responses cannot fall through to WebRTC after a direct call has
     assert.match(source, /if \(await navigateToDirectLiveKit\((?:liveCall|next), liveKitConnection\)\) return;\s*if \(!activeRef\.current \|\| endingRef\.current\) return;/);
   }
 });
+
+
+test('direct LiveKit transition revalidates the accepted call and handles concurrent conference promotion', () => {
+  for (const source of [nativeCall, webCall]) {
+    const start = source.indexOf('const navigateToDirectLiveKit');
+    const end = source.indexOf('const endCall', start);
+    const navigate = source.slice(start, end);
+    assert.match(navigate, /from\('call_sessions'\)/);
+    assert.match(navigate, /latestCall\.status !== 'accepted'/);
+    assert.match(navigate, /latestCall\.group_room_id/);
+    assert.match(navigate, /if \(!activeRef\.current \|\| endingRef\.current\) return false/);
+    assert.match(source, /const \{ data: latestCall, error: stateError \} = await supabase\.from\('call_sessions'\)/);
+  }
+  assert.match(nativeCall, /if \(isTerminalCallStatus\(next\.status\)\) \{\s*endingRef\.current = true;/);
+  assert.match(webCall, /else if \(isTerminalCallStatus\(next\.status\)\) \{\s*endingRef\.current = true;/);
+});
