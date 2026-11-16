@@ -523,3 +523,22 @@ Each screen remains incomplete until its real data and interaction states pass v
 ### Additional security observation
 
 The deployed web CSP in `vercel.json` and `netlify.toml` currently sets `frame-ancestors`, `base-uri` and `object-src`, but does not define `default-src` or `script-src`. It provides clickjacking/base/object restrictions, not a complete script-loading/XSS policy. A stricter CSP requires an allowlist based on actual Supabase, Render, LiveKit, OAuth and media origins and must be validated against the exported Expo web app before rollout.
+
+
+## Screen implementation checkpoint — 2026-11-16
+
+### Merged improvements since the previous tracker revision
+
+- PR #93: Status composer drafts are account-scoped; switching accounts resets in-memory draft state before loading another account's record. Permanent account deletion clears the user's local drafts, pins, pending text/attachment outboxes, status draft and channel draft/recent-channel keys. This is local device cleanup; it does not claim E2EE or encrypted message outbox storage.
+- PR #95: the Chats screen's story tray now renders privacy-aware contact profile photos rather than generic accent-only avatars. Identity comes from the authenticated conversation-profile directory; avatar visibility is resolved by `get_visible_profile_avatar_paths`; restricted photos are signed from the private avatar bucket for the current viewer. If a private avatar cannot be signed, the UI falls back to initials rather than an unverified public URL. Online dots use the live presence set.
+- Both frontend quality workflows passed for PR #95. Its Netlify deploy preview passed. Vercel's check failed due the team's build-rate limit, not a source compile failure.
+
+### Deployment configuration gate
+
+- The Vercel team is reachable and is on the Hobby plan, but its project list is currently empty. Creating a replacement `zannychat` project through the connected API returned HTTP 403 (the current connection cannot create projects). No Vercel project/domain/deployment was created by this audit.
+- The frontend repository already contains the correct Expo web build settings (`npm ci`, `npm run build:web`, output `dist`) and the public Supabase URL/publishable key plus Render backend URL are present in the existing EAS profile. The backend CORS allowlist already includes `https://zannychat.vercel.app`.
+- A Vercel team owner/admin must create or grant project-creation rights before a production Vercel deployment can be completed. Do not upgrade the Hobby plan or spend money without explicit approval.
+
+### Next screen-by-screen pass
+
+The next interface implementation target is the Chat screen, followed by New Chat, Forward Message, Saved Messages, Drafts, Pinned Messages, Chat Folders, Shared Media and Chat Appearance. Keep the canonical 48 navigation experiences / 46 registered screen modules inventory; do not truncate work to the old 36-screen estimate. Each screen remains open until its real interaction states, responsive widths, keyboard/safe-area behavior, light/dark and custom palettes, accessibility and supported-platform runtime behavior are verified.
