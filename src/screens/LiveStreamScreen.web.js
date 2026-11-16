@@ -530,6 +530,18 @@ export default function LiveStreamScreen({ route, navigation }) {
     } catch (err) { setError(err?.message || 'Could not load LIVE stage participants.'); }
   };
 
+  const setModerator = async (userId, makeModerator) => {
+    try {
+      await backendFetch(`/live/${stream.id}/moderators${makeModerator ? '' : `/${userId}`}`, {
+        method: makeModerator ? 'POST' : 'DELETE',
+        ...(makeModerator ? { body: JSON.stringify({ userId }) } : {}),
+      });
+      setParticipants((current) => current.flatMap((item) => item.userId === userId
+        ? (makeModerator || item.joined ? [{ ...item, moderator: makeModerator }] : [])
+        : [item]));
+    } catch (err) { setError(err?.message || 'Could not update LIVE moderator.'); }
+  };
+
   useEffect(() => {
     if (!creatorMode || panel !== 'stage' || !stream?.id) return undefined;
     let active = true;
@@ -718,6 +730,7 @@ export default function LiveStreamScreen({ route, navigation }) {
           {item.stage && <Action colors={colors} label={item.microphoneMuted ? 'Unmute mic' : 'Mute mic'} onPress={() => muteGuest(item.userId, !item.microphoneMuted)} />}
           {item.stage && <Action colors={colors} label={item.spotlighted ? 'Unspotlight' : 'Spotlight'} onPress={() => spotlightGuest(item.userId, !item.spotlighted)} />}
           {item.stage && <Action colors={colors} label="Remove guest" danger onPress={() => removeGuest(item.userId)} />}
+          {(item.moderator || item.joined) && <Action colors={colors} label={item.moderator ? 'Remove moderator' : 'Make moderator'} danger={item.moderator} onPress={() => setModerator(item.userId, !item.moderator)} />}
         </View>)}
         {!participants.length && <Text style={{ color: colors.textSecondary }}>No connected viewers or guests yet.</Text>}
       </View>}
