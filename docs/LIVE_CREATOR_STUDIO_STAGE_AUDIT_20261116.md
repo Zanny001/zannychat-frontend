@@ -14,6 +14,7 @@ This increment is stacked on the LIVE media reliability branch so role labels an
 - Existing invite, microphone mute, spotlight, removal and moderator actions remain in place.
 - Native and web surfaces share the same Studio summary language and role hierarchy.
 - Contract tests protect the role labels and ensure the Studio metrics use joined participant rows rather than estimated audience/watch-time values.
+- While Creator Studio is open, both clients refresh the creator-only participant snapshot every 15 seconds and stop polling when the panel closes or the room changes.
 
 ## Data integrity
 
