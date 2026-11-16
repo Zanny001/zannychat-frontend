@@ -137,7 +137,7 @@ test('native and web LIVE screens synchronize the creator spotlight across parti
   assert.ok(webSource.includes("RoomEvent.ParticipantAttributesChanged"));
   assert.ok(webSource.includes('/spotlight'));
   assert.ok(webSource.includes('spotlightGuest'));
-  assert.ok(webSource.includes('spotlight={track.participant.attributes?.zannychat_spotlight'));
+  assert.ok(webSource.includes('spotlight={item.participant.attributes?.zannychat_spotlight'));
 });
 
 test('removed native guests are demoted to audience mode without disconnecting', () => {
@@ -181,7 +181,7 @@ test('LIVE video tiles use a responsive moderate 16:9 frame instead of oversized
   assert.ok(screen.includes("numColumns={stageGridVideos.length === 1 && !spotlightVideo ? 1 : 2}"));
   assert.ok(webSource.includes('aspectRatio: 16 / 9'));
   assert.ok(webSource.includes('maxWidth: spotlight || single ? 560 : 520'));
-  assert.ok(webSource.includes('single={remoteVideoTracks.length === 1}'));
+  assert.ok(webSource.includes('single={videoTileCount === 1}'));
   assert.ok(!webSource.includes('minHeight: spotlight ? 310 : 190'));
 });
 
