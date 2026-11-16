@@ -427,9 +427,11 @@ export default function ChatScreen({ route, navigation }) {
           stickToBottom.current = true;
         } catch (error) {
           if (isPermanentMessageSendError(error)) {
-            await removePendingMessage(myUserId, conversation.id, item.requestId);
-            setPendingOutbox((items) => items.filter((entry) => entry.requestId !== item.requestId));
-            setSendError(error?.message || 'This message can no longer be sent. Edit it and try again.');
+            const removed = await removePendingMessage(myUserId, conversation.id, item.requestId);
+            if (removed) setPendingOutbox((items) => items.filter((entry) => entry.requestId !== item.requestId));
+            setSendError(removed
+              ? (error?.message || 'This message can no longer be sent. Edit it and try again.')
+              : 'This message was rejected, but its local retry record could not be cleared. Check device storage before retrying.');
           } else {
             await recordMessageRetryFailure(myUserId, conversation.id, item.requestId, error);
           }
@@ -516,9 +518,16 @@ export default function ChatScreen({ route, navigation }) {
       setReplyingTo(replyTarget);
       const pending = { requestId, text, replyToId: replyTarget?.id || null, createdAt: new Date().toISOString() };
       const permanentFailure = isPermanentMessageSendError(err);
-      const queued = permanentFailure ? false : await savePendingMessage(myUserId, conversation.id, pending);
-      if (queued) {
-        setPendingOutbox((items) => [...items.filter((item) => item.requestId !== requestId), pending]);
+      let queued = false;
+      if (permanentFailure) {
+        if (existingRequestId) {
+          const removed = await removePendingMessage(myUserId, conversation.id, requestId);
+          if (removed) setPendingOutbox((items) => items.filter((item) => item.requestId !== requestId));
+          else setSendError('This message was rejected, but its local retry record could not be cleared. Check device storage before retrying.');
+        }
+      } else {
+        queued = await savePendingMessage(myUserId, conversation.id, pending);
+        if (queued) setPendingOutbox((items) => [...items.filter((item) => item.requestId !== requestId), pending]);
       }
       console.error('[ChatScreen] Message send failed:', err);
       const blocked = err?.code === '42501' || /row-level security|no longer have permission/i.test(err.message || '');
