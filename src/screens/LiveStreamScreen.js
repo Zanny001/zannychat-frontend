@@ -173,7 +173,7 @@ function LiveMedia({ streamId, creatorMode, publisherMode, cameraEnabled, microp
             {moderatorMode && <TouchableOpacity onPress={onToggleReports} accessibilityRole="button" accessibilityLabel="Open LIVE safety reports" style={{ backgroundColor: hexToRgba(colors.surface, 0.88), borderWidth: 1, borderColor: colors.border, minWidth: 48, height: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, borderRadius: 13 }}><Ionicons name="shield-checkmark-outline" size={19} color={colors.textPrimary} /></TouchableOpacity>}
           </ScrollView>
         </View>
-        <View style={{ flex: 1, justifyContent: 'center', position: 'relative' }}>
+        <View style={{ flex: 1, justifyContent: 'center', position: 'relative', paddingTop: 112 }}>
           {spotlightVideo && (
             <View style={{ marginHorizontal: 6, marginBottom: 8, borderRadius: 20, overflow: 'hidden', borderWidth: 2, borderColor: colors.accent, backgroundColor: '#211F2B' }}>
               <VideoTrack trackRef={spotlightVideo} style={{ width: "100%", aspectRatio: 16 / 9, maxWidth: 560, maxHeight: 315, borderRadius: 18 }} />
