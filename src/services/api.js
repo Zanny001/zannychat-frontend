@@ -1425,13 +1425,17 @@ export async function sendMessage(conversationId, text, replyToId = null, reques
   } = await supabase.auth.getUser();
 
   if (authError) {
-    throw new Error(`Could not verify your sign-in: ${authError.message}`);
+    const error = new Error('Could not verify your sign-in. Sign in again before sending.');
+    error.code = 'AUTH_SESSION_ERROR';
+    throw error;
   }
 
   const userId = authData?.user?.id;
 
   if (!userId) {
-    throw new Error('You are not signed in. Sign in again before sending.');
+    const error = new Error('You are not signed in. Sign in again before sending.');
+    error.code = 'AUTH_REQUIRED';
+    throw error;
   }
 
   const payload = {
@@ -1468,7 +1472,10 @@ export async function sendMessage(conversationId, text, replyToId = null, reques
     if (!data) {
       // Do not expose raw Postgres errors or row/schema details in production logs
       // or user-facing alerts. Map known cases to actionable, privacy-safe copy.
-      throw new Error(getSafeMessageSendError(error));
+      const safeError = new Error(getSafeMessageSendError(error));
+      if (typeof error?.code === 'string') safeError.code = error.code;
+      if (Number.isFinite(Number(error?.status))) safeError.status = Number(error.status);
+      throw safeError;
     }
   }
 
