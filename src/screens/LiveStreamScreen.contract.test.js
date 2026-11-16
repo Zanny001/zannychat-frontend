@@ -296,7 +296,12 @@ test('LIVE creator-only controls derive from the authenticated server role, neve
 });
 
 
-test('native LIVE synchronizes initial camera and microphone controls with each server-issued publisher token', () => {
+test('native and web LIVE synchronize camera and microphone controls with each server-issued publisher token', () => {
+  const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.ok(screen.includes('setCameraEnabled(publisherMode);'));
   assert.ok(screen.includes('setMicrophoneEnabled(publisherMode);'));
+  assert.ok(screen.includes("}, [connection?.token]);"));
+  assert.ok(web.includes('setCamera(publisherMode);'));
+  assert.ok(web.includes('setMic(publisherMode);'));
+  assert.ok(web.includes("}, [connection?.token]);"));
 });
