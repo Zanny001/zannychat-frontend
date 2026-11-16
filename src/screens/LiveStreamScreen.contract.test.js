@@ -328,3 +328,14 @@ test('LIVE creator Studio reports only measured joined viewers, guests and remai
   assert.ok(webSource.includes("participants.filter((item) => item.joined && item.role === 'guest').length"));
   assert.ok(webSource.includes('Creator Studio'));
 });
+
+
+test('Creator Studio refreshes joined audience and stage counts while open, then stops polling on close', () => {
+  assert.ok(screen.includes('if (!creatorMode || !showParticipants || !stream?.id) return undefined;'));
+  assert.ok(screen.includes('setInterval(refreshStudioParticipants, 15_000)'));
+  assert.ok(screen.includes('clearInterval(interval)'));
+  const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(webSource.includes("if (!creatorMode || panel !== 'stage' || !stream?.id) return undefined;"));
+  assert.ok(webSource.includes('setInterval(refreshStudioParticipants, 15_000)'));
+  assert.ok(webSource.includes('clearInterval(interval)'));
+});
