@@ -4,7 +4,7 @@ on:
   push:
     branches: [feat/premium-status-live-1.2.244]
   pull_request:
-    branches: [main]
+    branches: [main, fix/livekit-remote-track-participant-stage]
 
 concurrency:
   group: premium-status-live-${{ github.ref }}
