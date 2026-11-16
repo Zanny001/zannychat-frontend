@@ -14,7 +14,9 @@ test('permanent account deletion clears account-scoped local content before loca
   assert.ok(cleanup > serverDelete, 'local cleanup must not happen before server deletion succeeds');
   assert.ok(signOut > cleanup, 'local auth session is removed only after cleanup attempts');
   assert.match(deletion, /const localCleanupComplete = cleanupResults\.every\(Boolean\)/);
-  assert.match(deletion, /return \{ deleted: true, localCleanupComplete \}/);
+  assert.match(deletion, /let localSessionCleared = true/);
+  assert.match(deletion, /localCleanupComplete && localSessionCleared/);
+  assert.match(deletion, /return \{ deleted: true, localCleanupComplete: localCleanupComplete && localSessionCleared \}/);
   for (const operation of [
     'clearDraftsForUser(userData.user.id)',
     'clearPinnedMessagesForUser(userData.user.id)',
