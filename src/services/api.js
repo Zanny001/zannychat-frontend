@@ -9,6 +9,7 @@ import { clearPinnedMessagesForUser } from './pinnedMessages';
 import { clearPendingMessagesForUser } from './messageOutbox';
 import { clearPendingAttachmentsForUser } from './attachmentOutbox';
 import { clearStatusDraft } from '../utils/statusDraftStorage';
+import { clearChannelPostDraftsForUser } from '../utils/channelDraftStorage';
 import { supabase, SUPABASE_ENABLED, SUPABASE_URL } from './supabaseClient';
 import { backendFetch, BACKEND_ENABLED } from './backendClient';
 import { getActiveVoipPushToken, getActiveApnsAlertToken } from './voipPushTokenState';
@@ -846,6 +847,7 @@ export async function deleteAccount(currentPassword) {
     clearPendingMessagesForUser(userData.user.id),
     clearPendingAttachmentsForUser(userData.user.id),
     clearStatusDraft(AsyncStorage, userData.user.id),
+    clearChannelPostDraftsForUser(AsyncStorage, userData.user.id),
   ].map((cleanup) => cleanup.catch(() => false)));
   await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
   return { deleted: true };
