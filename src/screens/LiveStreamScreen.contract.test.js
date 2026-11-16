@@ -270,3 +270,8 @@ test('LIVE navigation attempts are intercepted and use the same confirmed exit h
   assert.ok(web.includes('leaveRef.current?.();'));
   assert.ok(web.includes('leaveRef.current = leave;'));
 });
+
+
+test('native LIVE viewers explicitly auto-subscribe to creator and guest media tracks', () => {
+  assert.ok(screen.includes('options={{ adaptiveStream: true, dynacast: true, autoSubscribe: true }}'));
+});
