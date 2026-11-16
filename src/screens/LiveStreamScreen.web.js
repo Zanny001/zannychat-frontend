@@ -663,7 +663,7 @@ export default function LiveStreamScreen({ route, navigation }) {
               {audioOnlyParticipants.length > 0 && (
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, padding: 8 }}>
                   {audioOnlyParticipants.map((participant) => <View key={participant.identity} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
-                    <Text style={{ color: colors.textPrimary, fontSize: 12 }}>{participant.name} · Audio only</Text>
+                    <Text style={{ color: colors.textPrimary, fontSize: 12 }}>{participant.identity === stream.creator_id ? 'HOST' : 'GUEST'} · {participant.name || participant.identity} · Audio only</Text>
                   </View>)}
                 </View>
               )}
@@ -683,7 +683,7 @@ export default function LiveStreamScreen({ route, navigation }) {
         <Action colors={colors} label={mic ? 'Mute mic' : 'Unmute mic'} onPress={toggleMic} />
       </View>}
       {creatorMode && stream.allow_guests && <View style={{ paddingHorizontal: 12, paddingBottom: 10, flexDirection: 'row', gap: 8 }}>
-        <Action colors={colors} label={panel === 'stage' ? 'Close stage manager' : 'Manage LIVE stage'} onPress={loadParticipants} />
+        <Action colors={colors} label={panel === 'stage' ? 'Close Creator Studio' : 'Creator Studio'} onPress={loadParticipants} />
         <Action colors={colors} label={`Guest requests (${guestRequests.length})`} onPress={() => setPanel(panel === 'guestRequests' ? '' : 'guestRequests')} />
       </View>}
       {creatorMode && replayEnabled && <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}><Action colors={colors} label={replayBusy ? 'Updating replay…' : replay?.status === 'ready' ? 'Watch saved LIVE replay' : replay?.status === 'recording' ? 'Stop LIVE replay' : replay?.status === 'processing' || replay?.status === 'starting' ? 'Preparing replay…' : 'Start LIVE replay'} disabled={replayBusy || ['starting', 'processing'].includes(replay?.status)} onPress={replay?.status === 'ready' ? viewReplay : replay?.status === 'recording' ? stopReplay : confirmStartReplay} /></View>}
