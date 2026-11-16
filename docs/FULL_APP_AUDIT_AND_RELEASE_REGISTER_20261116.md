@@ -19,10 +19,13 @@ The application has substantial implemented functionality, but the current evide
 
 | PR | State | Finding / gate |
 |---|---|---|
-| Frontend #86 — LIVE media reliability | Merged | Source fixes and automated workflows merged. Two-account browser and two-physical-device media acceptance remain outstanding. |
-| Frontend #88 — LIVE Creator Studio | Closed, not merged | Its branch is 73 commits ahead and 17 behind current main; do not assume it is safe to reopen or merge. Rebase/reconstruction and fresh CI are required. |
-| Frontend #84 — direct-call LiveKit client | Open draft | Automated client workflow reported success on the branch; physical-device/browser calling acceptance remains outstanding. |
-| Frontend #101 — permanent message retry failures | Open draft | Source change is present; no PR-triggered workflow run was returned for its head commit at audit time. Review duplicate/idempotency handling before merge. |
+| Frontend #86 — LIVE media reliability | Merged | Core browser/native media, role authority and lifecycle fixes merged. Real two-account/browser and two-physical-device acceptance remain outstanding. |
+| Frontend #89 — LIVE Creator Studio | Merged | Rebased implementation from #88 is already in main: creator-only participant metrics, host/guest labels, guest capacity and native/web controls. Runtime acceptance remains outstanding. |
+| Frontend #87 — LIVE discovery | Merged | Search/filter and replay-ready navigation improvements are in main. Search is limited to the returned feed, not global/paginated search. |
+| Frontend #91 — Crown Aurora foundation | Merged | Premium visual foundation and source-level UI/UX audit/tracker are in main. Individual screen visual/device sign-off remains incomplete. |
+| Frontend #88 — original stacked Creator Studio PR | Closed, not merged | Superseded by rebased PR #89; do not reopen. |
+| Frontend #84 — direct-call LiveKit client | Open draft | Automated client checks were in progress on the latest observed run; physical-device/browser calling acceptance remains outstanding. |
+| Frontend #102 — permanent message retry failures (rebased) | Open draft | API attempts same-ID recovery after SQLSTATE 23505. An earlier Premium workflow failed one stale source-contract assertion; corrected in commit b30c5ac, fresh CI result not yet observed. |
 | Backend | No open PRs returned | Continue main-branch source, migration and production route audit. |
 
 ## Workstream A — LIVE
@@ -31,7 +34,7 @@ The application has substantial implemented functionality, but the current evide
 
 **Not proven:** remote RTP audio/video delivery between independent accounts/devices; guest promotion/demotion across token renewal; camera/mic transitions; network loss recovery; end-to-end Egress recording, webhook finalization, private object upload, playback, expiry and deletion. Production previously had no replay rows/objects in the LIVE audit snapshot.
 
-**Next:** recover Creator Studio work from #88 safely; re-run LIVE workflows; complete browser two-account and Android two-device acceptance; create and play one real test replay; verify viewer/guest/creator permissions and moderation.
+**Verified addition:** Creator Studio is already present in main through rebased PR #89; LIVE discovery improvements are present through #87. **Next:** verify creator-only Studio visibility, participant refresh lifecycle, host/guest labels and web/native moderator parity in runtime; complete browser two-account and Android two-device media acceptance; create and play one real test replay; verify viewer/guest/creator permissions and moderation.
 
 ## Workstream B — Calling
 
@@ -43,11 +46,11 @@ The application has substantial implemented functionality, but the current evide
 
 ## Workstream C — Messaging
 
-**Verified:** frontend #101 addresses permanent insert failures being queued forever, preserves safe Postgres error codes, and distinguishes several permanent failures from transient failures.
+**Verified:** rebased frontend #102 distinguishes permanent from transient send errors, preserves safe Postgres error codes/status, avoids queuing permanent failures, and removes permanently rejected items discovered by background retry. The send API reuses the request ID and attempts to recover the committed row after SQLSTATE 23505 before surfacing an error.
 
-**Review concern:** SQLSTATE 23505 is currently classified as permanent. A duplicate request ID can also mean the original insert committed but its response was lost. Confirm idempotent lookup/reconciliation before deleting a queued item; otherwise a successful message may be reported as failed after a retry. No workflow run was returned for #101 at audit time.
+**CI finding:** an earlier Premium quality run failed one legacy source-contract assertion because the test expected a multi-line queue conditional while the implementation uses an inline queue update. The assertion was corrected in commit b30c5ac; a fresh workflow result is still required. PR #102 remains draft.
 
-**Next:** audit send/delivery/read receipts, optimistic state, outbox and attachment retry, edits/deletes/replies/forwarding, drafts, offline sync, pagination, search, notification and multi-device consistency. Test network interruption and duplicate delivery.
+**Next:** audit send/delivery/read receipts, optimistic state, outbox and attachment retry, edits/deletes/replies/forwarding, drafts, offline sync, pagination, search, notification and multi-device consistency. Test network interruption, duplicate delivery and read-after-commit recovery.
 
 ## Workstream D — Security and privacy
 
@@ -59,7 +62,7 @@ The application has substantial implemented functionality, but the current evide
 
 ## Workstream E — Premium interfaces (36-screen programme)
 
-Design direction: Crown Aurora — deep navy/void surfaces, violet and cyan accents, restrained crown gold, moderate content/video containers, refined glass treatment, controlled motion, strong typography and accessible contrast. Preserve working navigation, real data and service-backed actions. Audit each of the 36 screens individually; no screen is marked complete based on a mockup alone.
+Design direction: Crown Aurora — deep navy/void surfaces, violet and cyan accents, restrained crown gold, moderate content/video containers, refined glass treatment, controlled motion, strong typography and accessible contrast. The foundation is merged through PR #91. Preserve working navigation, real data and service-backed actions. Reconcile the agreed 36-screen redesign against the repository's broader screen inventory; no screen is marked complete based on a mockup alone.
 
 For each screen record: layout hierarchy, responsive breakpoints, tap-target sizes, text scaling, light/dark theme, loading/empty/error states, accessibility labels, data provenance, navigation, destructive confirmation, keyboard behavior and interaction tests.
 
