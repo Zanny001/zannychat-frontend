@@ -132,3 +132,8 @@ A final role-boundary review found that both platform screens still OR-ed the na
 The native client also placed `autoSubscribe` inside LiveKit `RoomOptions`. It is a room connection option, so the client now passes it through `connectOptions={{ autoSubscribe: true }}` while keeping adaptive stream and dynacast in `options`. Regression contracts now protect the server-role boundary on both platforms and the correct native prop placement.
 
 These are frontend changes only. No Supabase migration, policy change, credential change, or production deployment was made. Two-account browser playback and two-device native playback remain required before merge/release.
+
+
+## Follow-up remediation — publisher control state after token handoff
+
+The final role transition review found a related UI-state issue: camera and microphone toggle state was initialized from the publisher role only on first render. Because the authenticated LIVE connection is commonly fetched asynchronously, a creator or newly approved guest could receive a publisher token while the toggle state still showed camera/microphone off. Native and web clients now synchronize the local camera/microphone UI state whenever the server-issued connection token changes, using the newly derived server-authorized publisher mode. This also covers viewer-to-approved-guest token handoff. Regression contracts cover both platforms.
