@@ -29,7 +29,9 @@ The application has substantial implemented functionality, but the current evide
 | Frontend #98 — saved/folder cleanup | Merged | Deleted-account local Saved Messages and Chat Folders are cleared; these features remain device-local. |
 | Frontend #88 — original stacked Creator Studio PR | Closed, not merged | Superseded by rebased PR #89; do not reopen. |
 | Frontend #84 — direct-call LiveKit client | Open draft | Automated client checks were in progress on the latest observed run; physical-device/browser calling acceptance remains outstanding. |
-| Frontend #102 — permanent message retry failures (rebased) | Open draft | API attempts same-ID recovery after SQLSTATE 23505. An earlier Premium workflow failed one stale source-contract assertion; corrected in commit b30c5ac, fresh CI result not yet observed. |
+| Frontend #100 — chat history recovery | Merged | Initial and older-history failures now show accessible loading/error/empty states and retry actions. Both frontend quality workflows and Netlify preview passed. |
+| Frontend #102 — permanent message retry failures (rebased) | Merged | SQLSTATE/error codes survive safe error mapping; permission, stale-reference, validation and auth failures are not queued/retried indefinitely. Both frontend quality workflows and Netlify preview passed. |
+| Frontend #104 — member-favorites account cleanup | Merged | Permanent account deletion now clears only the deleted account's local directory favorites. Both frontend quality workflows and Netlify preview passed. |
 | Backend | No open PRs returned | Continue main-branch source, migration and production route audit. |
 
 ## Workstream A — LIVE
@@ -52,7 +54,7 @@ The application has substantial implemented functionality, but the current evide
 
 **Verified:** rebased frontend #102 distinguishes permanent from transient send errors, preserves safe Postgres error codes/status, avoids queuing permanent failures, and removes permanently rejected items discovered by background retry. The send API reuses the request ID and attempts to recover the committed row after SQLSTATE 23505 before surfacing an error.
 
-**CI finding:** an earlier Premium quality run failed one legacy source-contract assertion because the test expected a multi-line queue conditional while the implementation uses an inline queue update. The assertion was corrected in commit b30c5ac; a fresh workflow result is still required. PR #102 remains draft.
+**CI result:** frontend PR #102 is merged. The final Premium status/LIVE quality and Advanced calling client workflows both passed on the exact final head, and the Netlify deploy preview succeeded. The Vercel check was blocked by the team build-rate-limit at that point.
 
 **Next:** audit send/delivery/read receipts, optimistic state, outbox and attachment retry, edits/deletes/replies/forwarding, drafts, offline sync, pagination, search, notification and multi-device consistency. Test network interruption, duplicate delivery and read-after-commit recovery.
 
@@ -60,7 +62,7 @@ The application has substantial implemented functionality, but the current evide
 
 **Production SQL inventory:** 67 public SECURITY DEFINER functions inspected. Zero have unpinned search_path, zero grant EXECUTE to PUBLIC, and zero grant EXECUTE to anon. Twenty-eight are executable by authenticated users; sampled bodies bind authorization to auth.uid(), conversation membership, ownership, visibility and/or block relationships. This is a positive baseline, not a complete penetration test.
 
-**RLS and storage inventory:** sampled live catalog shows RLS enabled on the audited public tables; zero anon table privileges were found. Twenty-six RLS-protected tables grant at least one direct operation to authenticated users, with policies scoped to ownership, conversation membership, participant identity or eligible status audience. Call-session UPDATE has broad column grants, but its SECURITY DEFINER trigger validates immutable identity fields and enforces the call state machine. Six storage buckets exist: only `avatars` is public; `chat-media`, `status-media`, `live-replays` and `private-avatars` are private. LIVE replay objects have no direct client storage policies, consistent with service-role-only upload/playback signing. Storage policy definitions for chat media, private avatars and status media include conversation membership, owner path and audience authorization checks.
+**RLS and storage inventory:** sampled live catalog shows RLS enabled on the audited public tables; zero anon table privileges were found. Twenty-six RLS-protected tables grant at least one direct operation to authenticated users, with policies scoped to ownership, conversation membership, participant identity or eligible status audience. Call-session UPDATE has broad column grants, but its SECURITY DEFINER trigger validates immutable identity fields and enforces the call state machine. Five storage buckets exist: only `avatars` is public; `chat-media`, `status-media`, `live-replays` and `private-avatars` are private. The three remaining objects in `avatars` were mapped to profiles whose profile and photo visibility are both `everyone`; privacy transition triggers reject direct visibility changes unless public avatar URLs and objects have first been removed. LIVE replay objects have no direct client storage policies, consistent with service-role-only upload/playback signing. Storage policy definitions for chat media, private avatars and status media include conversation membership, owner path and audience authorization checks.
 
 **Advisor items:** leaked-password protection is disabled; enablement needs an Auth configuration change and confirmation that it is available in the current plan. Advisor reports for RLS-enabled tables without policies are consistent with backend-only tables where direct anon/authenticated grants are absent; do not add broad policies to silence the advisor. Review all authenticated SECURITY DEFINER functions individually and retain regression tests.
 
@@ -97,3 +99,14 @@ Required evidence before production completion:
 - **Production accepted:** production smoke and operational evidence completed.
 
 Never promote one status to another without evidence. Do not invent analytics, earnings, view counts or successful media delivery. Keep monetisation/wallet work deferred until a secure ledger, purchase verification and reconciliation are designed and tested.
+
+
+## Reconciled completion checkpoint — 2026-11-16 20:00 UTC
+
+- Frontend PR #93 (account-scoped Status drafts and local outbox cleanup), #98 (Saved Messages and Chat Folders deletion cleanup), #99 (Chat Folders recovery), #100 (Chat history recovery), #102 (permanent message-send failure classification), and #104 (member-directory favorites cleanup) are now merged to `main`.
+- Final frontend CI passed on the exact heads for #100, #102 and #104; each has a successful Netlify deploy preview. The Vercel integration has since produced a successful preview check on the documentation register PR, but the team-scoped project-management API still requires the owner to approve a one-time Vercel team authorization request before project settings/deployments can be inspected.
+- PR #84 remains a draft. Its direct-call LiveKit migration and late-token/end-call race protection passed both frontend workflows and Netlify preview; physical Android/iOS/browser acceptance is still a mandatory release gate.
+- Current main has the ChatScreen initial-history and older-page retry states. Messaging source audit also found and fixed a permanent-failure outbox loop; no claim is made that cross-device message sync or E2EE exists.
+- Account deletion cleanup now covers message drafts, pins, text and attachment retry queues, Status drafts, Channel drafts/recent-channel IDs, Saved Messages, Chat Folders and member-directory favorites. Notification/media/theme preferences remain device-level preferences, not account content.
+- Production Supabase catalog recheck: 67 public SECURITY DEFINER functions; 0 executable by PUBLIC, 0 by anon, 28 by authenticated; 0 without pinned search_path. 37 RLS-enabled public tables without policies have 0 anon/authenticated table privileges. Storage currently has five buckets (one public legacy avatars bucket, four private buckets); all three remaining public avatar objects currently map to profiles whose profile and photo visibility are both everyone. Profile visibility transition triggers protect against direct client-side bypass by requiring public URLs/objects to be removed before a restrictive visibility setting is accepted.
+- No production Vercel deployment, native release build, physical-device acceptance, or real LIVE replay Egress cycle is certified by this documentation update.
