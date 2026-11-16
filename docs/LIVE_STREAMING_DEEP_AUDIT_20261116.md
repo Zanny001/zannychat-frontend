@@ -123,3 +123,12 @@ A successful build, a connected LiveKit room, a participant database row, or a g
 
 
 | Native compact-screen stage controls | The original single-row header placed the title, audio route, participants, guest requests, replay, reports and end controls side by side. On narrow screens this could compress the title and push action targets out of view. | Reworked the native stage into a premium Crown Aurora control rail: a compact LIVE/title/end row plus a horizontally scrollable action row with accessible touch targets. Reserved vertical space so the controls do not cover the stage. Added a regression contract. |
+
+
+## Follow-up remediation — role authority and native subscription configuration
+
+A final role-boundary review found that both platform screens still OR-ed the navigation hint `route.params.creatorMode` with the backend-issued connection role. A stale or incorrectly supplied route parameter could therefore expose creator-only interface controls to a guest/viewer even though the backend would still reject unauthorized operations. Both screens now derive creator mode exclusively from `connection.role === 'creator'`. Guest publishing remains gated by the server-issued `role === 'guest'` and `canPublish` grant, with the local demotion state able to revoke publisher UI immediately. Navigation parameters are treated as routing hints only, never as authorization.
+
+The native client also placed `autoSubscribe` inside LiveKit `RoomOptions`. It is a room connection option, so the client now passes it through `connectOptions={{ autoSubscribe: true }}` while keeping adaptive stream and dynacast in `options`. Regression contracts now protect the server-role boundary on both platforms and the correct native prop placement.
+
+These are frontend changes only. No Supabase migration, policy change, credential change, or production deployment was made. Two-account browser playback and two-device native playback remain required before merge/release.
