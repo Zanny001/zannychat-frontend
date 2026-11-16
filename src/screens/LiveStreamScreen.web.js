@@ -50,7 +50,7 @@ function FloatingReaction({ item, index, onComplete }) {
   );
 }
 
-function RemoteVideoTile({ track, participant, colors, spotlight = false, single = false }) {
+function RemoteVideoTile({ track, participant, colors, creatorId, spotlight = false, single = false }) {
   const containerRef = useRef(null);
   useEffect(() => {
     const element = track.attach();
@@ -69,6 +69,9 @@ function RemoteVideoTile({ track, participant, colors, spotlight = false, single
     <View style={{ width: spotlight || single ? '100%' : '48%', maxWidth: spotlight || single ? 560 : 520, minWidth: spotlight || single ? 0 : 140, aspectRatio: 16 / 9, borderRadius: 16, overflow: 'hidden', backgroundColor: '#050509', borderWidth: spotlight ? 2 : 1, borderColor: spotlight ? colors.accent : colors.border }}>
       <View ref={containerRef} collapsable={false} style={{ width: '100%', height: '100%' }} />
       {spotlight && <View style={{ position: 'absolute', top: 8, left: 8, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: colors.accent }}><Text style={{ color: colors.onAccent, fontWeight: '900', fontSize: 10 }}>SPOTLIGHT</Text></View>}
+      <View style={{ position: 'absolute', top: 8, right: 8, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.72)' }}>
+        <Text style={{ color: '#FFFFFF', fontSize: 9, fontWeight: '900' }}>{participant.identity === creatorId ? 'HOST' : 'GUEST'}</Text>
+      </View>
       <View style={{ position: 'absolute', left: 8, bottom: 8, maxWidth: '88%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.65)' }}>
         <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>{participant.name || participant.identity}</Text>
       </View>
@@ -635,7 +638,7 @@ export default function LiveStreamScreen({ route, navigation }) {
                       </View>
                     </View>
                   )}
-                  {[...remoteVideoTracks].sort((a, b) => Number(b.participant.attributes?.zannychat_spotlight === 'true') - Number(a.participant.attributes?.zannychat_spotlight === 'true')).map((item) => <RemoteVideoTile key={item.track.sid} track={item.track} participant={item.participant} colors={colors} spotlight={item.participant.attributes?.zannychat_spotlight === 'true'} single={videoTileCount === 1} />)}
+                  {[...remoteVideoTracks].sort((a, b) => Number(b.participant.attributes?.zannychat_spotlight === 'true') - Number(a.participant.attributes?.zannychat_spotlight === 'true')).map((item) => <RemoteVideoTile key={item.track.sid} track={item.track} participant={item.participant} colors={colors} creatorId={stream.creator_id} spotlight={item.participant.attributes?.zannychat_spotlight === 'true'} single={videoTileCount === 1} />)}
                 </View>
               )}
               {audioOnlyParticipants.length > 0 && (
@@ -667,7 +670,29 @@ export default function LiveStreamScreen({ route, navigation }) {
       {creatorMode && replayEnabled && <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}><Action colors={colors} label={replayBusy ? 'Updating replay…' : replay?.status === 'ready' ? 'Watch saved LIVE replay' : replay?.status === 'recording' ? 'Stop LIVE replay' : replay?.status === 'processing' || replay?.status === 'starting' ? 'Preparing replay…' : 'Start LIVE replay'} disabled={replayBusy || ['starting', 'processing'].includes(replay?.status)} onPress={replay?.status === 'ready' ? viewReplay : replay?.status === 'recording' ? stopReplay : confirmStartReplay} /></View>}
       {moderatorMode && <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}><Action colors={colors} label={panel === 'reports' ? 'Close safety reports' : 'Safety reports'} onPress={loadReports} /></View>}
       {panel === 'stage' && creatorMode && <View style={{ margin: 12, padding: 12, borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
-        <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 8 }}>LIVE stage manager · up to 5 guests</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <View>
+            <Text style={{ color: colors.textPrimary, fontWeight: '900' }}>Creator Studio</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>Live audience and stage controls</Text>
+          </View>
+          <View style={{ paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, backgroundColor: colors.surfaceAlt }}>
+            <Text style={{ color: colors.accent, fontWeight: '900', fontSize: 10 }}>HOST</Text>
+          </View>
+        </View>
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
+          <View style={{ flex: 1, minWidth: 0, padding: 10, borderRadius: 12, backgroundColor: colors.surfaceAlt }}>
+            <Text style={{ color: colors.textPrimary, fontWeight: '900', fontSize: 20 }}>{participants.filter((item) => item.joined && item.role === 'viewer').length}</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Viewers</Text>
+          </View>
+          <View style={{ flex: 1, minWidth: 0, padding: 10, borderRadius: 12, backgroundColor: colors.surfaceAlt }}>
+            <Text style={{ color: colors.textPrimary, fontWeight: '900', fontSize: 20 }}>{participants.filter((item) => item.joined && item.role === 'guest').length}/5</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Guests on stage</Text>
+          </View>
+          <View style={{ flex: 1, minWidth: 0, padding: 10, borderRadius: 12, backgroundColor: colors.surfaceAlt }}>
+            <Text style={{ color: colors.textPrimary, fontWeight: '900', fontSize: 20 }}>{Math.max(0, 5 - participants.filter((item) => item.joined && item.role === 'guest').length)}</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Open slots</Text>
+          </View>
+        </View>
         {participants.map((item) => <View key={item.userId} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border }}>
           <Text style={{ color: colors.textPrimary, flex: 1, minWidth: 100 }}>{item.name}{item.stage ? ' · On stage' : !item.joined ? ' · offline' : ''}</Text>
           {stream.allow_guests && item.joined && item.role === 'viewer' && <Action colors={colors} label={item.guestInvited ? 'Invited' : 'Invite to stage'} disabled={busy || item.guestInvited} onPress={() => inviteGuest(item.userId)} />}
