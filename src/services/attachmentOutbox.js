@@ -64,3 +64,18 @@ export async function removePendingAttachment(userId, conversationId, id) {
     } catch (_) { return false; }
   });
 }
+
+
+/** Remove all queued attachment metadata for one account after account deletion. */
+export async function clearPendingAttachmentsForUser(userId) {
+  if (!userId) return false;
+  const prefix = getAttachmentOutboxStoragePrefix(userId);
+  try {
+    const keys = (await AsyncStorage.getAllKeys()).filter((key) => key.startsWith(prefix));
+    await Promise.all(keys.map((key) => serializeByKey(key, async () => {
+      await AsyncStorage.removeItem(key);
+      return true;
+    })));
+    return true;
+  } catch (_) { return false; }
+}
