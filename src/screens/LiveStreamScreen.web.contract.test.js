@@ -157,3 +157,9 @@ test('web LIVE creator-only controls derive from the authenticated server role, 
   assert.equal(web.includes('route.params?.creatorMode || connection?.role'), false);
   assert.ok(web.includes("const publisherMode = Boolean(creatorMode || (connection?.role === 'guest' && connection?.canPublish && !demotedToViewer));"));
 });
+
+
+test('web LIVE synchronizes initial camera and microphone controls with each server-issued publisher token', () => {
+  assert.ok(web.includes('setCamera(publisherMode);'));
+  assert.ok(web.includes('setMic(publisherMode);'));
+});
