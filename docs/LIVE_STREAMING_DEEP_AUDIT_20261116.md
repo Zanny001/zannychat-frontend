@@ -98,3 +98,25 @@ This fix improves participant presence accuracy; it does not itself establish th
 
 | Replay ownership controls | The replay player showed a delete button whenever replay metadata contained a creator ID, including for viewers who were not the owner. The backend correctly rejected those requests, but the UI exposed an invalid action. | The player now resolves the signed-in user and displays delete only when the replay creator ID matches that user. Added a regression contract. |
 | Navigation exit safety | Hardware/back navigation could fire a best-effort leave/end request while allowing the screen to disappear before the server confirmed it. | Both native and browser screens now intercept `beforeRemove`, invoke the same guarded exit handler, and proceed only after the server confirms success. The handler locks against duplicate requests and restores retry state on failure. |
+
+
+| Native media subscription | The native client relied on LiveKit's default auto-subscribe behavior while the browser now made it explicit. The default is enabled in LiveKit, but relying on an implicit default makes a critical viewer path harder to diagnose. | Native `LiveKitRoom` now explicitly sets `autoSubscribe: true` alongside adaptive stream and dynacast. A contract test protects this configuration. |
+| Replay quota expiry | The backend retention worker previously charged the full replay allowance when a replay remained in `processing` until its retention deadline without a valid Egress completion webhook. | Backend PR #108 was merged after both backend quality workflows passed. Expired unfinalized processing rows now release the quota reservation as unsuccessful rather than consuming the maximum replay duration. |
+
+## Full LIVE audit coverage and remaining release gates
+
+| Surface | Source-level review | Current conclusion |
+|---|---|---|
+| Discovery / hub | Public and followed stream discovery, filters, follow/unfollow, invitations, private audience setup, notifications, creator profile navigation | Core routes exist; live UX and cross-account privacy still need acceptance testing. |
+| Admission / permissions | Public, followers and private access; blocked-user checks; guest request/approval; direct guest invitations; maximum five guests; creator/moderator authorization | Server-side authorization is enforced in the inspected route/RPC paths. |
+| Media transport | LiveKit token generation, subscribe/publish grants, browser event callbacks, native track references, remote audio/video, mute/unmute, disconnect/reconnect and camera controls | Confirmed browser participant-reference defect and unreliable viewer heartbeat were remediated. Native and browser clients now explicitly auto-subscribe. Actual end-to-end media still needs two independent accounts/devices. |
+| Stage management | Invite, approve/decline, mute, remove/demote, spotlight, moderator appointment/removal, reports and comment moderation | Controls and server routes exist; concurrent multi-guest and moderator acceptance remains outstanding. |
+| Audience interaction | Comments, seven reactions, floating reaction animation, reporting, audio unlock | Implemented in source; delivery latency, autoplay and race conditions need real sessions. |
+| Replay | Start/stop Egress, signed webhook, private MP4 storage, signed playback URLs, seven-day expiry, quota reservation, deletion, recovery worker | Code paths exist. Production has no replay rows or objects; Egress completion and playback remain unverified. Quota expiry accounting has been corrected in backend main. |
+| Lifecycle / resilience | Heartbeat, explicit leave/end, navigation interception, retry handling, room cleanup, replay stop and worker recovery | Client exit flow and browser heartbeat are corrected; abrupt network loss, app termination, and Egress failure recovery still require fault-injection tests. |
+| Security / privacy | RLS, grants, service-role-only RPCs, private replay bucket, visibility and block rules | LIVE tables are backend-only with RLS; no broad policies or schema changes were needed. Continue validating owner-only replay deletion and private/follower access in test accounts. |
+| Accessibility / responsive UX | Labels, touch targets, contrast, stage sizing, multiple tiles, small-screen toolbar and landscape layouts | Key controls have labels and 48px targets in major areas. A full physical-device visual/accessibility pass has not yet been performed. |
+
+### Important boundary
+
+A successful build, a connected LiveKit room, a participant database row, or a green deployment check is not proof that remote RTP video/audio is visible to a separate viewer. Production media acceptance is still a required gate. The Netlify PR preview check is green, but I could not independently load the preview in this audit environment. The Vercel check is green, but its status link does not independently prove the browser preview URL or deployed runtime is reachable.
