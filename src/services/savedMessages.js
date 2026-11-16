@@ -25,3 +25,11 @@ export async function removeSavedMessage(userId, savedId) {
   await AsyncStorage.setItem(keyFor(userId), JSON.stringify(next));
   return next;
 }
+
+
+/** Remove only this account's device-local saved-message bookmarks after deletion. */
+export async function clearSavedMessagesForUser(userId) {
+  if (!userId) return false;
+  try { await AsyncStorage.removeItem(keyFor(userId)); return true; }
+  catch (_) { return false; }
+}
