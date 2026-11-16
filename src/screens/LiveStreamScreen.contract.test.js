@@ -342,3 +342,13 @@ test('Creator Studio refreshes joined audience and stage counts while open, then
   assert.ok(webSource.includes('setInterval(refreshStudioParticipants, 15_000)'));
   assert.ok(webSource.includes('clearInterval(interval)'));
 });
+
+
+test('web Creator Studio can appoint and remove moderators with creator-only stage controls', () => {
+  const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(webSource.includes("const setModerator = async (userId, makeModerator)"));
+  assert.ok(webSource.includes("/moderators${makeModerator ? '' : `/${userId}`}"));
+  assert.ok(webSource.includes("method: makeModerator ? 'POST' : 'DELETE'"));
+  assert.ok(webSource.includes("label={item.moderator ? 'Remove moderator' : 'Make moderator'}"));
+  assert.ok(webSource.includes("panel === 'stage' && creatorMode"));
+});
