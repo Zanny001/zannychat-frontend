@@ -451,3 +451,12 @@ The source scan covered these families:
 - Retrieved the current branch source through GitHub and manually evaluated the key contract predicates in the connected execution environment. The following all returned true: composer raised surface/20px radius/52px minimum height; updated legacy composer assertion; ten-minute account-deletion reauthentication copy; privacy contract presence; startup push preference guard; push-token upsert error handling; awaited notification registration and honest UI status; and presence of the notification contract test.
 - This is a targeted static check of source text and test expectations only. It is not equivalent to executing `npm run test:unit`, Expo exports, the calling workflow, or a device-level push test.
 - Latest PR head remains `d5345569fa1ebb07d0386fd40766a08dbc6754a5`; no new Actions run has been returned. Vercel remains build-rate-limited.
+
+
+## CI syntax failure identified and repaired — 2026-11-16
+
+- Inspected the failed Premium status/LIVE quality run 663 and Advanced calling client run 853 for the current PR head. Both completed dependency installation, Expo web and Android exports, and (for the calling workflow) Android Kotlin compilation and compile-only APK assembly successfully.
+- Both workflows then failed at the same `npm run test:unit` step: Node reported a SyntaxError in `src/screens/ChatScreen.contract.test.js` line 47. The prior composer assertion update had accidentally inserted the two-character escaped sequence `\n` between two JavaScript statements instead of an actual newline.
+- Replaced the malformed sequence with a real line break in a new commit. This is a test-source syntax repair; the application composer implementation was not changed by this repair.
+- Fresh CI has not yet been observed for the repair commit. Do not mark unit tests, call recovery, native call receiver, release/contract audits, or integrity checks as passed until the new workflow completes.
+- Vercel team access currently returns 403 for the previously used team scope and requires the team owner to approve a single-use authorization link. No Vercel deployment was attempted after this access failure.
