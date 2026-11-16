@@ -28,13 +28,13 @@ The current remediation is isolated to the frontend browser LIVE client and its 
 - Production migration history includes `20261114123057_live_stage_guest_capacity`.
 - Guest approval is creator-only; the backend checks the requester remains a joined viewer and checks block relationships before accepting.
 - LIVE tables remain backend-only with RLS enabled and no broad client policies. No RLS relaxation or database migration is proposed.
-- The production database had no active LIVE stream at audit time, so it was not possible to inspect a current media session directly.
+- A later read-only production snapshot found one active public LIVE with guest participation enabled and two joined database participants (one creator and one guest). No viewer row was present in that snapshot. This confirms the database admission state, not LiveKit media delivery; no RTP/track telemetry is exposed by these database checks.
 
 ## Production log observations
 
 For the preceding 24-hour query window, the Supabase edge log aggregation showed successful (HTTP 200) reads for LIVE streams, participants, comments, reactions, invitations and replay records. It showed seven successful `join_live_stream` RPC calls, one stream creation, one guest invitation insert, one guest invitation update, one successful stream end, and one HTTP 403 stream-end attempt. The 403 is consistent with creator-only end authorization and is not by itself evidence of a fault.
 
-These logs are database/API evidence only. They do not contain LiveKit RTP/media delivery telemetry and therefore cannot prove that a viewer actually received video or audio. There was no active stream during the audit, and no end-to-end media acceptance test is claimed.
+These logs are database/API evidence only. They do not contain LiveKit RTP/media delivery telemetry and therefore cannot prove that a viewer actually received video or audio. A targeted read-only query found one HTTP 403 call to `end_live_stream`, followed 26 seconds later by an HTTP 200 call. The function correctly rejects a non-creator caller; the available logs do not establish which UI action or account produced the rejected call. The active stream snapshot shows a creator and guest joined, but not a viewer, so the reported viewer playback issue remains unverified at the media layer.
 
 ## Required acceptance tests
 
@@ -75,3 +75,22 @@ These logs are database/API evidence only. They do not contain LiveKit RTP/media
 A second confirmed browser defect was identified during the renewed review. The web heartbeat effect required the UI status to equal the exact string `Connected`, but viewers are assigned `Connected · waiting for the creator`. That meant connected waiting viewers skipped periodic presence heartbeats. The effect now checks the actual LiveKit room connection state, sends heartbeats on initial connection and reconnect, and removes its event listeners on cleanup. A regression contract was added.
 
 This fix improves participant presence accuracy; it does not itself establish that RTP media is flowing. Real viewer playback remains an acceptance gate.
+
+
+## Renewed production security and operational review
+
+- All 13 LIVE tables inspected have RLS enabled. Direct SELECT privileges are denied to both `anon` and `authenticated`; `service_role` has the expected backend access. The advisor's "RLS enabled, no policy" INFO findings are therefore consistent with the intentional backend-only data-access model, not a reason to add permissive client policies.
+- The `live-replays` Storage bucket is private, restricted to MP4, and has a 48,000,000-byte object limit.
+- The inspected LIVE SECURITY DEFINER functions use an empty `search_path` and have EXECUTE grants only for `service_role` (besides the owner). The reaction-breakdown function is invoker-security and also service-role-only.
+- The general Supabase security advisor reports 28 authenticated-executable SECURITY DEFINER functions across the project and disabled leaked-password protection. These are broader project findings, not evidence that the LIVE functions are exposed. They should receive a separate project-wide review; do not loosen or broadly change LIVE permissions to silence the advisor.
+- The performance advisor reports unused indexes, including some LIVE tables. With very small LIVE row counts and no meaningful sustained production traffic, this is not a safe basis for dropping indexes.
+- Production currently has nine LIVE stream records, one active public stream, 14 participant records, four accepted guest invitations, 11 persisted reactions, one comment, and zero replay rows / zero objects in the private replay bucket at the time of the snapshot.
+- A single end-stream RPC 403 was followed by a successful 200. The end/leave UI previously navigated away even when the request failed, making the broadcast appear ended despite server rejection. Both native and browser handlers now retain the room, reset the retry guard, and surface the error when the server rejects end/leave.
+
+## Additional remediation
+
+| Area | Finding | Remediation |
+|---|---|---|
+| End/leave reliability | Native client swallowed end/leave errors and navigated away. Browser client showed an error but still disconnected and navigated away. | Both clients now navigate only after the backend confirms success. On failure they remain in the room, restore retry state and show an actionable error. Regression contract added. |
+| Production permissions | Advisor reports LIVE tables with RLS enabled but no policies. | Verified direct `anon` and `authenticated` SELECT privileges are false and backend `service_role` access is true. Retain backend-only access; do not add broad policies. |
+| Replay availability | No replay rows or storage objects exist, despite configured worker code and private bucket. | End-to-end Egress start/stop/webhook/finalization/playback/deletion is still a release gate. No recording was fabricated or created during this audit. |
