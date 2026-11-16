@@ -851,8 +851,14 @@ export async function deleteAccount(currentPassword) {
     clearChannelPostDraftsForUser(AsyncStorage, userData.user.id),
   ].map((cleanup) => cleanup.catch(() => false)));
   const localCleanupComplete = cleanupResults.every(Boolean);
-  await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
-  return { deleted: true, localCleanupComplete };
+  let localSessionCleared = true;
+  try {
+    const signOutResult = await supabase.auth.signOut({ scope: 'local' });
+    localSessionCleared = !signOutResult?.error;
+  } catch {
+    localSessionCleared = false;
+  }
+  return { deleted: true, localCleanupComplete: localCleanupComplete && localSessionCleared };
 }
 
 export async function getSessionSecurityInfo() {
