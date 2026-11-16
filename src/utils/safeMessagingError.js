@@ -34,5 +34,5 @@ export function isPermanentMessageSendError(error) {
 
   const status = Number(error?.status || error?.statusCode || 0);
   if ([400, 401, 403, 404, 413, 415, 422].includes(status)) return true;
-  return /not signed in|sign in again|could not verify your sign-in|conversation id is missing|enter a message before sending|no longer have permission|no longer available|invalid/i.test(String(error?.message || ''));
+  return /not signed in|sign in again|could not verify your sign-in|conversation id is missing|enter a message before sending|no longer have permission|no longer available|invalid message data|invalid input|invalid parameter/.test(String(error?.message || ''));
 }
