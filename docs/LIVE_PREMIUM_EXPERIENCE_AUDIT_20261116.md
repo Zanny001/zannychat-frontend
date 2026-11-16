@@ -54,3 +54,34 @@ Use Crown Aurora: deep void navy, restrained violet/cyan accents and crown-gold 
 - Native and web contract tests cover creator/guest role boundaries, track subscription, remote publisher stage layout, guest approval/demotion, moderation, replay controls, participant heartbeat and media lifecycle. These are automated source contracts, not proof of remote RTP delivery.
 - The current production LIVE replay snapshot contains zero replay rows and zero objects in the private replay bucket. A complete Egress-to-storage-to-playback test remains outstanding.
 - Creator Studio metrics are derived from the authenticated participant list and labelled “Viewers listed”; they are not total audience, reach, watch time, retention or earnings.
+
+
+## LIVE replay implementation and production security reassessment — 2026-11-17
+
+The earlier production note that there were zero replay rows/objects remains accurate. A fresh backend source review confirms that the Egress-to-private-storage implementation exists; the remaining blocker is runtime/configuration and end-to-end evidence, not an absent code path.
+
+### Implementation confirmed in backend source
+
+- `POST /live/:streamId/replays/start` is authenticated and creator-only, requires a live stream, feature flags and configured Egress/Supabase S3 credentials, reserves a bounded quota, starts LiveKit `StartEgress`, persists the Egress ID and schedules a five-minute stop.
+- The Egress request uses a grid template, MP4 output (LiveKit `EncodedFileType.MP4 = 1`), Supabase S3-compatible storage, 640×360 at 24fps, 500kbps video and 64kbps audio.
+- The Egress webhook is mounted before the JSON parser, reads the raw body, verifies the signed JWT issuer/signature and SHA-256 body digest, accepts only `egress_ended`, and validates completion status, exact output path, file size and duration before marking a replay ready.
+- Ready playback is delivered only through an authenticated six-minute signed URL. The replay bucket is not public. Creator deletion and seven-day retention cleanup remove private objects.
+- A worker recovers active Egress starts, stops expired recordings, retries stop failures and removes expired objects. A failed/missing Egress start releases its quota reservation.
+- Backend tests cover Egress request construction, MP4 output, signed webhook validation, nanosecond duration parsing, read-only Egress/S3 credential validation, route authorization contracts, quota migration and worker mounting.
+
+### Fresh production catalog/storage snapshot
+
+- `public.live_stream_replays`: RLS enabled; no policies; no anon or authenticated SELECT/INSERT/UPDATE/DELETE privileges; service-role access only.
+- `reserve_live_replay_quota`, `finalize_live_replay_quota`, and `get_live_replay_storage_bytes`: SECURITY DEFINER with empty pinned search_path; EXECUTE roles are postgres and service_role only.
+- `live-replays` bucket: private, 48,000,000-byte file cap, MIME allowlist `video/mp4`.
+- Current replay rows: 0. Current objects in the bucket: 0 (0 bytes). Quota row: 0 reserved seconds, 2 used seconds, no active replay ID.
+- No production database changes were made during this review.
+
+### Constraints and open risks
+
+- Current product limits are five minutes per replay, 50 minutes of aggregate replay allowance per calendar month, one globally active replay reservation at a time, 48 MB per MP4, and seven-day retention. This is a deliberately constrained free-tier design, not unlimited creator replay.
+- The production Render workspace environment flags and actual Egress/webhook runtime logs were not re-verified in this pass. The server requires both `LIVEKIT_REPLAY_ENABLED=true` and `LIVEKIT_REPLAY_BUILD_PLAN_CONFIRMED=true`; missing either keeps replay disabled.
+- The recovery worker's Egress lookup currently requests active Egress only. If an ambiguous Egress start completed but its signed webhook was never delivered and its Egress ID was never persisted, the worker can fail the row after its recovery grace period rather than reconstructing a completed output. LiveKit retries webhooks, but delivery is not guaranteed. This is a P2 recovery-hardening item.
+- No real creator-to-viewer recording, webhook receipt, Supabase object upload, signed playback, expiry, or cleanup cycle has been accepted on production. Zero rows/objects means there is currently no production replay to play. The previous “LIVE replays unavailable” symptom therefore remains unresolved at runtime even though source implementation exists.
+
+Official protocol references reviewed: https://docs.livekit.io/reference/other/egress/api/ and https://docs.livekit.io/intro/basics/rooms-participants-tracks/webhooks-events/
