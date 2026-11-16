@@ -128,6 +128,7 @@ test('web LIVE creator stage manager has parity with native guest controls', () 
   assert.ok(webSource.includes('Remove guest'));
   assert.ok(webSource.includes("role === 'guest').length}/5</Text>"));
   assert.ok(webSource.includes('Creator Studio'));
+  assert.ok(webSource.includes('Viewers listed'));
 });
 
 test('native and web LIVE screens synchronize the creator spotlight across participants', () => {
@@ -323,6 +324,7 @@ test('LIVE creator Studio reports only measured joined viewers, guests and remai
   assert.ok(screen.includes("participants.filter((item) => item.joined && item.role === 'guest').length"));
   assert.ok(screen.includes('const availableGuestSlots = Math.max(0, 5 - onStageGuestCount)'));
   assert.ok(screen.includes('Creator Studio'));
+  assert.ok(screen.includes('Viewers listed'));
   assert.ok(screen.includes('accessibilityLabel="Open Creator Studio"'));
   const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.ok(webSource.includes("participants.filter((item) => item.joined && item.role === 'viewer').length"));
