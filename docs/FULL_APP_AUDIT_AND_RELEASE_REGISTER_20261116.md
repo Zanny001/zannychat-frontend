@@ -13,7 +13,7 @@ The application has substantial implemented functionality, but the current evide
 - Backend repository: `Zanny001/zannychat-backend`, default branch `main`, package version `1.2.241`.
 - Supabase project `vithpppgyjmazxvogvno` is `ACTIVE_HEALTHY`, PostgreSQL 17.6.
 - Vercel team slug is `zanny-chat`; project listing and deployment inspection are blocked until this connection is authorised for the exact team ID.
-- No production schema changes were made during this audit pass.
+- Production Supabase migrations were applied during this audit: message INSERT integrity (`20261116195405`) and call-signal server timestamp/rate-limit integrity (`20261116195939`). Both are additive trigger/function changes with rollback procedures; the repository migration filenames are reconciled to the production ledger.
 
 ## Live pull-request state checked on 2026-11-16
 
@@ -28,7 +28,7 @@ The application has substantial implemented functionality, but the current evide
 | Frontend #95 — privacy-aware story avatars | Merged | Contact story avatars use privacy-filtered profile projections and private signed URLs where appropriate. |
 | Frontend #98 — saved/folder cleanup | Merged | Deleted-account local Saved Messages and Chat Folders are cleared; these features remain device-local. |
 | Frontend #88 — original stacked Creator Studio PR | Closed, not merged | Superseded by rebased PR #89; do not reopen. |
-| Frontend #84 — direct-call LiveKit client | Open draft | Both frontend quality workflows passed on head `a426127`; Netlify preview succeeded. Late-token/end-call race protection is included. Physical-device/browser calling acceptance remains outstanding. |
+| Frontend #108 — direct-call LiveKit client with terminal-state guards | Merged | Direct LiveKit transport, WebRTC/TURN fallback, native lifecycle and terminal-state-safe group promotion are merged. Advanced calling client and Premium status/LIVE workflows passed on the exact final head. Physical Android/iOS and browser media acceptance remains outstanding. |
 | Frontend #100 — chat history recovery | Merged | Initial and older-history failures now show accessible loading/error/empty states and retry actions. Both frontend quality workflows and Netlify preview passed. |
 | Frontend #102 — permanent message retry failures (rebased) | Merged | SQLSTATE/error codes survive safe error mapping; permission, stale-reference, validation and auth failures are not queued/retried indefinitely. Both frontend quality workflows and Netlify preview passed. |
 | Frontend #104 — member-favorites account cleanup | Merged | Permanent account deletion now clears only the deleted account's local directory favorites. Both frontend quality workflows and Netlify preview passed. |
@@ -36,7 +36,9 @@ The application has substantial implemented functionality, but the current evide
 | Backend #126 — message insert integrity | Merged | Production migration applied as Supabase version 20261116195405; repository filename aligned in backend PR #127. Rollback-only production smoke tests passed and left no test rows. |
 | Backend #127 — message guard migration ledger alignment | Merged | Repository filename matches Supabase version 20261116195405. |
 | Backend #128 — call signal server timestamps | Merged | Fixes client timestamp spoofing that could bypass the 120-signals/minute limit; applied as Supabase version 20261116195939. |
-| Backend #129 — call signal migration ledger alignment | Open draft | Repository filename is being aligned to the applied version 20261116195939. |
+| Backend #129 — call signal migration ledger alignment | Merged | Repository filename matches Supabase version 20261116195939. |
+| Backend #130 — user activity timestamp integrity | Open draft | Adds server-authoritative timestamps for status views/replies/reactions, message reactions, pinned messages, profile activity and read cursors. CI initially found a test-regex issue; corrected, awaiting fresh CI. Migration not applied. |
+| Frontend #109 — audit register reconciliation | Merged | Canonical navigation inventory and current production evidence recorded in this document. |
 
 ## Navigation inventory reconciliation
 
@@ -54,7 +56,7 @@ Five experiences were added in the current navigator and must also be audited: L
 
 ## Workstream B — Calling
 
-**Verified:** the frontend has a draft direct-call LiveKit migration (#84); backend package scripts include call signaling, group-call, conference upgrade, heartbeat lease, notification and cleanup tests. Existing direct WebRTC/TURN fallback is intended to remain during rollout.
+**Verified:** frontend PR #108 is merged with direct LiveKit transport, WebRTC/TURN fallback, native lifecycle handling and terminal-state-safe direct-to-group promotion. Backend package scripts include call signaling, group-call, conference upgrade, heartbeat lease, notification and cleanup tests.
 
 **Not proven:** incoming/outgoing audio and video on physical Android/iOS devices; background/terminated incoming-call handling; speaker/Bluetooth route changes; camera/mic switching; reconnects; participant addition; direct-to-group promotion; CallKit/Android Telecom lifecycle and cleanup under process death.
 
@@ -80,7 +82,7 @@ Five experiences were added in the current navigator and must also be audited: L
 
 **Advisor items:** leaked-password protection is disabled; enablement needs an Auth configuration change and confirmation that it is available in the current plan. The advisor currently reports 37 RLS-enabled tables without policies. A direct catalog check confirms zero anon and zero authenticated table privileges on all 37, consistent with backend/service-role-only tables; do not add broad policies to silence the advisor. Review all authenticated SECURITY DEFINER functions individually and retain regression tests.
 
-**Additional P2 integrity backlog:** `message_delivery_receipts.delivered_at` is already protected by its server-timestamp trigger; `status_updates` expiry/creation and `call_sessions` lifecycle timestamps are also guarded. Remaining authenticated-own-row timestamp fields include `status_views.viewed_at`, `status_reactions.created_at/updated_at`, `message_reactions.created_at`, `status_replies.created_at`, `profile_details.last_seen_at`, `conversation_participants.last_read_at` and `pinned_messages.pinned_at`. These do not grant cross-user writes, but can distort view/reaction/reply ordering, last-seen display or read cursors. Harden with server timestamp/monotonicity triggers after the current call-client release gate.
+**Additional P2 integrity work in review:** Backend PR #130 adds a SECURITY INVOKER, empty-search-path trigger to server-stamp `status_views.viewed_at`, `status_replies.created_at`, `message_reactions.created_at`, `status_reactions.created_at/updated_at`, `pinned_messages.pinned_at`, `profile_details.last_seen_at/updated_at` and non-null `conversation_participants.last_read_at` changes. It preserves explicit null read-cursor resets (mark unread), existing profile visibility and pinned-message snapshot triggers, and all RLS/table grants. Production migration is deliberately not applied until CI passes and SQL is revalidated. Other timestamp-bearing tables must still be reviewed for authenticated-writable fields.
 
 **Next:** inspect all RLS table grants and storage policies; verify signed URL expiry and object ownership; audit auth/session storage on web/native; inspect account deletion and cleanup; validate CORS allowlist and security headers; test rate limits, input validation, enumeration resistance, token revocation and privilege escalation. End-to-end encryption is not to be advertised unless implemented and verified.
 
@@ -121,12 +123,22 @@ Required evidence before production completion:
 Never promote one status to another without evidence. Do not invent analytics, earnings, view counts or successful media delivery. Keep monetisation/wallet work deferred until a secure ledger, purchase verification and reconciliation are designed and tested.
 
 
-## Reconciled completion checkpoint — 2026-11-16 20:00 UTC
+## Reconciled completion checkpoint — 2026-11-16 21:30 UTC
 
 - Frontend PR #93 (account-scoped Status drafts and local outbox cleanup), #98 (Saved Messages and Chat Folders deletion cleanup), #99 (Chat Folders recovery), #100 (Chat history recovery), #102 (permanent message-send failure classification), and #104 (member-directory favorites cleanup) are now merged to `main`.
 - Final frontend CI passed on the exact heads for #100, #102 and #104; each has a successful Netlify deploy preview. The Vercel integration has since produced a successful preview check on the documentation register PR, but the team-scoped project-management API still requires the owner to approve a one-time Vercel team authorization request before project settings/deployments can be inspected.
-- PR #84 remains a draft. Its direct-call LiveKit migration and late-token/end-call race protection passed both frontend workflows and Netlify preview; physical Android/iOS/browser acceptance is still a mandatory release gate.
+- Frontend PR #108 has now merged after both Advanced calling client and Premium status/LIVE workflows passed on its exact final head. Physical Android/iOS/browser acceptance is still a mandatory release gate.
 - Current main has the ChatScreen initial-history and older-page retry states. Messaging source audit also found and fixed a permanent-failure outbox loop; no claim is made that cross-device message sync or E2EE exists.
 - Account deletion cleanup now covers message drafts, pins, text and attachment retry queues, Status drafts, Channel drafts/recent-channel IDs, Saved Messages, Chat Folders and member-directory favorites. Notification/media/theme preferences remain device-level preferences, not account content.
 - Production Supabase catalog recheck: 67 public SECURITY DEFINER functions; 0 executable by PUBLIC, 0 by anon, 28 by authenticated; 0 without pinned search_path. 37 RLS-enabled public tables without policies have 0 anon/authenticated table privileges. Storage currently has five buckets (one public legacy avatars bucket, four private buckets); all three remaining public avatar objects currently map to profiles whose profile and photo visibility are both everyone. Profile visibility transition triggers protect against direct client-side bypass by requiring public URLs/objects to be removed before a restrictive visibility setting is accepted.
 - No production Vercel deployment, native release build, physical-device acceptance, or real LIVE replay Egress cycle is certified by this documentation update.
+
+
+### Security hardening update — 2026-11-16 21:30 UTC
+
+- Backend PR #125 (sanitized CORS rejection diagnostics), #126 (message INSERT integrity), #127 (message migration ledger reconciliation), #128 (server-time call signal rate limiting) and #129 (call-signal migration ledger reconciliation) are merged.
+- Supabase production migration versions `20261116195405` and `20261116195939` are recorded and verified. Both changes were additive; transaction-only smoke checks were rolled back and no test rows persisted.
+- Backend PR #130 is under review for server-authoritative user activity timestamps. Its first CI run exposed one test-only regex formatting assumption (the SQL trigger declaration spans lines); this was corrected. The migration has not been applied to production.
+- Frontend PR #108 is merged with successful CI on its exact head. Physical-device/browser calling acceptance remains open.
+- Frontend PR #109 (this audit register reconciliation) is merged.
+- No Vercel production deployment or native production build is claimed. Vercel project-write permission remains a separate integration blocker.
