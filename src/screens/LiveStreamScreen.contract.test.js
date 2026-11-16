@@ -305,3 +305,24 @@ test('native and web LIVE synchronize camera and microphone controls with each s
   assert.ok(web.includes('setMic(publisherMode);'));
   assert.ok(web.includes("}, [connection?.token]);"));
 });
+
+
+test('LIVE creator stage labels host and guests distinctly on native and web tiles', () => {
+  assert.ok(screen.includes('creatorId={stream.creator_id}'));
+  assert.ok(screen.includes("spotlightVideo.participant.identity === creatorId ? 'HOST' : 'GUEST'"));
+  assert.ok(screen.includes("item.participant.identity === creatorId ? 'HOST' : 'GUEST'"));
+  const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(webSource.includes('creatorId={stream.creator_id}'));
+  assert.ok(webSource.includes("participant.identity === creatorId ? 'HOST' : 'GUEST'"));
+});
+
+test('LIVE creator Studio reports only measured joined viewers, guests and remaining guest slots', () => {
+  assert.ok(screen.includes("participants.filter((item) => item.joined && item.role === 'viewer').length"));
+  assert.ok(screen.includes("participants.filter((item) => item.joined && item.role === 'guest').length"));
+  assert.ok(screen.includes('const availableGuestSlots = Math.max(0, 5 - onStageGuestCount)'));
+  assert.ok(screen.includes('Creator Studio'));
+  const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(webSource.includes("participants.filter((item) => item.joined && item.role === 'viewer').length"));
+  assert.ok(webSource.includes("participants.filter((item) => item.joined && item.role === 'guest').length"));
+  assert.ok(webSource.includes('Creator Studio'));
+});
