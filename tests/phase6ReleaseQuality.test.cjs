@@ -44,10 +44,11 @@ test('native release CI protects main and compiles Android native code', () => {
 });
 
 
-test('Android compile-only artifact is not mislabeled as physical-device QA', () => {
-  assert.match(workflow, /zannychat-android-compile-only-not-for-install/);
-  assert.match(workflow, /not suitable for installation or physical-device QA/i);
-  assert.doesNotMatch(workflow, /Upload Android debug APK and checksum for physical-device QA/);
+test('Android CI is explicit that Kotlin compilation is not APK packaging or physical-device QA', () => {
+  assert.match(workflow, /:app:compileDebugKotlin/);
+  assert.doesNotMatch(workflow, /:app:assembleDebug/);
+  assert.doesNotMatch(workflow, /zannychat-android-compile-only-not-for-install/);
+  assert.match(workflow, /not device QA/i);
 });
 
 test('Android release has an explicit positive version code', () => {
