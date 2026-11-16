@@ -356,7 +356,12 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [floatingReactions, setFloatingReactions] = useState([]);
   const seenReactionIds = useRef(new Set());
   const [cameraEnabled, setCameraEnabled] = useState(publisherMode);
-  useEffect(() => { setDemotedToViewer(false); setStageNotice(''); }, [connection?.token]);
+  useEffect(() => {
+    setDemotedToViewer(false);
+    setStageNotice('');
+    setCameraEnabled(publisherMode);
+    setMicrophoneEnabled(publisherMode);
+  }, [connection?.token]);
   const handleDemotedToViewer = useCallback(() => {
     setDemotedToViewer(true);
     setCameraEnabled(false);
