@@ -108,7 +108,12 @@ export default function LiveStreamScreen({ route, navigation }) {
   const endedRef = useRef(false);
   const leaveRef = useRef(null);
   const [status, setStatus] = useState('Connecting…');
-  useEffect(() => { setDemotedToViewer(false); setStageNotice(''); }, [connection?.token]);
+  useEffect(() => {
+    setDemotedToViewer(false);
+    setStageNotice('');
+    setCamera(publisherMode);
+    setMic(publisherMode);
+  }, [connection?.token]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [replayEnabled, setReplayEnabled] = useState(false);
