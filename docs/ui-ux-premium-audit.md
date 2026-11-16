@@ -460,3 +460,12 @@ The source scan covered these families:
 - Replaced the malformed sequence with a real line break in a new commit. This is a test-source syntax repair; the application composer implementation was not changed by this repair.
 - Fresh CI has not yet been observed for the repair commit. Do not mark unit tests, call recovery, native call receiver, release/contract audits, or integrity checks as passed until the new workflow completes.
 - Vercel team access currently returns 403 for the previously used team scope and requires the team owner to approve a single-use authorization link. No Vercel deployment was attempted after this access failure.
+
+
+## Post-repair CI and Vercel access checkpoint — 2026-11-16
+
+- Team authorization was approved and the connected Vercel account now lists the ZannyChat Hobby team (`zanny-chat`). Git deployment context currently reports no linked projects for this team; a project search for `zannychat` also returns none.
+- Attempted to create the intended `zannychat` project linked to `Zanny001/zannychat-frontend` with `npm ci`, `npm run build:web` and `dist` output. Vercel rejected project creation with HTTP 403 (`You don't have permission to create the project`). No project or deployment was created. This is a team permission blocker, not a build failure; do not claim Vercel hosting is configured.
+- The repaired PR head `be2e53d0b44199ddc86cc566373cccdd65d5c7f1` triggered Premium status and LIVE quality workflow #664, which completed successfully.
+- Advanced calling client checks workflow #854 is still in progress at this checkpoint. Dependency installation, npm vulnerability audit, Expo config/prebuild, Android Kotlin compilation all passed; Android compile-only APK assembly is in progress. Web/Android exports, unit tests, call-recovery/native receiver tests, phase-6 quality tests, release/contract/integrity audits remain pending in that run.
+- PR #85 remains draft and unmerged. Do not merge until workflow #854 completes successfully and remaining visual/device acceptance is addressed.
