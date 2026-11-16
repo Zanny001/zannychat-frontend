@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { backendFetch } from '../services/backendClient';
 import { getCurrentUser } from '../services/api';
-import { getCurrentUser } from '../services/api';
 import { useTheme } from '../theme/ThemeContext';
 import { confirmAction, showAppAlert } from '../utils/appDialogs';
 
