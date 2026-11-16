@@ -17,12 +17,12 @@ This is a dated addendum to `FULL_APP_AUDIT_AND_RELEASE_REGISTER_20261116.md`. I
 
 Current Supabase documentation confirms that leaked-password protection uses the HaveIBeenPwned Pwned Passwords API and is available on the Pro plan and above: https://supabase.com/docs/guides/auth/password-security
 
-The current project is on the existing no-cost operating constraint. Do not upgrade or incur a subscription cost without explicit approval. Therefore leaked-password protection remains an acknowledged P1 security improvement that cannot be enabled on the present plan through the available connection. Maintain strong password policy, rate limits, secure session revocation and MFA where configured; revisit this setting if the project is upgraded. No Auth setting was changed in this pass.
+The user's standing budget constraint is ₦0, so no upgrade or paid change was initiated. The connected project metadata does not expose its current Supabase billing tier; therefore this audit does not claim the project is on Free or that the setting is unavailable on its current tier. If the project is on Free, enabling this feature requires a Pro upgrade. Verify the current tier in Supabase billing before deciding. No Auth setting was changed in this pass.
 
 ## Vercel authorization and deployment
 
 - The Vercel team is `zanny-chat` / `team_P8IYvDiidDlhUHaQBe1RN1Wg`, Hobby plan, with zero linked projects returned by the connected context.
-- There are no open pull requests in either the frontend or backend repository at this checkpoint.
+- A search immediately before opening this documentation PR found no pre-existing open PRs in either repository.
 - Project creation previously returned HTTP 403. A fresh one-time team-consent request was generated on this connection; the team owner must open the current link supplied in the ChatGPT conversation, review permissions and approve it. The link expires after ten minutes and can only be used once.
 - Do not retry project creation until approval is completed. No Vercel project, alias, or production deployment is claimed by this addendum.
 
