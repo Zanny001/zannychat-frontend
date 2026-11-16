@@ -6,6 +6,7 @@ import { backendFetch } from '../services/backendClient';
 import { supabase } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
 import CallInvitePicker from '../components/CallInvitePicker';
+import { updateCallStatus } from '../services/calls';
 
 function MediaTile({ track, name, local, colors }) {
   const elementRef = useRef(null);
@@ -33,7 +34,7 @@ function MediaTile({ track, name, local, colors }) {
 }
 
 export default function GroupCallScreenWeb({ route, navigation }) {
-  const { roomId, conversationId, conversationName = 'Group call', callType = 'audio', connection: initialConnection = null } = route.params || {};
+  const { roomId, directCallId = null, directCall = null, conversationId, conversationName = 'Group call', callType = 'audio', connection: initialConnection = null } = route.params || {};
   const { colors, typography } = useTheme();
   const [connection, setConnection] = useState(null);
   const [status, setStatus] = useState('Connecting…');
@@ -57,7 +58,7 @@ export default function GroupCallScreenWeb({ route, navigation }) {
   const canInviteNow = canInvite && status === 'Connected';
 
   useEffect(() => {
-    if (!roomId && !conversationId) {
+    if (!roomId && !directCallId && !conversationId) {
       setStatus('Unavailable');
       setErrorText('This group conversation is missing.');
       return undefined;
@@ -101,7 +102,22 @@ export default function GroupCallScreenWeb({ route, navigation }) {
 
     (async () => {
       let result;
-      if (roomId) {
+      if (directCallId) {
+        result = initialConnection?.callId === directCallId && initialConnection?.token && initialConnection?.livekitUrl
+          ? initialConnection
+          : await backendFetch(`/calls/${directCallId}/livekit-token`, { method: 'POST' });
+        const sourceCall = directCall || {};
+        result = {
+          ...result,
+          room: {
+            id: directCallId,
+            conversation_id: sourceCall.conversation_id || conversationId,
+            host_user_id: sourceCall.caller_id,
+            source_call_id: directCallId,
+            call_type: result.callType || sourceCall.call_type || callType,
+          },
+        };
+      } else if (roomId) {
         result = initialConnection?.room?.id === roomId && initialConnection?.token && initialConnection?.livekitUrl
           ? initialConnection
           : await backendFetch(`/group-calls/${roomId}/join`, { method: 'POST' });
@@ -112,10 +128,10 @@ export default function GroupCallScreenWeb({ route, navigation }) {
         });
       }
       if (!active) {
-        if (result?.room?.id) await backendFetch(`/group-calls/${result.room.id}/leave`, { method: 'POST' }).catch(() => {});
+        if (result?.room?.id && !directCallId) await backendFetch(`/group-calls/${result.room.id}/leave`, { method: 'POST' }).catch(() => {});
         return;
       }
-      const connected = { ...result, roomId: result.room.id, callType: result.room.call_type || callType };
+      const connected = { ...result, roomId: result.roomId || result.room.id, callType: result.callType || result.room.call_type || callType };
       joinedRoomIdRef.current = connected.roomId;
       setConnection(connected);
       setIsVideo(connected.callType === 'video');
@@ -148,15 +164,20 @@ export default function GroupCallScreenWeb({ route, navigation }) {
       room.disconnect();
       for (const publication of room.localParticipant.trackPublications.values()) publication.track?.stop?.();
       const activeRoomId = joinedRoomIdRef.current;
-      if (!endedRef.current && activeRoomId) backendFetch(`/group-calls/${activeRoomId}/leave`, { method: 'POST' }).catch(() => {});
+      if (!directCallId && !endedRef.current && activeRoomId) backendFetch(`/group-calls/${activeRoomId}/leave`, { method: 'POST' }).catch(() => {});
       roomRef.current = null;
     };
-  }, [roomId, requestedVideo, initialConnection, conversationId, callType]);
+  }, [roomId, directCallId, directCall, requestedVideo, initialConnection, conversationId, callType]);
 
   useEffect(() => {
     if (!connection?.room) return undefined;
     let active = true;
     (async () => {
+      if (directCallId) {
+        setCanInvite(true);
+        setCanEnd(true);
+        return;
+      }
       const { data: auth } = await supabase.auth.getUser();
       const userId = auth?.user?.id;
       if (!active || !userId) return;
@@ -176,17 +197,19 @@ export default function GroupCallScreenWeb({ route, navigation }) {
       setCanEnd(manager);
     })().catch(() => {});
     return () => { active = false; };
-  }, [connection?.room?.id, conversationId]);
+  }, [connection?.room?.id, conversationId, directCallId]);
 
   useEffect(() => {
     if (!connection?.roomId || status !== 'Connected') return undefined;
     let active = true;
-    const heartbeat = () => backendFetch(`/group-calls/${connection.roomId}/heartbeat`, { method: 'POST' })
-      .catch((error) => { if (active) console.warn('[group-calls] presence heartbeat failed:', error?.message || error); });
+    const heartbeat = () => (directCallId
+      ? supabase.rpc('heartbeat_call_session', { p_call_id: directCallId })
+      : backendFetch(`/group-calls/${connection.roomId}/heartbeat`, { method: 'POST' }))
+      .catch((error) => { if (active) console.warn('[calls] presence heartbeat failed:', error?.message || error); });
     heartbeat();
     const interval = setInterval(heartbeat, 30_000);
     return () => { active = false; clearInterval(interval); };
-  }, [connection?.roomId, status]);
+  }, [connection?.roomId, directCallId, status]);
 
   const toggleMute = useCallback(async () => {
     const next = !muted;
@@ -213,22 +236,85 @@ export default function GroupCallScreenWeb({ route, navigation }) {
   }, []);
 
   const endCall = useCallback(async () => {
+    if (endedRef.current) return;
+    endedRef.current = true;
     try {
-      const activeRoomId = connection?.roomId || joinedRoomIdRef.current || roomId;
-      if (!activeRoomId) { navigation.goBack(); return; }
-      await backendFetch(`/group-calls/${activeRoomId}/${canEnd ? 'end' : 'leave'}`, { method: 'POST' });
-      endedRef.current = true;
+      if (directCallId) {
+        await updateCallStatus(directCallId, 'ended');
+      } else {
+        const activeRoomId = connection?.roomId || joinedRoomIdRef.current || roomId;
+        if (!activeRoomId) { navigation.goBack(); return; }
+        await backendFetch(`/group-calls/${activeRoomId}/${canEnd ? 'end' : 'leave'}`, { method: 'POST' });
+      }
       roomRef.current?.disconnect();
       navigation.goBack();
-    } catch (error) { setErrorText(error?.message || 'Could not leave this call.'); }
-  }, [canEnd, connection?.roomId, navigation, roomId]);
+    } catch (error) {
+      endedRef.current = false;
+      setErrorText(error?.message || 'Could not leave this call.');
+    }
+  }, [canEnd, connection?.roomId, directCallId, navigation, roomId]);
 
   const invitePerson = useCallback(async (person) => {
+    if (directCallId) {
+      endedRef.current = true;
+      let result;
+      try {
+        result = await backendFetch(`/group-calls/upgrade/${directCallId}`, {
+          method: 'POST',
+          body: JSON.stringify({ userIds: [person.id], callType: connection?.callType || callType }),
+        });
+      } catch (error) {
+        endedRef.current = false;
+        throw error;
+      }
+      if (!result?.room?.id) {
+        endedRef.current = false;
+        throw new Error('Could not upgrade this call to a conference.');
+      }
+      navigation.replace('GroupCall', {
+        roomId: result.room.id,
+        connection: result,
+        conversationId: result.room.conversation_id || conversationId,
+        conversationName: 'Group call',
+        callType: result.room.call_type || callType,
+      });
+      return;
+    }
     await backendFetch(`/group-calls/${connection.roomId}/invite`, {
       method: 'POST',
       body: JSON.stringify({ userIds: [person.id] }),
     });
-  }, [connection?.roomId]);
+  }, [callType, connection?.callType, connection?.roomId, conversationId, directCallId, navigation]);
+
+  useEffect(() => {
+    if (!directCallId || !supabase) return undefined;
+    let active = true;
+    const handleCallUpdate = (next) => {
+      if (!active || !next || endedRef.current) return;
+      if (next.group_room_id) {
+        endedRef.current = true;
+        navigation.replace('GroupCall', {
+          roomId: next.group_room_id,
+          conversationId: next.conversation_id || conversationId,
+          conversationName: 'Group call',
+          callType: next.call_type || callType,
+        });
+      } else if (['declined', 'cancelled', 'ended', 'missed', 'failed'].includes(next.status)) {
+        endedRef.current = true;
+        navigation.goBack();
+      }
+    };
+    const channel = supabase.channel(`direct-livekit-call-web:${directCallId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'call_sessions', filter: `id=eq.${directCallId}` }, (event) => handleCallUpdate(event?.new))
+      .subscribe((channelStatus) => {
+        if (channelStatus === 'SUBSCRIBED') {
+          supabase.from('call_sessions').select('id,conversation_id,call_type,status,group_room_id')
+            .eq('id', directCallId).maybeSingle()
+            .then(({ data }) => { if (data) handleCallUpdate(data); }).catch(() => {});
+        }
+      });
+    return () => { active = false; supabase.removeChannel(channel); };
+  }, [callType, conversationId, directCallId, navigation]);
 
   const localCameraTrack = roomRef.current?.localParticipant.getTrackPublication(Track.Source.Camera)?.videoTrack;
   const remoteVideoTracksView = remoteVideoTracks;
@@ -255,7 +341,7 @@ export default function GroupCallScreenWeb({ route, navigation }) {
       ) : (
         <View style={styles.audioStage}>
           <View style={[styles.audioOrb, { backgroundColor: colors.surface, borderColor: colors.border }]}><Ionicons name="people" size={44} color={colors.primary} /></View>
-          <Text style={[typography.title, { color: colors.textPrimary }]}>Voice conference</Text>
+          <Text style={[typography.title, { color: colors.textPrimary }]}>{directCallId ? 'Voice call' : 'Voice conference'}</Text>
           <Text style={[typography.small, { color: colors.textSecondary }]}>{participantIds.length || 1} participants connected</Text>
         </View>
       )}
@@ -295,8 +381,8 @@ export default function GroupCallScreenWeb({ route, navigation }) {
           onClose={() => setInvitePickerVisible(false)}
           onInvite={invitePerson}
           conversationId={connection.room.conversation_id || conversationId}
-          roomId={connection.roomId}
-          filterToConversationMembers={!connection.room.source_call_id}
+          roomId={directCallId ? null : connection.roomId}
+          filterToConversationMembers={!directCallId && !connection.room.source_call_id}
           excludeIds={participantIds}
           title="Add people to call"
         />
