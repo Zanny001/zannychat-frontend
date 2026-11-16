@@ -134,7 +134,20 @@ export default function StatusUpdatesScreen({ navigation, route }) {
 
   useEffect(() => {
     let active = true;
-    readStatusDraft(AsyncStorage).then((draft) => {
+    const userId = myProfile?.id;
+    setStatusDraftReady(false);
+    setStatusDraftSaved(false);
+    // Clear the previous account's in-memory draft before loading the new
+    // account's record; the old global key is never migrated across users.
+    setText('');
+    setAudience('contacts');
+    setExpiryHours(24);
+    setSelectedAudienceIds([]);
+    if (!userId) {
+      setStatusDraftReady(true);
+      return () => { active = false; };
+    }
+    readStatusDraft(AsyncStorage, userId).then((draft) => {
       if (!active) return;
       if (draft) {
         setText(draft.text);
@@ -146,15 +159,15 @@ export default function StatusUpdatesScreen({ navigation, route }) {
       setStatusDraftReady(true);
     }).catch(() => { if (active) setStatusDraftReady(true); });
     return () => { active = false; };
-  }, []);
+  }, [myProfile?.id]);
 
   useEffect(() => {
-    if (!statusDraftReady) return;
+    if (!myProfile?.id || !statusDraftReady) return;
     const timer = setTimeout(() => {
-      writeStatusDraft(AsyncStorage, { text, audience, expiryHours, selectedAudienceIds }).then((saved) => setStatusDraftSaved(Boolean(saved && text.trim())));
+      writeStatusDraft(AsyncStorage, myProfile.id, { text, audience, expiryHours, selectedAudienceIds }).then((saved) => setStatusDraftSaved(Boolean(saved && text.trim())));
     }, 450);
     return () => clearTimeout(timer);
-  }, [statusDraftReady, text, audience, expiryHours, selectedAudienceIds]);
+  }, [myProfile?.id, statusDraftReady, text, audience, expiryHours, selectedAudienceIds]);
 
   useEffect(() => {
     let active = true;
@@ -330,7 +343,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
           ? await publishVideoStatus(video, normalized, audience, audienceRecipientIds, expiryHours)
           : await publishTextStatus(normalized, audience, audienceRecipientIds, expiryHours);
       setStatuses((old) => [item, ...old]); setText(''); setPhoto(null); setVideo(null);
-      await clearStatusDraft(AsyncStorage); setStatusDraftSaved(false);
+      await clearStatusDraft(AsyncStorage, myProfile?.id); setStatusDraftSaved(false);
       setPublishSuccess(`Status published successfully. It expires in ${expiryHours} hours.`);
     } catch (e) {
       const message = e?.message || 'Please try again.';
