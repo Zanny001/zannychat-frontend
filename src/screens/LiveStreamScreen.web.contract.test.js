@@ -139,3 +139,14 @@ test('web LIVE explicitly keeps automatic subscription enabled and surfaces fail
   assert.ok(web.includes('RoomEvent.TrackSubscriptionFailed'));
   assert.ok(web.includes('const onTrackSubscriptionFailed = (trackSid, participant) =>'));
 });
+
+
+test('web LIVE viewer presence heartbeat runs for connected waiting viewers and after reconnects', () => {
+  const heartbeatEffect = web.slice(web.indexOf("if (!stream?.id) return undefined;", web.indexOf("const refreshComments")), web.indexOf("const refreshComments"));
+  assert.ok(web.includes("roomRef.current?.state !== 'connected'"));
+  assert.ok(web.includes('room?.on(RoomEvent.Connected, heartbeat)'));
+  assert.ok(web.includes('room?.on(RoomEvent.Reconnected, heartbeat)'));
+  assert.ok(web.includes('room?.off(RoomEvent.Connected, heartbeat)'));
+  assert.ok(web.includes('room?.off(RoomEvent.Reconnected, heartbeat)'));
+  assert.ok(web.includes('setInterval(heartbeat, 30_000)'));
+});
