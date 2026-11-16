@@ -38,6 +38,7 @@ import { hexToRgba } from '../utils/color';
 import { savePendingMessage, loadPendingMessages, removePendingMessage, recordMessageRetryFailure, isMessageRetryDue } from '../services/messageOutbox';
 import { savePendingAttachment, loadPendingAttachments, removePendingAttachment, recordAttachmentRetryFailure } from '../services/attachmentOutbox';
 import { getAttachmentNextRetryAt, isAttachmentRetryDue } from '../utils/attachmentRetryPolicy';
+import { isPermanentMessageSendError } from '../utils/safeMessagingError';
 import { preserveAttachmentForRetry, removePreservedAttachment } from '../utils/attachmentFileRecovery';
 import {
   fetchMessages,
@@ -434,9 +435,17 @@ export default function ChatScreen({ route, navigation }) {
           setMessages((items) => items.some((entry) => entry.id === confirmed.id) ? items : [...items, confirmed]);
           stickToBottom.current = true;
         } catch (error) {
-          await recordMessageRetryFailure(myUserId, conversation.id, item.requestId, error);
-          // Do not alert on every background retry; the queued-message banner
-          // remains visible and the user can still retry manually.
+          if (isPermanentMessageSendError(error)) {
+            const removed = await removePendingMessage(myUserId, conversation.id, item.requestId);
+            if (removed) setPendingOutbox((items) => items.filter((entry) => entry.requestId !== item.requestId));
+            setSendError(removed
+              ? (error?.message || 'This message can no longer be sent. Edit it and try again.')
+              : 'This message was rejected, but its local retry record could not be cleared. Check device storage before retrying.');
+          } else {
+            await recordMessageRetryFailure(myUserId, conversation.id, item.requestId, error);
+          }
+          // Background retries stay quiet. Permanent failures are removed
+          // from the retry queue and surfaced inline instead of retrying forever.
         }
       }
       setPendingOutbox(await loadPendingMessages(myUserId, conversation.id));
@@ -517,17 +526,26 @@ export default function ChatScreen({ route, navigation }) {
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
       setReplyingTo(replyTarget);
       const pending = { requestId, text, replyToId: replyTarget?.id || null, createdAt: new Date().toISOString() };
-      const queued = await savePendingMessage(myUserId, conversation.id, pending);
-      if (queued) {
-        setPendingOutbox((items) => [...items.filter((item) => item.requestId !== requestId), pending]);
+      const permanentFailure = isPermanentMessageSendError(err);
+      let queued = false;
+      if (permanentFailure) {
+        if (existingRequestId) {
+          const removed = await removePendingMessage(myUserId, conversation.id, requestId);
+          if (removed) setPendingOutbox((items) => items.filter((item) => item.requestId !== requestId));
+        }
+      } else {
+        queued = await savePendingMessage(myUserId, conversation.id, pending);
+        if (queued) setPendingOutbox((items) => [...items.filter((item) => item.requestId !== requestId), pending]);
       }
       console.error('[ChatScreen] Message send failed:', err);
-      const blocked = /row-level security/i.test(err.message || '');
+      const blocked = err?.code === '42501' || /row-level security|no longer have permission/i.test(err.message || '');
       const failureMessage = blocked
         ? 'You can no longer send messages in this conversation.'
-        : !queued
-          ? 'Your message could not be saved for automatic retry because the pending-message queue is full or local storage is unavailable. Keep this draft and try again after clearing pending messages.'
-          : err.message || 'Please try again.';
+        : permanentFailure
+          ? err.message || 'This message can no longer be sent. Edit it and try again.'
+          : !queued
+            ? 'Your message could not be saved for automatic retry because the pending-message queue is full or local storage is unavailable. Keep this draft and try again after clearing pending messages.'
+            : err.message || 'Please try again.';
       setSendError(failureMessage);
       Alert.alert('Message not sent', failureMessage);
       return false;
