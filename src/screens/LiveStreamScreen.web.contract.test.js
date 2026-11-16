@@ -8,7 +8,7 @@ const native = fs.readFileSync(new URL('./LiveStreamScreen.js', import.meta.url)
 test('web LIVE connects to the browser LiveKit client using the server-issued URL and token', () => {
   assert.ok(web.includes("from 'livekit-client'"));
   assert.ok(web.includes('new Room({ adaptiveStream: true, dynacast: true })'));
-  assert.ok(web.includes('room.connect(connection.livekitUrl, connection.token)'));
+  assert.ok(web.includes('room.connect(connection.livekitUrl, connection.token, { autoSubscribe: true })'));
 });
 
 test('web LIVE publishers acquire and publish camera and microphone while viewers subscribe', () => {
