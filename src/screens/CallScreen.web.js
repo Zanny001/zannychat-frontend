@@ -214,6 +214,7 @@ export default function CallScreenWeb({ route, navigation }) {
         try {
           const liveKitConnection = await backendFetch(`/calls/${liveCall.id}/livekit-token`, { method: 'POST' });
           if (await navigateToDirectLiveKit(liveCall, liveKitConnection)) return;
+          if (!activeRef.current || endingRef.current) return;
         } catch (liveKitError) {
           console.warn('[calls] LiveKit direct transport unavailable; retaining WebRTC fallback:', liveKitError?.message || liveKitError);
         }
@@ -336,7 +337,7 @@ export default function CallScreenWeb({ route, navigation }) {
       };
 
       const maybeStartOffer = async () => {
-        if (!isCaller || currentStatus !== 'accepted' || !signalingReady || offerStartedRef.current || !pc || !activeRef.current) return;
+        if (!isCaller || currentStatus !== 'accepted' || !signalingReady || offerStartedRef.current || !pc || !activeRef.current || endingRef.current) return;
         offerStartedRef.current = true;
         try {
           const offer = await pc.createOffer();
@@ -360,7 +361,7 @@ export default function CallScreenWeb({ route, navigation }) {
       });
 
       unsubscribeSession = subscribeToCallSession(liveCall.id, (next) => {
-        if (!activeRef.current || !next) return;
+        if (!activeRef.current || endingRef.current || !next) return;
         currentStatus = next.status;
         callRef.current = next;
         setCall(next);
@@ -374,6 +375,7 @@ export default function CallScreenWeb({ route, navigation }) {
             try {
               const liveKitConnection = await backendFetch(`/calls/${next.id}/livekit-token`, { method: 'POST' });
               if (await navigateToDirectLiveKit(next, liveKitConnection)) return;
+              if (!activeRef.current || endingRef.current) return;
             } catch (liveKitError) {
               console.warn('[calls] LiveKit direct transport unavailable; retaining WebRTC fallback:', liveKitError?.message || liveKitError);
             }
