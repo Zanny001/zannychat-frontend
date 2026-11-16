@@ -70,3 +70,21 @@ test('older history pagination failures retain a visible accessible retry action
   assert.match(screen, /accessibilityLabel="Retry loading earlier messages"/);
   assert.match(screen, /hasMore && !olderLoadError/);
 });
+
+
+test('permanent send failures never enter the retry outbox', () => {
+  assert.match(screen, /const permanentFailure = isPermanentMessageSendError\(err\)/);
+  assert.match(screen, /let queued = false/);
+  assert.match(screen, /queued = await savePendingMessage\(myUserId, conversation\.id, pending\)/);
+  assert.match(screen, /err\?\.code === '42501'/);
+});
+
+test('permanent failures discovered by automatic recovery are removed instead of retried forever', () => {
+  const start = screen.indexOf('const retryQueuedTextMessages');
+  const end = screen.indexOf('}, [myUserId, conversation?.id]);', start);
+  const body = screen.slice(start, end);
+  assert.match(body, /if \(isPermanentMessageSendError\(error\)\)/);
+  assert.match(body, /removePendingMessage\(myUserId, conversation\.id, item\.requestId\)/);
+  assert.match(body, /setPendingOutbox\(\(items\) => items\.filter/);
+  assert.match(body, /setSendError\(removed/);
+});
