@@ -401,6 +401,52 @@ export async function setStatusExcludedUser(userId, excluded) {
 }
 
 // Resolve only the profile fields needed to label status replies and mute preferences.
+/**
+ * Resolve status-owner identities through the privacy-aware profile RPCs.
+ * Public avatar URLs are used only when the profile projection allows them;
+ * restricted avatars are signed from the private bucket for this viewer.
+ */
+export async function resolveStatusUserProfiles(userIds, viewerId) {
+  if (!SUPABASE_ENABLED || !supabase) return {};
+  const ids = [...new Set((userIds || []).filter((id) => typeof id === 'string' && id && id !== viewerId))];
+  if (!ids.length) return {};
+
+  const profilesById = new Map();
+  for (let offset = 0; offset < ids.length; offset += 500) {
+    const batch = ids.slice(offset, offset + 500);
+    const [{ data: profiles, error: profileError }, { data: avatarPaths, error: avatarError }] = await Promise.all([
+      supabase.rpc('get_conversation_profile_directory', { p_user_ids: batch }),
+      supabase.rpc('get_visible_profile_avatar_paths', { p_user_ids: batch }),
+    ]);
+    if (profileError) throw profileError;
+    if (avatarError) throw avatarError;
+    const pathsById = new Map((avatarPaths || []).map((row) => [row.user_id, row]));
+
+    await Promise.all((profiles || []).map(async (profile) => {
+      const path = pathsById.get(profile.id);
+      let avatarUrl = path?.requires_private ? null : (profile.avatar_url || null);
+      if (path?.can_view && path.avatar_path && (path.requires_private || !avatarUrl)) {
+        try {
+          const { data: signed, error: signError } = await supabase.storage
+            .from('private-avatars')
+            .createSignedUrl(path.avatar_path, 300);
+          if (!signError) avatarUrl = signed?.signedUrl || avatarUrl;
+        } catch (_) {
+          // Keep the identity row; never fall back to an unverified public URL.
+          if (path.requires_private) avatarUrl = null;
+        }
+      }
+      profilesById.set(profile.id, {
+        name: String(profile.name || 'ZannyChat user').trim() || 'ZannyChat user',
+        avatarColor: profile.avatar_color || null,
+        avatarUrl,
+        online: Boolean(profile.online),
+      });
+    }));
+  }
+  return Object.fromEntries(profilesById);
+}
+
 export async function resolveStatusUserNames(userIds) {
   if (!SUPABASE_ENABLED || !supabase) return {};
   const ids = [...new Set((userIds || []).filter((id) => typeof id === 'string' && id))];
