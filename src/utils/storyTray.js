@@ -2,7 +2,7 @@ import { unreadStatusCount } from './statusSeen.js';
 
 // Build one privacy-filtered tray item per status owner. Callers must pass
 // statuses returned by the authenticated status service, never raw rows.
-export function buildStoryTrayGroups(statuses, names, seenIds) {
+export function buildStoryTrayGroups(statuses, profiles, seenIds) {
   const grouped = new Map();
   for (const status of Array.isArray(statuses) ? statuses : []) {
     if (!status?.user_id || !status?.id) continue;
