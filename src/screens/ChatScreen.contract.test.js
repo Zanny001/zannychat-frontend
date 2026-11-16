@@ -57,7 +57,9 @@ test('message composer keeps a distinct moderate input surface and balanced cont
 
 test('permanent send failures never enter the retry outbox', () => {
   assert.match(screen, /const permanentFailure = isPermanentMessageSendError\(err\)/);
-  assert.match(screen, /const queued = permanentFailure \? false : await savePendingMessage/);
+  assert.match(screen, /const permanentFailure = isPermanentMessageSendError\(err\)/);
+  assert.match(screen, /let queued = false/);
+  assert.match(screen, /queued = await savePendingMessage\(myUserId, conversation\.id, pending\)/);
   assert.match(screen, /err\?\.code === '42501'/);
 });
 
@@ -68,5 +70,5 @@ test('permanent failures discovered by automatic recovery are removed instead of
   assert.match(body, /if \(isPermanentMessageSendError\(error\)\)/);
   assert.match(body, /removePendingMessage\(myUserId, conversation\.id, item\.requestId\)/);
   assert.match(body, /setPendingOutbox\(\(items\) => items\.filter/);
-  assert.match(body, /setSendError\(error\?\.message/);
+  assert.match(body, /setSendError\(removed/);
 });
