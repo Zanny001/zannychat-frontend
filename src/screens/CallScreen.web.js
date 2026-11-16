@@ -97,17 +97,39 @@ export default function CallScreenWeb({ route, navigation }) {
     });
   }, [activeCallType, conversationId, navigation]);
 
+  const navigateToDirectLiveKit = useCallback(async (currentCall, connectionResult) => {
+    if (!activeRef.current || endingRef.current || !currentCall?.id || !connectionResult?.token || !connectionResult?.livekitUrl || !connectionResult?.roomId || upgradeNavigatedRef.current) return false;
+    upgradeNavigatedRef.current = true;
+    endingRef.current = true;
+    navigation.replace('GroupCall', {
+      directCallId: currentCall.id,
+      directCall: currentCall,
+      connection: connectionResult,
+      conversationId: currentCall.conversation_id || conversationId,
+      conversationName: participantName,
+      callType: currentCall.call_type || activeCallType,
+    });
+    return true;
+  }, [activeCallType, conversationId, navigation, participantName]);
+
   const endCall = useCallback(async (reason = 'ended') => {
+    if (endingRef.current) return;
+    endingRef.current = true;
+    let endStatePersisted = false;
     const current = callRef.current || call;
     if (current?.id && ['ringing', 'accepted'].includes(current.status)) {
       const nextStatus = getCallEndStatus({ reason, isCaller, status: current.status });
       try {
         const updated = await updateCallStatus(current.id, nextStatus);
         callRef.current = { ...current, ...updated };
+        endStatePersisted = true;
       } catch (_) {
-        // The beforeRemove guard gets one final chance to persist the end state.
+        // Re-enable the beforeRemove fallback below if this first write fails.
       }
+    } else {
+      endStatePersisted = true;
     }
+    if (!endStatePersisted) endingRef.current = false;
     navigation.goBack();
   }, [call, isCaller, navigation]);
 
@@ -187,6 +209,15 @@ export default function CallScreenWeb({ route, navigation }) {
       }
       if (!liveCall || (isCaller ? !['ringing', 'accepted'].includes(liveCall.status) : liveCall.status !== 'accepted')) {
         throw new Error('This call is no longer available. Please start or answer the call again.');
+      }
+      if (liveCall.status === 'accepted') {
+        try {
+          const liveKitConnection = await backendFetch(`/calls/${liveCall.id}/livekit-token`, { method: 'POST' });
+          if (await navigateToDirectLiveKit(liveCall, liveKitConnection)) return;
+          if (!activeRef.current || endingRef.current) return;
+        } catch (liveKitError) {
+          console.warn('[calls] LiveKit direct transport unavailable; retaining WebRTC fallback:', liveKitError?.message || liveKitError);
+        }
       }
       callRef.current = liveCall;
       if (activeRef.current) setCall(liveCall);
@@ -306,7 +337,7 @@ export default function CallScreenWeb({ route, navigation }) {
       };
 
       const maybeStartOffer = async () => {
-        if (!isCaller || currentStatus !== 'accepted' || !signalingReady || offerStartedRef.current || !pc || !activeRef.current) return;
+        if (!isCaller || currentStatus !== 'accepted' || !signalingReady || offerStartedRef.current || !pc || !activeRef.current || endingRef.current) return;
         offerStartedRef.current = true;
         try {
           const offer = await pc.createOffer();
@@ -330,7 +361,7 @@ export default function CallScreenWeb({ route, navigation }) {
       });
 
       unsubscribeSession = subscribeToCallSession(liveCall.id, (next) => {
-        if (!activeRef.current || !next) return;
+        if (!activeRef.current || endingRef.current || !next) return;
         currentStatus = next.status;
         callRef.current = next;
         setCall(next);
@@ -340,7 +371,16 @@ export default function CallScreenWeb({ route, navigation }) {
         }
         if (next.status === 'accepted') {
           setPhase('Connecting…');
-          maybeStartOffer();
+          (async () => {
+            try {
+              const liveKitConnection = await backendFetch(`/calls/${next.id}/livekit-token`, { method: 'POST' });
+              if (await navigateToDirectLiveKit(next, liveKitConnection)) return;
+              if (!activeRef.current || endingRef.current) return;
+            } catch (liveKitError) {
+              console.warn('[calls] LiveKit direct transport unavailable; retaining WebRTC fallback:', liveKitError?.message || liveKitError);
+            }
+            maybeStartOffer();
+          })();
         } else if (isTerminalCallStatus(next.status)) {
           setPhase(next.status === 'declined' ? 'Call declined' : next.status === 'missed' ? 'No answer' : 'Call ended');
           setTimeout(() => { if (activeRef.current) navigation.goBack(); }, 700);
