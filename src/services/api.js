@@ -838,9 +838,10 @@ export async function deleteAccount(currentPassword) {
     }
     throw error;
   }
-  // Account is already removed server-side. Clean this account's local
-  // unsent drafts before dropping the local session; cleanup is best-effort
-  // and never turns a successful server deletion into a reported failure.
+  // Account is already removed server-side. Clear this account's drafts,
+  // pins, status/channel drafts and pending outbox records before dropping
+  // the local session. Cleanup is best-effort, but its result is reported so
+  // the user can clear app storage if the device storage adapter failed.
   const cleanupResults = await Promise.all([
     clearDraftsForUser(userData.user.id),
     clearPinnedMessagesForUser(userData.user.id),
