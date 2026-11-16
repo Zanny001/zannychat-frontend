@@ -98,7 +98,7 @@ export default function CallScreenWeb({ route, navigation }) {
   }, [activeCallType, conversationId, navigation]);
 
   const navigateToDirectLiveKit = useCallback(async (currentCall, connectionResult) => {
-    if (!currentCall?.id || !connectionResult?.token || !connectionResult?.livekitUrl || !connectionResult?.roomId || upgradeNavigatedRef.current) return false;
+    if (!activeRef.current || endingRef.current || !currentCall?.id || !connectionResult?.token || !connectionResult?.livekitUrl || !connectionResult?.roomId || upgradeNavigatedRef.current) return false;
     upgradeNavigatedRef.current = true;
     endingRef.current = true;
     navigation.replace('GroupCall', {
@@ -113,16 +113,23 @@ export default function CallScreenWeb({ route, navigation }) {
   }, [activeCallType, conversationId, navigation, participantName]);
 
   const endCall = useCallback(async (reason = 'ended') => {
+    if (endingRef.current) return;
+    endingRef.current = true;
+    let endStatePersisted = false;
     const current = callRef.current || call;
     if (current?.id && ['ringing', 'accepted'].includes(current.status)) {
       const nextStatus = getCallEndStatus({ reason, isCaller, status: current.status });
       try {
         const updated = await updateCallStatus(current.id, nextStatus);
         callRef.current = { ...current, ...updated };
+        endStatePersisted = true;
       } catch (_) {
-        // The beforeRemove guard gets one final chance to persist the end state.
+        // Re-enable the beforeRemove fallback below if this first write fails.
       }
+    } else {
+      endStatePersisted = true;
     }
+    if (!endStatePersisted) endingRef.current = false;
     navigation.goBack();
   }, [call, isCaller, navigation]);
 
