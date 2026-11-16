@@ -37,7 +37,10 @@ The application has substantial implemented functionality, but the current evide
 | Backend #127 — message guard migration ledger alignment | Merged | Repository filename matches Supabase version 20261116195405. |
 | Backend #128 — call signal server timestamps | Merged | Fixes client timestamp spoofing that could bypass the 120-signals/minute limit; applied as Supabase version 20261116195939. |
 | Backend #129 — call signal migration ledger alignment | Merged | Repository filename matches Supabase version 20261116195939. |
-| Backend #130 — user activity timestamp integrity | Open draft | Adds server-authoritative timestamps for status views/replies/reactions, message reactions, pinned messages, profile activity and read cursors. CI initially found a test-regex issue; corrected, awaiting fresh CI. Migration not applied. |
+| Backend #130 — user activity timestamp integrity | Merged | Added 14 timestamp triggers; CI passed. Initial dispatcher omission was found in post-apply review and corrected by #132. |
+| Backend #131 — activity migration ledger alignment | Merged | Repository filename matches Supabase version 20261116203426. |
+| Backend #132 — activity timestamp dispatcher correction | Merged | Explicitly handles all 14 attached tables; Backend quality and Advanced calling backend workflows passed. Corrective migration applied as 20261116203635. |
+| Backend #133 — dispatcher migration ledger alignment | Open draft | Repository filename alignment for production version 20261116203635; CI/review pending. |
 | Frontend #109 — audit register reconciliation | Merged | Canonical navigation inventory and current production evidence recorded in this document. |
 
 ## Navigation inventory reconciliation
@@ -82,7 +85,7 @@ Five experiences were added in the current navigator and must also be audited: L
 
 **Advisor items:** leaked-password protection is disabled; enablement needs an Auth configuration change and confirmation that it is available in the current plan. The advisor currently reports 37 RLS-enabled tables without policies. A direct catalog check confirms zero anon and zero authenticated table privileges on all 37, consistent with backend/service-role-only tables; do not add broad policies to silence the advisor. Review all authenticated SECURITY DEFINER functions individually and retain regression tests.
 
-**Additional P2 integrity work in review:** Backend PR #130 adds a SECURITY INVOKER, empty-search-path trigger to server-stamp `status_views.viewed_at`, `status_replies.created_at`, `message_reactions.created_at`, `status_reactions.created_at/updated_at`, `pinned_messages.pinned_at`, `profile_details.last_seen_at/updated_at` and non-null `conversation_participants.last_read_at` changes. It preserves explicit null read-cursor resets (mark unread), existing profile visibility and pinned-message snapshot triggers, and all RLS/table grants. Production migration is deliberately not applied until CI passes and SQL is revalidated. Other timestamp-bearing tables must still be reviewed for authenticated-writable fields.
+**Applied P2 integrity hardening:** Backend PR #130 adds a SECURITY INVOKER, empty-search-path trigger across 14 activity/presence/moderation tables. Post-apply review caught an incomplete table-dispatch branch in the first migration; backend PR #132 corrected it with explicit branches for every attached table and a fail-closed exception. Both Backend quality and Advanced calling backend workflows passed on the corrective PR. Supabase production versions `20261116203426` and `20261116203635` are applied; catalog confirms 14 triggers and no direct anon/authenticated EXECUTE. Explicit NULL read-cursor resets (mark unread), existing profile visibility and pinned-message snapshot triggers, and all RLS/table grants are preserved. Additional timestamp-bearing tables should still be reviewed.
 
 **Next:** inspect all RLS table grants and storage policies; verify signed URL expiry and object ownership; audit auth/session storage on web/native; inspect account deletion and cleanup; validate CORS allowlist and security headers; test rate limits, input validation, enumeration resistance, token revocation and privilege escalation. End-to-end encryption is not to be advertised unless implemented and verified.
 
@@ -136,9 +139,9 @@ Never promote one status to another without evidence. Do not invent analytics, e
 
 ### Security hardening update — 2026-11-16 21:30 UTC
 
-- Backend PR #125 (sanitized CORS rejection diagnostics), #126 (message INSERT integrity), #127 (message migration ledger reconciliation), #128 (server-time call signal rate limiting) and #129 (call-signal migration ledger reconciliation) are merged.
+- Backend PR #125 (sanitized CORS rejection diagnostics), #126 (message INSERT integrity), #127 (message migration ledger reconciliation), #128 (server-time call signal rate limiting), #129 (call-signal migration ledger reconciliation), #130 (activity timestamp triggers), #131 (activity migration ledger reconciliation) and #132 (activity timestamp dispatcher correction) are merged.
 - Supabase production migration versions `20261116195405` and `20261116195939` are recorded and verified. Both changes were additive; transaction-only smoke checks were rolled back and no test rows persisted.
-- Backend PR #130 is under review for server-authoritative user activity timestamps. Its first CI run exposed one test-only regex formatting assumption (the SQL trigger declaration spans lines); this was corrected. The migration has not been applied to production.
+- Backend PR #132 corrected the first activity timestamp migration's incomplete table dispatcher after post-apply review. The corrective migration is applied and verified; PR #133 is pending to align the repository migration filename with Supabase's recorded version.
 - Frontend PR #108 is merged with successful CI on its exact head. Physical-device/browser calling acceptance remains open.
 - Frontend PR #109 (this audit register reconciliation) is merged.
 - No Vercel production deployment or native production build is claimed. Vercel project-write permission remains a separate integration blocker.
