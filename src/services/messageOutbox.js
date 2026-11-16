@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { serializeByKey } from '../utils/serializeByKey';
 import { MAX_PENDING_MESSAGES, normalizePendingMessages } from '../utils/normalizePendingMessages';
-import { getMessageOutboxStorageKey } from '../utils/messageOutboxKeys';
+import { getMessageOutboxStorageKey, getMessageOutboxStoragePrefix } from '../utils/messageOutboxKeys';
 import { getSafeRetryError, normalizeSafeRetryError } from '../utils/safeRetryError';
 
 const keyFor = getMessageOutboxStorageKey;
