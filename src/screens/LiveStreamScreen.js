@@ -363,6 +363,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [replayBusy, setReplayBusy] = useState(false);
   const [error, setError] = useState('');
   const endedRef = useRef(false);
+  const leaveRef = useRef(null);
 
   useEffect(() => {
     if (!streamId) {
@@ -486,11 +487,10 @@ export default function LiveStreamScreen({ route, navigation }) {
 
   useEffect(() => {
     if (!navigation?.addListener || !stream?.id) return undefined;
-    const unsubscribe = navigation.addListener('beforeRemove', () => {
-      if (!endedRef.current) {
-        endedRef.current = true;
-        backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' }).catch(() => {});
-      }
+    const unsubscribe = navigation.addListener('beforeRemove', (event) => {
+      if (endedRef.current) return;
+      event.preventDefault();
+      leaveRef.current?.();
     });
     return unsubscribe;
   }, [navigation, stream?.id, creatorMode]);
@@ -522,10 +522,10 @@ export default function LiveStreamScreen({ route, navigation }) {
 
   const leave = async () => {
     if (!stream?.id || endedRef.current || busy) return;
+    endedRef.current = true;
     setBusy(true);
     try {
       await backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' });
-      endedRef.current = true;
       setBusy(false);
       navigation.goBack();
     } catch (error) {
@@ -537,6 +537,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       );
     }
   };
+  leaveRef.current = leave;
 
   const sendComment = async () => {
     if (!draft.trim() || !stream?.id) return;
