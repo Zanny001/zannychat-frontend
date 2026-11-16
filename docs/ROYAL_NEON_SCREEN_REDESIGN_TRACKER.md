@@ -150,3 +150,57 @@ The order below preserves the agreed messaging-first sequence. A screen is not c
 - Chats header camera, drafts and new-chat actions are now 44×44; search has a 48-point minimum surface and the Moments “See all” action has a 44-point target. Regression assertions cover the dimensions.
 
 - NewChat quick actions now wrap on narrow viewports rather than forcing all three cards into a single row; each action retains a 44-point minimum content height and a responsive width basis.
+
+
+## Reconciled main-branch checkpoint — 2026-11-16
+
+### Merged implementation baseline
+
+- Frontend PR #71 merged: the signed-in user's profile avatar is used in the “My status” ring, with the story image as fallback.
+- Frontend PR #86 merged: LIVE remote-track handling, server-issued role boundaries, creator/guest/viewer media stage, publisher state synchronization, viewer heartbeat and safer leave/end behavior.
+- Frontend PR #89 merged: Creator Studio, explicit HOST/GUEST labels, creator-only participant snapshot, honest “Viewers listed” metric, moderator parity and mobile panel sizing.
+- Frontend PR #90 merged: auth sign-out revocation marker now persists in Keychain/Keystore as well as AsyncStorage; reinstall simulation is covered by a regression contract.
+- Frontend PR #91 merged: Crown Aurora shared design foundation, chat bubble/composer/glass/header refinements, responsive media sizing, notification opt-out persistence, privacy/account-deletion copy and contracts.
+- Earlier stacked PRs #85 and #88 were closed as superseded after their non-conflicting changes were reapplied on current main. Their older LIVE header hunk was intentionally omitted because PR #86 already contains a newer scrollable management rail.
+- PR #84 remains a draft for direct 1:1 LiveKit transport pending browser and physical-device audio/video acceptance.
+
+### Current inventory — use this as the canonical count
+
+- **48 unique navigation experiences**: 43 root-stack routes plus six Main-tab destinations, with Channels shared between navigators.
+- **46 registered screen modules** and **49 screen implementation files** when platform-specific web call/LIVE variants are counted.
+- The earlier 45-experience and 36-screen counts are superseded planning snapshots. Do not omit routes to fit the original 36-screen estimate, and do not count shared routes twice.
+- All 46 registered screen modules have received a first-pass source review. This is not a visual, keyboard, accessibility, browser, or device sign-off.
+
+### What is now implemented in the shared premium foundation
+
+- Crown Aurora palette direction: void/deep navy, violet, cyan and restrained crown gold, while preserving the stable theme preference key and user-selected palettes.
+- Shared GlassCard, Header, ChatBubble and InputBar refinements.
+- Responsive media preview sizing and stronger composer hierarchy.
+- Notification startup registration now respects persisted opt-out; token upsert/deletion outcomes are checked and the screen reports the real registration state.
+- Privacy/security account-deletion copy requires recent authentication and explains reauthentication rather than implying a stale session is sufficient.
+- Status avatar, high-priority 48-point hit areas, dark/light contrast and accessibility labels were previously addressed in the earlier screen passes.
+
+### Current release/preview disposition
+
+- PR #91's Premium status and LIVE quality workflow and Advanced calling client workflow passed; its Netlify preview succeeded.
+- Vercel checks continue to fail because the team's build-rate limit is reached. This is an account/plan limit, not a failed application build. No Vercel production deployment is confirmed.
+- PR #86/#89 merge does not replace two-account browser and two-physical-device acceptance. LIVE replay Egress-to-private-storage-to-playback remains unverified; production replay table currently has zero rows.
+- Native auth hardening is in source, but production-configured Android/iOS binaries and reinstall/account-switching tests remain required.
+
+### Next screen-by-screen implementation order
+
+1. Main / Chats: story tray, chat list density, search, filters, pinned/archived states, loading/empty/error and bottom navigation safe area.
+2. Chat: message hierarchy, reply/forward/edit/delete states, reactions, media, voice-note playback, composer/attachment sheet, keyboard and long-history scrolling.
+3. New Chat: contact discovery, call/video actions, search, privacy-safe profile rows and invitation states.
+4. Forward Message, Saved Messages, Drafts and Pinned Messages.
+5. Chat Folders, Shared Media and Chat Appearance.
+6. Status/Stories and privacy/audience flows.
+7. Profile, peer profile, edit profile and account/security settings.
+8. Call history, incoming/outgoing/direct/group call and LIVE screens.
+9. Channels, events, polls, groups, discovery, support and utility flows.
+
+Each screen remains incomplete until its real data and interaction states pass visual checks at 320/360/390/430 px, tablet and desktop widths; light/dark and user-selected palettes; keyboard-open and safe-area states; large text/reduced motion; screen-reader labels and touch targets; and supported-platform runtime checks. Do not substitute screenshots or design references for functional behavior.
+
+### Additional security observation
+
+The deployed web CSP in `vercel.json` and `netlify.toml` currently sets `frame-ancestors`, `base-uri` and `object-src`, but does not define `default-src` or `script-src`. It provides clickjacking/base/object restrictions, not a complete script-loading/XSS policy. A stricter CSP requires an allowlist based on actual Supabase, Render, LiveKit, OAuth and media origins and must be validated against the exported Expo web app before rollout.
