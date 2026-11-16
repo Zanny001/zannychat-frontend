@@ -209,7 +209,9 @@ test('native and web LIVE sessions renew participant presence and support stale 
   const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.ok(web.includes("`/live/${stream.id}/heartbeat`"));
   assert.ok(web.includes('setInterval(heartbeat, 30_000)'));
-  assert.ok(web.includes("status !== 'Connected'"));
+  assert.ok(web.includes("roomRef.current?.state !== 'connected'"));
+  assert.ok(web.includes('room?.on(RoomEvent.Connected, heartbeat)'));
+  assert.ok(web.includes('room?.on(RoomEvent.Reconnected, heartbeat)'));
 });
 
 
