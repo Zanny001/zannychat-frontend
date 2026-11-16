@@ -128,6 +128,7 @@ test('web LIVE keeps the stage accurate when remote cameras mute, unmute or unpu
   assert.ok(web.includes('const onUnpublished = (publication, participant) =>'));
   assert.ok(web.includes('const onTrackMuted = (publication, participant) =>'));
   assert.ok(web.includes('const onTrackUnmuted = (publication, participant) =>'));
+  assert.ok(web.includes('!participant.isLocal && publication.source === Track.Source.Camera'));
   assert.ok(web.includes('room.on(RoomEvent.TrackUnpublished, onUnpublished)'));
   assert.ok(web.includes('room.on(RoomEvent.TrackMuted, onTrackMuted)'));
   assert.ok(web.includes('room.on(RoomEvent.TrackUnmuted, onTrackUnmuted)'));
