@@ -115,7 +115,8 @@ test('LIVE stage actions are accessible and destructive guest removal requires c
 });
 
 test('stage panel shows the enforced guest capacity and retains moderator management', () => {
-  assert.ok(screen.includes('up to 5 guests'));
+  assert.ok(screen.includes('onStageGuestCount}/5'));
+  assert.ok(screen.includes('availableGuestSlots'));
   assert.ok(screen.includes('onSetModerator'));
 });
 
@@ -125,7 +126,8 @@ test('web LIVE creator stage manager has parity with native guest controls', () 
   assert.ok(webSource.includes('/mute'));
   assert.ok(webSource.includes('Manage LIVE stage'));
   assert.ok(webSource.includes('Remove guest'));
-  assert.ok(webSource.includes('up to 5 guests'));
+  assert.ok(webSource.includes("role === 'guest').length}</Text>"));
+  assert.ok(webSource.includes('Creator Studio'));
 });
 
 test('native and web LIVE screens synchronize the creator spotlight across participants', () => {
