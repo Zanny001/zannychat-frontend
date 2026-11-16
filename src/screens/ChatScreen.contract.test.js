@@ -44,7 +44,8 @@ test('message composer keeps a distinct moderate input surface and balanced cont
   const inputBar = fs.readFileSync(new URL('../components/InputBar.js', import.meta.url), 'utf8');
   assert.match(inputBar, /backgroundColor: colors\.surfaceElevated/);
   assert.match(inputBar, /borderColor: hexToRgba\(colors\.primary, 0\.32\)/);
-  assert.match(inputBar, /borderRadius: 20/);\n  assert.match(inputBar, /minHeight: 52/);
+  assert.match(inputBar, /borderRadius: 20/);
+  assert.match(inputBar, /minHeight: 52/);
   assert.match(inputBar, /width: 48, height: 48/);
   assert.match(inputBar, /accessibilityLabel="Send voice message"/);
   assert.match(inputBar, /accessibilityLabel=\{text\.trim\(\) \? \(editing \? 'Confirm edit' : 'Send message'\) : 'Record a voice message'\}/);
