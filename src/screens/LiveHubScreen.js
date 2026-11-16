@@ -32,6 +32,7 @@ export default function LiveHubScreen({ navigation, route }) {
   const [invitations, setInvitations] = useState([]);
   const [replays, setReplays] = useState([]);
   const [replayError, setReplayError] = useState('');
+  const [replayLoaded, setReplayLoaded] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
   const pendingReplayPollStartedAt = useRef(0);
   const [followingIds, setFollowingIds] = useState([]);
@@ -89,24 +90,26 @@ export default function LiveHubScreen({ navigation, route }) {
     setLoading(true);
     try {
       const [publicResult, followedResult, followResult, inviteResult, replayResult, currentUser] = await Promise.all([
-        backendFetch('/live'),
+        backendFetch('/live').then((result) => ({ result, error: null })).catch((error) => ({ result: { streams: [] }, error })),
         backendFetch('/live/following/streams').catch(() => ({ streams: [] })),
         backendFetch('/live/following').catch(() => ({ following: [] })),
         backendFetch('/live/invitations').catch(() => ({ invitations: [] })),
         backendFetch('/live/replays').then((result) => ({ result, error: null })).catch((error) => ({ result: { replays: [] }, error })),
         getCurrentUser().catch(() => null),
       ]);
-      const allStreams = [...(publicResult?.streams || []), ...(followedResult?.streams || [])];
+      const allStreams = [...(publicResult?.result?.streams || []), ...(followedResult?.streams || [])];
       setStreams([...new Map(allStreams.map((item) => [item.id, item])).values()]);
       setFollowingCreators(followResult?.following || []);
       setFollowingIds((followResult?.following || []).map((item) => item.creator_id));
       setInvitations((inviteResult?.invitations || []).filter((item) => item.stream));
       setReplays(Array.isArray(replayResult?.result?.replays) ? replayResult.result.replays : []);
+      setReplayLoaded(!replayResult?.error);
       setReplayError(replayResult?.error ? 'LIVE replays are temporarily unavailable. Please try again.' : '');
       setCurrentUserId(currentUser?.id || null);
-      setError('');
+      setError(publicResult?.error?.message || '');
     } catch (e) {
       setError(e?.message || 'LIVE discovery is unavailable.');
+      setReplayLoaded(false);
       setReplayError('LIVE replays could not be refreshed. Please try again.');
     } finally {
       setLoading(false);
@@ -431,7 +434,7 @@ export default function LiveHubScreen({ navigation, route }) {
               </View>
             )}
 
-            {(replays.length > 0 || !!replayError || (!loading && !error)) && (
+            {(replays.length > 0 || !!replayError || (replayLoaded && !loading)) && (
               <View style={{ paddingHorizontal: spacing.md, marginBottom: spacing.md, gap: spacing.sm }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
                   <Ionicons name="play-circle" size={19} color={colors.primary} />
