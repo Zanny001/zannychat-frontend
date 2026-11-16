@@ -8,7 +8,7 @@ test('native ongoing group calls expose a privacy-filtered add-people workflow',
   assert.match(source, /initialConnection\?\.room\?\.id/);
   assert.match(source, /CallInvitePicker/);
   assert.match(source, /group-call.*invite/);
-  assert.match(source, /filterToConversationMembers=\{!connection\.room\.source_call_id\}/);
+  assert.match(source, /filterToConversationMembers=\{!directCallId && !connection\.room\.source_call_id\}/);
   assert.match(source, /excludeIds=\{participantIds\}/);
 });
 
