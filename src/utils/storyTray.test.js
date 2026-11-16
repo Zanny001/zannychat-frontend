@@ -32,3 +32,24 @@ test('ignores malformed status records and handles missing input safely', () => 
   assert.deepEqual(buildStoryTrayGroups(null, {}, []), []);
   assert.deepEqual(buildStoryTrayGroups([null, {}, { id: 'missing-owner' }], {}, []), []);
 });
+
+
+test('carries privacy-resolved contact photos and presence into story tray items', () => {
+  const groups = buildStoryTrayGroups([
+    { id: 'peer-1', user_id: 'peer', is_own: false },
+  ], {
+    peer: { name: 'A friend', avatarUrl: 'https://example.test/avatar.jpg', avatarColor: '#123456', online: true },
+  }, []);
+  assert.equal(groups[0].name, 'A friend');
+  assert.equal(groups[0].avatarUrl, 'https://example.test/avatar.jpg');
+  assert.equal(groups[0].avatarColor, '#123456');
+  assert.equal(groups[0].online, true);
+});
+
+test('keeps the legacy name-map shape compatible and does not invent an avatar', () => {
+  const groups = buildStoryTrayGroups([
+    { id: 'peer-1', user_id: 'peer', is_own: false },
+  ], { peer: 'A friend' }, []);
+  assert.equal(groups[0].name, 'A friend');
+  assert.equal(groups[0].avatarUrl, null);
+});
