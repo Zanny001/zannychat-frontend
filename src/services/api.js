@@ -12,6 +12,7 @@ import { clearStatusDraft } from '../utils/statusDraftStorage';
 import { clearChannelPostDraftsForUser } from '../utils/channelDraftStorage';
 import { clearSavedMessagesForUser } from './savedMessages';
 import { clearChatFoldersForUser } from './chatFolders';
+import { clearMemberFavoritesForUser } from '../utils/memberFavorites';
 import { supabase, SUPABASE_ENABLED, SUPABASE_URL } from './supabaseClient';
 import { backendFetch, BACKEND_ENABLED } from './backendClient';
 import { getActiveVoipPushToken, getActiveApnsAlertToken } from './voipPushTokenState';
@@ -853,6 +854,7 @@ export async function deleteAccount(currentPassword) {
     clearChannelPostDraftsForUser(AsyncStorage, userData.user.id),
     clearSavedMessagesForUser(userData.user.id),
     clearChatFoldersForUser(userData.user.id),
+    clearMemberFavoritesForUser(AsyncStorage, userData.user.id),
   ].map((cleanup) => cleanup.catch(() => false)));
   const localCleanupComplete = cleanupResults.every(Boolean);
   let localSessionCleared = true;

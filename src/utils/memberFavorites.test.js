@@ -25,3 +25,17 @@ test('directory supports all, online and favorites filters plus search', () => {
   assert.deepEqual(filterMemberDirectory(members, '', 'favorites', ['b']).map((m) => m.id), ['b']);
   assert.deepEqual(filterMemberDirectory(members, 'ADA', 'all').map((m) => m.id), ['a']);
 });
+
+
+test('account deletion clears only the deleted user’s member-directory favorites', async () => {
+  const { clearMemberFavoritesForUser } = await import('./memberFavorites.js');
+  const values = new Map([
+    [memberFavoritesStorageKey('user-a'), '["peer-a"]'],
+    [memberFavoritesStorageKey('user-b'), '["peer-b"]'],
+  ]);
+  const storage = { removeItem: async (key) => values.delete(key) };
+  assert.equal(await clearMemberFavoritesForUser(storage, 'user-a'), true);
+  assert.equal(values.has(memberFavoritesStorageKey('user-a')), false);
+  assert.equal(values.has(memberFavoritesStorageKey('user-b')), true);
+  assert.equal(await clearMemberFavoritesForUser(storage, ''), false);
+});
