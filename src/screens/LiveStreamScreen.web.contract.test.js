@@ -150,3 +150,10 @@ test('web LIVE viewer presence heartbeat runs for connected waiting viewers and 
   assert.ok(web.includes('room?.off(RoomEvent.Reconnected, heartbeat)'));
   assert.ok(web.includes('setInterval(heartbeat, 30_000)'));
 });
+
+
+test('web LIVE creator-only controls derive from the authenticated server role, never navigation params', () => {
+  assert.ok(web.includes("const creatorMode = connection?.role === 'creator';"));
+  assert.equal(web.includes('route.params?.creatorMode || connection?.role'), false);
+  assert.ok(web.includes("const publisherMode = Boolean(creatorMode || (connection?.role === 'guest' && connection?.canPublish && !demotedToViewer));"));
+});
