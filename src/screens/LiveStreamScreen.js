@@ -656,6 +656,25 @@ export default function LiveStreamScreen({ route, navigation }) {
     } catch (e) { Alert.alert('Participants unavailable', e?.message || 'Please try again.'); }
   };
 
+  useEffect(() => {
+    if (!creatorMode || !showParticipants || !stream?.id) return undefined;
+    let active = true;
+    const refreshStudioParticipants = () => {
+      backendFetch(`/live/${stream.id}/participants`)
+        .then((result) => {
+          if (active) setParticipants(Array.isArray(result?.participants) ? result.participants : []);
+        })
+        .catch((refreshError) => {
+          if (active) console.warn('[live] creator studio refresh failed:', refreshError?.message || refreshError);
+        });
+    };
+    const interval = setInterval(refreshStudioParticipants, 15_000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [creatorMode, showParticipants, stream?.id]);
+
   const loadGuestRequests = async () => {
     try {
       const result = await backendFetch(`/live/${stream.id}/guest-requests`);
