@@ -75,3 +75,15 @@ test('late LiveKit token responses cannot resurrect a call after the user ends o
     assert.match(end, /if \(!endStatePersisted\) endingRef\.current = false/);
   }
 });
+
+
+test('late token responses cannot fall through to WebRTC after a direct call has begun ending', () => {
+  for (const source of [nativeCall, webCall]) {
+    const start = source.indexOf('maybeStartOffer = async () => {', source.indexOf('const run = async'));
+    const end = source.indexOf('};', start);
+    const offerGuard = source.slice(start, end);
+    assert.match(offerGuard, /endingRef\.current/);
+    assert.match(source, /if \(!activeRef\.current \|\| endingRef\.current \|\| !next\) return/);
+    assert.match(source, /if \(await navigateToDirectLiveKit\((?:liveCall|next), liveKitConnection\)\) return;\s*if \(!activeRef\.current \|\| endingRef\.current\) return;/);
+  }
+});
