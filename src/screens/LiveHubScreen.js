@@ -8,6 +8,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 import { confirmAction, showAppAlert } from '../utils/appDialogs';
 import GlassCard from '../components/GlassCard';
+import { filterLiveStreams } from '../utils/liveDiscovery';
 
 const VISIBILITIES = [
   { value: 'public', label: 'Public' },
@@ -46,6 +47,7 @@ export default function LiveHubScreen({ navigation, route }) {
   const [error, setError] = useState('');
   const [startStage, setStartStage] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const handledLiveNotificationRef = useRef(null);
 
   const refreshPendingReplays = useCallback(async () => {
@@ -75,10 +77,10 @@ export default function LiveHubScreen({ navigation, route }) {
     }
   }, [replays]);
 
-  const visibleStreams = streams.filter((item) => {
-    if (activeFilter === 'following') return followingIds.includes(item.creator_id);
-    if (activeFilter === 'public') return item.visibility === 'public';
-    return true;
+  const visibleStreams = filterLiveStreams(streams, {
+    filter: activeFilter,
+    followingIds,
+    query: searchQuery,
   });
 
   const refresh = useCallback(async () => {
@@ -305,6 +307,11 @@ export default function LiveHubScreen({ navigation, route }) {
               </View>
               <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 29, marginTop: spacing.md }]}>Your stage. Your people.</Text>
               <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs, lineHeight: 22 }]}>Go live, bring your community together, and invite trusted guests on stage.</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.md, minHeight: 50, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.md }}>
+                <Ionicons name="search" size={19} color={colors.textSecondary} />
+                <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder="Search LIVE titles or creators" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search LIVE titles or creators" returnKeyType="search" style={{ flex: 1, minWidth: 0, color: colors.textPrimary, paddingVertical: spacing.sm, paddingHorizontal: spacing.sm }} />
+                {!!searchQuery && <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear LIVE search" style={{ width: 36, height: 40, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={19} color={colors.textSecondary} /></TouchableOpacity>}
+              </View>
               <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>
                 <View style={{ flex: 1, borderRadius: radii.md, padding: spacing.sm, backgroundColor: colors.surface }}>
                   <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{streams.length}</Text>
@@ -535,7 +542,7 @@ export default function LiveHubScreen({ navigation, route }) {
             </View>
             <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>No LIVE streams in this view</Text>
             <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', lineHeight: 19 }]}>
-              {activeFilter === 'following' ? 'Follow creators to see their broadcasts here.' : 'Start a broadcast or check back when your community is live.'}
+              {searchQuery.trim() ? 'Try a different title or creator name, or clear your search.' : activeFilter === 'following' ? 'Follow creators to see their broadcasts here.' : 'Start a broadcast or check back when your community is live.'}
             </Text>
           </GlassCard>
         ) : null}
