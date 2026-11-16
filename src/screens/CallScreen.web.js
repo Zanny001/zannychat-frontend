@@ -109,14 +109,14 @@ export default function CallScreenWeb({ route, navigation }) {
       navigation.goBack();
       return false;
     }
-    if (latestCall.group_room_id) {
-      await navigateToConference({ id: latestCall.group_room_id, conversation_id: latestCall.conversation_id, call_type: latestCall.call_type });
-      return true;
-    }
     if (latestCall.status !== 'accepted') {
       endingRef.current = true;
       navigation.goBack();
       return false;
+    }
+    if (latestCall.group_room_id) {
+      await navigateToConference({ id: latestCall.group_room_id, conversation_id: latestCall.conversation_id, call_type: latestCall.call_type });
+      return true;
     }
     upgradeNavigatedRef.current = true;
     endingRef.current = true;
@@ -236,9 +236,13 @@ export default function CallScreenWeb({ route, navigation }) {
           if (!activeRef.current || endingRef.current) return;
         } catch (liveKitError) {
           const { data: latestCall, error: stateError } = await supabase.from('call_sessions').select('id,conversation_id,call_type,status,group_room_id').eq('id', liveCall.id).maybeSingle();
-          if (!stateError && (!latestCall || latestCall.status !== 'accepted' || latestCall.group_room_id)) {
-            if (latestCall?.group_room_id) await navigateToConference({ id: latestCall.group_room_id, conversation_id: latestCall.conversation_id, call_type: latestCall.call_type });
-            else { endingRef.current = true; navigation.goBack(); }
+          if (!stateError && (!latestCall || latestCall.status !== 'accepted')) {
+            endingRef.current = true;
+            navigation.goBack();
+            return;
+          }
+          if (!stateError && latestCall.group_room_id) {
+            await navigateToConference({ id: latestCall.group_room_id, conversation_id: latestCall.conversation_id, call_type: latestCall.call_type });
             return;
           }
           console.warn('[calls] LiveKit direct transport unavailable; retaining WebRTC fallback:', liveKitError?.message || liveKitError);
