@@ -283,6 +283,7 @@ test('native LIVE stage uses a premium horizontally scrollable action rail on co
   assert.ok(screen.includes('paddingTop: 120'));
   assert.ok(screen.includes('width: 48, height: 48'));
   assert.ok(screen.includes('minWidth: 48, minHeight: 48'));
+  assert.equal(screen.includes('minWidth: 48, height: 44'), false);
   assert.ok(screen.includes("borderColor: hexToRgba(colors.accent, 0.28)"));
   assert.ok(screen.includes("accessibilityLabel={creatorMode ? 'End LIVE stream' : 'Leave LIVE stream'}"));
 });
