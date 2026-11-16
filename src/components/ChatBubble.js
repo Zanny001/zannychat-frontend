@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, Animated, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, Image, StyleSheet, Animated, TouchableOpacity, Linking, useWindowDimensions } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
@@ -8,6 +8,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 import Avatar from './Avatar';
 import { extractFirstUrl } from '../utils/links';
+import { getMediaPreviewSize } from '../utils/mediaPreviewSizing';
 import { fetchLinkPreview } from '../services/api';
 
 const QUICK_REACTIONS = ['❤️', '😂', '👍', '😮', '😢'];
@@ -163,11 +164,11 @@ function LinkPreviewCard({ url, isMine }) {
 // this build has no separate delivery acknowledgment to show one
 // honestly.
 
-function VideoMessageContent({ uri, isMine, onSave }) {
+function VideoMessageContent({ uri, isMine, onSave, size }) {
   const { colors, radii } = useTheme();
   const player = useVideoPlayer(uri, (instance) => { instance.loop = false; });
   return (
-    <View style={{ width: 232, height: 174, borderRadius: radii.sm, overflow: 'hidden', backgroundColor: '#080808' }}>
+    <View style={{ width: size.width, height: size.height, borderRadius: radii.sm, overflow: 'hidden', backgroundColor: '#080808' }}>
       <VideoView player={player} nativeControls contentFit="contain" style={{ width: '100%', height: '100%' }} />
       <TouchableOpacity onPress={() => onSave?.(uri, 'video')} style={{ position: 'absolute', top: 8, right: 8, width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.62)' }} accessibilityRole="button" accessibilityLabel="Save video to device">
         <Ionicons name="download-outline" size={18} color="#fff" />
@@ -196,6 +197,9 @@ export default function ChatBubble({
   onOpenContact,
 }) {
   const { colors, spacing, radii, typography } = useTheme();
+  const { width: windowWidth } = useWindowDimensions();
+  const imagePreviewSize = getMediaPreviewSize(windowWidth, 'image');
+  const videoPreviewSize = getMediaPreviewSize(windowWidth, 'video');
   const swipeableRef = useRef(null);
 
   function renderLeftAction(progress) {
@@ -254,7 +258,7 @@ export default function ChatBubble({
           accessibilityHint="Opens the image in full screen"
         >
           <View>
-            <Image source={{ uri: message.mediaUrl }} style={[styles.image, { borderRadius: radii.sm }]} resizeMode="cover" />
+            <Image source={{ uri: message.mediaUrl }} style={[styles.image, { width: imagePreviewSize.width, height: imagePreviewSize.height, borderRadius: radii.sm }]} resizeMode="cover" />
             <TouchableOpacity onPress={() => onSaveMedia?.(message.mediaUrl, 'image')} style={{ position: 'absolute', top: 8, right: 8, width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.62)' }} accessibilityRole="button" accessibilityLabel="Save image to device">
               <Ionicons name="download-outline" size={18} color="#fff" />
             </TouchableOpacity>
@@ -265,7 +269,7 @@ export default function ChatBubble({
     }
 
     if (message.mediaType === 'video') {
-      return <View><VideoMessageContent uri={message.mediaUrl} isMine={isMine} onSave={onSaveMedia} />{message.text ? <Text style={[typography.body, { color: captionColor, marginTop: 6 }]}>{message.text}</Text> : null}</View>;
+      return <View><VideoMessageContent uri={message.mediaUrl} isMine={isMine} onSave={onSaveMedia} size={videoPreviewSize} />{message.text ? <Text style={[typography.body, { color: captionColor, marginTop: 6 }]}>{message.text}</Text> : null}</View>;
     }
 
     if (message.mediaType === 'voice') {
