@@ -26,3 +26,15 @@ export function filterMemberDirectory(members, query, filter = 'all', favorites 
     .slice()
     .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' }));
 }
+
+
+/** Clear only the deleted account's device-local directory favorites. */
+export async function clearMemberFavoritesForUser(storage, userId) {
+  if (!storage || typeof storage.removeItem !== 'function' || typeof userId !== 'string' || !userId.trim()) return false;
+  try {
+    await storage.removeItem(memberFavoritesStorageKey(userId));
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
