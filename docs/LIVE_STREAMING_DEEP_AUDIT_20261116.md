@@ -120,3 +120,6 @@ This fix improves participant presence accuracy; it does not itself establish th
 ### Important boundary
 
 A successful build, a connected LiveKit room, a participant database row, or a green deployment check is not proof that remote RTP video/audio is visible to a separate viewer. Production media acceptance is still a required gate. The Netlify PR preview check is green, but I could not independently load the preview in this audit environment. The Vercel check is green, but its status link does not independently prove the browser preview URL or deployed runtime is reachable.
+
+
+| Native compact-screen stage controls | The original single-row header placed the title, audio route, participants, guest requests, replay, reports and end controls side by side. On narrow screens this could compress the title and push action targets out of view. | Reworked the native stage into a premium Crown Aurora control rail: a compact LIVE/title/end row plus a horizontally scrollable action row with accessible touch targets. Reserved vertical space so the controls do not cover the stage. Added a regression contract. |
