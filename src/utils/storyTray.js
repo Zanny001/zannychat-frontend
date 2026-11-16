@@ -14,7 +14,10 @@ export function buildStoryTrayGroups(statuses, names, seenIds) {
     return {
       userId,
       isOwn,
-      name: isOwn ? 'Your story' : names?.[userId] || 'ZannyChat user',
+      name: isOwn ? 'Your story' : (typeof profiles?.[userId] === 'string' ? profiles[userId] : profiles?.[userId]?.name) || 'ZannyChat user',
+      avatarUrl: isOwn ? null : (profiles?.[userId]?.avatarUrl || profiles?.[userId]?.avatar_url || null),
+      avatarColor: isOwn ? null : (profiles?.[userId]?.avatarColor || profiles?.[userId]?.avatar_color || null),
+      online: isOwn ? false : Boolean(profiles?.[userId]?.online),
       count: items.length,
       unseenCount: unreadStatusCount(items, seenIds, isOwn),
     };
