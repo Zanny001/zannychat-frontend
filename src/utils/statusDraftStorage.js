@@ -1,6 +1,14 @@
 import { normalizeStatusExpiryHours, normalizeStatusText } from './statusRules.js';
 
-export const STATUS_DRAFT_STORAGE_KEY = 'zannychat.status-draft.v1';
+// The legacy key had no account identity. It is intentionally discarded on
+// the first authenticated read rather than migrated to an unknown account.
+export const LEGACY_STATUS_DRAFT_STORAGE_KEY = 'zannychat.status-draft.v1';
+export const STATUS_DRAFT_STORAGE_PREFIX = 'zannychat.status-draft.v1.';
+
+export function getStatusDraftStorageKey(userId) {
+  if (userId == null || String(userId).trim() === '') return null;
+  return `${STATUS_DRAFT_STORAGE_PREFIX}${encodeURIComponent(String(userId))}`;
+}
 
 export function normalizeStatusDraft(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -14,27 +22,37 @@ export function normalizeStatusDraft(value) {
   return { version: 1, text, audience, expiryHours, selectedAudienceIds };
 }
 
-export async function readStatusDraft(storage) {
-  if (!storage || typeof storage.getItem !== 'function') return null;
+export async function readStatusDraft(storage, userId) {
+  const key = getStatusDraftStorageKey(userId);
+  if (!storage || typeof storage.getItem !== 'function' || !key) return null;
   try {
-    const raw = await storage.getItem(STATUS_DRAFT_STORAGE_KEY);
+    // Never attribute an old unscoped draft to whichever account signs in next.
+    if (typeof storage.removeItem === 'function') await storage.removeItem(LEGACY_STATUS_DRAFT_STORAGE_KEY);
+    const raw = await storage.getItem(key);
     return raw ? normalizeStatusDraft(JSON.parse(raw)) : null;
   } catch { return null; }
 }
 
-export async function writeStatusDraft(storage, value) {
-  if (!storage || typeof storage.setItem !== 'function') return false;
+export async function writeStatusDraft(storage, userId, value) {
+  const key = getStatusDraftStorageKey(userId);
+  if (!storage || typeof storage.setItem !== 'function' || !key) return false;
   const draft = normalizeStatusDraft(value);
   try {
     if (!draft) {
-      if (typeof storage.removeItem === 'function') await storage.removeItem(STATUS_DRAFT_STORAGE_KEY);
-      else await storage.setItem(STATUS_DRAFT_STORAGE_KEY, '');
-    } else await storage.setItem(STATUS_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+      if (typeof storage.removeItem === 'function') await storage.removeItem(key);
+      else await storage.setItem(key, '');
+    } else await storage.setItem(key, JSON.stringify(draft));
+    if (typeof storage.removeItem === 'function') await storage.removeItem(LEGACY_STATUS_DRAFT_STORAGE_KEY);
     return true;
   } catch { return false; }
 }
 
-export async function clearStatusDraft(storage) {
-  if (!storage || typeof storage.removeItem !== 'function') return false;
-  try { await storage.removeItem(STATUS_DRAFT_STORAGE_KEY); return true; } catch { return false; }
+export async function clearStatusDraft(storage, userId) {
+  const key = getStatusDraftStorageKey(userId);
+  if (!storage || typeof storage.removeItem !== 'function' || !key) return false;
+  try {
+    await storage.removeItem(key);
+    await storage.removeItem(LEGACY_STATUS_DRAFT_STORAGE_KEY);
+    return true;
+  } catch { return false; }
 }
