@@ -17,7 +17,7 @@ This increment is stacked on the LIVE media reliability branch so role labels an
 
 ## Data integrity
 
-The existing `GET /live/:streamId/participants` endpoint is creator-only and returns joined viewer/guest roles, joined state and moderator membership. The new metrics are derived only from those rows. They are explicitly labelled as current connected participants; they are not lifetime reach, unique viewers, watch time, retention, or earnings.
+The existing `GET /live/:streamId/participants` endpoint is creator-only and returns joined viewer/guest roles, joined state and moderator membership. The new metrics are derived only from those rows. They are explicitly labelled as current connected participants at the time the creator refreshes the Studio panel; they are not a guaranteed real-time counter, lifetime reach, unique viewers, watch time, retention, or earnings.
 
 ## Not included
 
