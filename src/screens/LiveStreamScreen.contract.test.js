@@ -280,7 +280,9 @@ test('native LIVE viewers explicitly auto-subscribe to creator and guest media t
 test('native LIVE stage uses a premium horizontally scrollable action rail on compact screens', () => {
   assert.ok(screen.includes('ScrollView, StatusBar'));
   assert.ok(screen.includes('showsHorizontalScrollIndicator={false}'));
-  assert.ok(screen.includes('paddingTop: 112'));
+  assert.ok(screen.includes('paddingTop: 120'));
+  assert.ok(screen.includes('width: 48, height: 48'));
+  assert.ok(screen.includes('minWidth: 48, minHeight: 48'));
   assert.ok(screen.includes("borderColor: hexToRgba(colors.accent, 0.28)"));
   assert.ok(screen.includes("accessibilityLabel={creatorMode ? 'End LIVE stream' : 'Leave LIVE stream'}"));
 });
