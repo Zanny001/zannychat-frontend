@@ -841,7 +841,7 @@ export async function deleteAccount(currentPassword) {
   // Account is already removed server-side. Clean this account's local
   // unsent drafts before dropping the local session; cleanup is best-effort
   // and never turns a successful server deletion into a reported failure.
-  await Promise.all([
+  const cleanupResults = await Promise.all([
     clearDraftsForUser(userData.user.id),
     clearPinnedMessagesForUser(userData.user.id),
     clearPendingMessagesForUser(userData.user.id),
@@ -849,8 +849,9 @@ export async function deleteAccount(currentPassword) {
     clearStatusDraft(AsyncStorage, userData.user.id),
     clearChannelPostDraftsForUser(AsyncStorage, userData.user.id),
   ].map((cleanup) => cleanup.catch(() => false)));
+  const localCleanupComplete = cleanupResults.every(Boolean);
   await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
-  return { deleted: true };
+  return { deleted: true, localCleanupComplete };
 }
 
 export async function getSessionSecurityInfo() {
