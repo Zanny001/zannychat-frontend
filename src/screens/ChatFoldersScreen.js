@@ -34,6 +34,7 @@ export default function ChatFoldersScreen({ navigation }) {
 
   const refresh = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const user = await getCurrentUser();
       const id = user?.id || 'guest';
@@ -61,7 +62,14 @@ export default function ChatFoldersScreen({ navigation }) {
   const cancelEdit = () => { setEditingId(null); setName(''); setRules(['unread']); setExcluded(['archived']); setError(''); };
   const remove = (folder) => Alert.alert('Delete folder?', `Delete “${folder.name}”? Your chats and messages will not be deleted.`, [
     { text: 'Cancel', style: 'cancel' },
-    { text: 'Delete', style: 'destructive', onPress: async () => { const next = await deleteChatFolder(userId, folder.id); setFolders(next); } },
+    { text: 'Delete', style: 'destructive', onPress: async () => {
+      try {
+        const next = await deleteChatFolder(userId, folder.id);
+        setFolders(next);
+      } catch (_) {
+        setError('Could not delete this folder. Please try again.');
+      }
+    } },
   ]);
 
   const Choice = ({ item, selected, onPress, subtitle }) => (
