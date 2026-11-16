@@ -106,6 +106,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [remoteAudioParticipants, setRemoteAudioParticipants] = useState([]);
   const audioOnlyParticipants = remoteAudioParticipants.filter((participant) => !remoteVideoTracks.some((entry) => entry.participant.identity === participant.identity));
   const endedRef = useRef(false);
+  const leaveRef = useRef(null);
   const [status, setStatus] = useState('Connecting…');
   useEffect(() => { setDemotedToViewer(false); setStageNotice(''); }, [connection?.token]);
   const [error, setError] = useState('');
@@ -394,11 +395,10 @@ export default function LiveStreamScreen({ route, navigation }) {
 
   useEffect(() => {
     if (!navigation?.addListener || !stream?.id) return undefined;
-    const unsubscribe = navigation.addListener('beforeRemove', () => {
-      if (!endedRef.current) {
-        endedRef.current = true;
-        backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' }).catch(() => {});
-      }
+    const unsubscribe = navigation.addListener('beforeRemove', (event) => {
+      if (endedRef.current) return;
+      event.preventDefault();
+      leaveRef.current?.();
     });
     return unsubscribe;
   }, [navigation, stream?.id, creatorMode]);
@@ -428,10 +428,10 @@ export default function LiveStreamScreen({ route, navigation }) {
 
   const leave = async () => {
     if (!stream?.id || endedRef.current || busy) return;
+    endedRef.current = true;
     setBusy(true);
     try {
       await backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' });
-      endedRef.current = true;
       roomRef.current?.disconnect();
       setBusy(false);
       navigation.goBack();
@@ -441,6 +441,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       setError(err?.message || (creatorMode ? 'Could not end the LIVE session.' : 'Could not leave the LIVE session.'));
     }
   };
+  leaveRef.current = leave;
   const toggleCamera = async () => {
     try { const next = !camera; await roomRef.current?.localParticipant.setCameraEnabled(next); setCamera(next); }
     catch (err) { setError(err?.message || 'Camera permission is unavailable.'); }
