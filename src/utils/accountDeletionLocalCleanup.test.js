@@ -24,6 +24,8 @@ test('permanent account deletion clears account-scoped local content before loca
     'clearPendingAttachmentsForUser(userData.user.id)',
     'clearStatusDraft(AsyncStorage, userData.user.id)',
     'clearChannelPostDraftsForUser(AsyncStorage, userData.user.id)',
+    'clearSavedMessagesForUser(userData.user.id)',
+    'clearChatFoldersForUser(userData.user.id)',
   ]) assert.ok(deletion.includes(operation), `missing local cleanup: ${operation}`);
 });
 

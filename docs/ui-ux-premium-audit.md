@@ -547,3 +547,10 @@ The next interface implementation target is the Chat screen, followed by New Cha
 ### Vercel permission verification
 
 The connected account is confirmed as an `OWNER` of the `ZannyChat` Hobby team, but the team currently returns zero projects. Both the Vercel project-create and Git-linked project-create operations returned HTTP 403 `forbidden` for `zannychat`. The Vercel CLI fallback is not available in the connected execution environment. No project or deployment was created. This is not a missing team-owner role; project creation must be completed in the Vercel dashboard or through the owner's authenticated CLI, then the project can be inspected/configured here.
+
+
+### Local messaging data boundaries — 2026-11-16
+
+- Saved Messages and Chat Folders are intentionally stored in account-keyed device-local AsyncStorage; they do not currently sync between devices. PR #98 extends permanent account deletion to remove both stores, in addition to drafts, pins, pending text/attachment outboxes, Status drafts and Channel drafts/recent-channel data.
+- Message drafts and pending outbox records are also device-local. Account-scoped keys prevent another signed-in account from reading them through the app, but AsyncStorage is not end-to-end encryption or secure hardware-backed storage.
+- Cross-device sync for saved messages/folders and encrypted outbox persistence remain separate product/security work; do not imply either capability is already available.

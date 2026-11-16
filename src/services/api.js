@@ -10,6 +10,8 @@ import { clearPendingMessagesForUser } from './messageOutbox';
 import { clearPendingAttachmentsForUser } from './attachmentOutbox';
 import { clearStatusDraft } from '../utils/statusDraftStorage';
 import { clearChannelPostDraftsForUser } from '../utils/channelDraftStorage';
+import { clearSavedMessagesForUser } from './savedMessages';
+import { clearChatFoldersForUser } from './chatFolders';
 import { supabase, SUPABASE_ENABLED, SUPABASE_URL } from './supabaseClient';
 import { backendFetch, BACKEND_ENABLED } from './backendClient';
 import { getActiveVoipPushToken, getActiveApnsAlertToken } from './voipPushTokenState';
@@ -839,7 +841,7 @@ export async function deleteAccount(currentPassword) {
     throw error;
   }
   // Account is already removed server-side. Clear this account's drafts,
-  // pins, status/channel drafts and pending outbox records before dropping
+  // pins, saved messages, folders, status/channel drafts and pending outbox records before dropping
   // the local session. Cleanup is best-effort, but its result is reported so
   // the user can clear app storage if the device storage adapter failed.
   const cleanupResults = await Promise.all([
@@ -849,6 +851,8 @@ export async function deleteAccount(currentPassword) {
     clearPendingAttachmentsForUser(userData.user.id),
     clearStatusDraft(AsyncStorage, userData.user.id),
     clearChannelPostDraftsForUser(AsyncStorage, userData.user.id),
+    clearSavedMessagesForUser(userData.user.id),
+    clearChatFoldersForUser(userData.user.id),
   ].map((cleanup) => cleanup.catch(() => false)));
   const localCleanupComplete = cleanupResults.every(Boolean);
   let localSessionCleared = true;
