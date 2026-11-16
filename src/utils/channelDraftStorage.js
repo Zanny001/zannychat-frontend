@@ -33,13 +33,14 @@ export function clearChannelPostDraft(storage, key) {
 
 export async function clearChannelPostDraftsForUser(storage, userId) {
   const user = typeof userId === 'string' ? userId.trim() : '';
-  if (!storage || !user || typeof storage.getAllKeys !== 'function' || typeof storage.multiRemove !== 'function') return false;
+  if (!storage || !user || typeof storage.getAllKeys !== 'function' || typeof storage.removeItem !== 'function') return false;
   const prefix = `${CHANNEL_POST_DRAFT_PREFIX}${user}/`;
   try {
     const keys = await storage.getAllKeys();
     const matches = keys.filter((key) => key.startsWith(prefix));
-    if (matches.length) await storage.multiRemove(matches);
-    if (typeof storage.removeItem === 'function') await storage.removeItem(`zannychat:recent-channels:${user}`);
+    const cleared = await Promise.all(matches.map((key) => clearChannelPostDraft(storage, key)));
+    if (cleared.some((result) => !result)) return false;
+    await storage.removeItem(`zannychat:recent-channels:${user}`);
     return true;
   } catch (_) { return false; }
 }
