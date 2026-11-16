@@ -1457,7 +1457,7 @@ export default function ChatScreen({ route, navigation }) {
                   </TouchableOpacity>
                 </View>
               ) : null}
-              {hasMore ? (
+              {hasMore && !olderLoadError ? (
                 <TouchableOpacity
                   onPress={loadOlder}
                   disabled={loadingOlder}
