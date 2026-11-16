@@ -701,7 +701,7 @@ export default function LiveStreamScreen({ route, navigation }) {
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
           <View style={{ flex: 1, minWidth: 0, padding: 10, borderRadius: 12, backgroundColor: colors.surfaceAlt }}>
             <Text style={{ color: colors.textPrimary, fontWeight: '900', fontSize: 20 }}>{participants.filter((item) => item.joined && item.role === 'viewer').length}</Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Viewers</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Viewers listed</Text>
           </View>
           <View style={{ flex: 1, minWidth: 0, padding: 10, borderRadius: 12, backgroundColor: colors.surfaceAlt }}>
             <Text style={{ color: colors.textPrimary, fontWeight: '900', fontSize: 20 }}>{participants.filter((item) => item.joined && item.role === 'guest').length}/5</Text>
