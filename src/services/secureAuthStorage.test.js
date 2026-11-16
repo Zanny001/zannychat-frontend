@@ -82,7 +82,9 @@ test('removeItem deletes both secure and legacy session copies', async () => {
 
   assert.equal(await storage.getItem('sb-zanny-auth-token'), null);
   assert.equal(memory.legacy.has('sb-zanny-auth-token'), false);
-  assert.equal([...memory.secure.keys()].some((key) => key.includes('.secure-v2.')), false);
+  assert.equal(memory.secure.get('sb-zanny-auth-token.secure-v2.revoked'), '1');
+  assert.equal([...memory.secure.keys()].some((key) => key.includes('.secure-v2.manifest')), false);
+  assert.equal([...memory.secure.keys()].some((key) => key.includes('.secure-v2.') && !key.endsWith('.revoked')), false);
 });
 
 test('oversized values fail without replacing the previous session', async () => {
@@ -121,6 +123,12 @@ test('failed secure deletion leaves a revocation marker so the session cannot re
   await assert.rejects(storage.removeItem('sb-zanny-auth-token'), /Keychain deletion failure/);
   assert.equal(await storage.getItem('sb-zanny-auth-token'), null);
   assert.equal(memory.legacy.get('sb-zanny-auth-token.secure-v2.revoked'), '1');
+  assert.equal(memory.secure.get('sb-zanny-auth-token.secure-v2.revoked'), '1');
+
+  // Simulate uninstall/reinstall: app-sandbox AsyncStorage is wiped, but
+  // the iOS Keychain item remains. The secure revocation marker must still win.
+  memory.legacy.clear();
+  assert.equal(await storage.getItem('sb-zanny-auth-token'), null);
 
   memory.secureStore.deleteItemAsync = originalDelete;
   await storage.setItem('sb-zanny-auth-token', 'new-session');

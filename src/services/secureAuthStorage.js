@@ -128,8 +128,18 @@ export function createSecureAuthStorage({
 
   async function getItem(key) {
       if (typeof key !== 'string' || !key) throw new TypeError('Auth storage key is required.');
-      // A durable sign-out marker takes precedence over any stale secure or legacy session.
+      // Check the legacy marker first, then the Keychain/Keystore marker. The
+      // secure marker survives an iOS app reinstall if manifest deletion failed.
       if (await legacyStorage.getItem(makeRevocationKey(key)) === '1') return null;
+      let secureRevocation;
+      try {
+        secureRevocation = await secureStore.getItemAsync(makeRevocationKey(key));
+      } catch {
+        // Older binaries without the native module can still read legacy sessions.
+        // During sign-out, the legacy marker is written before any secure operation.
+        return legacyStorage.getItem(key);
+      }
+      if (secureRevocation === '1') return null;
       let stored;
       try {
         stored = await readManifest(key);
@@ -182,6 +192,11 @@ export function createSecureAuthStorage({
       };
       await secureStore.setItemAsync(makeManifestKey(key), JSON.stringify(nextManifest), secureOptions);
 
+      // Publish the new manifest before clearing revocation. The legacy marker
+      // remains in place until the secure marker is gone, so a crash cannot
+      // expose the previous session between these operations.
+      const secureRevocation = await secureStore.getItemAsync(makeRevocationKey(key));
+      if (secureRevocation === '1') await secureStore.deleteItemAsync(makeRevocationKey(key));
       try {
         await legacyStorage.removeItem(key);
       } catch {
@@ -193,14 +208,31 @@ export function createSecureAuthStorage({
 
   async function removeItem(key) {
       if (typeof key !== 'string' || !key) throw new TypeError('Auth storage key is required.');
-      // Persist revocation before touching either copy. If Keychain/Keystore is
-      // temporarily unavailable, getItem still refuses to resurrect the session.
+      // Persist revocation in AsyncStorage first for immediate same-install
+      // protection, then in Keychain/Keystore so it survives iOS reinstall if
+      // manifest deletion fails.
       await legacyStorage.setItem(makeRevocationKey(key), '1');
+      try {
+        await secureStore.setItemAsync(makeRevocationKey(key), '1', secureOptions);
+      } catch (markerError) {
+        // If a durable marker cannot be written, still try to remove the
+        // manifest. Without its pointer, leftover chunks cannot restore a session.
+        try {
+          const stored = await readManifest(key);
+          await secureStore.deleteItemAsync(makeManifestKey(key));
+          if (stored.manifest) await deleteGeneration(secureStore, key, stored.manifest);
+          await legacyStorage.removeItem(key);
+          await legacyStorage.removeItem(makeRevocationKey(key));
+          return;
+        } catch {
+          throw markerError;
+        }
+      }
       await legacyStorage.removeItem(key);
       const stored = await readManifest(key);
       await secureStore.deleteItemAsync(makeManifestKey(key));
       if (stored.manifest) await deleteGeneration(secureStore, key, stored.manifest);
-      await legacyStorage.removeItem(makeRevocationKey(key));
+      // Keep both revocation markers until a fresh session has been fully written.
     }
 
   return { getItem, setItem, removeItem };
