@@ -275,3 +275,12 @@ test('LIVE navigation attempts are intercepted and use the same confirmed exit h
 test('native LIVE viewers explicitly auto-subscribe to creator and guest media tracks', () => {
   assert.ok(screen.includes('options={{ adaptiveStream: true, dynacast: true, autoSubscribe: true }}'));
 });
+
+
+test('native LIVE stage uses a premium horizontally scrollable action rail on compact screens', () => {
+  assert.ok(screen.includes('ScrollView, StatusBar'));
+  assert.ok(screen.includes('showsHorizontalScrollIndicator={false}'));
+  assert.ok(screen.includes('paddingTop: 112'));
+  assert.ok(screen.includes("borderColor: hexToRgba(colors.accent, 0.28)"));
+  assert.ok(screen.includes("accessibilityLabel={creatorMode ? 'End LIVE stream' : 'Leave LIVE stream'}"));
+});
