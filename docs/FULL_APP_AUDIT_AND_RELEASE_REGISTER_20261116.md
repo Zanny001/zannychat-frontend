@@ -28,7 +28,7 @@ The application has substantial implemented functionality, but the current evide
 | Frontend #95 — privacy-aware story avatars | Merged | Contact story avatars use privacy-filtered profile projections and private signed URLs where appropriate. |
 | Frontend #98 — saved/folder cleanup | Merged | Deleted-account local Saved Messages and Chat Folders are cleared; these features remain device-local. |
 | Frontend #88 — original stacked Creator Studio PR | Closed, not merged | Superseded by rebased PR #89; do not reopen. |
-| Frontend #84 — direct-call LiveKit client | Open draft | Automated client checks were in progress on the latest observed run; physical-device/browser calling acceptance remains outstanding. |
+| Frontend #84 — direct-call LiveKit client | Open draft | Both frontend quality workflows passed on head `a426127`; Netlify preview succeeded. Late-token/end-call race protection is included. Physical-device/browser calling acceptance remains outstanding. |
 | Frontend #100 — chat history recovery | Merged | Initial and older-history failures now show accessible loading/error/empty states and retry actions. Both frontend quality workflows and Netlify preview passed. |
 | Frontend #102 — permanent message retry failures (rebased) | Merged | SQLSTATE/error codes survive safe error mapping; permission, stale-reference, validation and auth failures are not queued/retried indefinitely. Both frontend quality workflows and Netlify preview passed. |
 | Frontend #104 — member-favorites account cleanup | Merged | Permanent account deletion now clears only the deleted account's local directory favorites. Both frontend quality workflows and Netlify preview passed. |
