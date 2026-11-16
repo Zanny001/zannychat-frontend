@@ -257,3 +257,16 @@ test('LIVE end and leave failures do not silently navigate away from an active r
   assert.ok(webLeave.includes("roomRef.current?.disconnect()")); 
   assert.ok(webLeave.indexOf('navigation.goBack()') < webLeave.indexOf('catch (err)') || webLeave.includes('navigation.goBack();\n    } catch (err)'));
 });
+
+
+test('LIVE navigation attempts are intercepted and use the same confirmed exit handler', () => {
+  assert.ok(screen.includes("navigation.addListener('beforeRemove', (event) => {"));
+  assert.ok(screen.includes('event.preventDefault();'));
+  assert.ok(screen.includes('leaveRef.current?.();'));
+  assert.ok(screen.includes('leaveRef.current = leave;'));
+  const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(web.includes("navigation.addListener('beforeRemove', (event) => {"));
+  assert.ok(web.includes('event.preventDefault();'));
+  assert.ok(web.includes('leaveRef.current?.();'));
+  assert.ok(web.includes('leaveRef.current = leave;'));
+});
