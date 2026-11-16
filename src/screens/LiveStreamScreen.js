@@ -279,7 +279,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
             <View style={{ flexDirection: 'row', gap: 7, marginBottom: 10 }}>
               <View style={{ flex: 1, minWidth: 0, padding: 9, borderRadius: 12, backgroundColor: colors.surface }}>
                 <Text style={[typography.heading, { color: colors.textPrimary }]}>{connectedViewerCount}</Text>
-                <Text style={[typography.caption, { color: colors.textSecondary }]}>Viewers</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>Viewers listed</Text>
               </View>
               <View style={{ flex: 1, minWidth: 0, padding: 9, borderRadius: 12, backgroundColor: colors.surface }}>
                 <Text style={[typography.heading, { color: colors.textPrimary }]}>{onStageGuestCount}/5</Text>
