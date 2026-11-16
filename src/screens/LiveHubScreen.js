@@ -48,6 +48,7 @@ export default function LiveHubScreen({ navigation, route }) {
   const [startStage, setStartStage] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showComposer, setShowComposer] = useState(false);
   const handledLiveNotificationRef = useRef(null);
 
   const refreshPendingReplays = useCallback(async () => {
@@ -329,7 +330,7 @@ export default function LiveHubScreen({ navigation, route }) {
             </View>
 
             <GlassCard glow style={{ marginHorizontal: spacing.md, marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.md }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              <TouchableOpacity onPress={() => setShowComposer((value) => !value)} accessibilityRole="button" accessibilityLabel="Toggle LIVE broadcast setup" accessibilityState={{ expanded: showComposer }} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                 <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: hexToRgba(colors.danger, 0.12), alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="videocam" size={22} color={colors.danger} />
                 </View>
@@ -338,10 +339,12 @@ export default function LiveHubScreen({ navigation, route }) {
                   <Text style={[typography.caption, { color: colors.textSecondary }]}>Set the mood before you go live</Text>
                 </View>
                 <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, backgroundColor: hexToRgba(colors.danger, 0.1) }}>
-                  <Text style={[typography.caption, { color: colors.danger, fontWeight: '800' }]}>LIVE</Text>
+                  <Text style={[typography.caption, { color: colors.danger, fontWeight: '800' }]}>{showComposer ? 'CLOSE' : 'SET UP'}</Text>
                 </View>
-              </View>
+                <Ionicons name={showComposer ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
 
+              {showComposer && <>
               <TextInput value={title} onChangeText={(v) => setTitle(v.slice(0, 80))} maxLength={80} placeholder="What are you going live about?" placeholderTextColor={colors.textSecondary} accessibilityLabel="LIVE stream title" style={fieldStyle} />
               <TextInput value={description} onChangeText={(v) => setDescription(v.slice(0, 500))} maxLength={500} multiline placeholder="Add a description so people know what to expect…" placeholderTextColor={colors.textSecondary} accessibilityLabel="LIVE stream description" style={[fieldStyle, { minHeight: 76, textAlignVertical: 'top' }]} />
 
@@ -395,6 +398,7 @@ export default function LiveHubScreen({ navigation, route }) {
                 <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>{busy ? 'Connecting…' : 'Go LIVE'}</Text>
               </TouchableOpacity>
               {!!startStage && <Text accessibilityRole="status" style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>{startStage}</Text>}
+              </>}
             </GlassCard>
 
             {invitations.length > 0 && (
