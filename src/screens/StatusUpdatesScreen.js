@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import GlassCard from '../components/GlassCard';
 import { useTheme } from '../theme/ThemeContext';
+import { getCurrentUser } from '../services/api';
 import { filterStatusContacts } from '../utils/filterStatusContacts';
 import { updateSelectedAudienceIds } from '../utils/statusAudienceSelection';
 import { resolveStatusPublishAudience } from '../utils/statusPublishAudience';
@@ -69,6 +70,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
   const [photo, setPhoto] = useState(null);
   const [video, setVideo] = useState(null);
   const [statuses, setStatuses] = useState([]);
+  const [myProfile, setMyProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [publishError, setPublishError] = useState('');
@@ -224,13 +226,21 @@ export default function StatusUpdatesScreen({ navigation, route }) {
     }
   }, []);
   useFocusEffect(useCallback(() => {
+    let focused = true;
+    getCurrentUser()
+      .then((profile) => { if (focused) setMyProfile(profile); })
+      .catch(() => { if (focused) setMyProfile(null); });
     refresh();
     let refreshTimer = null;
     const unsubscribe = subscribeToStatusChanges(() => {
       if (refreshTimer) clearTimeout(refreshTimer);
       refreshTimer = setTimeout(() => { refreshTimer = null; refresh(); }, 350);
     });
-    return () => { if (refreshTimer) clearTimeout(refreshTimer); unsubscribe(); };
+    return () => {
+      focused = false;
+      if (refreshTimer) clearTimeout(refreshTimer);
+      unsubscribe();
+    };
   }, [refresh]));
 
   const choosePhoto = async () => {
@@ -576,9 +586,11 @@ export default function StatusUpdatesScreen({ navigation, route }) {
           <TouchableOpacity onPress={() => ownStatusGroup ? openStatus(ownStatusGroup.latest) : statusTextInputRef.current?.focus?.()} accessibilityRole="button" accessibilityLabel="Open or create your status" style={{ width: 72, alignItems: 'center', gap: 6 }}>
             <View style={{ width: 66, height: 66, borderRadius: 33, borderWidth: 2, borderColor: colors.primary, padding: 3, alignItems: 'center', justifyContent: 'center' }}>
               <View style={{ width: '100%', height: '100%', borderRadius: 30, backgroundColor: colors.surfaceElevated || colors.surface, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                {ownStatusGroup?.latest?.media_url && ownStatusGroup.latest.media_kind === 'image'
-                  ? <Image source={{ uri: ownStatusGroup.latest.media_url }} style={{ width: '100%', height: '100%' }} />
-                  : <Ionicons name="person-outline" size={25} color={colors.textSecondary} />}
+                {myProfile?.avatarUrl
+                  ? <Image source={{ uri: myProfile.avatarUrl }} style={{ width: '100%', height: '100%' }} />
+                  : ownStatusGroup?.latest?.media_url && ownStatusGroup.latest.media_kind === 'image'
+                    ? <Image source={{ uri: ownStatusGroup.latest.media_url }} style={{ width: '100%', height: '100%' }} />
+                    : <Ionicons name="person-outline" size={25} color={colors.textSecondary} />}
               </View>
               <View style={{ position: 'absolute', right: -1, bottom: -1, width: 23, height: 23, borderRadius: 12, backgroundColor: colors.primary, borderWidth: 2, borderColor: colors.background, alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="add" size={16} color={colors.background} />
