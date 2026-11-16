@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getMessageOutboxStorageKey } from './messageOutboxKeys.js';
+import { getMessageOutboxStorageKey, getMessageOutboxStoragePrefix } from './messageOutboxKeys.js';
 
 test('message outbox keys encode delimiters to prevent user/conversation collisions', () => {
   const first = getMessageOutboxStorageKey('user:alpha', 'room');
@@ -15,7 +15,6 @@ test('message outbox key rejects a missing conversation and safely handles malfo
   assert.equal(getMessageOutboxStorageKey('user\uD800', 'room'), 'zannychat:outbox:v1:user%EF%BF%BD:room');
 });
 
-import { getMessageOutboxStoragePrefix } from './messageOutboxKeys.js';
 
 test('message outbox prefix is isolated to the encoded account', () => {
   assert.equal(getMessageOutboxStoragePrefix('user:alpha'), 'zannychat:outbox:v1:user%3Aalpha:');
