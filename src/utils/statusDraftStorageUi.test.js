@@ -9,6 +9,8 @@ test('status composer restores local drafts for the signed-in account and persis
   assert.match(screen, /setStatusDraftReady\(true\)/);
   assert.match(screen, /writeStatusDraft\(AsyncStorage, myProfile\.id, \{ text, audience, expiryHours, selectedAudienceIds \}\)/);
   assert.match(screen, /Draft saved on this device/);
+  assert.match(screen, /editable={statusComposerReady && !saving}/);
+  assert.match(screen, /disabled={!statusComposerReady}/);
 });
 
 test('successful status publish clears only the signed-in account draft and draft media is not persisted', () => {
