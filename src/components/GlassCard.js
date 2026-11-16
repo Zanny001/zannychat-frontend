@@ -17,8 +17,8 @@ export default function GlassCard({
   children,
   style,
   contentStyle,
-  intensity = 36,
-  tintAlpha = 0.46,
+  intensity = 24,
+  tintAlpha = 0.54,
   borderRadius,
   noPadding = false,
   glow = false,
@@ -55,7 +55,7 @@ export default function GlassCard({
         ) : null}
         <View style={[StyleSheet.absoluteFill, { backgroundColor: hexToRgba(colors.surface, tintAlpha) }]} />
         <View style={[!noPadding && { padding: spacing.md }, contentStyle]}>{children}</View>
-        <View pointerEvents="none" style={[styles.specularTop, { backgroundColor: hexToRgba('#FFFFFF', glow ? 0.24 : 0.13), borderTopLeftRadius: radius, borderTopRightRadius: radius }]} />
+        <View pointerEvents="none" style={[styles.specularTop, { backgroundColor: hexToRgba('#FFFFFF', glow ? 0.18 : 0.08), borderTopLeftRadius: radius, borderTopRightRadius: radius }]} />
         <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.innerEdge, { borderRadius: radius, borderColor: hexToRgba(colors.textPrimary, glow ? 0.16 : 0.08) }]} />
       </View>
     </View>

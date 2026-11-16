@@ -60,7 +60,7 @@ export default function Header({ title, onBack, right, subtitle, brand = false, 
               accessibilityRole={onTitlePress ? 'button' : undefined}
               accessibilityLabel={onTitlePress ? `View ${title} profile` : undefined}
             >
-              <Text style={[typography.heading, styles.titleText, { color: colors.textPrimary }]} numberOfLines={1} ellipsizeMode="tail">
+              <Text accessibilityRole="header" style={[typography.heading, styles.titleText, { color: colors.textPrimary }]} numberOfLines={1} ellipsizeMode="tail">
                 {title}
               </Text>
               {subtitle ? (
@@ -69,7 +69,7 @@ export default function Header({ title, onBack, right, subtitle, brand = false, 
             </Pressable>
           )}
         </View>
-        <View style={styles.right}>{right}</View>
+        <View style={[styles.right, { gap: spacing.xs }]}>{right}</View>
       </View>
     </View>
   );

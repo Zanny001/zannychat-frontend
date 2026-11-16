@@ -65,9 +65,12 @@ export const MOODS = {
     danger: '#FF6157',
   },
   royalNeon: {
-    key: 'royalNeon', label: 'Royal Neon', ink: '#080B18', inkRaised: '#11172A',
-    inkRaisedAlt: '#1A2340', signal: '#7C60FF', thread: '#39E7E0', gold: '#FFD58A',
-    paper: '#F4F2FF', inkSoft: '#A9A5D0', line: '#302B59', danger: '#FF6685',
+    // Crown Aurora — the signature ZannyChat direction from the premium
+    // reference set. Keep the stable key so existing saved preferences migrate
+    // in place without resetting anyone's selected theme.
+    key: 'royalNeon', label: 'Crown Aurora', ink: '#070A1A', inkRaised: '#0E1330',
+    inkRaisedAlt: '#161C42', signal: '#6A4DFF', thread: '#38BDF8', gold: '#F3B94D',
+    paper: '#F4F5FF', inkSoft: '#A3ABD6', line: '#2B3155', danger: '#FB7185',
   },
   ocean: {
     key: 'ocean', label: 'Ocean', ink: '#061722', inkRaised: '#0D2432',
