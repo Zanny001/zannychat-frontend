@@ -107,3 +107,34 @@ test('web LIVE route uses a stream ID and fetches its connection after navigatio
 test('web LIVE reactions refresh the server feed immediately after acceptance', () => {
   assert.ok(web.includes('if (result?.accepted) await refreshComments()'));
 });
+
+
+test('web LIVE uses the participant supplied by LiveKit TrackSubscribed instead of reading it from RemoteTrack', () => {
+  assert.ok(web.includes('const onSubscribed = (track, publication, participant) =>'));
+  assert.ok(web.includes('{ track, publication, participant }'));
+  assert.ok(web.includes('participant={item.participant}'));
+  assert.equal(web.includes('track.participant'), false);
+});
+
+test('web LIVE renders creator and remote guests together in one responsive stage', () => {
+  assert.ok(web.includes('const videoTileCount = remoteVideoTracks.length + (publisherMode ? 1 : 0)'));
+  assert.ok(web.includes('ref={localRef}'));
+  assert.ok(web.includes("creatorMode ? 'You · Creator' : 'You · Guest'"));
+  assert.ok(web.includes('<RemoteVideoTile key={item.track.sid}'));
+  assert.ok(web.includes('aspectRatio: 16 / 9'));
+});
+
+test('web LIVE keeps the stage accurate when remote cameras mute, unmute or unpublish', () => {
+  assert.ok(web.includes('const onUnpublished = (publication, participant) =>'));
+  assert.ok(web.includes('const onTrackMuted = (publication, participant) =>'));
+  assert.ok(web.includes('const onTrackUnmuted = (publication, participant) =>'));
+  assert.ok(web.includes('room.on(RoomEvent.TrackUnpublished, onUnpublished)'));
+  assert.ok(web.includes('room.on(RoomEvent.TrackMuted, onTrackMuted)'));
+  assert.ok(web.includes('room.on(RoomEvent.TrackUnmuted, onTrackUnmuted)'));
+});
+
+test('web LIVE explicitly keeps automatic subscription enabled and surfaces failed remote subscriptions', () => {
+  assert.ok(web.includes('room.connect(connection.livekitUrl, connection.token, { autoSubscribe: true })'));
+  assert.ok(web.includes('RoomEvent.TrackSubscriptionFailed'));
+  assert.ok(web.includes('const onTrackSubscriptionFailed = (trackSid, participant) =>'));
+});
