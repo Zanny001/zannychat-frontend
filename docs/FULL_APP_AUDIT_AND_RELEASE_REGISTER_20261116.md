@@ -162,3 +162,17 @@ The 28 public SECURITY DEFINER functions executable by `authenticated` were indi
 - Vercel still has zero linked projects in the connected team context. Its GitHub check reports `build-rate-limit`; no Vercel deployment or project is claimed. The team owner must approve the current one-time authorization request before project creation can be retried.
 - Direct inspection of `vercel.json` confirms the CSP currently contains only `frame-ancestors 'none'; base-uri 'self'; object-src 'none'` and lacks a complete directive allowlist. Do not enforce a guessed restrictive CSP; inventory the built bundle and observed browser origins, validate Report-Only against OAuth, Supabase, Render, LiveKit and media, then enforce.
 - No paid plan upgrade, production database schema change, blanket RLS change, or index deletion was made. Android/iOS physical-device push, call, LIVE creator/guest/viewer and replay Egress-to-private-storage-to-playback acceptance remain open.
+
+
+### LIVE replay production audit correction — 2026-11-17
+
+The backend source does contain a complete initial replay implementation; the previously recorded zero-row/zero-object production snapshot should not be interpreted as proof that the code path is absent. The current source includes authenticated creator-only start/stop, LiveKit Egress MP4 output to private Supabase S3 storage, raw signed webhook verification, bounded duration/size validation, signed playback URLs, quota reservation/finalization, worker recovery and seven-day object cleanup.
+
+Fresh production checks:
+- `live_stream_replays` has RLS enabled, no policies and no direct anon/authenticated table privileges; service-role only.
+- The three replay quota/storage RPCs are SECURITY DEFINER with empty search_path and EXECUTE granted only to postgres/service_role.
+- `live-replays` is private, accepts MP4 only, and has a 48,000,000-byte object cap.
+- Replay rows: 0; replay objects: 0; quota: 0 reserved seconds, 2 used seconds, no active replay.
+- No database changes were made.
+
+The current replay budget is five minutes per recording, 50 minutes total per calendar month, one globally active replay at a time, 48 MB per file and seven-day retention. The production Render feature flags and Egress/webhook runtime logs were not re-verified in this pass. A P2 reliability risk remains: ambiguous-start recovery lists active Egress only, so a completed Egress whose ID was not persisted and whose webhook delivery was lost may be marked failed after the grace period. Real production Egress-to-object-to-signed-playback acceptance remains open.
