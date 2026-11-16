@@ -521,14 +521,21 @@ export default function LiveStreamScreen({ route, navigation }) {
   }, [creatorMode, stream?.id, stream?.allow_guests]);
 
   const leave = async () => {
-    if (!stream?.id || endedRef.current) return;
-    endedRef.current = true;
+    if (!stream?.id || endedRef.current || busy) return;
     setBusy(true);
     try {
       await backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' });
-    } catch (_) {}
-    setBusy(false);
-    navigation.goBack();
+      endedRef.current = true;
+      setBusy(false);
+      navigation.goBack();
+    } catch (error) {
+      endedRef.current = false;
+      setBusy(false);
+      Alert.alert(
+        creatorMode ? 'Could not end LIVE' : 'Could not leave LIVE',
+        error?.message || 'Your connection is still active. Check your network and try again.',
+      );
+    }
   };
 
   const sendComment = async () => {
