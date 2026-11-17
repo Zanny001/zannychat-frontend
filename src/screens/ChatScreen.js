@@ -411,10 +411,10 @@ export default function ChatScreen({ route, navigation }) {
     setOlderLoadError('');
     stickToBottom.current = false;
     try {
-      const oldest = messages[0]?.createdAtRaw;
+      const oldest = messages[0];
       const { messages: older, hasMore: more } = await fetchMessages(conversation.id, {
         limit: MESSAGE_PAGE_SIZE,
-        before: oldest,
+        before: { id: oldest?.id, created_at: oldest?.createdAtRaw },
       });
       if (requestId !== olderLoadRequestRef.current || activeUserIdRef.current !== expectedUserId) return;
       older.forEach((m) => {
@@ -1608,6 +1608,11 @@ export default function ChatScreen({ route, navigation }) {
         keyboardVerticalOffset={90}
       >
         <FlatList keyboardShouldPersistTaps="handled"
+          initialNumToRender={12}
+          maxToRenderPerBatch={10}
+          updateCellsBatchingPeriod={50}
+          windowSize={9}
+          maintainVisibleContentPosition={{ minIndexForVisible: 1 }}
           ref={listRef}
           data={listItems}
           keyExtractor={(item) => item.id}
