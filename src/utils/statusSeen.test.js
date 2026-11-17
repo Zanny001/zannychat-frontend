@@ -17,9 +17,10 @@ test('marks all IDs in a status group seen without duplicates or invalid IDs', (
 });
 
 test('reads persisted seen IDs only from the authenticated account key', async () => {
-  const values = new Map([['zannychat.status-seen.v2:user-a', '["s1","s1"]']]);
-  const storage = { getItem: async (key) => values.get(key) || null };
+  const values = new Map([['zannychat.status-seen.v2:user-a', '["s1","s1"]'], ['zannychat.status-seen.v1', '["legacy"]']]);
+  const storage = { getItem: async (key) => values.get(key) || null, removeItem: async (key) => values.delete(key) };
   assert.deepEqual(await readSeenStatusIds(storage, 'user-a'), ['s1']);
+  assert.equal(values.has('zannychat.status-seen.v1'), false);
   assert.deepEqual(await readSeenStatusIds(storage, 'user-b'), []);
   assert.deepEqual(await readSeenStatusIds({ getItem: async () => 'not-json' }, 'user-a'), []);
   assert.deepEqual(await readSeenStatusIds(storage, null), []);
@@ -28,11 +29,13 @@ test('reads persisted seen IDs only from the authenticated account key', async (
 
 test('writes status read markers to distinct account-scoped keys', async () => {
   const values = new Map();
-  const storage = { setItem: async (key, value) => values.set(key, value) };
+  const storage = { setItem: async (key, value) => values.set(key, value), removeItem: async (key) => values.delete(key) };
+  values.set('zannychat.status-seen.v1', '["legacy"]');
   assert.equal(await writeSeenStatusIds(storage, 'user-a', ['s1', 's1', '']), true);
   assert.equal(await writeSeenStatusIds(storage, 'user-b', ['s2']), true);
   assert.deepEqual(JSON.parse(values.get('zannychat.status-seen.v2:user-a')), ['s1']);
   assert.deepEqual(JSON.parse(values.get('zannychat.status-seen.v2:user-b')), ['s2']);
+  assert.equal(values.has('zannychat.status-seen.v1'), false);
   assert.equal(await writeSeenStatusIds(storage, null, ['s3']), false);
   assert.equal(statusSeenStorageKey('user-a'), 'zannychat.status-seen.v2:user-a');
   assert.equal(statusSeenStorageKey(null), null);
