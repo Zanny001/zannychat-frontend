@@ -37,6 +37,17 @@ class PresenceLifecycleRegressionTests(unittest.TestCase):
         source = self.read("App.js")
         self.assertIn("} else if (event === 'SIGNED_OUT') {\n          stopPresence();", source)
 
+    def test_presence_cache_resets_when_authenticated_account_changes(self):
+        service = self.read("src/services/presence.js")
+        app = self.read("App.js")
+        self.assertIn("let presenceOwnerId = null;", service)
+        self.assertIn("export function setPresenceOwner(userId)", service)
+        self.assertIn("if (presenceOwnerId === nextOwnerId) {", service)
+        self.assertIn("if (nextOwnerId && listeners.size > 0 && !started) startPresence();", service)
+        self.assertIn("if (!SUPABASE_ENABLED || !presenceOwnerId || started) return;", service)
+        self.assertIn("setPresenceOwner(session.user?.id);", app)
+        self.assertIn("setPresenceOwner(null);", app)
+
 
 if __name__ == "__main__":
     unittest.main()
