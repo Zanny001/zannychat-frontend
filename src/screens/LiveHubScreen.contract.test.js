@@ -151,3 +151,9 @@ test('LIVE hub clears private state immediately when Supabase auth owner changes
   assert.ok(screen.includes('if (nextUserId) Promise.resolve().then(() => refresh())'));
   assert.ok(screen.includes('data?.subscription?.unsubscribe?.()'));
 });
+
+
+test('LIVE Hub does not let an identity lookup overwrite a newer auth event', () => {
+  assert.ok(screen.includes('if (requestId !== refreshRequestRef.current) return;'));
+  assert.ok(screen.includes('An auth event may have invalidated this refresh'));
+});
