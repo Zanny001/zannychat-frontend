@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const screen = fs.readFileSync(new URL('../screens/StatusUpdatesScreen.js', import.meta.url), 'utf8');
+const durationStorage = fs.readFileSync(new URL('./statusDurationStorage.js', import.meta.url), 'utf8');
 test('status viewer provides accessible previous and next navigation', () => {
   assert.match(screen, /accessibilityLabel="Previous status"/);
   assert.match(screen, /accessibilityLabel="Next status"/);
@@ -25,7 +26,8 @@ test('status viewer can pause and resume automatic progression accessibly', () =
 });
 
 test('status viewer lets users adjust and persist per-type display duration', () => {
-  assert.match(screen, /zannychat\.status-duration-preferences\.v1/);
+  assert.match(durationStorage, /STATUS_DURATION_STORAGE_PREFIX = 'zannychat\.status-duration-preferences\.v1\.'/);
+  assert.match(screen, /writeStatusDurationPreferences\(AsyncStorage, myProfile\.id, next\)/);
   assert.match(screen, /Decrease this Status display duration by five seconds/);
   assert.match(screen, /Increase this Status display duration by five seconds/);
   assert.match(screen, /getStatusDurationMs\(viewing, statusDurations\)/);
