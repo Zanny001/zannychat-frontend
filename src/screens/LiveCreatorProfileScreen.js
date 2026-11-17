@@ -68,7 +68,7 @@ export default function LiveCreatorProfileScreen({ navigation }) {
       activeUserIdRef.current = nextUserId;
       refreshRequestRef.current += 1;
       setSummary(null);
-      setError('');
+      setError(nextUserId ? '' : 'Sign in to view your LIVE creator profile.');
       setLoading(Boolean(nextUserId));
       if (nextUserId) Promise.resolve().then(() => refresh());
     });
