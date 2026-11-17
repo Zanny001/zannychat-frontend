@@ -171,6 +171,14 @@ export default function StatusUpdatesScreen({ navigation, route }) {
   useEffect(() => {
     let active = true;
     const userId = myProfile?.id;
+    statusRefreshRequestRef.current += 1;
+    setStatuses([]);
+    setReactions({});
+    setViewing(null);
+    setReplies([]);
+    setMutedUsers([]);
+    setExcludedUsers([]);
+    setStatusUserNames({});
     // Never display the previous account's local read markers or viewer
     // preferences while the next account's records are loading.
     seenStatusIdsRef.current = [];
@@ -243,7 +251,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
     } finally {
       if (isCurrent()) setLoading(false);
     }
-  }, []);
+  }, [myProfile?.id]);
   useFocusEffect(useCallback(() => {
     let focused = true;
     getCurrentUser()
