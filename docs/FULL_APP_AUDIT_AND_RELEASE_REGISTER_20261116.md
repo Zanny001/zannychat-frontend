@@ -391,3 +391,25 @@ Group roster pagination must be implemented on the trusted backend and must veri
 | Password Reset | Static reset form with explicit validation and completion state. | Source pass complete; expired/reused token and session invalidation acceptance pending |
 
 The first source-level pass now covers the principal messaging, profile, privacy, status, calling, social, group, scheduled-message and authentication routes. Source review is not equivalent to device acceptance; all production gates remain separately tracked.
+
+
+### Messaging and social interface performance checkpoint — 17 Nov 2026
+
+The following implementation PRs were merged to `main` after both frontend quality workflows passed on their exact final heads:
+
+- PR #152 — Call History now uses a bounded FlatList while preserving refresh, empty/error, direct/group redial, per-row deletion and privacy guidance.
+- PR #153 — Polls now use a virtualized list while retaining the composer, multi-select voting, result percentages, closed states and existing cursor pagination.
+- PR #154 — Events now use a virtualized list and validated ascending keyset pages. The service filters past events in the query; creation, RSVP counts and all three RSVP responses remain present.
+- PR #155 — Group Management now virtualizes the member roster. Review caught and fixed a missing FlatList import and a stale undefined footer reference before merge; regression tests cover both.
+- PR #156 — Scheduled Messages now virtualize pending rows. The destination picker is capped at 100 recent conversations and is skipped when the route already supplies a conversation.
+- PR #157 — Channels directory mounts 40 entries initially and reveals further 40-entry batches, preserving filters, privacy-aware channel visibility and join/open actions.
+- PR #158 — Chat history now uses deterministic `(created_at, id)` pagination, preserving PostgreSQL microsecond timestamps, plus a bounded FlatList window and visible-row anchoring.
+
+Additional source/CI work in progress:
+
+- PR #159 — Drafts, Saved Messages, Pinned Messages, Forward Message and Chat Folders receive bounded render windows. Drafts avoid an unnecessary conversation lookup when empty and cap the required lookup at 100. The first test run found one remaining linear lookup in the row renderer; it was corrected and CI is running again.
+- PR #160 — New Chat contact directory bounded render window.
+- PR #161 — Chats inbox bounded render window while retaining existing server-side pagination and realtime behavior.
+
+These are source and automated-regression improvements, not visual sign-off. The canonical 48 navigation experiences and 46 registered modules remain incomplete until the documented responsive, keyboard, theme, accessibility and supported-device checks pass. No PR above constitutes a production deployment or a real-device media acceptance result.
+
