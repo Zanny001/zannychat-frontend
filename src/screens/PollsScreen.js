@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, SafeAreaView, FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
@@ -70,8 +70,19 @@ export default function PollsScreen({ navigation, route }) {
   };
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
     <Header title="Polls" subtitle="Ask your conversation and vote" onBack={() => navigation.goBack()} />
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl }}>
-      <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+    <FlatList
+      style={{ flex: 1 }}
+      data={polls}
+      keyExtractor={(poll) => String(poll.id)}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+      initialNumToRender={8}
+      maxToRenderPerBatch={8}
+      windowSize={7}
+      contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, flexGrow: 1 }}
+      ListHeaderComponent={
+        <View>
+          <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Create a poll</Text>
         <TextInput value={question} onChangeText={setQuestion} maxLength={240} placeholder="Ask a question" placeholderTextColor={colors.textSecondary} accessibilityLabel="Poll question" style={[typography.body, { color: colors.textPrimary, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, minHeight: 48, padding: spacing.md }]} />
         {options.map((value, index) => <TextInput key={index} value={value} onChangeText={(v) => setOptions((old) => old.map((item, i) => i === index ? v : item))} maxLength={120} placeholder={`Option ${index + 1}${index < 2 ? ' (required)' : ' (optional)'}`} placeholderTextColor={colors.textSecondary} accessibilityLabel={`Poll option ${index + 1}`} style={[typography.body, { color: colors.textPrimary, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.md }]} />)}
@@ -83,18 +94,28 @@ export default function PollsScreen({ navigation, route }) {
         <Text style={[typography.caption, { color: colors.textSecondary }]}>Choose single-choice or multi-select voting; 2–10 options. Percentages show the share of voters who selected each option. Requires migrations 0017, 0051, 0052 and 0053.</Text>
       </GlassCard>
       <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: spacing.sm }]}>Conversation polls</Text>
-      {loading ? <ActivityIndicator color={colors.primary} style={{ padding: spacing.xl }} /> : error ? <View style={{ padding: spacing.md }}><Text style={[typography.body, { color: colors.textSecondary }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading conversation polls" style={{ minHeight: 48, justifyContent: 'center', paddingVertical: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></View> : polls.map((poll) => {
+          {loading && polls.length ? <ActivityIndicator color={colors.primary} style={{ padding: spacing.md }} /> : null}
+          {error && polls.length ? <View style={{ padding: spacing.md }}><Text style={[typography.body, { color: colors.textSecondary }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading conversation polls" style={{ minHeight: 48, justifyContent: 'center', paddingVertical: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></View> : null}
+        </View>
+      }
+      renderItem={({ item: poll }) => {
         const total = poll.total_votes || 0;
         const closed = poll.closes_at && new Date(poll.closes_at).getTime() <= Date.now();
-        return <GlassCard key={poll.id} style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+        return <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
           <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{poll.question}</Text>
           {(poll.poll_options || []).map((option) => { const summary = formatPollVoteSummary(option.vote_count, total); const selected = (selectedPollOptions[poll.id] || []).includes(option.id); return <TouchableOpacity key={option.id} disabled={Boolean(closed) || votingPollId === poll.id} onPress={() => vote(poll, option)} accessibilityRole="checkbox" accessibilityState={{ checked: poll.allow_multiple ? selected : Boolean(option.selected_by_me) }} accessibilityLabel={`${option.label}, ${summary.votes} votes, ${summary.label}`} style={{ minHeight: 48, borderWidth: 1, borderColor: selected || option.selected_by_me ? colors.primary : colors.border, borderRadius: radii.md, padding: spacing.sm, gap: 7, opacity: closed ? 0.92 : 1 }}><View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm }}><View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}><Ionicons name={(poll.allow_multiple ? selected : option.selected_by_me) ? 'checkmark-circle' : 'ellipse-outline'} size={18} color={(poll.allow_multiple ? selected : option.selected_by_me) ? colors.primary : colors.textSecondary} /><Text style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0 }]}>{option.label}</Text></View><Text style={[typography.caption, { color: colors.textSecondary }]}>{summary.label} · {summary.votes}</Text></View><View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ height: 5, borderRadius: 3, overflow: 'hidden', backgroundColor: colors.border }}><View style={{ height: '100%', width: `${summary.percentage}%`, borderRadius: 3, backgroundColor: colors.primary }} /></View></TouchableOpacity>; })}
           {poll.allow_multiple && !closed ? <TouchableOpacity onPress={() => submitMultiVote(poll)} disabled={votingPollId === poll.id || !(selectedPollOptions[poll.id] || []).length} accessibilityRole="button" accessibilityLabel={`Submit ${((selectedPollOptions[poll.id] || []).length)} poll selections`} accessibilityState={{ disabled: votingPollId === poll.id || !(selectedPollOptions[poll.id] || []).length, busy: votingPollId === poll.id }} style={{ minHeight: 48, borderRadius: radii.md, backgroundColor: votingPollId === poll.id || !(selectedPollOptions[poll.id] || []).length ? colors.border : colors.primary, alignItems: 'center', justifyContent: 'center' }}><Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>{votingPollId === poll.id ? 'Saving vote…' : `Submit ${((selectedPollOptions[poll.id] || []).length)} selection${(selectedPollOptions[poll.id] || []).length === 1 ? '' : 's'}`}</Text></TouchableOpacity> : null}
           <Text style={[typography.caption, { color: colors.textSecondary }]}>{total} voter{total === 1 ? '' : 's'}{poll.allow_multiple ? ' · Multiple answers allowed' : ''}{closed ? ' · Closed' : poll.allow_multiple ? ' · Select options, then submit' : ' · Tap an option to vote or change your vote'}</Text>
         </GlassCard>;
-      })}
-      {!loading && !error && hasMore ? <TouchableOpacity onPress={loadMore} disabled={loadingMore} accessibilityRole="button" accessibilityLabel="Load older conversation polls" accessibilityState={{ disabled: loadingMore, busy: loadingMore }} style={{ minHeight: 48, marginVertical: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}>{loadingMore ? <ActivityIndicator color={colors.primary} /> : <Ionicons name="chevron-down" size={18} color={colors.primary} />}<Text style={[typography.bodyStrong, { color: colors.primary }]}>{loadingMore ? 'Loading older polls…' : 'Load older polls'}</Text></TouchableOpacity> : null}
-      {!loading && !error && polls.length === 0 ? <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', paddingVertical: spacing.lg }]}>No polls in this conversation yet.</Text> : null}
-    </ScrollView>
+      }}
+      ListEmptyComponent={
+        loading ? <ActivityIndicator color={colors.primary} style={{ padding: spacing.xl }} />
+          : error ? <View style={{ padding: spacing.md }}><Text style={[typography.body, { color: colors.textSecondary }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading conversation polls" style={{ minHeight: 48, justifyContent: 'center', paddingVertical: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></View>
+          : <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', paddingVertical: spacing.lg }]}>No polls in this conversation yet.</Text>
+      }
+      ListFooterComponent={!loading && !error && hasMore ? (
+        <TouchableOpacity onPress={loadMore} disabled={loadingMore} accessibilityRole="button" accessibilityLabel="Load older conversation polls" accessibilityState={{ disabled: loadingMore, busy: loadingMore }} style={{ minHeight: 48, marginVertical: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}>{loadingMore ? <ActivityIndicator color={colors.primary} /> : <Ionicons name="chevron-down" size={18} color={colors.primary} />}<Text style={[typography.bodyStrong, { color: colors.primary }]}>{loadingMore ? 'Loading older polls…' : 'Load older polls'}</Text></TouchableOpacity>
+      ) : loadingMore ? <ActivityIndicator color={colors.primary} style={{ padding: spacing.md }} /> : null}
+    />
   </SafeAreaView>;
 }
