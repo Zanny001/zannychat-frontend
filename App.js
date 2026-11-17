@@ -17,6 +17,7 @@ import {
 import AppNavigator, { navigationRef } from './src/navigation/AppNavigator';
 import VoIPPushRegistrar from './src/components/VoIPPushRegistrar';
 import { createPushRegistrationCoordinator } from './src/services/pushRegistrationCoordinator';
+import { stopPresence } from './src/services/presence';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -116,6 +117,7 @@ export default function App() {
             registerPushOnce(session.user?.id);
           }
         } else if (event === 'SIGNED_OUT') {
+          stopPresence();
           pushRegistration.reset();
           setInitialRoute('Onboarding');
         } else if (event === 'INITIAL_SESSION') {
