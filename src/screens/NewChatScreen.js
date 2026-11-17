@@ -20,6 +20,7 @@ import GlassCard from '../components/GlassCard';
 import { debugLog } from '../utils/diagnostics';
 import { filterMemberDirectory, memberFavoritesStorageKey, toggleMemberFavorite } from '../utils/memberFavorites';
 import { startPresence, subscribePresence } from '../services/presence';
+import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { startCall, getCallParticipantName } from '../services/calls';
 import {
   fetchContacts,
@@ -55,6 +56,11 @@ export default function NewChatScreen({ navigation, route }) {
   const [favoriteIds, setFavoriteIds] = useState([]);
   const [favoriteStorageKey, setFavoriteStorageKey] = useState('zannychat:member-favorites:v1:guest');
   const [onlineIds, setOnlineIds] = useState(new Set());
+  const [activeUserId, setActiveUserId] = useState(null);
+  const activeUserIdRef = useRef(undefined);
+  const accountChangedRef = useRef(false);
+  const favoritesRequestRef = useRef(0);
+  const contactsRequestRef = useRef(0);
 
   const requestedCallType = route?.params?.callType;
   const targetUserId = route?.params?.targetUserId;
@@ -103,64 +109,122 @@ export default function NewChatScreen({ navigation, route }) {
 
   useEffect(() => {
     let active = true;
-    getCurrentUser().then(async (user) => {
-      const key = memberFavoritesStorageKey(user?.id);
-      const raw = await AsyncStorage.getItem(key);
-      let parsed = [];
-      try { parsed = raw ? JSON.parse(raw) : []; } catch (_) { parsed = []; }
-      if (active) { setFavoriteStorageKey(key); setFavoriteIds(Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'string') : []); }
-    }).catch(() => {});
-    return () => { active = false; };
-  }, []);
+
+    const loadAccountDirectory = async (userId) => {
+      const favoriteRequestId = ++favoritesRequestRef.current;
+      const contactsRequestId = ++contactsRequestRef.current;
+      const key = memberFavoritesStorageKey(userId);
+      setFavoriteStorageKey(key);
+      setLoadingContacts(Boolean(userId));
+      setContactsError('');
+      try {
+        const [raw, result] = await Promise.all([
+          AsyncStorage.getItem(key).catch(() => null),
+          userId ? fetchContacts() : Promise.resolve([]),
+        ]);
+        if (!active || activeUserIdRef.current !== userId
+            || favoriteRequestId !== favoritesRequestRef.current
+            || contactsRequestId !== contactsRequestRef.current) return;
+        let parsed = [];
+        try { parsed = raw ? JSON.parse(raw) : []; } catch (_) { parsed = []; }
+        setFavoriteIds(Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'string') : []);
+        setContacts(Array.isArray(result) ? result : []);
+      } catch (error) {
+        if (active && activeUserIdRef.current === userId && contactsRequestId === contactsRequestRef.current) {
+          setContacts([]);
+          setFavoriteIds([]);
+          setContactsError(error?.message || 'Could not load contacts. Please try again.');
+        }
+      } finally {
+        if (active && activeUserIdRef.current === userId && contactsRequestId === contactsRequestRef.current) {
+          setLoadingContacts(false);
+        }
+      }
+    };
+
+    const applyUserId = (userId) => {
+      const previousUserId = activeUserIdRef.current;
+      if (previousUserId !== undefined && previousUserId !== userId) {
+        favoritesRequestRef.current += 1;
+        contactsRequestRef.current += 1;
+        setContacts([]);
+        setFavoriteIds([]);
+        setDiscoveredContacts([]);
+        setMemberSearch('');
+        setContactsError('');
+        setDiscoveryError('');
+        setOnlineIds(new Set());
+        setChatError('');
+        setOpeningChatId(null);
+        setSendingId(null);
+        setDirectoryFilter(initialDirectoryFilter);
+        setOnlineOnly(false);
+        accountChangedRef.current = true;
+        if (navigation?.canGoBack?.()) navigation.goBack();
+      }
+      activeUserIdRef.current = userId;
+      setActiveUserId(userId);
+      if (!userId && SUPABASE_ENABLED) {
+        setFavoriteStorageKey(memberFavoritesStorageKey(null));
+        setLoadingContacts(false);
+        return;
+      }
+      loadAccountDirectory(userId || 'guest');
+    };
+
+    if (SUPABASE_ENABLED && supabase?.auth?.onAuthStateChange) {
+      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+        const userId = session?.user?.id || null;
+        if (activeUserIdRef.current === undefined || activeUserIdRef.current !== userId) {
+          applyUserId(userId);
+        }
+      });
+      return () => {
+        active = false;
+        data?.subscription?.unsubscribe?.();
+        favoritesRequestRef.current += 1;
+        contactsRequestRef.current += 1;
+      };
+    }
+
+    getCurrentUser().then((user) => {
+      if (active) applyUserId(user?.id || 'guest');
+    }).catch(() => {
+      if (active) applyUserId('guest');
+    });
+    return () => {
+      active = false;
+      favoritesRequestRef.current += 1;
+      contactsRequestRef.current += 1;
+    };
+  }, [navigation, initialDirectoryFilter]);
 
   async function toggleFavorite(contactId) {
+    const expectedUserId = activeUserIdRef.current;
+    const expectedStorageKey = favoriteStorageKey;
     const next = toggleMemberFavorite(favoriteIds, contactId);
     setFavoriteIds(next);
-    try { await AsyncStorage.setItem(favoriteStorageKey, JSON.stringify(next)); } catch (_) {
-      setFavoriteIds(favoriteIds);
-      Alert.alert('Could not save favorite', 'Please check device storage and try again.');
+    try {
+      await AsyncStorage.setItem(expectedStorageKey, JSON.stringify(next));
+      if (activeUserIdRef.current !== expectedUserId) return;
+    } catch (_) {
+      if (activeUserIdRef.current === expectedUserId) {
+        setFavoriteIds(favoriteIds);
+        Alert.alert('Could not save favorite', 'Please check device storage and try again.');
+      }
     }
   }
 
   useEffect(() => {
-    startPresence();
-    return subscribePresence(setOnlineIds);
-  }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadContacts() {
-      setLoadingContacts(true);
-      setContactsError('');
-
-      try {
-        const result = await fetchContacts();
-
-        if (isMounted) {
-          setContacts(Array.isArray(result) ? result : []);
-        }
-      } catch (err) {
-        console.error('[NewChat] Failed to fetch contacts:', err);
-
-        if (isMounted) {
-          setContactsError(
-            err?.message || 'Could not load contacts. Please try again.'
-          );
-        }
-      } finally {
-        if (isMounted) {
-          setLoadingContacts(false);
-        }
-      }
+    if (!activeUserId) {
+      setOnlineIds(new Set());
+      return undefined;
     }
-
-    loadContacts();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    startPresence();
+    return subscribePresence((ids) => {
+      if (activeUserIdRef.current === activeUserId) setOnlineIds(ids);
+    });
+  }, [activeUserId]);
 
   async function startChat(contact) {
     if (openingChatId !== null) return;
@@ -216,7 +280,7 @@ export default function NewChatScreen({ navigation, route }) {
   }
 
   useEffect(() => {
-    if (loadingContacts || !targetUserId || !['audio', 'video'].includes(requestedCallType)) return;
+    if (accountChangedRef.current || loadingContacts || !targetUserId || !['audio', 'video'].includes(requestedCallType)) return;
     const key = targetUserId + ':' + requestedCallType;
     if (autoStartedCallRef.current === key) return;
     autoStartedCallRef.current = key;
