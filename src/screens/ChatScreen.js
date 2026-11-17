@@ -75,7 +75,6 @@ import {
 import { subscribePresence } from '../services/presence';
 import { startCall } from '../services/calls';
 import { canStartCall } from '../utils/callPolicy';
-import { SUPABASE_ENABLED } from '../services/supabaseClient';
 import { searchMessages } from '../utils/searchMessages';
 import { resolvePhotoUploadQuality } from '../utils/mediaQuality';
 import { loadMediaPreferences } from '../services/mediaPreferences';
