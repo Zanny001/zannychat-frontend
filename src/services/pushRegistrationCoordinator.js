@@ -19,6 +19,17 @@ export function createPushRegistrationCoordinator(register) {
       activeUserId = userId;
       registrationPromise = Promise.resolve()
         .then(() => register(userId))
+        .then((result) => {
+          // A null result means registration was skipped (permissions,
+          // account settings, unavailable device) or could not complete.
+          // Permit a later auth/settings retry instead of permanently
+          // treating that account as registered for this app lifetime.
+          if (result == null && activeUserId === userId) {
+            activeUserId = null;
+            registrationPromise = null;
+          }
+          return result;
+        })
         .catch((error) => {
           if (activeUserId === userId) {
             activeUserId = null;

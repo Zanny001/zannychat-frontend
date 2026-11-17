@@ -20,7 +20,7 @@ import { supabase, SUPABASE_ENABLED, SUPABASE_URL } from './supabaseClient';
 import { backendFetch, BACKEND_ENABLED } from './backendClient';
 import { getActiveVoipPushToken, getActiveApnsAlertToken } from './voipPushTokenState';
 import { isMissingRpcFunction } from './rpcErrors';
-import { deletePushTokenRows } from './pushTokenCleanup';
+import { cleanupExpoPushTokensForSignOut } from './pushTokenCleanup';
 import {
   CURRENT_USER,
   MOCK_CONTACTS,
@@ -893,22 +893,24 @@ async function removeExpoPushTokensBeforeSignOut(scope) {
     const userId = authData?.user?.id;
     if (!userId) return;
 
-    if (scope === 'global') {
-      await deletePushTokenRows({ supabase, userId });
-      return;
-    }
-
-    // Local sign-out must remove only this device's Expo token. If token
-    // resolution fails, fail closed rather than deleting every device token.
-    if (!Device.isDevice) return;
-    const projectId = Constants.expoConfig?.extra?.eas?.projectId || Constants.easConfig?.projectId;
-    if (!projectId) return;
-    const { data: token, error: tokenError } = await Notifications.getExpoPushTokenAsync({ projectId });
-    if (tokenError) throw tokenError;
-    if (!token) return;
-    await deletePushTokenRows({ supabase, userId, expoPushToken: token });
+    await cleanupExpoPushTokensForSignOut({
+      supabase,
+      storage: AsyncStorage,
+      userId,
+      scope,
+      resolveExpoPushToken: async () => {
+        // Migration fallback for older app installs that predate the local
+        // token cache. Never broaden local cleanup if resolution fails.
+        if (!Device.isDevice) return null;
+        const projectId = Constants.expoConfig?.extra?.eas?.projectId || Constants.easConfig?.projectId;
+        if (!projectId) return null;
+        const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
+        return token || null;
+      },
+    });
   } catch (error) {
-    // Push cleanup is best-effort; never trap a user in an authenticated session.
+    // Keep the local token cache on failure so a later sign-out can retry.
+    // Never fall back to deleting all devices for a local sign-out.
     console.warn('[push] Expo token cleanup during sign-out failed:', error?.message || error);
   }
 }
