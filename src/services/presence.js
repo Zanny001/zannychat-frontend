@@ -24,11 +24,13 @@ async function heartbeat(active) {
 }
 
 async function refreshVisiblePresence() {
-  if (!SUPABASE_ENABLED || inFlight || AppState.currentState !== 'active') return;
+  if (!SUPABASE_ENABLED || !started || inFlight || AppState.currentState !== 'active') return;
+  const version = lifecycleVersion;
   inFlight = true;
   try {
     const { data, error } = await supabase.rpc('get_visible_presence');
     if (error) throw error;
+    if (!started || version !== lifecycleVersion) return;
     onlineIds = new Set((data || []).filter((row) => row.is_online).map((row) => row.user_id));
     notify();
   } catch (_) {
@@ -70,6 +72,7 @@ export function stopPresence() {
   if (pollTimer) clearInterval(pollTimer);
   heartbeatTimer = null;
   pollTimer = null;
+  inFlight = false;
   appStateSubscription?.remove?.();
   appStateSubscription = null;
   const wasStarted = started;
