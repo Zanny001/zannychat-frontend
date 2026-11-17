@@ -1,11 +1,12 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { SafeAreaView, ScrollView, View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import GlassCard from '../components/GlassCard';
 import { useTheme } from '../theme/ThemeContext';
-import { fetchConversations, getCurrentUser } from '../services/api';
+import { fetchConversations } from '../services/api';
+import { useAuthenticatedUserId } from '../hooks/useAuthenticatedUserId';
 import { clearDraft, loadDraftsForUser } from '../services/drafts';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -22,30 +23,56 @@ export default function DraftsScreen({ navigation }) {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const requestRef = useRef(0);
+  const { userId, userIdRef } = useAuthenticatedUserId(useCallback(() => {
+    requestRef.current += 1;
+    setDrafts([]);
+    setConversations([]);
+    setError('');
+    setLoading(true);
+    if (navigation?.canGoBack?.()) navigation.goBack();
+  }, [navigation]));
 
   const load = useCallback(async () => {
+    const requestId = ++requestRef.current;
+    if (!userId) {
+      setDrafts([]);
+      setConversations([]);
+      setLoading(false);
+      return;
+    }
+    const expectedUserId = userId;
     setLoading(true);
     setError('');
     try {
-      const user = await getCurrentUser();
-      const items = await loadDraftsForUser(user?.id || 'me');
-      setDrafts(items);
+      const items = await loadDraftsForUser(expectedUserId);
+      if (requestId !== requestRef.current || userIdRef.current !== expectedUserId) return;
+      setDrafts(Array.isArray(items) ? items : []);
       try {
         const result = await fetchConversations({ limit: 1000, offset: 0 });
+        if (requestId !== requestRef.current || userIdRef.current !== expectedUserId) return;
         setConversations(result.conversations || []);
       } catch (_) {
+        if (requestId !== requestRef.current || userIdRef.current !== expectedUserId) return;
         setConversations([]);
         if (items.length) setError('Drafts are saved, but conversation details could not be loaded. Retry when you are back online.');
         else throw new Error('Conversation details unavailable');
       }
     } catch (_) {
-      setError('Your drafts could not be loaded. Please try again.');
+      if (requestId === requestRef.current && userIdRef.current === expectedUserId) {
+        setDrafts([]);
+        setConversations([]);
+        setError('Your drafts could not be loaded. Please try again.');
+      }
     } finally {
-      setLoading(false);
+      if (requestId === requestRef.current) setLoading(false);
     }
-  }, []);
+  }, [userId, userIdRef]);
 
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  useFocusEffect(useCallback(() => {
+    load();
+    return () => { requestRef.current += 1; };
+  }, [load]));
 
   function openDraft(draft) {
     const conversation = conversations.find((item) => item.id === draft.conversationId);
@@ -60,7 +87,10 @@ export default function DraftsScreen({ navigation }) {
     Alert.alert('Delete draft?', 'This removes the unsent text from this device. It will not affect sent messages.', [
       { text: 'Keep draft', style: 'cancel' },
       { text: 'Delete draft', style: 'destructive', onPress: async () => {
+        const expectedUserId = userId;
+        if (!expectedUserId || userIdRef.current !== expectedUserId) return;
         const cleared = await clearDraft(draft.key);
+        if (userIdRef.current !== expectedUserId) return;
         if (!cleared) { Alert.alert("Couldn't delete draft", 'The draft is still stored on this device. Please try again.'); return; }
         setDrafts((current) => current.filter((item) => item.id !== draft.id));
       } },
