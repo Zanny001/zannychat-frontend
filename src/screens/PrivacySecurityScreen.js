@@ -46,6 +46,11 @@ export default function PrivacySecurityScreen({ navigation }) {
   const refreshBlockedUsers = useCallback(async (expectedUserId = null) => {
     const requestId = ++blockedRequestRef.current;
     try {
+      if (!SUPABASE_ENABLED || !supabase) {
+        const entries = await fetchBlockedUsers();
+        if (requestId === blockedRequestRef.current) setBlocked(Array.isArray(entries) ? entries : []);
+        return;
+      }
       const { data: authData, error: authError } = await supabase.auth.getUser();
       const userId = authData?.user?.id || null;
       if (authError || !userId || (expectedUserId && userId !== expectedUserId)) {
