@@ -60,3 +60,10 @@ The existing `vercel.json` also rewrites every path to `/index.html`, uses `npm 
 - Expo push-token device persistence/revocation (PR #119) is merged with frontend, Advanced Calling and Premium LIVE workflow success. Real push delivery and account-switch/logout still require device acceptance.
 - PR #135 remains open to clear remaining account-owned Status UI state on shared-device account switches.
 - No paid Vercel upgrade, production deploy, or physical-device acceptance is claimed.
+
+
+### Production hosting evidence — 2026-11-17
+
+Netlify's project record reports its current production deploy as Ready, but that deploy is commit `27d76827e2259d14e00e2717fd0b8ebc35b63011` from 2026-11-15. GitHub main is 57 commits ahead. Recent PR previews are Ready, but production remains stale. Do not tell users the latest LIVE, push-token, account-deletion or Status fixes are live until a new main deploy completes and the production smoke suite passes.
+
+PR #135 and PR #137 Netlify previews both reached Ready. PR #135 Premium LIVE/frontend quality passed; Advanced Calling checks were still in progress at the latest check. PR #137's Advanced Calling and Premium LIVE workflows were still in progress at the latest check. PR #137 fixes a missed account ID argument in ChatList story-seen state; it is not yet merged.
