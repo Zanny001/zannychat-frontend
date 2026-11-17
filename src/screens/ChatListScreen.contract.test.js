@@ -22,3 +22,13 @@ test('Chats header actions and search field keep moderate accessible dimensions'
   assert.match(screen, /searchBar: \{ minHeight: 48/);
   assert.match(screen, /accessibilityLabel="See all moments" style=\{\{ minHeight: 48/);
 });
+
+
+test('inbox refreshes while focused from realtime message and participant changes', () => {
+  assert.ok(screen.includes('subscribeToConversationListChanges'));
+  assert.ok(screen.includes('useFocusEffect(useCallback(() => {'));
+  assert.ok(screen.includes('setTimeout(() => {'));
+  assert.ok(screen.includes('load().catch(() => {})'));
+  assert.ok(screen.includes('unsubscribe()'));
+  assert.ok(screen.includes('loadRequestRef.current'));
+});
