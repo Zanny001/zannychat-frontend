@@ -176,3 +176,24 @@ Fresh production checks:
 - No database changes were made.
 
 The current replay budget is five minutes per recording, 50 minutes total per calendar month, one globally active replay at a time, 48 MB per file and seven-day retention. The production Render feature flags and Egress/webhook runtime logs were not re-verified in this pass. Backend PR #134 is merged: completed Egress is now reconciled by ID or exact output path through the shared webhook finalizer; both backend quality workflows passed, including LIVE/replay tests. Real production Egress-to-object-to-signed-playback acceptance remains open. Frontend PR #117 is adding explicit replay service-error and empty-library states; CI is still running.
+
+### Messaging, LIVE and account-isolation audit checkpoint — 2026-11-17
+
+- Frontend PR #119 is merged: Expo push tokens are cached under the signed-in account's device key; local sign-out deletes only that device token; global sign-out deletes only the account's tokens; failed deletion retains the cache for retry. The registration coordinator deduplicates by user and retries skipped registrations. Frontend quality, Android/iOS compile, web/Android export, unit, calling and release/integrity checks passed.
+- Frontend PR #120 is merged: LIVE comment/reaction, guest approval/request and creator participant refreshes now pause while the app is backgrounded or browser tab is hidden; overlapping polls are suppressed; intervals are reduced; LIVE Hub replay polling runs only while focused and foregrounded. Frontend quality, Android/iOS compile, web/Android export, unit, calling and LIVE checks passed. This reduces load but does not replace the planned authenticated event-driven transport or concurrent-viewer load test.
+- Frontend PR #121 adds a Realtime-driven inbox refresh: message and conversation-participant events invalidate the list, while fetchConversations remains the RLS-protected source of truth. It debounces events, reconciles after channel subscription, avoids stale overlapping fetches and refreshes on app foreground. Netlify preview was marked ready; Vercel preview creation is blocked by the free daily deployment cap. CI was still running at this register revision.
+- Frontend PR #122 scopes story/status read markers to the authenticated account. The previous device-global key could make a second account inherit the first account's viewed state on a shared device. The new v2 key is per-user; old global state is discarded rather than migrated because ownership cannot be proven. In-memory story state and in-flight requests are reset on account change. CI and shared-device acceptance are pending.
+- Local storage review confirmed chat folders, saved messages, pinned messages and status drafts already use account-scoped keys; the global status-seen key was the remaining confirmed cross-account read-state issue found in this pass.
+
+### Supabase Auth configuration gate — 2026-11-17
+
+- Production Security Advisor still reports auth_leaked_password_protection disabled.
+- The Supabase organization hosting ZannyChat is on the Free tier. Current Supabase password-security documentation states leaked-password protection is available on Pro and above. It cannot be enabled on the current plan without a paid upgrade, which was not initiated under the ₦0 budget constraint.
+- No client-side HaveIBeenPwned workaround was added: it would not provide server-side enforcement and would be misleading as a substitute for Supabase Auth's native control.
+- Recommended owner action if the project later moves to Pro: enable leaked-password protection in Supabase Auth password security settings, then verify the advisor finding clears. Until then, retain strong minimum password length/complexity controls where the Free plan exposes them and treat this as an explicit residual security risk.
+- The broader authenticated SECURITY DEFINER warnings and RLS-enabled/no-policy findings remain catalogued as reviewed findings, not blanket vulnerabilities: the 28 authenticated RPCs were individually audited earlier, and the no-policy tables were verified to have no anon/authenticated table grants.
+
+### Deployment limits
+
+- Netlify PR previews remain available, but the main production deploy is skipped because account credit usage is exceeded.
+- Vercel GitHub checks report api-deployments-free-per-day (more than 100 deployments in 24 hours). No Vercel production deployment is claimed; no paid upgrade was initiated. The connected Vercel API context still does not expose a readable project record, despite the GitHub integration's project metadata.
