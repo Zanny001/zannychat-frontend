@@ -39,3 +39,17 @@ test('LIVE replay deletion control is shown only to the authenticated creator', 
   assert.ok(screen.includes('getCurrentUser().then((user) =>'));
   assert.ok(screen.includes('replay?.creatorId && replay.creatorId === currentUserId'));
 });
+
+
+test('private replay playback is revoked from the visible player when the auth owner changes', () => {
+  assert.ok(screen.includes("import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient'"));
+  assert.ok(screen.includes('supabase.auth.onAuthStateChange'));
+  assert.ok(screen.includes('const nextUserId = session?.user?.id || null'));
+  assert.ok(screen.includes('currentUserIdRef.current === nextUserId'));
+  assert.ok(screen.includes('player.pause()'));
+  assert.ok(screen.includes('setPlaybackUrl(null)'));
+  assert.ok(screen.includes("setError(nextUserId ? '' : 'Sign in to access this LIVE replay.')"));
+  assert.ok(screen.includes('if (!currentUserId)'));
+  assert.ok(screen.includes('}, [replayId, attempt, player, currentUserId])'));
+  assert.ok(screen.includes('data?.subscription?.unsubscribe?.()'));
+});
