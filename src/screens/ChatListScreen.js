@@ -12,7 +12,7 @@ import Knot from '../components/Knot';
 import ActionSheet from '../components/ActionSheet';
 import { fetchConversations, subscribeToConversationListChanges, toggleFavorite, setConversationFlags, deleteConversationForCurrentUser, getCurrentUser } from '../services/api';
 import { subscribePresence } from '../services/presence';
-import { SUPABASE_ENABLED } from '../services/supabaseClient';
+import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { hexToRgba } from '../utils/color';
 import { filterConversations as filterChatList } from '../utils/filterConversations';
 import { filterByChatFolder } from '../utils/chatFolders';
@@ -58,26 +58,38 @@ export default function ChatListScreen({ navigation }) {
   const [conversationActionError, setConversationActionError] = useState('');
   const pendingConversationActions = useRef(new Set());
   const loadRequestRef = useRef(0);
+  const loadMoreRequestRef = useRef(0);
+  const focusRequestRef = useRef(0);
+  const activeUserIdRef = useRef(undefined);
 
 
   // Real presence: every "online" dot used to be mock data (the
   // profiles.online column existed but nothing ever set it). Now the
   // app tracks itself on a shared Presence channel and the dots reflect
   // who's actually connected right now. Mock mode keeps its own flags.
-  useEffect(() => subscribePresence(setOnlineIds), []);
+  useEffect(() => subscribePresence((ids) => {
+    if (activeUserIdRef.current === ownProfile?.id || (!SUPABASE_ENABLED && ownProfile?.id == null)) setOnlineIds(ids);
+  }), [ownProfile?.id]);
 
   const load = useCallback(async () => {
     const requestId = ++loadRequestRef.current;
+    const expectedUserId = activeUserIdRef.current;
+    if (SUPABASE_ENABLED && !expectedUserId) {
+      setConversations([]);
+      setInitialLoading(false);
+      return;
+    }
     setLoadError('');
     try {
       const { conversations: data, hasMore: more } = await fetchConversations({ limit: PAGE_SIZE, offset: 0 });
-      // A slower earlier focus/realtime refresh must not overwrite a newer list.
-      if (requestId === loadRequestRef.current) {
+      // A slower earlier focus/realtime refresh or previous account must not
+      // overwrite the active account's conversation list.
+      if (requestId === loadRequestRef.current && activeUserIdRef.current === expectedUserId) {
         setConversations(Array.isArray(data) ? data : []);
         setHasMore(Boolean(more));
       }
     } catch (error) {
-      if (requestId === loadRequestRef.current) {
+      if (requestId === loadRequestRef.current && activeUserIdRef.current === expectedUserId) {
         setLoadError(error?.message || 'Could not load your chats. Check your connection and try again.');
       }
       throw error;
@@ -86,19 +98,97 @@ export default function ChatListScreen({ navigation }) {
     }
   }, []);
 
+  const clearAccountScopedState = useCallback(() => {
+    loadRequestRef.current += 1;
+    loadMoreRequestRef.current += 1;
+    setConversations([]);
+    setStoryGroups([]);
+    setCustomFolders([]);
+    setOwnProfile(null);
+    setInitialLoading(true);
+    setHasMore(false);
+    setLoadingMore(false);
+    setLoadMoreError('');
+    setLoadError('');
+    setQuery('');
+    setActiveFilter('all');
+    setSheetFor(null);
+    setOnlineIds(new Set());
+    setDeleteTarget(null);
+    setDeleting(false);
+    setDeleteError('');
+    setConversationActionError('');
+    setRefreshing(false);
+    pendingConversationActions.current.clear();
+  }, []);
+
+  useEffect(() => {
+    if (!SUPABASE_ENABLED || !supabase?.auth?.onAuthStateChange) return undefined;
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUserId = session?.user?.id || null;
+      if (activeUserIdRef.current === undefined) {
+        activeUserIdRef.current = nextUserId;
+        return;
+      }
+      if (activeUserIdRef.current === nextUserId) return;
+      activeUserIdRef.current = nextUserId;
+      focusRequestRef.current += 1;
+      clearAccountScopedState();
+      if (nextUserId) {
+        Promise.resolve().then(async () => {
+          const user = await getCurrentUser().catch(() => null);
+          if (activeUserIdRef.current !== nextUserId) return;
+          setOwnProfile(user || null);
+          const folders = await loadChatFolders(nextUserId).catch(() => []);
+          if (activeUserIdRef.current !== nextUserId) return;
+          setCustomFolders(folders);
+          await load();
+        }).catch(() => {
+          if (activeUserIdRef.current === nextUserId) setInitialLoading(false);
+        });
+      } else {
+        setInitialLoading(false);
+      }
+    });
+    return () => data?.subscription?.unsubscribe?.();
+  }, [clearAccountScopedState, load]);
+
   useFocusEffect(useCallback(() => {
-    load().catch(() => {});
     let alive = true;
+    const focusRequestId = ++focusRequestRef.current;
     (async () => {
       try {
         const user = await getCurrentUser();
-        if (alive) setOwnProfile(user || null);
-        const folders = await loadChatFolders(user?.id || 'guest');
-        if (alive) setCustomFolders(folders);
-      } catch (_) {}
+        if (!alive || focusRequestId !== focusRequestRef.current) return;
+        const userId = user?.id || (SUPABASE_ENABLED ? null : 'guest');
+        // If an auth event has already published a different owner, this
+        // focus lookup is stale and must not revert the active identity.
+        if (activeUserIdRef.current !== undefined && activeUserIdRef.current !== userId) {
+          if (SUPABASE_ENABLED) return;
+          clearAccountScopedState();
+        }
+        activeUserIdRef.current = userId;
+        setOwnProfile(user || null);
+        const folders = await loadChatFolders(userId || 'guest');
+        if (!alive || focusRequestId !== focusRequestRef.current || activeUserIdRef.current !== userId) return;
+        setCustomFolders(folders);
+        await load();
+      } catch (_) {
+        if (alive && focusRequestId === focusRequestRef.current) {
+          setOwnProfile(null);
+          setCustomFolders([]);
+          setConversations([]);
+          setInitialLoading(false);
+        }
+      }
     })();
-    return () => { alive = false; };
-  }, [load]));
+    return () => {
+      alive = false;
+      focusRequestRef.current += 1;
+      loadRequestRef.current += 1;
+      loadMoreRequestRef.current += 1;
+    };
+  }, [load, clearAccountScopedState]));
 
   // The chat-list story tray must use the signed-in account's own read
   // markers. The old call omitted userId, which made the helper return an
@@ -150,7 +240,7 @@ export default function ChatListScreen({ navigation }) {
       appStateSubscription?.remove?.();
       unsubscribe();
     };
-  }, [load]));
+  }, [load, ownProfile?.id]));
 
   async function handleRefresh() {
     setRefreshing(true);
@@ -161,7 +251,9 @@ export default function ChatListScreen({ navigation }) {
   // Older conversations page in on scroll — created_at desc pages from
   // the API, re-sorted into the list by actual last activity.
   async function handleLoadMore() {
-    if (loadingMore || !hasMore) return;
+    if (loadingMore || !hasMore || (SUPABASE_ENABLED && !activeUserIdRef.current)) return;
+    const requestId = ++loadMoreRequestRef.current;
+    const expectedUserId = activeUserIdRef.current;
     setLoadingMore(true);
     setLoadMoreError('');
     try {
@@ -169,6 +261,7 @@ export default function ChatListScreen({ navigation }) {
         limit: PAGE_SIZE,
         offset: conversations.length,
       });
+      if (requestId !== loadMoreRequestRef.current || activeUserIdRef.current !== expectedUserId) return;
       if (!Array.isArray(older)) throw new Error('The server returned an invalid chat page.');
       setConversations((prev) => {
         const seen = new Set(prev.map((c) => c.id));
@@ -183,10 +276,12 @@ export default function ChatListScreen({ navigation }) {
       });
       setHasMore(Boolean(more));
     } catch (err) {
-      // Keep pagination available and give the user an explicit retry path.
-      setLoadMoreError(err?.message || 'Could not load older chats. Check your connection and try again.');
+      if (requestId === loadMoreRequestRef.current && activeUserIdRef.current === expectedUserId) {
+        // Keep pagination available and give the user an explicit retry path.
+        setLoadMoreError(err?.message || 'Could not load older chats. Check your connection and try again.');
+      }
     } finally {
-      setLoadingMore(false);
+      if (requestId === loadMoreRequestRef.current) setLoadingMore(false);
     }
   }
 
@@ -200,6 +295,7 @@ export default function ChatListScreen({ navigation }) {
   async function updateConversationFlag(conversation, field, persist) {
     if (!conversation?.id) return;
     const actionKey = `${conversation.id}:${field}`;
+    const expectedUserId = activeUserIdRef.current;
     if (pendingConversationActions.current.has(actionKey)) return;
     const previousValue = Boolean(conversation[field]);
     const nextValue = !previousValue;
@@ -208,12 +304,14 @@ export default function ChatListScreen({ navigation }) {
     patchConversation(conversation.id, { [field]: nextValue });
     try {
       await persist(conversation.id, nextValue);
+      if (activeUserIdRef.current !== expectedUserId) return;
     } catch (error) {
+      if (activeUserIdRef.current !== expectedUserId) return;
       // Roll back only the field involved; preserve unrelated newer updates.
       patchConversation(conversation.id, { [field]: previousValue });
       setConversationActionError(`Couldn't save ${field === 'isFavorite' ? 'favorite' : field === 'isMuted' ? 'mute setting' : 'archive setting'}. Please try again.`);
     } finally {
-      pendingConversationActions.current.delete(actionKey);
+      if (activeUserIdRef.current === expectedUserId) pendingConversationActions.current.delete(actionKey);
     }
   }
 
@@ -232,6 +330,7 @@ export default function ChatListScreen({ navigation }) {
   async function performDeleteConversation(conversation) {
     if (!conversation || deleting) return;
 
+    const expectedUserId = activeUserIdRef.current;
     const previous = conversations;
     setDeleting(true);
     setDeleteError('');
@@ -241,9 +340,11 @@ export default function ChatListScreen({ navigation }) {
 
     try {
       await deleteConversationForCurrentUser(conversation.id);
+      if (activeUserIdRef.current !== expectedUserId) return;
       setDeleteTarget(null);
       setSheetFor(null);
     } catch (error) {
+      if (activeUserIdRef.current !== expectedUserId) return;
       setConversations(previous);
       const message = error?.message || 'Please try again.';
       setDeleteError(message);
@@ -251,7 +352,7 @@ export default function ChatListScreen({ navigation }) {
         window.alert('Could not delete chat: ' + message);
       }
     } finally {
-      setDeleting(false);
+      if (activeUserIdRef.current === expectedUserId) setDeleting(false);
     }
   }
 

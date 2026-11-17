@@ -44,3 +44,38 @@ test('chat-list story tray reads seen markers for the active account and invalid
   assert.ok(screen.includes('if (!alive) return;'));
   assert.equal(screen.includes('readSeenStatusIds(AsyncStorage)'), false);
 });
+
+
+test('chat list clears conversations, folders, story groups and filters when auth owner changes', () => {
+  assert.ok(screen.includes("import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient'"));
+  assert.ok(screen.includes('const activeUserIdRef = useRef(undefined)'));
+  assert.ok(screen.includes('supabase.auth.onAuthStateChange'));
+  assert.ok(screen.includes('const nextUserId = session?.user?.id || null'));
+  assert.ok(screen.includes('clearAccountScopedState()'));
+  assert.ok(screen.includes('setConversations([])'));
+  assert.ok(screen.includes('setCustomFolders([])'));
+  assert.ok(screen.includes('setStoryGroups([])'));
+  assert.ok(screen.includes("setActiveFilter('all')"));
+  assert.ok(screen.includes('data?.subscription?.unsubscribe?.()'));
+});
+
+test('chat list history and pagination reject stale responses from a previous account', () => {
+  assert.ok(screen.includes('activeUserIdRef.current === expectedUserId'));
+  assert.ok(screen.includes('requestId === loadRequestRef.current'));
+  assert.ok(screen.includes('requestId !== loadMoreRequestRef.current'));
+  assert.ok(screen.includes('loadMoreRequestRef.current += 1'));
+  assert.ok(screen.includes('if (SUPABASE_ENABLED && !expectedUserId)'));
+});
+
+test('chat list realtime and presence subscriptions follow the active account', () => {
+  assert.ok(screen.includes('activeUserIdRef.current === ownProfile?.id'));
+  assert.ok(screen.includes('[load, ownProfile?.id]'));
+});
+
+
+test('chat list optimistic actions and deletes cannot restore old-account conversations', () => {
+  assert.ok(screen.includes('const expectedUserId = activeUserIdRef.current'));
+  assert.ok(screen.includes('if (activeUserIdRef.current !== expectedUserId) return'));
+  assert.ok(screen.includes('if (activeUserIdRef.current === expectedUserId) setDeleting(false)'));
+  assert.ok(screen.includes('if (activeUserIdRef.current === expectedUserId) pendingConversationActions.current.delete(actionKey)'));
+});

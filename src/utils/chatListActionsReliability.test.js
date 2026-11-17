@@ -8,7 +8,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const source = await readFile(resolve(here, '../screens/ChatListScreen.js'), 'utf8');
 
 test('optimistic chat flag actions roll back when persistence fails', () => {
-  assert.match(source, /catch \(error\) \{\s*\/\/ Roll back only the field involved/);
+  assert.match(source, /catch \(error\) \{\s*if \(activeUserIdRef\.current !== expectedUserId\) return;\s*\/\/ Roll back only the field involved/);
   assert.match(source, /patchConversation\(conversation\.id, \{ \[field\]: previousValue \}\)/);
   assert.match(source, /setConversationActionError\(`Couldn't save/);
 });
