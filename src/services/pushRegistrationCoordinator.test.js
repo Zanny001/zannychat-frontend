@@ -64,3 +64,15 @@ test('clears a failed in-flight registration so it can be retried', async () => 
   assert.equal(await coordinator.registerForUser('user-a'), 'ok');
   assert.equal(calls, 2);
 });
+
+test('allows a later retry when registration returns null', async () => {
+  let calls = 0;
+  const coordinator = createPushRegistrationCoordinator(async () => {
+    calls += 1;
+    return calls === 1 ? null : 'registered';
+  });
+
+  assert.equal(await coordinator.registerForUser('user-a'), null);
+  assert.equal(await coordinator.registerForUser('user-a'), 'registered');
+  assert.equal(calls, 2);
+});
