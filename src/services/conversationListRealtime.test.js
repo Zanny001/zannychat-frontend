@@ -34,6 +34,7 @@ test('inbox subscribes to message and participant changes and removes the channe
   assert.deepEqual(client.subscriptions.map((item) => [item.type, item.filter.table]), [
     ['postgres_changes', 'messages'],
     ['postgres_changes', 'conversation_participants'],
+    ['postgres_changes', 'conversations'],
   ]);
   client.subscriptions[0].callback({ eventType: 'INSERT', new: { conversation_id: 'c1' } });
   assert.equal(events.length, 2);

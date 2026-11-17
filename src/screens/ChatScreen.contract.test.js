@@ -88,3 +88,10 @@ test('permanent failures discovered by automatic recovery are removed instead of
   assert.match(body, /setPendingOutbox\(\(items\) => items\.filter/);
   assert.match(body, /setSendError\(removed/);
 });
+
+
+test('read receipts use scoped Realtime updates rather than a five-second RPC poll', () => {
+  assert.match(screen, /subscribeToParticipantUpdates\(conversation\.id/);
+  assert.doesNotMatch(screen, /fetchParticipantReadState\(conversation\.id\)/);
+  assert.match(screen, /advance the read cursor immediately/);
+});

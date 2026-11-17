@@ -1234,22 +1234,41 @@ export async function fetchParticipantReadState(conversationId) {
 // ignores) — the same postgres_changes mechanism subscribeToMessages
 // uses, just watching UPDATE on a different table.
 export function subscribeToParticipantUpdates(conversationId, onUpdate) {
-  if (!SUPABASE_ENABLED) return () => {};
+  if (!SUPABASE_ENABLED || !conversationId || typeof onUpdate !== 'function') return () => {};
   let active = true;
-  let previous = null;
-  const poll = async () => {
-    try {
-      const state = await fetchParticipantReadState(conversationId);
-      if (!active) return;
-      for (const [user_id, last_read_at] of Object.entries(state)) {
-        if (previous && previous[user_id] !== last_read_at) onUpdate({ user_id, last_read_at });
-      }
-      previous = state;
-    } catch (_) { /* Preserve the last known read state during transient outages. */ }
+  const latestByUser = new Map();
+  const emit = (user_id, last_read_at) => {
+    if (!active || !user_id) return;
+    const previous = latestByUser.get(user_id);
+    // Read cursors are monotonic. Ignore a slower initial snapshot if a newer
+    // Realtime UPDATE has already arrived while that snapshot was in flight.
+    if (previous && (!last_read_at || (Date.parse(last_read_at) < Date.parse(previous)))) return;
+    latestByUser.set(user_id, last_read_at ?? null);
+    onUpdate({ user_id, last_read_at: last_read_at ?? null });
   };
-  poll();
-  const timer = setInterval(poll, 5000);
-  return () => { active = false; clearInterval(timer); };
+
+  const unsubscribe = subscribeToParticipantReadState({
+    supabase,
+    enabled: SUPABASE_ENABLED,
+    conversationId,
+    onUpdate: (updated) => emit(updated.user_id, updated.last_read_at),
+    onSubscribed: () => {
+      fetchParticipantReadState(conversationId)
+        .then((state) => {
+          if (!active) return;
+          for (const [user_id, last_read_at] of Object.entries(state)) emit(user_id, last_read_at);
+        })
+        .catch(() => {
+          // Keep the Realtime channel alive; a later UPDATE or screen focus
+          // will reconcile the read cursors after a transient RPC failure.
+        });
+    },
+  });
+
+  return () => {
+    active = false;
+    unsubscribe();
+  };
 }
 
 // Starts a conversation with a contact. When the backend is deployed,

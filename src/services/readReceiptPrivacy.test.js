@@ -10,7 +10,12 @@ const exportService = fs.readFileSync(path.join(here, 'personalDataExport.js'), 
 test('chat read state is fetched through a server-side privacy projection', () => {
   assert.match(api, /rpc\('get_conversation_read_state'/);
   assert.match(api, /rpc\('get_my_read_cursors'/);
-  assert.match(api, /setInterval\(poll, 5000\)/);
+  const start = api.indexOf('export function subscribeToParticipantUpdates(conversationId, onUpdate) {');
+  const end = api.indexOf('// Starts a conversation with a contact.', start);
+  const participantSubscription = api.slice(start, end);
+  assert.match(participantSubscription, /subscribeToParticipantReadState/);
+  assert.match(participantSubscription, /onSubscribed/);
+  assert.doesNotMatch(participantSubscription, /setInterval/);
   assert.doesNotMatch(api, /table: 'conversation_participants'[\s\S]{0,180}last_read_at/);
 });
 

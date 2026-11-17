@@ -20,6 +20,11 @@ export function subscribeToConversationListEvents({ supabase, enabled = true, on
       schema: 'public',
       table: 'conversation_participants',
     }, onChange)
+    .on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'conversations',
+    }, onChange)
     .subscribe((status) => {
       // Reconcile once the channel is live to close the fetch/subscribe race
       // on screen focus; callers can treat this like any other invalidation.
