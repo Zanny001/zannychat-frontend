@@ -29,7 +29,7 @@ test('saved, pinned, forward and folder collections use bounded FlatList render 
 
 test('saved and pinned content remains device-local and opens the original message', () => {
   assert.ok(saved.includes('Your private, on-device collection'));
-  assert.ok(saved.includes('navigation.navigate(\\'Chat\\''));
-  assert.ok(pinned.includes('navigation.navigate(\\'Chat\\''));
+  assert.ok(saved.includes("navigation.navigate('Chat'"));
+  assert.ok(pinned.includes("navigation.navigate('Chat'"));
   assert.ok(pinned.includes('Open original message'));
 });
