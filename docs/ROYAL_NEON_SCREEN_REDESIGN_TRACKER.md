@@ -245,3 +245,17 @@ The connected account is confirmed as an `OWNER` of the `ZannyChat` Hobby team, 
 - A full public-schema scan found no authenticated-writable timestamp/date columns on tables lacking a BEFORE INSERT/UPDATE trigger.
 - The Vercel team is correctly identified as `team_P8IYvDiidDlhUHaQBe1RN1Wg` (ZannyChat, Hobby). Project creation through the connected API still returns 403. A one-time team authorization link was generated; owner approval must be completed before retrying. No Vercel project/deployment is claimed.
 - The next visual pass remains messaging-first. All 48 navigation experiences stay [~] until screen-level visual, keyboard, responsive, accessibility and supported-device checks are complete.
+
+
+### Screen implementation checkpoint — 17 Nov 2026
+
+The current messaging-first pass has extended the existing premium foundation without marking any screen visually complete:
+
+- Call History, Polls, Events, Group Management, Scheduled Messages, Channels and Chat have landed in `main` through PRs #152–#158. Both frontend quality workflows passed on each final merged head.
+- PR #159 continues local message collections and forwarding; PR #160 continues New Chat; PR #161 continues Main / Chats. These remain open until both quality workflows pass.
+- Chat history now paginates by the exact timestamp plus message UUID. This prevents rows sharing a timestamp from being skipped and preserves database microsecond precision.
+- Event discovery now retrieves upcoming rows in bounded 40-row pages. Group member management and polling preserve their server-authorized actions while moving large row collections to FlatList.
+- The Drafts view was found to fetch up to 1,000 conversations although it only needed display labels for drafts; the active change caps that lookup at 100 and skips it when no drafts exist.
+- The Channels directory remains a progressively revealed in-memory directory, not a backend cursor page. The source endpoint still returns a bounded combined directory; full directory search/pagination is a separate future UX task.
+
+Do not mark these screens [x] from automated checks alone. Visual verification at 320/360/390/430 px, tablet/desktop, light/dark/custom palettes, keyboard-open/safe-area states, large text/reduced motion, screen-reader labels and supported-platform runtime checks remain required.
