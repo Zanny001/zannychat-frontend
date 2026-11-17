@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { SafeAreaView, ScrollView, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView, FlatList, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
@@ -83,8 +83,15 @@ export default function ChatFoldersScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Chat folders" subtitle="Build your own chat filters" onBack={() => navigation.goBack()} />
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32 }}>
-        <GlassCard glow style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md }}>
+      <FlatList
+        data={folders}
+        keyExtractor={(folder) => String(folder.id)}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, flexGrow: 1 }}
+        ListHeaderComponent={
+          <View>
+            <GlassCard glow style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md }}>
           <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.xs }]}>Create a folder</Text>
           <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>A chat appears when it matches any selected category. Folders are saved on this device and are not synced across devices yet.</Text>
           <TextInput value={name} onChangeText={setName} maxLength={32} placeholder="e.g. Work, Close friends" placeholderTextColor={colors.textSecondary} accessibilityLabel="Folder name" style={[typography.body, { color: colors.textPrimary, borderColor: colors.border, borderWidth: 1, borderRadius: radii.md, minHeight: 48, paddingHorizontal: spacing.md, paddingVertical: 10, marginBottom: spacing.md }]} />
@@ -100,16 +107,20 @@ export default function ChatFoldersScreen({ navigation }) {
           </TouchableOpacity>
           {editingId ? <TouchableOpacity onPress={cancelEdit} accessibilityRole="button" accessibilityLabel="Cancel chat folder editing" style={{ minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 }}><Text style={[typography.body, { color: colors.textSecondary }]}>Cancel editing</Text></TouchableOpacity> : null}
         </GlassCard>
-        <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.sm }]}>Your folders · {folders.length}</Text>
-        {loading ? <ActivityIndicator color={colors.primary} /> : folders.length ? folders.map((folder) => (
-          <GlassCard key={folder.id} style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.sm }]}>Your folders · {folders.length}</Text>
+          </View>
+        }
+        renderItem={({ item: folder }) => (
+          <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, flexDirection: 'row', alignItems: 'center' }}>
             <View style={{ width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: `${colors.primary}18` }}><Ionicons name="folder-open-outline" size={20} color={colors.primary} /></View>
             <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm }}><Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{folder.name}</Text><Text style={[typography.caption, { color: colors.textSecondary }]}>{folder.rules.join(' · ')}{folder.excluded.length ? ` · excludes ${folder.excluded.join(', ')}` : ''}</Text></View>
             <TouchableOpacity onPress={() => edit(folder)} accessibilityRole="button" accessibilityLabel={`Edit ${folder.name} folder`} hitSlop={8} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="create-outline" size={19} color={colors.primary} /></TouchableOpacity>
             <TouchableOpacity onPress={() => remove(folder)} accessibilityRole="button" accessibilityLabel={`Delete ${folder.name} folder`} hitSlop={8} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="trash-outline" size={19} color={colors.danger} /></TouchableOpacity>
           </GlassCard>
-        )) : <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>No custom folders yet. Create one to organize your chats.</Text>}
-      </ScrollView>
+        )}
+        ListEmptyComponent={loading ? <ActivityIndicator color={colors.primary} /> : <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>No custom folders yet. Create one to organize your chats.</Text>}
+        ListFooterComponent={loading && folders.length ? <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing.md }} /> : null}
+      />
     </SafeAreaView>
   );
 }
