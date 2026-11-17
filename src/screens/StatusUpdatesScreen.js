@@ -764,7 +764,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
       }}
       ListEmptyComponent={
         loading ? <View style={{ padding: spacing.xl, alignItems: 'center' }}><ActivityIndicator color={colors.primary} /></View>
-          : error ? <View style={{ padding: spacing.md }}><Text style={[typography.body, { color: colors.textSecondary }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh statuses" style={{ minHeight: 48, justifyContent: 'center', paddingVertical: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></View>
+          : error ? null
           : <View style={{ paddingVertical: spacing.xl, alignItems: 'center' }}><Ionicons name="aperture-outline" size={34} color={colors.textSecondary} /><Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.sm, textAlign: 'center' }]}>No active statuses yet. Publish a short update above.</Text></View>
       }
       ListFooterComponent={loading && groupedStatuses.length ? <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing.md }} /> : null}
