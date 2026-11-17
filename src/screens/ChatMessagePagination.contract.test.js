@@ -7,7 +7,7 @@ const screen = readFileSync(new URL('./ChatScreen.js', import.meta.url), 'utf8')
 
 test('message history uses stable created_at and ID ordering for cursor pagination', () => {
   const start = api.indexOf('export async function fetchMessages(');
-  const end = api.indexOf('\\n}\\n', start) + 3;
+  const end = api.indexOf('\n}\n', start) + 3;
   const body = api.slice(start, end);
   assert.ok(body.includes(".order('created_at', { ascending: false })"));
   assert.ok(body.includes(".order('id', { ascending: false })"));
