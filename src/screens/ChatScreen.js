@@ -363,7 +363,9 @@ export default function ChatScreen({ route, navigation }) {
   // than scroll-position-triggered fetching, so reading old messages
   // never yanks the list under your thumb.
   const loadOlder = useCallback(async () => {
-    if (loadingOlder || !hasMore || messages.length === 0) return;
+    if (loadingOlder || !hasMore || messages.length === 0 || (SUPABASE_ENABLED && !myUserId)) return;
+    const requestId = ++olderLoadRequestRef.current;
+    const expectedUserId = myUserId;
     setLoadingOlder(true);
     setOlderLoadError('');
     stickToBottom.current = false;
@@ -373,11 +375,16 @@ export default function ChatScreen({ route, navigation }) {
         limit: MESSAGE_PAGE_SIZE,
         before: oldest,
       });
+      if (requestId !== olderLoadRequestRef.current || activeUserIdRef.current !== expectedUserId) return;
       older.forEach((m) => {
         if (m.senderName) senderNamesRef.current[m.senderId] = m.senderName;
       });
       fetchMessageDeliveryState(conversation.id, older.map((message) => message.id))
-        .then((state) => setMessageDeliveryState((prev) => ({ ...prev, ...state }))).catch(() => {});
+        .then((state) => {
+          if (requestId === olderLoadRequestRef.current && activeUserIdRef.current === expectedUserId) {
+            setMessageDeliveryState((prev) => ({ ...prev, ...state }));
+          }
+        }).catch(() => {});
       markMessagesDelivered(conversation.id, older, myUserId).catch(() => {});
       setMessages((prev) => {
         const seen = new Set(prev.map((m) => m.id));
@@ -385,12 +392,17 @@ export default function ChatScreen({ route, navigation }) {
       });
       setHasMore(more);
       fetchReactions(older.map((m) => m.id))
-        .then((more) => setReactions((prev) => ({ ...prev, ...more })))
-        .catch(() => {});
+        .then((more) => {
+          if (requestId === olderLoadRequestRef.current && activeUserIdRef.current === expectedUserId) {
+            setReactions((prev) => ({ ...prev, ...more }));
+          }
+        }).catch(() => {});
     } catch (err) {
-      setOlderLoadError(err?.message || 'Could not load earlier messages. Please try again.');
+      if (requestId === olderLoadRequestRef.current && activeUserIdRef.current === expectedUserId) {
+        setOlderLoadError(err?.message || 'Could not load earlier messages. Please try again.');
+      }
     } finally {
-      setLoadingOlder(false);
+      if (requestId === olderLoadRequestRef.current) setLoadingOlder(false);
     }
   }, [conversation.id, hasMore, loadingOlder, messages, myUserId]);
 
