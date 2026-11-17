@@ -204,7 +204,7 @@ ${invite.token}` });
         </GlassCard>;
       }}
       ListEmptyComponent={<Text style={[typography.caption, { color: colors.textSecondary, paddingVertical: spacing.md }]}>{members.length ? 'No members match your search and filter.' : 'No group members were returned.'}</Text>}
-      ListFooterComponent={<Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>{footer.replace(/^<Text[^>]*>|<\/Text>$/g,'')}</Text>}
+      ListFooterComponent={<Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Member changes require a working backend session and migration 0019. If an action fails, your membership has not been changed by this screen.</Text>}
     />}
   </SafeAreaView>;
 }
