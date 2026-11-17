@@ -46,9 +46,9 @@ test('upgraded one-to-one calls appear only once as conference history', () => {
 });
 
 test('call history uses a virtualized list with stable direct and group call keys', () => {
-  assert.match(callsScreen, /<FlatList\\b/);
-  assert.match(callsScreen, /data=\\{calls\\}/);
-  assert.match(callsScreen, /keyExtractor=/);
-  assert.match(callsScreen, /renderItem=/);
-  assert.doesNotMatch(callsScreen, /calls\\.map\\(/);
+  assert.ok(callsScreen.includes('<FlatList'));
+  assert.ok(callsScreen.includes('data={calls}'));
+  assert.ok(callsScreen.includes('keyExtractor='));
+  assert.ok(callsScreen.includes('renderItem='));
+  assert.ok(!callsScreen.includes('calls.map('));
 });
