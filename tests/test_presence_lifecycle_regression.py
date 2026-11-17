@@ -27,8 +27,8 @@ class PresenceLifecycleRegressionTests(unittest.TestCase):
         source = self.read("src/services/api.js")
         self.assertEqual(source.count("await stopPresence();"), 4)
         self.assertIn("await stopPresence();\n  try {\n    const signOutResult = await supabase.auth.signOut", source)
-        self.assertIn("stopPresence();\n  const { error } = await supabase.auth.signOut({ scope: 'local' });", source)
-        self.assertIn("stopPresence();\n  const { error } = await supabase.auth.signOut({ scope: 'global' });", source)
+        self.assertIn("await stopPresence();\n  const { error } = await supabase.auth.signOut({ scope: 'local' });", source)
+        self.assertIn("await stopPresence();\n  const { error } = await supabase.auth.signOut({ scope: 'global' });", source)
 
     def test_auth_event_is_a_fallback_for_remote_or_external_signout(self):
         source = self.read("App.js")
