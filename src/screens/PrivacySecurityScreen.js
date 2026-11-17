@@ -16,7 +16,8 @@ import { validatePasswordChange } from '../utils/authValidation';
 import { getPrivacyCheckupItems } from '../utils/privacyCheckup';
 
 const ACCOUNT_DELETE_REAUTH_KEY = 'zannychat.account-delete-reauth.v1';
-const ACCOUNT_DELETE_REAUTH_TTL_MS = 10 * 60 * 1000;
+// Backend requires auth_time within five minutes; keep a 30-second safety margin.
+const ACCOUNT_DELETE_REAUTH_TTL_MS = 4 * 60 * 1000 + 30 * 1000;
 
 // One of the three Profile rows the Oct 2026 audit found rendering but
 // doing nothing ("the single most visible 'looks finished, isn't'
@@ -179,7 +180,7 @@ export default function PrivacySecurityScreen({ navigation }) {
         if (googleReauthMismatch) {
           Alert.alert('Google account mismatch', 'The Google account used for verification does not match the account you are deleting. Sign back into the original account.');
         } else {
-          Alert.alert('Verify with Google first', 'Re-verify the same Google account, return here, and then confirm deletion within ten minutes.');
+          Alert.alert('Verify with Google first', 'Re-verify the same Google account, return here, and then confirm deletion within five minutes.');
         }
         return;
       }
