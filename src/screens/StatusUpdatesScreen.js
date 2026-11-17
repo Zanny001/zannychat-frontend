@@ -179,13 +179,26 @@ export default function StatusUpdatesScreen({ navigation, route }) {
     setSeenStatusReady(false);
     setStatuses([]);
     setReactions({});
+    setReactingStatusIds([]);
+    reactionLocksRef.current.clear();
     setMutedUsers([]);
     setExcludedUsers([]);
     setStatusUserNames({});
+    setPrivacyContacts([]);
+    setPrivacyModalOpen(false);
+    setPrivacyBusy(false);
+    setPrivacyLoadError('');
+    setPrivacySearch('');
+    setPrivacyMode('exclude');
+    setSelectedAudienceIds([]);
     setViewing(null);
     setReplies([]);
     setRepliesHasMore(false);
     setReplyCursor(null);
+    setReplyText('');
+    setSendingReply(false);
+    setLoading(true);
+    setError('');
     if (!userId) return () => { active = false; };
     readSeenStatusIds(AsyncStorage, userId).then((ids) => {
       if (!active) return;
