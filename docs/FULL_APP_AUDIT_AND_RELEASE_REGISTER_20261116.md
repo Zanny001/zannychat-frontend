@@ -348,3 +348,15 @@ Follow-up: blocked-user collection has no explicit UI cap and should receive a d
 | Call History | Service caps fetches at 100 by default / 200 maximum. The screen previously mapped rows in ScrollView; PR #152 converts history to FlatList while preserving redial, delete, refresh and empty/error states. | CI pending |
 
 Call release remains gated on two-account and multi-device tests: remote audio in both directions, camera/video switch during an active call, group participant addition/removal, Bluetooth/speaker routing, network handoff, background/foreground recovery, CallKit/Android Telecom receiver lifecycle and terminal-state cleanup.
+
+
+### Screens 25–28 — social and community
+
+| Experience | Source-level finding | Status |
+|---|---|---|
+| Updates / Status route | Shares the Status Updates experience reviewed as screen 12; profile-picture-first "My status" avatar is present. | Source pass complete; device acceptance pending |
+| Channels | Backend directory currently returns up to 100 public + 100 owned-private + 500 subscribed-private channels (up to 700). Community feed, channel posts, comments and reports use cursor pagination; LIVE preview is capped at four. The directory currently maps all returned channels inside a ScrollView and needs a dedicated progressive-rendering/FlatList pass. | Source pass complete; directory scaling remains open |
+| Polls | Service already uses validated 40-item keyset pages, vote-count RPC and 2–10 options. PR #153 virtualizes the poll collection and retains create/vote/multi-select/closed states. | CI pending |
+| Events | Previous service fetched all past and future events without a limit, then filtered upcoming events on-device. PR #154 adds future-only, 40-item ascending keyset pages and FlatList rendering with RSVP state. | CI pending |
+
+The Channels directory is the next dedicated collection-performance task; its moderator/report/comment actions remain role-scoped and should not be simplified by removing server-side permission checks.
