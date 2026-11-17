@@ -75,5 +75,8 @@ test('status read markers are isolated by authenticated account and reset on acc
   assert.ok(screen.includes('writeSeenStatusIds(AsyncStorage, myProfile.id'));
   assert.ok(screen.includes('seenStatusReady'));
   assert.ok(screen.includes('seenStatusIdsRef.current = []'));
+  assert.ok(screen.includes('statusRefreshRequestRef.current += 1'));
+  assert.ok(screen.includes('setStatuses([])'));
+  assert.ok(screen.includes('setViewing(null)'));
   assert.equal(screen.includes('zannychat.status-seen.v1'), false);
 });
