@@ -172,19 +172,47 @@ export default function StatusUpdatesScreen({ navigation, route }) {
     let active = true;
     const userId = myProfile?.id;
     statusRefreshRequestRef.current += 1;
+    setLoading(true);
+    setError('');
     setStatuses([]);
     setReactions({});
+    setReactingStatusIds([]);
+    reactionLocksRef.current.clear();
     setViewing(null);
+    setStatusPaused(false);
+    setStatusProgress(0);
+    setMediaLoadError(false);
+    setRetryingMedia(false);
+    mediaRetryLockRef.current = false;
+    requestedStoryOpenRef.current = null;
     setReplies([]);
+    setRepliesHasMore(false);
+    setLoadingOlderReplies(false);
+    setReplyCursor(null);
+    setReplyText('');
+    setSendingReply(false);
+    replyPageLockRef.current = false;
     setMutedUsers([]);
     setExcludedUsers([]);
     setStatusUserNames({});
+    // Privacy controls can contain account-specific contacts and selected
+    // recipients. Close and clear them before the next account is loaded.
+    setPrivacyContacts([]);
+    setPrivacyModalOpen(false);
+    setPrivacyBusy(false);
+    setPrivacyLoadError('');
+    setPrivacySearch('');
+    setPrivacyMode('exclude');
+    setSelectedAudienceIds([]);
     // Never display the previous account's local read markers or viewer
     // preferences while the next account's records are loading.
     seenStatusIdsRef.current = [];
     setSeenStatusIds([]);
     setStatusDurations(DEFAULT_STATUS_DURATIONS);
-    if (!userId) return () => { active = false; };
+    if (!userId) {
+      setLoading(false);
+      return () => { active = false; };
+    }
 
     readSeenStatusIds(AsyncStorage, userId).then((ids) => {
       if (active) { seenStatusIdsRef.current = ids; setSeenStatusIds(ids); }
