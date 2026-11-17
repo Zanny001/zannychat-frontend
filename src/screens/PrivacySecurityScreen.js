@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Alert, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -40,11 +40,38 @@ export default function PrivacySecurityScreen({ navigation }) {
   const [googleReauthVerifiedUserId, setGoogleReauthVerifiedUserId] = useState(null);
   const [googleReauthMismatch, setGoogleReauthMismatch] = useState(false);
   const authUserIdRef = useRef(null);
+  const blockedRequestRef = useRef(0);
+
+  const refreshBlockedUsers = useCallback(async (expectedUserId = null) => {
+    const requestId = ++blockedRequestRef.current;
+    try {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      const userId = authData?.user?.id || null;
+      if (authError || !userId || (expectedUserId && userId !== expectedUserId)) {
+        if (requestId === blockedRequestRef.current) setBlocked([]);
+        return;
+      }
+      const entries = await fetchBlockedUsers();
+      const { data: latestAuthData } = await supabase.auth.getUser();
+      if (requestId === blockedRequestRef.current && latestAuthData?.user?.id === userId) {
+        setBlocked(Array.isArray(entries) ? entries : []);
+      }
+    } catch (error) {
+      if (requestId === blockedRequestRef.current) setBlocked([]);
+      throw error;
+    }
+  }, []);
 
   const refreshAuthProviders = useCallback(async () => {
     if (!SUPABASE_ENABLED || !supabase) return;
     const { data, error } = await supabase.auth.getUser();
-    if (error || !data?.user) return;
+    if (error || !data?.user) {
+      authUserIdRef.current = null;
+      setAuthProviders({ email: false, google: false });
+      setGoogleReauthVerifiedUserId(null);
+      setGoogleReauthMismatch(false);
+      return;
+    }
     const providers = new Set([
       ...(Array.isArray(data.user.app_metadata?.providers) ? data.user.app_metadata.providers : []),
       data.user.app_metadata?.provider,
@@ -78,13 +105,40 @@ export default function PrivacySecurityScreen({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
-      fetchBlockedUsers()
-        .then(setBlocked)
+      refreshBlockedUsers()
         .catch(() => {})
         .finally(() => setLoading(false));
       refreshAuthProviders().catch(() => {});
-    }, [refreshAuthProviders])
+    }, [refreshAuthProviders, refreshBlockedUsers])
   );
+
+  useEffect(() => {
+    if (!SUPABASE_ENABLED || !supabase?.auth?.onAuthStateChange) return undefined;
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      const nextUserId = session?.user?.id || null;
+      if (authUserIdRef.current !== nextUserId) {
+        authUserIdRef.current = nextUserId;
+        blockedRequestRef.current += 1;
+        setBlocked([]);
+        setAuthProviders({ email: false, google: false });
+        setGoogleReauthVerifiedUserId(null);
+        setGoogleReauthMismatch(false);
+        setNewPassword('');
+        setConfirmPassword('');
+        setDeletePassword('');
+        setDeleteConfirmation('');
+        setLoading(Boolean(nextUserId));
+        if (nextUserId) Promise.resolve().then(() => refreshBlockedUsers(nextUserId).catch(() => {}));
+        else setLoading(false);
+      }
+      // A same-user Google reauthentication still needs to consume the
+      // account-bound one-time marker saved before OAuth navigation.
+      if (nextUserId && event === 'SIGNED_IN') {
+        Promise.resolve().then(() => refreshAuthProviders().catch(() => {}));
+      }
+    });
+    return () => data?.subscription?.unsubscribe?.();
+  }, [refreshAuthProviders, refreshBlockedUsers]);
 
   async function handleUnblock(entry) {
     const name = entry.profile?.name || 'this person';
