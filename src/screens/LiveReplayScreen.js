@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, SafeAreaView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { backendFetch } from '../services/backendClient';
 import { getCurrentUser } from '../services/api';
+import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
 import { confirmAction, showAppAlert } from '../utils/appDialogs';
 
@@ -13,6 +14,7 @@ export default function LiveReplayScreen({ route, navigation }) {
   const replayId = replay?.id || route.params?.replayId;
   const [playbackUrl, setPlaybackUrl] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const currentUserIdRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
@@ -24,22 +26,51 @@ export default function LiveReplayScreen({ route, navigation }) {
   useEffect(() => {
     let active = true;
     getCurrentUser().then((user) => {
-      if (active) setCurrentUserId(user?.id || null);
+      if (!active) return;
+      const userId = user?.id || null;
+      currentUserIdRef.current = userId;
+      setCurrentUserId(userId);
     }).catch(() => {
-      if (active) setCurrentUserId(null);
+      if (!active) return;
+      currentUserIdRef.current = null;
+      setCurrentUserId(null);
     });
     return () => { active = false; };
   }, []);
 
   useEffect(() => {
+    if (!SUPABASE_ENABLED || !supabase?.auth?.onAuthStateChange) return undefined;
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUserId = session?.user?.id || null;
+      if (currentUserIdRef.current === nextUserId) return;
+      currentUserIdRef.current = nextUserId;
+      // Stop and hide any previous account's signed playback URL immediately.
+      player.pause();
+      setPlaybackUrl(null);
+      setError(nextUserId ? '' : 'Sign in to access this LIVE replay.');
+      setLoading(Boolean(nextUserId));
+      setCurrentUserId(nextUserId);
+    });
+    return () => data?.subscription?.unsubscribe?.();
+  }, [player]);
+
+  useEffect(() => {
     let active = true;
     const loadPlayback = async () => {
+      if (!currentUserId) {
+        setPlaybackUrl(null);
+        setError('Sign in to access this LIVE replay.');
+        setLoading(false);
+        return;
+      }
       if (!replayId) {
         setError('This replay is unavailable.');
         setLoading(false);
         return;
       }
       setLoading(true);
+      setPlaybackUrl(null);
+      player.pause();
       setError('');
       try {
         const result = await backendFetch(`/live/replays/${replayId}/playback`);
@@ -63,7 +94,7 @@ export default function LiveReplayScreen({ route, navigation }) {
       active = false;
       player.pause();
     };
-  }, [replayId, attempt, player]);
+  }, [replayId, attempt, player, currentUserId]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
