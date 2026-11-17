@@ -531,6 +531,10 @@ export default function ChatListScreen({ navigation }) {
       ) : null}
 
       <FlatList keyboardShouldPersistTaps="handled"
+        initialNumToRender={12}
+        maxToRenderPerBatch={10}
+        updateCellsBatchingPeriod={50}
+        windowSize={9}
         style={{ flex: 1 }}
         data={filtered}
         keyExtractor={(item) => item.id}
