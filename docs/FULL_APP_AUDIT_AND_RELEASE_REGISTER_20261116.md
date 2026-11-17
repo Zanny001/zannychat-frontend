@@ -276,3 +276,22 @@ No paid-plan upgrade, production database mutation, blanket RLS change, object d
 - A full public-function ownership/grant count returned 70 public functions, all owned by `postgres`; 67 are SECURITY DEFINER, 28 are executable by `authenticated`, and zero are executable by `anon`.
 - The default ACL for postgres-created public functions grants execution to `authenticated` and `service_role`, not `anon`. The separate `supabase_admin` default ACL includes `anon`, but there are currently no public functions owned by `supabase_admin`. Keep migrations/functions owned by the reviewed migration role and explicitly revoke `anon` if a future public RPC is created under a different owner. Do not blanket-change Supabase system defaults.
 - The first 11 messaging/navigation surfaces were rechecked for list rendering. Chats, Chat, New Chat and Forward Message already use virtualized lists. Chat Appearance is a fixed, small canvas-selection form and appropriately remains a ScrollView. Chat Folders is user-created and has no product-level folder cap, so it is included with Saved Messages, Drafts, Pinned Messages and Shared Media in PR #150. Those previously mapped collections inside ScrollView; the PR converts them to FlatList with stable keys, retained empty/error states and bounded Shared Media batches. CI and regression acceptance are pending; this is not yet merged.
+
+
+### First 11 navigation experiences — sequential source review
+
+| Sequence | Experience | Source-level finding | Status |
+|---:|---|---|---|
+| 01 | Main | Six established destinations remain: Chats, Calls, LIVE, Updates, Explore/Channels and Profile. Floating glass tab bar uses reduced-motion handling and disables costly backdrop blur on older Android versions. | Navigation preserved; device visual review pending |
+| 02 | Chats | Virtualized conversation list; horizontal story and filter rails are bounded. 48-point actions and explicit loading/error/empty states. Account-change isolation merged in PR #146. | Source pass complete; two-account acceptance pending |
+| 03 | Chat | Virtualized message list, keyboard-avoiding composer, attachment recovery and 48-point action targets. | Source pass complete; device/keyboard acceptance pending |
+| 04 | New Chat | Virtualized contact directory and moderate 76-point contact rows. Account-owned directory/favourites reset and stale-write guards merged in PR #147. | Source pass complete; two-account acceptance pending |
+| 05 | Forward Message | Virtualized recipient list and search; no unbounded ScrollView collection found. | Source pass complete |
+| 06 | Saved Messages | Previously mapped the collection in ScrollView; FlatList conversion and stable keys are in PR #150. | CI pending |
+| 07 | Drafts | Previously mapped drafts in ScrollView; FlatList conversion retains local-only semantics and retry/delete states in PR #150. | CI pending |
+| 08 | Pinned Messages | Previously mapped pinned rows in ScrollView; FlatList conversion retains search and open-original-message actions in PR #150. | CI pending |
+| 09 | Chat Folders | User-created folders have no product-level cap; converted from ScrollView mapping to FlatList in PR #150. Folder configuration remains device-local. | CI pending |
+| 10 | Shared Media | Previously accumulated paginated media in ScrollView; PR #150 uses FlatList, two-column photos, one-column files/links, 30-message pages and bounded six-page load actions. | CI pending |
+| 11 | Chat Appearance | Canvas choices are a small fixed settings list; ScrollView is appropriate. Preview clearly states appearance changes do not modify message content. | Source pass complete |
+
+The first 11 screens now have a source-level performance and interaction pass. This does not replace the planned individual visual review of spacing, safe areas, contrast, light/dark/custom palette behaviour, keyboard handling, accessibility and real-device presentation.
