@@ -31,4 +31,7 @@ test('inbox refreshes while focused from realtime message and participant change
   assert.ok(screen.includes('load().catch(() => {})'));
   assert.ok(screen.includes('unsubscribe()'));
   assert.ok(screen.includes('loadRequestRef.current'));
+  assert.ok(screen.includes('AppState.addEventListener(\'change\''));
+  assert.ok(screen.includes('state === \'active\' && active'));
+  assert.ok(screen.includes('AppState.currentState && AppState.currentState !== \'active\''));
 });
