@@ -224,6 +224,8 @@ export default function ChatScreen({ route, navigation }) {
   const activeUserIdRef = useRef(undefined);
   const messageLoadRequestRef = useRef(0);
   const olderLoadRequestRef = useRef(0);
+  const resolvedConversationRequestRef = useRef(0);
+  const pinnedLoadRequestRef = useRef(0);
 
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(audioRecorder, 200);
@@ -321,8 +323,22 @@ export default function ChatScreen({ route, navigation }) {
   }, [conversation.id, myUserId]);
 
   useEffect(() => {
-    if (!myUserId) return;
-    loadPinnedMessages(myUserId).then(setPinnedMessages).catch(() => setPinnedMessages([]));
+    const requestId = ++pinnedLoadRequestRef.current;
+    if (!myUserId) {
+      setPinnedMessages([]);
+      return () => { pinnedLoadRequestRef.current += 1; };
+    }
+    const expectedUserId = myUserId;
+    loadPinnedMessages(myUserId)
+      .then((items) => {
+        if (requestId === pinnedLoadRequestRef.current && activeUserIdRef.current === expectedUserId) {
+          setPinnedMessages(items);
+        }
+      })
+      .catch(() => {
+        if (requestId === pinnedLoadRequestRef.current && activeUserIdRef.current === expectedUserId) setPinnedMessages([]);
+      });
+    return () => { pinnedLoadRequestRef.current += 1; };
   }, [myUserId, conversation.id]);
 
   const isMineMessage = useCallback(
@@ -331,18 +347,22 @@ export default function ChatScreen({ route, navigation }) {
   );
 
   useEffect(() => {
-    if (display.participant?.name) return;
+    if (display.participant?.name || !myUserId) return;
+    const requestId = ++resolvedConversationRequestRef.current;
+    const expectedUserId = myUserId;
     fetchConversations().then(({ conversations: list }) => {
+      if (requestId !== resolvedConversationRequestRef.current || activeUserIdRef.current !== expectedUserId) return;
       const match = list.find((c) => c.id === conversation.id);
       if (match) {
         setResolved(match);
         setFlags({ isMuted: Boolean(match.isMuted), isArchived: Boolean(match.isArchived) });
       }
-    });
+    }).catch(() => {});
+    return () => { resolvedConversationRequestRef.current += 1; };
     // conversation.id is stable for the screen's lifetime; display is
     // deliberately excluded so this doesn't loop against its own update.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversation.id]);
+  }, [conversation.id, myUserId]);
 
   const load = useCallback(async () => {
     const requestId = ++messageLoadRequestRef.current;
