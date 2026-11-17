@@ -199,7 +199,10 @@ export default function StatusUpdatesScreen({ navigation, route }) {
     setSendingReply(false);
     setLoading(true);
     setError('');
-    if (!userId) return () => { active = false; };
+    if (!userId) {
+      setLoading(false);
+      return () => { active = false; };
+    }
     readSeenStatusIds(AsyncStorage, userId).then((ids) => {
       if (!active) return;
       seenStatusIdsRef.current = ids;
