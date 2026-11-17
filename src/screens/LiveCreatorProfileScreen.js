@@ -75,7 +75,10 @@ export default function LiveCreatorProfileScreen({ navigation }) {
     return () => data?.subscription?.unsubscribe?.();
   }, [refresh]);
 
-  useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
+  useFocusEffect(useCallback(() => {
+    refresh();
+    return () => { refreshRequestRef.current += 1; };
+  }, [refresh]));
 
   const profile = summary?.profile || {};
   const impact = summary?.impact || {};
