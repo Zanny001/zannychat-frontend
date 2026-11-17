@@ -18,3 +18,9 @@ test('schedule composer, handled keyboard taps and recovery states remain presen
   assert.ok(source.includes('ListEmptyComponent='));
   assert.ok(source.includes('Refresh scheduled messages'));
 });
+
+test('scheduled-message picker fetches at most 100 conversations and skips lookup for a preselected chat', () => {
+  assert.ok(source.includes('fetchConversations({ limit: 100, offset: 0 })'));
+  assert.ok(source.includes('initialConversationId ? Promise.resolve({ conversations: [] })'));
+  assert.ok(!source.includes('limit: 1000'));
+});
