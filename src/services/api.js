@@ -915,3 +915,1337 @@ async function removeExpoPushTokensBeforeSignOut(scope) {
   }
 }
 
+async function removeVoipTokensBeforeSignOut(scope) {
+  if (!BACKEND_ENABLED || !SUPABASE_ENABLED) return;
+  try {
+    if (scope === 'global') {
+      await backendFetch('/calls/voip-token', {
+        method: 'DELETE',
+        body: JSON.stringify({ all: true }),
+      });
+      return;
+    }
+    // A local sign-out must remove every native push credential for this
+    // device, including the separate standard APNs alert token on iOS.
+    const tokens = [...new Set([getActiveVoipPushToken(), getActiveApnsAlertToken()].filter(Boolean))];
+    for (const token of tokens) {
+      await backendFetch('/calls/voip-token', {
+        method: 'DELETE',
+        body: JSON.stringify({ token }),
+      });
+    }
+  } catch (error) {
+    // Push cleanup is best-effort so a temporary backend outage never traps
+    // the user in an authenticated session. The next sign-in re-registers
+    // the current device token and replaces its previous owner association.
+    console.warn('[calls] VoIP token cleanup during sign-out failed:', error?.message || error);
+  }
+}
+
+export async function signOutThisDevice() {
+  if (!SUPABASE_ENABLED || !supabase) throw new Error('Session management requires a connected account.');
+  await removeExpoPushTokensBeforeSignOut('local');
+  await removeVoipTokensBeforeSignOut('local');
+  const { error } = await supabase.auth.signOut({ scope: 'local' });
+  if (error) throw error;
+  return { signedOut: true, scope: 'local' };
+}
+
+export async function signOutEverywhere() {
+  if (!SUPABASE_ENABLED || !supabase) throw new Error('Session management requires a connected account.');
+  await removeExpoPushTokensBeforeSignOut('global');
+  await removeVoipTokensBeforeSignOut('global');
+  const { error } = await supabase.auth.signOut({ scope: 'global' });
+  if (error) throw error;
+  return { signedOut: true, scope: 'global' };
+}
+
+export async function signOut() {
+  if (!SUPABASE_ENABLED || !supabase) return;
+  // Settings logout is device-local; global revocation is explicit in Devices & sessions.
+  await removeExpoPushTokensBeforeSignOut('local');
+  await removeVoipTokensBeforeSignOut('local');
+  const { error } = await supabase.auth.signOut({ scope: 'local' });
+  if (error) throw error;
+}
+
+// Excludes your own profile — without this, "New chat" showed yourself
+// as a contact, and tapping it failed anyway (the backend explicitly
+// rejects starting a conversation with yourself).
+export async function fetchContactById(userId) {
+  if (!SUPABASE_ENABLED) throw new Error('QR contact discovery requires a connected account.');
+  if (typeof userId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)) {
+    throw new Error('That QR code is not a valid ZannyChat contact.');
+  }
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData?.user) throw new Error('Sign in before connecting to a contact.');
+  if (authData.user.id === userId) throw new Error("That's your own QR code. Scan someone else's code.");
+  // QR codes can introduce two people who have never chatted. The legacy
+  // contact-directory RPC intentionally requires a shared conversation;
+  // resolve the QR through the privacy-aware public profile lookup instead.
+  const { data, error } = await supabase.rpc('get_public_profile_by_id', { p_user_id: userId });
+  if (error) throw error;
+  const profile = Array.isArray(data) ? data[0] : null;
+  if (!profile) {
+    throw new Error('profile is private, unavailable, or not discoverable');
+  }
+  const [resolved] = await resolveProfileAvatarUrls([profile]);
+  return normalizeProfile(resolved || profile);
+}
+
+// Private phone discovery: send only numbers the user explicitly selects.
+// Never log or persist the submitted phone list on the client.
+export async function getPhoneDiscoverySettings() {
+  return backendFetch('/discovery/enrollment');
+}
+
+export async function setPhoneDiscoverability(discoverable) {
+  if (typeof discoverable !== 'boolean') throw new Error('Choose whether people can find you by phone.');
+  return backendFetch('/discovery/enrollment', { method: 'POST', body: JSON.stringify({ discoverable }) });
+}
+
+export async function matchPhoneContacts(phones) {
+  if (!Array.isArray(phones) || phones.length > 100) throw new Error('Match up to 100 selected phone numbers at a time.');
+  return backendFetch('/discovery/match', { method: 'POST', body: JSON.stringify({ phones }) });
+}
+
+export async function fetchContacts() {
+  if (!SUPABASE_ENABLED) return MOCK_CONTACTS;
+
+  const { data, error } = await supabase.rpc('get_contact_directory');
+  if (error) throw error;
+  const resolved = await resolveProfileAvatarUrls(Array.isArray(data) ? data : []);
+  return resolved.map(normalizeProfile);
+}
+
+// Search all discoverable members without exposing private auth metadata.
+// The database RPC enforces profile visibility, block relationships and
+// bounded pagination; the shared-chat directory remains a separate source.
+export async function searchPublicProfiles(query, { limit = 20, offset = 0 } = {}) {
+  const normalizedQuery = String(query || '').trim().replace(/^@/, '').toLowerCase();
+  if (normalizedQuery.length < 2) return [];
+  if (normalizedQuery.length > 40) throw new Error('Search must be 40 characters or fewer.');
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 20, 30));
+  const safeOffset = Math.max(0, Math.min(Number(offset) || 0, 1000));
+
+  if (!SUPABASE_ENABLED) {
+    return MOCK_CONTACTS.filter((member) =>
+      [member.name, member.username].some((value) =>
+        typeof value === 'string' && value.toLowerCase().includes(normalizedQuery)
+      )
+    ).slice(safeOffset, safeOffset + safeLimit);
+  }
+
+  const { data, error } = await supabase.rpc('search_public_profiles', {
+    p_query: normalizedQuery,
+    p_limit: safeLimit,
+    p_offset: safeOffset,
+  });
+  if (error) throw error;
+  const resolved = await resolveProfileAvatarUrls(Array.isArray(data) ? data : []);
+  return resolved.map(normalizeProfile);
+}
+
+// Paginated since the Oct 2026 audit ("no pagination anywhere"): the
+// conversation list pages by created_at desc, and each conversation's
+// nested messages are capped at the 30 most recent — enough for the
+// last-message preview and an unread count (which is therefore capped
+// at 30; honest tradeoff, noted on the badge rather than fetching
+// unbounded history per row like before).
+// Server-backed scheduled messages. These helpers intentionally use the authenticated
+// backend rather than direct Supabase writes because the queue is service-role-only.
+export async function fetchScheduledMessages() {
+  const result = await backendFetch('/conversations/scheduled-messages');
+  return result.scheduledMessages || [];
+}
+
+export async function scheduleMessage(conversationId, text, scheduledFor) {
+  if (typeof conversationId !== 'string' || !conversationId.trim()) throw new Error('A conversation is required');
+  if (typeof text !== 'string' || !text.trim() || text.trim().length > 4000) throw new Error('Message text must be 1–4000 characters');
+  if (typeof scheduledFor !== 'string' || !Number.isFinite(Date.parse(scheduledFor))) throw new Error('A valid scheduled date is required');
+  const result = await backendFetch('/conversations/scheduled-messages', {
+    method: 'POST',
+    body: JSON.stringify({ conversationId, text: text.trim(), scheduledFor }),
+  });
+  return result.scheduledMessage;
+}
+
+export async function cancelScheduledMessage(scheduledMessageId) {
+  if (typeof scheduledMessageId !== 'string' || !scheduledMessageId.trim()) throw new Error('A scheduled message ID is required');
+  await backendFetch(`/conversations/scheduled-messages/${encodeURIComponent(scheduledMessageId)}`, { method: 'DELETE' });
+  return true;
+}
+
+export async function fetchConversations({ limit = 50, offset = 0 } = {}) {
+  if (!SUPABASE_ENABLED) return { conversations: MOCK_CONVERSATIONS, hasMore: false };
+
+  const { data: authData } = await supabase.auth.getUser();
+  const currentUserId = authData?.user?.id;
+
+  const { data, error } = await supabase
+    .from('conversations')
+    .select(
+      `id, created_at, name, is_group,
+       conversation_participants(user_id, is_favorite, is_muted, is_archived),
+       messages!messages_conversation_id_fkey(sender_id, text, created_at, media_type)`
+    )
+    .order('created_at', { ascending: false, referencedTable: 'messages' })
+    .limit(30, { referencedTable: 'messages' })
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) throw error;
+
+  // Group rows only need a member count in the chat list; avoid fetching
+  // every group member's profile when only direct-chat peer identity is shown.
+  const participantIds = [...new Set(
+    (data || [])
+      .filter((row) => !row.is_group)
+      .flatMap((row) => (row.conversation_participants || []).map((participant) => participant.user_id))
+      .filter(Boolean),
+  )];
+  const participantProfiles = [];
+  for (let start = 0; start < participantIds.length; start += 500) {
+    const { data: batchProfiles, error: participantProfilesError } = await supabase.rpc(
+      'get_conversation_profile_directory',
+      { p_user_ids: participantIds.slice(start, start + 500) },
+    );
+    if (participantProfilesError) throw participantProfilesError;
+    participantProfiles.push(...(batchProfiles || []));
+  }
+  const profilesWithResolvedAvatars = await resolveProfileAvatarUrls(participantProfiles);
+  const profilesById = new Map(profilesWithResolvedAvatars.map((profile) => [profile.id, profile]));
+  for (const row of data || []) {
+    row.conversation_participants = (row.conversation_participants || []).map((participant) => ({
+      ...participant,
+      profiles: profilesById.get(participant.user_id) || null,
+    }));
+  }
+
+  let readCursors;
+  const { data: rpcReadCursors, error: readCursorError } = await supabase.rpc('get_my_read_cursors');
+  if (readCursorError) {
+    if (!isMissingRpcFunction(readCursorError, 'get_my_read_cursors')) throw readCursorError;
+    if (currentUserId) {
+      const { data: participantRows, error: participantError } = await supabase
+        .from('conversation_participants')
+        .select('conversation_id, last_read_at')
+        .eq('user_id', currentUserId);
+      if (participantError) throw participantError;
+      readCursors = participantRows;
+    } else {
+      readCursors = [];
+    }
+  } else {
+    readCursors = rpcReadCursors;
+  }
+  const readCursorByConversation = new Map((readCursors || []).map((item) => [item.conversation_id, item.last_read_at]));
+  for (const row of data || []) row.my_last_read_at = readCursorByConversation.get(row.id) || null;
+
+  const conversations = data
+    .map((row) => normalizeConversation(row, currentUserId))
+    .sort((a, b) => new Date(b._sortKey) - new Date(a._sortKey))
+    .map(({ _sortKey, ...rest }) => rest);
+
+  return { conversations, hasMore: data.length === limit };
+}
+
+// Removes the current user's membership in a conversation. This is a
+// user-scoped "delete chat": it removes the chat from this account's list
+// without deleting the other participants' conversation or message history.
+// The database must permit users to delete only their own participant row;
+// if RLS rejects the operation, surface the error rather than pretending it worked.
+export async function deleteConversationForCurrentUser(conversationId) {
+  if (!SUPABASE_ENABLED) return;
+
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError) throw authError;
+  const userId = authData?.user?.id;
+  if (!userId) throw new Error('Sign in to delete a chat.');
+
+  const { data, error } = await supabase
+    .from('conversation_participants')
+    .delete()
+    .eq('conversation_id', conversationId)
+    .eq('user_id', userId)
+    .select('conversation_id');
+
+  if (error) throw error;
+  if (!data || data.length === 0) {
+    throw new Error('This chat could not be deleted. You may no longer be a participant.');
+  }
+}
+
+// Called when ChatScreen gains focus — zeroes this conversation's
+// unread count for the current user by advancing their own
+// last_read_at, and (in a 1:1) is what the other person's "seen" tick
+// is watching for via subscribeToParticipantUpdates below. Mock mode
+// has nothing to persist this to, so it's a no-op there.
+export async function markConversationRead(conversationId) {
+  if (!SUPABASE_ENABLED) return;
+
+  const { data: authData } = await supabase.auth.getUser();
+  const userId = authData?.user?.id;
+  if (!userId) return;
+
+  const { error } = await supabase
+    .from('conversation_participants')
+    .update({ last_read_at: new Date().toISOString() })
+    .eq('conversation_id', conversationId)
+    .eq('user_id', userId);
+
+  if (error) throw error;
+}
+
+export async function toggleFavorite(conversationId, isFavorite) {
+  if (!SUPABASE_ENABLED) return;
+
+  const { data: authData } = await supabase.auth.getUser();
+  const userId = authData?.user?.id;
+  if (!userId) return;
+
+  const { error } = await supabase
+    .from('conversation_participants')
+    .update({ is_favorite: isFavorite })
+    .eq('conversation_id', conversationId)
+    .eq('user_id', userId);
+
+  if (error) throw error;
+}
+
+// Returns { [userId]: last_read_at } for everyone in a conversation —
+// what ChatScreen uses to compute each of its own messages' "seen"
+// state at render time. Only meaningful in a 1:1 today (a group's
+// "seen by 4 of 6" is a real feature this doesn't attempt — see the
+// backend README).
+export async function fetchParticipantReadState(conversationId) {
+  if (!SUPABASE_ENABLED) return {};
+
+  const { data, error } = await supabase.rpc('get_conversation_read_state', {
+    p_conversation_id: conversationId,
+  });
+
+  if (error) throw error;
+  return Object.fromEntries((data || []).map((row) => [row.user_id, row.last_read_at]));
+}
+
+// Live "seen" ticks: fires whenever ANYONE's last_read_at in this
+// conversation changes (including your own, which the caller just
+// ignores) — the same postgres_changes mechanism subscribeToMessages
+// uses, just watching UPDATE on a different table.
+export function subscribeToParticipantUpdates(conversationId, onUpdate) {
+  if (!SUPABASE_ENABLED) return () => {};
+  let active = true;
+  let previous = null;
+  const poll = async () => {
+    try {
+      const state = await fetchParticipantReadState(conversationId);
+      if (!active) return;
+      for (const [user_id, last_read_at] of Object.entries(state)) {
+        if (previous && previous[user_id] !== last_read_at) onUpdate({ user_id, last_read_at });
+      }
+      previous = state;
+    } catch (_) { /* Preserve the last known read state during transient outages. */ }
+  };
+  poll();
+  const timer = setInterval(poll, 5000);
+  return () => { active = false; clearInterval(timer); };
+}
+
+// Starts a conversation with a contact. When the backend is deployed,
+// this is a single trusted server call that creates the conversation
+// and both participant rows together (see zannychat-backend's
+// POST /conversations). Otherwise it falls back to a locally-faked
+// conversation, same as before — good enough to demo the Chat screen
+// without any backend at all.
+export async function createConversation(participantId, participantProfile) {
+  if (BACKEND_ENABLED && SUPABASE_ENABLED) {
+    const conversation = await backendFetch('/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ participantId }),
+    });
+    return {
+      ...conversation,
+      isGroup: false,
+      participant: participantProfile,
+      lastMessage: '',
+      lastMessageAt: '',
+      unreadCount: 0,
+    };
+  }
+
+  return {
+    id: `new-${participantId}`,
+    isGroup: false,
+    participant: participantProfile,
+    lastMessage: '',
+    lastMessageAt: '',
+    unreadCount: 0,
+  };
+}
+
+// Same idea as createConversation but for 2+ other people plus a name —
+// see zannychat-backend's POST /conversations/group. memberProfiles is
+// only used to synthesize a reasonable local object in mock mode /
+// before the group's own member list has been fetched; the real
+// `participant` (group name/color) always comes from the server round
+// trip once BACKEND_ENABLED && SUPABASE_ENABLED.
+export async function createGroupConversation(participantIds, name, memberProfiles = []) {
+  if (BACKEND_ENABLED && SUPABASE_ENABLED) {
+    const conversation = await backendFetch('/conversations/group', {
+      method: 'POST',
+      body: JSON.stringify({ participantIds, name }),
+    });
+    return {
+      ...conversation,
+      isGroup: true,
+      memberCount: participantIds.length + 1,
+      participant: {
+        name,
+        avatarColor: GROUP_AVATAR_COLOR,
+        avatarUrl: null,
+        online: false,
+      },
+      lastMessage: '',
+      lastMessageAt: '',
+      unreadCount: 0,
+    };
+  }
+
+  return {
+    id: `new-group-${Date.now()}`,
+    isGroup: true,
+    memberCount: memberProfiles.length + 1,
+    participant: {
+      name,
+      avatarColor: GROUP_AVATAR_COLOR,
+      avatarUrl: null,
+      online: false,
+    },
+    lastMessage: '',
+    lastMessageAt: '',
+    unreadCount: 0,
+  };
+}
+
+// Resolves each message's replyToId into the actual quoted text
+// (replyPreview) from within the same fetched batch — replies almost
+// always quote something still in view. subscribeToMessages does the
+// same resolution for realtime-delivered messages, against whatever's
+// currently in ChatScreen's state. The sender join (disambiguated by
+// column name, since messages has two FKs to profiles — sender_id and
+// shared_user_id) is what makes group messages show "who" without a
+// second query.
+// Paginated since the Oct 2026 audit: loads the most recent `limit`
+// messages (default 30), newest-first from the DB then flipped back to
+// chronological for display. Pass `before` (the oldest currently-loaded
+// message's createdAtRaw) to fetch the next older page. Returns
+// { messages, hasMore } — hasMore=true means another older page likely
+// exists.
+//
+// Resolves each message's replyToId into the actual quoted text
+// (replyPreview) from within the fetched batch. A reply quoting a
+// message older than the current page shows no preview until that page
+// loads — a bounded, acceptable gap (previously the whole history was
+// loaded so this never came up; pagination trades that away on
+// purpose).
+export async function fetchMessages(conversationId, { limit = 30, before = null } = {}) {
+  if (!SUPABASE_ENABLED) {
+    return { messages: mockMessageStore[conversationId] || [], hasMore: false };
+  }
+
+  let query = supabase
+    .from('messages')
+    .select('*, sender:profiles!sender_id(name)')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (before) query = query.lt('created_at', before);
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  const normalized = (await Promise.all(data.map(normalizeMessageWithMedia))).reverse(); // back to chronological
+  const byId = Object.fromEntries(normalized.map((m) => [m.id, m]));
+  return {
+    messages: normalized.map((m) => ({
+      ...m,
+      replyPreview: m.replyToId ? byId[m.replyToId]?.text : undefined,
+    })),
+    hasMore: data.length === limit,
+  };
+}
+
+// Edit own message — the RLS policy from 0006 scopes this to the
+// sender, so the client just does the update; the server enforces it.
+export async function editMessage(messageId, text) {
+  if (!SUPABASE_ENABLED) {
+    for (const list of Object.values(mockMessageStore)) {
+      const found = list.find((m) => m.id === messageId);
+      if (found) {
+        found.text = text;
+        found.editedAt = new Date().toISOString();
+      }
+    }
+    return;
+  }
+
+  const { error } = await supabase
+    .from('messages')
+    .update({ text, edited_at: new Date().toISOString() })
+    .eq('id', messageId);
+  if (error) throw error;
+}
+
+// Per-user hiding and sender-only global retraction are enforced by the
+// delete_message RPC. This avoids direct client writes to deletion metadata.
+export async function deleteMessage(messageId, mode = 'everyone') {
+  if (!messageId) throw new Error('A message is required.');
+  if (!['me', 'everyone'].includes(mode)) throw new Error('Invalid deletion mode.');
+  if (!SUPABASE_ENABLED) {
+    for (const list of Object.values(mockMessageStore)) {
+      const found = list.find((m) => m.id === messageId);
+      if (found) {
+        if (mode === 'everyone') found.deletedAt = new Date().toISOString();
+        else found.hiddenForMe = true;
+      }
+    }
+    return;
+  }
+  const { error } = await supabase.rpc('delete_message', {
+    p_message_id: messageId,
+    p_mode: mode,
+  });
+  if (error) throw error;
+}
+
+function createMessageRequestId() {
+  // UUID-shaped client identifier keeps a retry from creating a second copy
+  // if the first insert reached Postgres but its response was lost.
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
+    const random = Math.floor(Math.random() * 16);
+    return (char === 'x' ? random : (random & 0x3) | 0x8).toString(16);
+  });
+}
+
+export async function sendMessage(conversationId, text, replyToId = null, requestId = null) {
+  const messageText = typeof text === 'string' ? text.trim() : '';
+
+  if (!conversationId) {
+    throw new Error('Cannot send this message: the conversation ID is missing.');
+  }
+
+  if (!messageText) {
+    throw new Error('Enter a message before sending.');
+  }
+
+  if (!SUPABASE_ENABLED || !supabase) {
+    const message = {
+      id: `local-${Date.now()}`,
+      senderId: 'me',
+      text: messageText,
+      replyToId,
+      createdAt: 'Now',
+      createdAtRaw: new Date().toISOString(),
+    };
+
+    mockMessageStore[conversationId] = [
+      ...(mockMessageStore[conversationId] || []),
+      message,
+    ];
+
+    return message;
+  }
+
+  const {
+    data: authData,
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError) {
+    const error = new Error('Could not verify your sign-in. Sign in again before sending.');
+    error.code = 'AUTH_SESSION_ERROR';
+    throw error;
+  }
+
+  const userId = authData?.user?.id;
+
+  if (!userId) {
+    const error = new Error('You are not signed in. Sign in again before sending.');
+    error.code = 'AUTH_REQUIRED';
+    throw error;
+  }
+
+  const payload = {
+    id: requestId || createMessageRequestId(),
+    conversation_id: conversationId,
+    sender_id: userId,
+    text: messageText,
+  };
+
+  if (replyToId) {
+    payload.reply_to_id = replyToId;
+  }
+
+  let data;
+  try {
+    const result = await retryTransient(async () => {
+      const response = await supabase
+        .from('messages')
+        .insert(payload)
+        .select('*')
+        .single();
+      if (response.error) throw response.error;
+      return response.data;
+    }, { attempts: 3, delay: 300 });
+    data = result;
+  } catch (error) {
+    // A timeout can happen after Postgres committed the insert. Since retries
+    // reuse the same primary key, recover that committed row instead of asking
+    // the user to retry and risking a duplicate message.
+    if (error?.code === '23505') {
+      const recovered = await supabase.from('messages').select('*').eq('id', payload.id).maybeSingle();
+      if (!recovered.error && recovered.data) data = recovered.data;
+    }
+    if (!data) {
+      // Do not expose raw Postgres errors or row/schema details in production logs
+      // or user-facing alerts. Map known cases to actionable, privacy-safe copy.
+      const safeError = new Error(getSafeMessageSendError(error));
+      if (typeof error?.code === 'string') safeError.code = error.code;
+      if (Number.isFinite(Number(error?.status))) safeError.status = Number(error.status);
+      throw safeError;
+    }
+  }
+
+  if (!data) throw new Error('Supabase did not return the saved message. Please retry.');
+  return normalizeMessage(data);
+}
+
+// Subscribes to new messages in a conversation. Returns an unsubscribe
+// function. In mock mode this is a no-op (there's nothing to push
+// realtime updates), which keeps ChatScreen's cleanup logic identical
+// in both modes.
+export function subscribeToMessages(conversationId, onInsert) {
+  if (!SUPABASE_ENABLED) {
+    return () => {};
+  }
+
+  const channel = supabase
+    .channel(`messages:${conversationId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `conversation_id=eq.${conversationId}`,
+      },
+      (payload) => { normalizeMessageWithMedia(payload.new).then(onInsert); }
+    )
+    .subscribe();
+
+  return () => supabase.removeChannel(channel);
+}
+
+// --- Per-message delivery acknowledgements --------------------------------
+// A receipt means the recipient's authenticated client fetched/received the
+// message. It is not a read receipt; last_read_at remains the read source.
+export async function markMessagesDelivered(conversationId, messages, userId) {
+  if (!SUPABASE_ENABLED || !conversationId || !userId || !Array.isArray(messages)) return;
+  const rows = messages
+    .filter((message) => message?.id && !String(message.id).startsWith('temp-') && message.senderId && message.senderId !== userId)
+    .map((message) => ({ message_id: message.id, conversation_id: conversationId, user_id: userId }));
+  if (!rows.length) return;
+  const { error } = await supabase.from('message_delivery_receipts')
+    .upsert(rows, { onConflict: 'message_id,user_id', ignoreDuplicates: true });
+  if (error) throw error;
+}
+
+// Returns { [messageId]: [recipientUserId, ...] } for this conversation.
+export async function fetchMessageDeliveryState(conversationId, messageIds = []) {
+  if (!SUPABASE_ENABLED || !conversationId || !Array.isArray(messageIds) || messageIds.length === 0) return {};
+  const { data, error } = await supabase.from('message_delivery_receipts')
+    .select('message_id, user_id').eq('conversation_id', conversationId).in('message_id', messageIds);
+  if (error) throw error;
+  return (data || []).reduce((state, row) => {
+    (state[row.message_id] ||= []).push(row.user_id);
+    return state;
+  }, {});
+}
+
+export function subscribeToMessageDeliveryReceipts(conversationId, onReceipt) {
+  if (!SUPABASE_ENABLED) return () => {};
+  const channel = supabase.channel(`message-delivery:${conversationId}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'message_delivery_receipts', filter: `conversation_id=eq.${conversationId}` },
+      (payload) => onReceipt?.(payload.new))
+    .subscribe();
+  return () => supabase.removeChannel(channel);
+}
+
+// --- Reactions (persisted, synced) ---------------------------------------
+// Backed by the message_reactions table from migration 0006 — the
+// pre-upgrade handleReact only touched local state, so a reaction was
+// invisible to the other person and gone on reopen. One reaction per
+// user per message; re-reacting replaces it, re-tapping the same emoji
+// removes it.
+
+// Returns { [messageId]: [{ userId, emoji }] } for the given messages.
+export async function fetchReactions(messageIds) {
+  if (!SUPABASE_ENABLED || messageIds.length === 0) return {};
+
+  const { data, error } = await supabase
+    .from('message_reactions')
+    .select('message_id, user_id, emoji')
+    .in('message_id', messageIds);
+
+  if (error) throw error;
+
+  const byMessage = {};
+  for (const row of data || []) {
+    (byMessage[row.message_id] = byMessage[row.message_id] || []).push({
+      userId: row.user_id,
+      emoji: row.emoji,
+    });
+  }
+  return byMessage;
+}
+
+// Toggles the current user's reaction on a message. `existing` is the
+// emoji they currently have on it (if any) — same emoji removes the
+// reaction, a different one replaces it.
+export async function toggleReaction(messageId, emoji, existing = null) {
+  if (!SUPABASE_ENABLED) return; // mock mode: reactions stay local to the screen
+
+  const { data: authData } = await supabase.auth.getUser();
+  const userId = authData?.user?.id;
+  if (!userId) return;
+
+  if (existing === emoji) {
+    const { error } = await supabase
+      .from('message_reactions')
+      .delete()
+      .eq('message_id', messageId)
+      .eq('user_id', userId);
+    if (error) throw error;
+    return;
+  }
+
+  const { error } = await supabase
+    .from('message_reactions')
+    .upsert(
+      { message_id: messageId, user_id: userId, emoji },
+      { onConflict: 'message_id,user_id' }
+    );
+  if (error) throw error;
+}
+
+// Live reaction sync — fires on any insert/update/delete of
+// message_reactions. Not filtered server-side (the filter would need a
+// join through messages); the callback gets the raw payload and the
+// screen ignores rows for messages it isn't showing.
+export function subscribeToReactions(onChange) {
+  if (!SUPABASE_ENABLED) return () => {};
+
+  const channel = supabase
+    .channel('reactions:all')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'message_reactions' },
+      (payload) => onChange(payload)
+    )
+    .subscribe();
+
+  return () => supabase.removeChannel(channel);
+}
+
+// --- Typing indicators ----------------------------------------------------
+// Supabase Realtime broadcast (not the DB) — typing is ephemeral by
+// nature, persisting it would be pure overhead. One channel per open
+// conversation; both sides subscribe and send on the same topic.
+
+const typingChannels = {};
+
+export function subscribeToTyping(conversationId, onTyping) {
+  if (!SUPABASE_ENABLED) return () => {};
+
+  const channel = supabase.channel(`typing:${conversationId}`);
+  channel
+    .on('broadcast', { event: 'typing' }, (payload) => onTyping(payload.payload))
+    .subscribe();
+  typingChannels[conversationId] = channel;
+
+  return () => {
+    delete typingChannels[conversationId];
+    supabase.removeChannel(channel);
+  };
+}
+
+export async function sendTyping(conversationId) {
+  const channel = typingChannels[conversationId];
+  if (!channel) return;
+
+  const { data } = await supabase.auth.getUser();
+  const userId = data?.user?.id;
+  if (!userId) return;
+
+  channel.send({
+    type: 'broadcast',
+    event: 'typing',
+    payload: { userId },
+  });
+}
+
+// --- Mute / archive ---------------------------------------------------------
+// Same shape as toggleFavorite — per-participant flags on your own
+// conversation_participants row (0006 columns, 0004's UPDATE policy).
+// Mute also suppresses push notifications from this conversation,
+// enforced server-side in the backend's webhook (see internal.js).
+export async function setConversationFlags(conversationId, flags) {
+  if (!SUPABASE_ENABLED) return;
+
+  const { data: authData } = await supabase.auth.getUser();
+  const userId = authData?.user?.id;
+  if (!userId) return;
+
+  const update = {};
+  if (flags.isMuted !== undefined) update.is_muted = flags.isMuted;
+  if (flags.isArchived !== undefined) update.is_archived = flags.isArchived;
+  if (Object.keys(update).length === 0) return;
+
+  const { error } = await supabase
+    .from('conversation_participants')
+    .update(update)
+    .eq('conversation_id', conversationId)
+    .eq('user_id', userId);
+
+  if (error) throw error;
+}
+
+// --- Trust & safety (block / report) --------------------------------------
+// Thin wrappers over the backend's /safety routes (see
+// zannychat-backend/src/routes/safety.js). The backend enforces the
+// actual semantics (RLS blocks message inserts server-side too — these
+// routes exist so blocking also works atomically and is listable).
+
+const mockBlockedUsers = [];
+
+export async function blockUser(userId) {
+  if (!BACKEND_ENABLED || !SUPABASE_ENABLED) {
+    if (!mockBlockedUsers.includes(userId)) mockBlockedUsers.push(userId);
+    return;
+  }
+  await backendFetch('/safety/block', {
+    method: 'POST',
+    body: JSON.stringify({ userId }),
+  });
+}
+
+export async function unblockUser(userId) {
+  if (!BACKEND_ENABLED || !SUPABASE_ENABLED) {
+    const i = mockBlockedUsers.indexOf(userId);
+    if (i >= 0) mockBlockedUsers.splice(i, 1);
+    return;
+  }
+  await backendFetch('/safety/unblock', {
+    method: 'POST',
+    body: JSON.stringify({ userId }),
+  });
+}
+
+export async function fetchBlockedUsers() {
+  if (!BACKEND_ENABLED || !SUPABASE_ENABLED) {
+    return mockBlockedUsers.map((id) => ({
+      userId: id,
+      profile: MOCK_CONTACTS.find((c) => c.id === id) || { id, name: 'Unknown' },
+    }));
+  }
+  const result = await backendFetch('/safety/blocked');
+  const blocked = Array.isArray(result?.blocked) ? result.blocked : [];
+  const profiles = blocked.map((entry) => entry?.profile).filter((profile) => profile?.id);
+  const resolved = await resolveProfileAvatarUrls(profiles);
+  const byId = new Map(resolved.map((profile) => [profile.id, profile]));
+  return blocked.map((entry) => ({
+    ...entry,
+    profile: entry?.profile?.id ? (byId.get(entry.profile.id) || entry.profile) : entry.profile,
+  }));
+}
+
+export async function reportUser({ reportedUserId, messageId = null, reason = '' }) {
+  if (!BACKEND_ENABLED || !SUPABASE_ENABLED) return; // mock mode: nowhere to file it
+  await backendFetch('/safety/report', {
+    method: 'POST',
+    body: JSON.stringify({ reportedUserId, messageId, reason }),
+  });
+}
+
+// --- Attachments: images, files, voice notes, and shared contacts -------
+// All funnel through sendAttachment() below. Images, files, and voice
+// notes upload to Storage first (skipped in mock mode — the local file
+// URI displays/plays fine on-device without a real upload); contacts
+// never upload anything, they just reference another profile's id.
+
+const MAX_CHAT_MEDIA_UPLOAD_BYTES = 25 * 1024 * 1024;
+const CHAT_MEDIA_MIME_TYPES = new Set([
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif',
+  'video/mp4', 'video/quicktime', 'video/webm', 'video/3gpp',
+  'audio/m4a', 'audio/mp4', 'audio/mpeg', 'audio/aac', 'audio/wav', 'audio/ogg', 'audio/webm',
+  'application/pdf', 'application/octet-stream', 'application/zip', 'application/x-zip-compressed',
+  'application/x-7z-compressed', 'application/x-rar-compressed', 'application/vnd.rar',
+  'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/rtf', 'application/json', 'application/epub+zip', 'application/gzip', 'application/x-tar',
+  'application/vnd.oasis.opendocument.text', 'application/vnd.oasis.opendocument.spreadsheet',
+  'application/vnd.oasis.opendocument.presentation', 'text/plain', 'text/csv', 'text/markdown',
+]);
+const CHAT_IMAGE_EXTENSIONS = Object.freeze({
+  'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp',
+  'image/gif': 'gif', 'image/heic': 'heic', 'image/heif': 'heif',
+});
+const BLOCKED_CHAT_MEDIA_EXTENSIONS = new Set([
+  'html', 'htm', 'svg', 'js', 'mjs', 'cjs', 'jsx', 'tsx', 'exe', 'dll', 'msi',
+  'bat', 'cmd', 'sh', 'ps1', 'vbs', 'scr', 'com', 'jar', 'apk', 'dex',
+  'php', 'phtml', 'asp', 'aspx', 'jsp', 'hta', 'wasm',
+]);
+
+function createChatMediaError(code, message) {
+  const error = new Error(message);
+  error.code = code;
+  return error;
+}
+
+function normalizeChatMediaMimeType(mimeType, fallback = 'application/octet-stream') {
+  const normalized = String(mimeType || fallback).split(';')[0].trim().toLowerCase();
+  if (!CHAT_MEDIA_MIME_TYPES.has(normalized)) {
+    throw createChatMediaError(
+      'UNSUPPORTED_MEDIA_TYPE',
+      'This file type cannot be shared securely. Choose a photo, video, audio file, PDF, Office document, text file, or archive.'
+    );
+  }
+  return normalized;
+}
+
+function assertSafeChatAttachmentName(fileName) {
+  const name = String(fileName || 'attachment');
+  const extension = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
+  if (BLOCKED_CHAT_MEDIA_EXTENSIONS.has(extension)) {
+    throw createChatMediaError(
+      'UNSUPPORTED_MEDIA_TYPE',
+      'This file extension is not supported for chat attachments. Active web pages, scripts, and executable files cannot be shared.'
+    );
+  }
+  return name;
+}
+
+function assertChatMediaSize(byteLength) {
+  if (Number.isFinite(byteLength) && byteLength > MAX_CHAT_MEDIA_UPLOAD_BYTES) {
+    throw createChatMediaError('FILE_TOO_LARGE', 'Chat attachments are limited to 25 MiB (26,214,400 bytes).');
+  }
+}
+
+export async function uploadChatImage(conversationId, localUri, mimeType = 'image/jpeg') {
+  const safeMimeType = normalizeChatMediaMimeType(mimeType, 'image/jpeg');
+  if (!safeMimeType.startsWith('image/')) {
+    throw createChatMediaError('UNSUPPORTED_MEDIA_TYPE', 'Choose a supported image format for this photo.');
+  }
+  if (!SUPABASE_ENABLED) return { url: localUri, name: 'photo' };
+
+  const extension = CHAT_IMAGE_EXTENSIONS[safeMimeType];
+  if (!extension) throw createChatMediaError('UNSUPPORTED_MEDIA_TYPE', 'This image format is not supported.');
+  const path = `${conversationId}/${Date.now()}-${Math.round(Math.random() * 1e6)}.${extension}`;
+
+  const arrayBuffer = await readUploadArrayBuffer(localUri);
+  assertChatMediaSize(arrayBuffer?.byteLength);
+  const { error } = await supabase.storage
+    .from('chat-media')
+    .upload(path, arrayBuffer, { contentType: safeMimeType });
+  if (error) throw error;
+
+  return { url: `storage://chat-media/${path}`, name: 'photo' };
+}
+
+export async function uploadChatFile(conversationId, localUri, fileName, mimeType, size) {
+  const originalName = assertSafeChatAttachmentName(fileName);
+  const safeMimeType = normalizeChatMediaMimeType(mimeType, 'application/octet-stream');
+  assertChatMediaSize(size);
+  if (!SUPABASE_ENABLED) return { url: localUri, name: originalName, size };
+
+  const safeName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const path = `${conversationId}/${Date.now()}-${safeName}`;
+
+  const arrayBuffer = await readUploadArrayBuffer(localUri);
+  assertChatMediaSize(arrayBuffer?.byteLength);
+  const { error } = await supabase.storage
+    .from('chat-media')
+    .upload(path, arrayBuffer, { contentType: safeMimeType });
+  if (error) throw error;
+
+  return { url: `storage://chat-media/${path}`, name: originalName, size: size || arrayBuffer.byteLength };
+}
+
+export async function uploadVoiceNote(conversationId, localUri, durationSeconds) {
+  if (!SUPABASE_ENABLED) return { url: localUri, duration: durationSeconds };
+
+  const path = `${conversationId}/${Date.now()}-voice.m4a`;
+
+  const arrayBuffer = await readUploadArrayBuffer(localUri);
+  assertChatMediaSize(arrayBuffer?.byteLength);
+  const { error } = await supabase.storage
+    .from('chat-media')
+    .upload(path, arrayBuffer, { contentType: 'audio/m4a' });
+  if (error) throw error;
+
+  return { url: `storage://chat-media/${path}`, duration: durationSeconds };
+}
+
+// One insert path for every attachment type — image/file/voice
+// (mediaUrl set) or a shared contact (sharedUserId set instead). text
+// is optional in every case (a caption, or nothing).
+export async function sendAttachment(conversationId, attachment) {
+  const { mediaUrl, mediaType, mediaName, mediaSize, mediaDuration, sharedUserId, text = '' } = attachment;
+
+  if (!SUPABASE_ENABLED) {
+    const message = {
+      id: `local-${Date.now()}`,
+      senderId: 'me',
+      text,
+      mediaUrl,
+      mediaType,
+      mediaName,
+      mediaSize,
+      mediaDuration,
+      sharedUserId,
+      createdAt: 'Now',
+    };
+    mockMessageStore[conversationId] = [...(mockMessageStore[conversationId] || []), message];
+    return message;
+  }
+
+  if (!conversationId) throw new Error('Cannot send this attachment: the conversation ID is missing.');
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError) throw new Error(`Could not verify your sign-in: ${authError.message}`);
+  const userId = authData?.user?.id;
+  if (!userId) throw new Error('You are not signed in. Sign in again before sending.');
+
+  const payload = {
+    id: createMessageRequestId(),
+    conversation_id: conversationId,
+    sender_id: userId,
+    text,
+    media_url: mediaUrl,
+    media_type: mediaType,
+    media_name: mediaName,
+    media_size: mediaSize,
+    media_duration: mediaDuration,
+    shared_user_id: sharedUserId,
+  };
+  let data;
+  try {
+    data = await retryTransient(async () => {
+      const response = await supabase.from('messages').insert(payload).select().single();
+      if (response.error) throw response.error;
+      return response.data;
+    }, { attempts: 3, delay: 300 });
+  } catch (error) {
+    if (error?.code === '23505') {
+      const recovered = await supabase.from('messages').select('*').eq('id', payload.id).maybeSingle();
+      if (!recovered.error && recovered.data) data = recovered.data;
+    }
+    if (!data) throw new Error(`Attachment could not be saved (${error?.code || 'network/database error'}): ${error?.message || 'Please check your connection and try again.'}`);
+  }
+  if (!data) throw new Error('Supabase did not return the saved attachment. Please retry.');
+  return normalizeMessageWithMedia(data);
+}
+
+// --- Phase 3: AI features (smart replies, summaries) -------------------
+// Both require the backend AND Supabase (same as createConversation —
+// these routes check a real session token) AND the backend's own
+// ANTHROPIC_API_KEY. There's no client-side flag for that last part —
+// the backend just returns 501, which these treat as "feature not on
+// yet" rather than an error worth alarming the user about.
+
+export async function fetchSmartReplies(conversationId) {
+  if (!BACKEND_ENABLED || !SUPABASE_ENABLED) return [];
+  try {
+    const result = await backendFetch('/ai/smart-replies', {
+      method: 'POST',
+      body: JSON.stringify({ conversationId }),
+    });
+    return result.suggestions || [];
+  } catch (err) {
+    return [];
+  }
+}
+
+export async function summarizeConversation(conversationId) {
+  if (!BACKEND_ENABLED || !SUPABASE_ENABLED) {
+    throw new Error('Connect Supabase and the backend to use AI summaries.');
+  }
+  const result = await backendFetch('/ai/summarize', {
+    method: 'POST',
+    body: JSON.stringify({ conversationId }),
+  });
+  return result.summary;
+}
+
+// Returns null on any failure (no backend, blocked host, timeout,
+// a page with no usable meta tags) rather than throwing — a message
+// with a link that can't be previewed should just show as plain text,
+// never a broken UI or a jarring error the sender didn't cause.
+export async function fetchLinkPreview(url) {
+  if (!BACKEND_ENABLED || !SUPABASE_ENABLED) return null;
+  try {
+    return await backendFetch(`/link-preview?url=${encodeURIComponent(url)}`);
+  } catch (err) {
+    return null;
+  }
+}
+
+
+// Load a group roster through the authenticated backend. The backend checks
+// membership before returning any profile information.
+export async function fetchGroupMembers(conversationId) {
+  if (!(BACKEND_ENABLED && SUPABASE_ENABLED)) {
+    throw new Error('Group members require a connected account.');
+  }
+  if (!conversationId) throw new Error('A group is required.');
+  return backendFetch(`/conversations/${encodeURIComponent(conversationId)}/members`);
+}
+
+// Group metadata is read only by members; server-side role checks protect edits.
+export async function fetchGroupMetadata(conversationId) {
+  if (!(BACKEND_ENABLED && SUPABASE_ENABLED)) throw new Error('Group settings require a connected account.');
+  if (!conversationId) throw new Error('A group is required.');
+  return backendFetch(`/conversations/${encodeURIComponent(conversationId)}/metadata`);
+}
+
+export async function updateGroupMetadata(conversationId, { name, topic, description, adminOnlyMessages }) {
+  if (!(BACKEND_ENABLED && SUPABASE_ENABLED)) throw new Error('Group settings require a connected account.');
+  if (!conversationId) throw new Error('A group is required.');
+  const cleanName = typeof name === 'string' ? name.trim() : undefined;
+  const cleanTopic = typeof topic === 'string' ? topic.trim() : '';
+  const cleanDescription = typeof description === 'string' ? description.trim() : '';
+  if (cleanName !== undefined && (!cleanName || cleanName.length > 80)) throw new Error('Group name must be between 1 and 80 characters.');
+  if (cleanTopic.length > 80 || cleanDescription.length > 500) throw new Error('Topic must be at most 80 characters and description at most 500.');
+  return backendFetch(`/conversations/${encodeURIComponent(conversationId)}/metadata`, {
+    method: 'PATCH', body: JSON.stringify({ ...(cleanName === undefined ? {} : { name: cleanName }), topic: cleanTopic, description: cleanDescription, ...(typeof adminOnlyMessages === 'boolean' ? { adminOnlyMessages } : {}) }),
+  });
+}
+
+// Group administration endpoints require a verified backend session. These
+// helpers intentionally fail closed in mock/offline mode instead of pretending
+// that a local-only role change has been saved to the server.
+export async function setGroupMemberAdmin(conversationId, memberId, isAdmin) {
+  if (!(BACKEND_ENABLED && SUPABASE_ENABLED)) {
+    throw new Error('Group administration requires a connected account.');
+  }
+  if (!conversationId || !memberId || typeof isAdmin !== 'boolean') {
+    throw new Error('A group, member, and valid admin setting are required.');
+  }
+  return backendFetch(`/conversations/${encodeURIComponent(conversationId)}/members/${encodeURIComponent(memberId)}/admin`, {
+    method: 'PATCH',
+    body: JSON.stringify({ isAdmin }),
+  });
+}
+
+export async function removeGroupMember(conversationId, memberId) {
+  if (!(BACKEND_ENABLED && SUPABASE_ENABLED)) {
+    throw new Error('Group membership changes require a connected account.');
+  }
+  if (!conversationId || !memberId) throw new Error('A group and member are required.');
+  return backendFetch(`/conversations/${encodeURIComponent(conversationId)}/members/${encodeURIComponent(memberId)}`, {
+    method: 'DELETE',
+  });
+}
+
+
+// Group invite links are generated and verified by the authenticated backend.
+export async function createGroupInvite(conversationId, options = {}) {
+  if (!(BACKEND_ENABLED && SUPABASE_ENABLED)) throw new Error('Group invites require a connected account.');
+  if (!conversationId) throw new Error('A group is required.');
+  const expiresInHours = options.expiresInHours ?? 168;
+  const maxUses = options.maxUses ?? 25;
+  return backendFetch(`/conversations/${encodeURIComponent(conversationId)}/invites`, {
+    method: 'POST', body: JSON.stringify({ expiresInHours, maxUses }),
+  });
+}
+
+export async function acceptGroupInvite(token) {
+  if (!(BACKEND_ENABLED && SUPABASE_ENABLED)) throw new Error('Joining a group requires a connected account.');
+  if (typeof token !== 'string' || !token.trim()) throw new Error('Enter a group invite token.');
+  return backendFetch('/conversations/invites/accept', { method: 'POST', body: JSON.stringify({ token: token.trim() }) });
+}
+
+export async function fetchGroupInvites(conversationId) {
+  if (!(BACKEND_ENABLED && SUPABASE_ENABLED)) throw new Error('Group invites require a connected account.');
+  if (!conversationId) throw new Error('A group is required.');
+  const result = await backendFetch(`/conversations/${encodeURIComponent(conversationId)}/invites`);
+  return Array.isArray(result?.invites) ? result.invites : [];
+}
+
+export async function revokeGroupInvite(conversationId, inviteId) {
+  if (!(BACKEND_ENABLED && SUPABASE_ENABLED)) throw new Error('Group invites require a connected account.');
+  if (!conversationId || !inviteId) throw new Error('A group and invite are required.');
+  return backendFetch(`/conversations/${encodeURIComponent(conversationId)}/invites/${encodeURIComponent(inviteId)}`, { method: 'DELETE' });
+}
+
+// Channel directory and broadcast-post APIs are mediated by the authenticated
+// backend so channel ownership and subscription state cannot be forged by clients.
+export async function listChannels(search = '') {
+  const query = typeof search === 'string' ? search.trim().slice(0, 80) : '';
+  const path = query ? `/channels?q=${encodeURIComponent(query)}` : '/channels';
+  const result = await backendFetch(path);
+  return Array.isArray(result?.channels) ? result.channels : [];
+}
+
+export async function createChannel({ title, description = '', isPrivate = false }) {
+  const result = await backendFetch('/channels', { method: 'POST', body: JSON.stringify({ title, description, isPrivate: Boolean(isPrivate) }) });
+  return result.channel;
+}
+
+export async function updateChannel(channelId, { title, description = '', isPrivate }) {
+  const payload = { title, description };
+  if (typeof isPrivate === 'boolean') payload.isPrivate = isPrivate;
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}`, { method: 'PATCH', body: JSON.stringify(payload) });
+  return result.channel;
+}
+
+export async function createChannelInvite(channelId, options = {}) {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/invites`, { method: 'POST', body: JSON.stringify(options) });
+  return result.invite;
+}
+
+export async function acceptChannelInvite(token) {
+  const result = await backendFetch('/channels/invites/accept', { method: 'POST', body: JSON.stringify({ token }) });
+  return result.channel;
+}
+
+export async function fetchChannelInvites(channelId) {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/invites`);
+  return Array.isArray(result?.invites) ? result.invites : [];
+}
+
+export async function revokeChannelInvite(channelId, inviteId) {
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}/invites/${encodeURIComponent(inviteId)}`, { method: 'DELETE' });
+}
+
+export async function subscribeToChannel(channelId) {
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}/subscribe`, { method: 'POST', body: '{}' });
+}
+
+export async function unsubscribeFromChannel(channelId) {
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}/subscribe`, { method: 'DELETE' });
+}
+
+export async function fetchChannelPosts(channelId, cursor = null) {
+  const query = cursor?.created_at && cursor?.id
+    ? `?beforeCreatedAt=${encodeURIComponent(cursor.created_at)}&beforeId=${encodeURIComponent(cursor.id)}`
+    : '';
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}/posts${query}`);
+}
+
+export async function fetchCommunityFeed(cursor = null) {
+  const query = cursor?.created_at && cursor?.id
+    ? `?beforeCreatedAt=${encodeURIComponent(cursor.created_at)}&beforeId=${encodeURIComponent(cursor.id)}`
+    : '';
+  return backendFetch(`/channels/discover/feed${query}`);
+}
+
+export async function publishChannelPost(channelId, body, clientRequestId = null) {
+  const payload = { body };
+  if (typeof clientRequestId === 'string' && clientRequestId) payload.clientRequestId = clientRequestId;
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts`, { method: 'POST', body: JSON.stringify(payload) });
+  return result.post;
+}
+
+export async function updateChannelPost(channelId, postId, body) {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}`, { method: 'PATCH', body: JSON.stringify({ body }) });
+  return result.post;
+}
+
+export async function setChannelPostPinned(channelId, postId, pinned) {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}/pin`, { method: 'PUT', body: JSON.stringify({ pinned: Boolean(pinned) }) });
+  return result.post;
+}
+
+export async function deleteChannelPost(channelId, postId) {
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}`, { method: 'DELETE' });
+}
+
+export async function setChannelPostReaction(channelId, postId, emoji) {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}/reaction`, { method: 'PUT', body: JSON.stringify({ emoji }) });
+  return result;
+}
+
+export async function fetchChannelPostComments(channelId, postId, cursor = null) {
+  const params = new URLSearchParams();
+  if (cursor && typeof cursor.created_at === 'string' && typeof cursor.id === 'string') {
+    params.set('beforeCreatedAt', cursor.created_at);
+    params.set('beforeId', cursor.id);
+  }
+  const query = params.toString();
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}/comments${query ? `?${query}` : ''}`);
+  return { comments: Array.isArray(result?.comments) ? result.comments : [], nextCursor: result?.nextCursor || null, hasMore: Boolean(result?.hasMore) };
+}
+
+export async function publishChannelPostComment(channelId, postId, body) {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}/comments`, { method: 'POST', body: JSON.stringify({ body }) });
+  return result.comment;
+}
+
+export async function updateChannelPostComment(channelId, postId, commentId, body) {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}`, { method: 'PATCH', body: JSON.stringify({ body }) });
+  return result.comment;
+}
+
+export async function setChannelPostCommentReaction(channelId, postId, commentId, emoji) {
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}/reaction`, { method: 'PUT', body: JSON.stringify({ emoji }) });
+}
+
+export async function deleteChannelPostComment(channelId, postId, commentId) {
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}`, { method: 'DELETE' });
+}
+
+export async function deleteChannel(channelId) {
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}`, { method: 'DELETE' });
+}
+
+export async function fetchChannelModerators(channelId) {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/moderators`);
+  return Array.isArray(result?.members) ? result.members : [];
+}
+
+export async function appointChannelModerator(channelId, userId) {
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}/moderators`, { method: 'POST', body: JSON.stringify({ userId }) });
+}
+
+export async function removeChannelModerator(channelId, userId) {
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}/moderators/${encodeURIComponent(userId)}`, { method: 'DELETE' });
+}
+
+
+export async function reportChannelPost(channelId, postId, reason, details = '') {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}/reports`, { method: 'POST', body: JSON.stringify({ reason, details }) });
+  return result.report;
+}
+
+export async function reportChannelPostComment(channelId, postId, commentId, reason, details = '') {
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}/reports`, { method: 'POST', body: JSON.stringify({ reason, details }) });
+  return result.report;
+}
+
+export async function fetchChannelPostReports(channelId, cursor = null) {
+  const query = new URLSearchParams();
+  if (cursor?.createdAt && cursor?.id) {
+    query.set('cursorCreatedAt', cursor.createdAt);
+    query.set('cursorId', cursor.id);
+  }
+  const suffix = query.toString();
+  const result = await backendFetch(`/channels/${encodeURIComponent(channelId)}/reports${suffix ? `?${suffix}` : ''}`);
+  return { reports: Array.isArray(result?.reports) ? result.reports : [], hasMore: result?.hasMore === true, nextCursor: result?.nextCursor || null };
+}
+
+export async function updateChannelPostReport(channelId, reportId, status) {
+  return backendFetch(`/channels/${encodeURIComponent(channelId)}/reports/${encodeURIComponent(reportId)}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+}
