@@ -1453,7 +1453,7 @@ function createMessageRequestId() {
   });
 }
 
-export async function sendMessage(conversationId, text, replyToId = null, requestId = null) {
+export async function sendMessage(conversationId, text, replyToId = null, requestId = null, expectedUserId = null) {
   const messageText = typeof text === 'string' ? text.trim() : '';
 
   if (!conversationId) {
@@ -1498,6 +1498,12 @@ export async function sendMessage(conversationId, text, replyToId = null, reques
   if (!userId) {
     const error = new Error('You are not signed in. Sign in again before sending.');
     error.code = 'AUTH_REQUIRED';
+    throw error;
+  }
+
+  if (expectedUserId && userId !== expectedUserId) {
+    const error = new Error('Your account changed. Reopen this conversation before retrying.');
+    error.code = 'AUTH_USER_CHANGED';
     throw error;
   }
 

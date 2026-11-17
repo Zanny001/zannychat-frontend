@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -74,7 +75,6 @@ import {
 import { subscribePresence } from '../services/presence';
 import { startCall } from '../services/calls';
 import { canStartCall } from '../utils/callPolicy';
-import { SUPABASE_ENABLED } from '../services/supabaseClient';
 import { searchMessages } from '../utils/searchMessages';
 import { resolvePhotoUploadQuality } from '../utils/mediaQuality';
 import { loadMediaPreferences } from '../services/mediaPreferences';
@@ -174,7 +174,28 @@ export default function ChatScreen({ route, navigation }) {
   // also stop pushing to this device (enforced server-side).
   const [flags, setFlags] = useState({ isMuted: Boolean(conversation.isMuted), isArchived: Boolean(conversation.isArchived) });
   const [myUserId, setMyUserId] = useState(null);
-  useEffect(() => { let active = true; Promise.all([loadPendingMessages(myUserId, conversation?.id), loadPendingAttachments(myUserId, conversation?.id)]).then(([messages, attachments]) => { if (active) { setPendingOutbox(messages); setPendingAttachments(attachments); } }); return () => { active = false; }; }, [myUserId, conversation?.id]);
+  useEffect(() => {
+    let active = true;
+    if (!myUserId) {
+      setPendingOutbox([]);
+      setPendingAttachments([]);
+      return () => { active = false; };
+    }
+    Promise.all([loadPendingMessages(myUserId, conversation?.id), loadPendingAttachments(myUserId, conversation?.id)])
+      .then(([messages, attachments]) => {
+        if (active && activeUserIdRef.current === myUserId) {
+          setPendingOutbox(messages);
+          setPendingAttachments(attachments);
+        }
+      })
+      .catch(() => {
+        if (active && activeUserIdRef.current === myUserId) {
+          setPendingOutbox([]);
+          setPendingAttachments([]);
+        }
+      });
+    return () => { active = false; };
+  }, [myUserId, conversation?.id]);
   const [pinnedMessages, setPinnedMessages] = useState([]);
   const [peerTyping, setPeerTyping] = useState(false);
   const [onlineIds, setOnlineIds] = useState(new Set());
@@ -199,6 +220,11 @@ export default function ChatScreen({ route, navigation }) {
   const targetLookupForRef = useRef(null);
   const targetLookupPagesRef = useRef(0);
   const automaticRetryInFlightRef = useRef(false);
+  const activeUserIdRef = useRef(undefined);
+  const messageLoadRequestRef = useRef(0);
+  const olderLoadRequestRef = useRef(0);
+  const resolvedConversationRequestRef = useRef(0);
+  const pinnedLoadRequestRef = useRef(0);
 
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(audioRecorder, 200);
@@ -208,11 +234,84 @@ export default function ChatScreen({ route, navigation }) {
   // mode EVERY message rendered as "theirs". The fix is knowing the
   // actual signed-in user id and comparing against both.
   useEffect(() => {
-    getCurrentUser().then((u) => setMyUserId(u?.id || 'me'));
-  }, []);
+    const applyUserId = (nextUserId) => {
+      if (activeUserIdRef.current === undefined) {
+        activeUserIdRef.current = nextUserId;
+        setMyUserId(nextUserId || (SUPABASE_ENABLED ? null : 'me'));
+        return;
+      }
+      if (activeUserIdRef.current === nextUserId) return;
+      activeUserIdRef.current = nextUserId;
+      messageLoadRequestRef.current += 1;
+      olderLoadRequestRef.current += 1;
+      setMyUserId(nextUserId);
+      // A chat is bound to its original authenticated participant. Never keep
+      // its messages, local outbox, receipts or media drafts visible after an
+      // account switch; leave the route so the new account must reopen access.
+      setMessages([]);
+      setLoadingMessages(false);
+      setMessageLoadError('Your account changed. Reopen this conversation from Chats.');
+      setOlderLoadError('');
+      setHasMore(false);
+      setLoadingOlder(false);
+      setReplyingTo(null);
+      setEditing(null);
+      setReactions({});
+      setParticipantReadState({});
+      setMessageDeliveryState({});
+      setPendingOutbox([]);
+      setPendingAttachments([]);
+      setRetryingOutbox(false);
+      setRetryingAttachments(false);
+      setPinnedMessages([]);
+      setPeerTyping(false);
+      setOnlineIds(new Set());
+      setSuggestions([]);
+      setSendError('');
+      setUploading(false);
+      setSummarizing(false);
+      setFullscreenImage(null);
+      setMediaDraft(null);
+      setMediaCaption('');
+      setResolved(null);
+      setFlags({ isMuted: false, isArchived: false });
+      setActiveSheet(null);
+      setDeleteMessageTarget(null);
+      setDeletingMessage(false);
+      setDeleteMessageError('');
+      setSearchOpen(false);
+      setSearchQuery('');
+      setActiveSearchIndex(0);
+      senderNamesRef.current = {};
+      stickToBottom.current = true;
+      handledTargetMessageRef.current = null;
+      targetLookupForRef.current = null;
+      targetLookupPagesRef.current = 0;
+      automaticRetryInFlightRef.current = false;
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+      if (navigation?.canGoBack?.()) navigation.goBack();
+    };
+
+    if (SUPABASE_ENABLED && supabase?.auth?.onAuthStateChange) {
+      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+        applyUserId(session?.user?.id || null);
+      });
+      return () => data?.subscription?.unsubscribe?.();
+    }
+
+    let active = true;
+    getCurrentUser().then((user) => {
+      if (active) applyUserId(user?.id || 'me');
+    }).catch(() => {
+      if (active) applyUserId('me');
+    });
+    return () => { active = false; };
+  }, [navigation]);
 
   useEffect(() => {
     const unsubscribe = subscribeToMessageDeliveryReceipts(conversation.id, (receipt) => {
+      if (activeUserIdRef.current !== myUserId) return;
       if (!receipt?.message_id || !receipt?.user_id) return;
       setMessageDeliveryState((prev) => ({
         ...prev,
@@ -220,11 +319,25 @@ export default function ChatScreen({ route, navigation }) {
       }));
     });
     return unsubscribe;
-  }, [conversation.id]);
+  }, [conversation.id, myUserId]);
 
   useEffect(() => {
-    if (!myUserId) return;
-    loadPinnedMessages(myUserId).then(setPinnedMessages).catch(() => setPinnedMessages([]));
+    const requestId = ++pinnedLoadRequestRef.current;
+    if (!myUserId) {
+      setPinnedMessages([]);
+      return () => { pinnedLoadRequestRef.current += 1; };
+    }
+    const expectedUserId = myUserId;
+    loadPinnedMessages(myUserId)
+      .then((items) => {
+        if (requestId === pinnedLoadRequestRef.current && activeUserIdRef.current === expectedUserId) {
+          setPinnedMessages(items);
+        }
+      })
+      .catch(() => {
+        if (requestId === pinnedLoadRequestRef.current && activeUserIdRef.current === expectedUserId) setPinnedMessages([]);
+      });
+    return () => { pinnedLoadRequestRef.current += 1; };
   }, [myUserId, conversation.id]);
 
   const isMineMessage = useCallback(
@@ -233,38 +346,57 @@ export default function ChatScreen({ route, navigation }) {
   );
 
   useEffect(() => {
-    if (display.participant?.name) return;
+    if (display.participant?.name || !myUserId) return;
+    const requestId = ++resolvedConversationRequestRef.current;
+    const expectedUserId = myUserId;
     fetchConversations().then(({ conversations: list }) => {
+      if (requestId !== resolvedConversationRequestRef.current || activeUserIdRef.current !== expectedUserId) return;
       const match = list.find((c) => c.id === conversation.id);
       if (match) {
         setResolved(match);
         setFlags({ isMuted: Boolean(match.isMuted), isArchived: Boolean(match.isArchived) });
       }
-    });
+    }).catch(() => {});
+    return () => { resolvedConversationRequestRef.current += 1; };
     // conversation.id is stable for the screen's lifetime; display is
     // deliberately excluded so this doesn't loop against its own update.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversation.id]);
+  }, [conversation.id, myUserId]);
 
   const load = useCallback(async () => {
+    const requestId = ++messageLoadRequestRef.current;
+    if (SUPABASE_ENABLED && !myUserId) {
+      setMessages([]);
+      setLoadingMessages(false);
+      return;
+    }
     setLoadingMessages(true);
     setMessageLoadError('');
     try {
       const { messages: data, hasMore: more } = await fetchMessages(conversation.id, { limit: MESSAGE_PAGE_SIZE });
+      if (requestId !== messageLoadRequestRef.current || activeUserIdRef.current !== myUserId) return;
       data.forEach((m) => {
         if (m.senderName) senderNamesRef.current[m.senderId] = m.senderName;
       });
       setMessages(data);
       fetchMessageDeliveryState(conversation.id, data.map((message) => message.id))
-        .then((state) => setMessageDeliveryState((prev) => ({ ...prev, ...state }))).catch(() => {});
+        .then((state) => {
+          if (requestId === messageLoadRequestRef.current && activeUserIdRef.current === myUserId) {
+            setMessageDeliveryState((prev) => ({ ...prev, ...state }));
+          }
+        }).catch(() => {});
       markMessagesDelivered(conversation.id, data, myUserId).catch(() => {});
       setHasMore(more);
       stickToBottom.current = true;
-      fetchReactions(data.map((m) => m.id)).then(setReactions).catch(() => {});
+      fetchReactions(data.map((m) => m.id)).then((state) => {
+        if (requestId === messageLoadRequestRef.current && activeUserIdRef.current === myUserId) setReactions(state);
+      }).catch(() => {});
     } catch (error) {
-      setMessageLoadError(error?.message || 'Could not load messages. Check your connection and try again.');
+      if (requestId === messageLoadRequestRef.current && activeUserIdRef.current === myUserId) {
+        setMessageLoadError(error?.message || 'Could not load messages. Check your connection and try again.');
+      }
     } finally {
-      setLoadingMessages(false);
+      if (requestId === messageLoadRequestRef.current) setLoadingMessages(false);
     }
   }, [conversation.id, myUserId]);
 
@@ -272,7 +404,9 @@ export default function ChatScreen({ route, navigation }) {
   // than scroll-position-triggered fetching, so reading old messages
   // never yanks the list under your thumb.
   const loadOlder = useCallback(async () => {
-    if (loadingOlder || !hasMore || messages.length === 0) return;
+    if (loadingOlder || !hasMore || messages.length === 0 || (SUPABASE_ENABLED && !myUserId)) return;
+    const requestId = ++olderLoadRequestRef.current;
+    const expectedUserId = myUserId;
     setLoadingOlder(true);
     setOlderLoadError('');
     stickToBottom.current = false;
@@ -282,11 +416,16 @@ export default function ChatScreen({ route, navigation }) {
         limit: MESSAGE_PAGE_SIZE,
         before: oldest,
       });
+      if (requestId !== olderLoadRequestRef.current || activeUserIdRef.current !== expectedUserId) return;
       older.forEach((m) => {
         if (m.senderName) senderNamesRef.current[m.senderId] = m.senderName;
       });
       fetchMessageDeliveryState(conversation.id, older.map((message) => message.id))
-        .then((state) => setMessageDeliveryState((prev) => ({ ...prev, ...state }))).catch(() => {});
+        .then((state) => {
+          if (requestId === olderLoadRequestRef.current && activeUserIdRef.current === expectedUserId) {
+            setMessageDeliveryState((prev) => ({ ...prev, ...state }));
+          }
+        }).catch(() => {});
       markMessagesDelivered(conversation.id, older, myUserId).catch(() => {});
       setMessages((prev) => {
         const seen = new Set(prev.map((m) => m.id));
@@ -294,12 +433,17 @@ export default function ChatScreen({ route, navigation }) {
       });
       setHasMore(more);
       fetchReactions(older.map((m) => m.id))
-        .then((more) => setReactions((prev) => ({ ...prev, ...more })))
-        .catch(() => {});
+        .then((more) => {
+          if (requestId === olderLoadRequestRef.current && activeUserIdRef.current === expectedUserId) {
+            setReactions((prev) => ({ ...prev, ...more }));
+          }
+        }).catch(() => {});
     } catch (err) {
-      setOlderLoadError(err?.message || 'Could not load earlier messages. Please try again.');
+      if (requestId === olderLoadRequestRef.current && activeUserIdRef.current === expectedUserId) {
+        setOlderLoadError(err?.message || 'Could not load earlier messages. Please try again.');
+      }
     } finally {
-      setLoadingOlder(false);
+      if (requestId === olderLoadRequestRef.current) setLoadingOlder(false);
     }
   }, [conversation.id, hasMore, loadingOlder, messages, myUserId]);
 
@@ -308,6 +452,7 @@ export default function ChatScreen({ route, navigation }) {
   // refresh-on-return are handled by useFocusEffect below.
   useEffect(() => {
     const unsubscribe = subscribeToMessages(conversation.id, (newMessage) => {
+      if (activeUserIdRef.current !== myUserId) return;
       if (newMessage?.senderId && newMessage.senderId !== myUserId) markMessagesDelivered(conversation.id, [newMessage], myUserId).catch(() => {});
       setMessages((prev) => {
         // Realtime doesn't exclude the sender — our own message, already
@@ -342,6 +487,7 @@ export default function ChatScreen({ route, navigation }) {
   // carry message_id/user_id at all.
   useEffect(() => {
     const unsubscribe = subscribeToReactions((payload) => {
+      if (activeUserIdRef.current !== myUserId) return;
       const row = payload.new || payload.old;
       if (!row?.message_id) return;
       setReactions((prev) => {
@@ -357,12 +503,13 @@ export default function ChatScreen({ route, navigation }) {
       });
     });
     return unsubscribe;
-  }, []);
+  }, [myUserId]);
 
   // Typing indicators — broadcast-only (ephemeral by nature), showing
   // "typing…" for a few seconds after the peer's last keystroke event.
   useEffect(() => {
     const unsubscribe = subscribeToTyping(conversation.id, ({ userId }) => {
+      if (activeUserIdRef.current !== myUserId) return;
       if (!userId || userId === myUserId) return;
       setPeerTyping(true);
       clearTimeout(typingTimeoutRef.current);
@@ -377,16 +524,19 @@ export default function ChatScreen({ route, navigation }) {
   // Real presence (Supabase Presence) — the header's online state comes
   // from who's actually connected right now, not a column nothing used
   // to update.
-  useEffect(() => subscribePresence(setOnlineIds), []);
+  useEffect(() => subscribePresence((ids) => {
+    if (activeUserIdRef.current === myUserId) setOnlineIds(ids);
+  }), [myUserId]);
 
   // Subscribes before taking the initial read-state snapshot. Realtime UPDATEs
   // then advance the read cursor immediately without a five-second RPC poll.
   useEffect(() => {
     const unsubscribe = subscribeToParticipantUpdates(conversation.id, (updated) => {
+      if (activeUserIdRef.current !== myUserId) return;
       setParticipantReadState((prev) => ({ ...prev, [updated.user_id]: updated.last_read_at }));
     });
     return unsubscribe;
-  }, [conversation.id]);
+  }, [conversation.id, myUserId]);
 
   // Marks this conversation read on every focus (not just mount) — the
   // case that matters is leaving and coming back to a conversation that
@@ -405,6 +555,10 @@ export default function ChatScreen({ route, navigation }) {
   useFocusEffect(
     useCallback(() => {
       load();
+      return () => {
+        messageLoadRequestRef.current += 1;
+        olderLoadRequestRef.current += 1;
+      };
     }, [load])
   );
 
@@ -412,7 +566,9 @@ export default function ChatScreen({ route, navigation }) {
   // to the foreground. Stable request IDs preserve server-side idempotency;
   // bounded exponential backoff prevents a bad connection from being hammered.
   const retryQueuedTextMessages = useCallback(async () => {
-    if (!myUserId || !conversation?.id || automaticRetryInFlightRef.current || AppState.currentState !== 'active') return;
+    if (!myUserId || !conversation?.id || automaticRetryInFlightRef.current || AppState.currentState !== 'active'
+        || (SUPABASE_ENABLED && activeUserIdRef.current !== myUserId)) return;
+    const expectedUserId = myUserId;
     automaticRetryInFlightRef.current = true;
     try {
       const queued = await loadPendingMessages(myUserId, conversation.id);
@@ -424,13 +580,17 @@ export default function ChatScreen({ route, navigation }) {
         .sort((a, b) => Date.parse(a.createdAt || 0) - Date.parse(b.createdAt || 0))
         .slice(0, 5);
       for (const item of dueQueued) {
+        if (SUPABASE_ENABLED && activeUserIdRef.current !== expectedUserId) return;
         try {
-          const confirmed = await sendMessage(conversation.id, item.text, item.replyToId, item.requestId);
+          const confirmed = await sendMessage(conversation.id, item.text, item.replyToId, item.requestId, expectedUserId);
+          if (SUPABASE_ENABLED && activeUserIdRef.current !== expectedUserId) return;
           await removePendingMessage(myUserId, conversation.id, item.requestId);
           setPendingOutbox((items) => items.filter((entry) => entry.requestId !== item.requestId));
           setMessages((items) => items.some((entry) => entry.id === confirmed.id) ? items : [...items, confirmed]);
           stickToBottom.current = true;
         } catch (error) {
+          if (error?.code === 'AUTH_USER_CHANGED'
+              || (SUPABASE_ENABLED && activeUserIdRef.current !== expectedUserId)) return;
           if (isPermanentMessageSendError(error)) {
             const removed = await removePendingMessage(myUserId, conversation.id, item.requestId);
             if (removed) setPendingOutbox((items) => items.filter((entry) => entry.requestId !== item.requestId));
@@ -444,7 +604,9 @@ export default function ChatScreen({ route, navigation }) {
           // from the retry queue and surfaced inline instead of retrying forever.
         }
       }
-      setPendingOutbox(await loadPendingMessages(myUserId, conversation.id));
+      if (!SUPABASE_ENABLED || activeUserIdRef.current === expectedUserId) {
+        setPendingOutbox(await loadPendingMessages(expectedUserId, conversation.id));
+      }
     } finally { automaticRetryInFlightRef.current = false; }
   }, [myUserId, conversation?.id]);
 
