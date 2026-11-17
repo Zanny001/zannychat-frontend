@@ -1,17 +1,25 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { SafeAreaView, ScrollView, View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import GlassCard from '../components/GlassCard';
 import { useTheme } from '../theme/ThemeContext';
-import { getCurrentUser } from '../services/api';
+import { useAuthenticatedUserId } from '../hooks/useAuthenticatedUserId';
 import { loadSavedMessages, removeSavedMessage } from '../services/savedMessages';
 import { filterSavedMessages } from '../utils/savedMessages';
 
 export default function SavedMessagesScreen({ navigation }) {
   const { colors, spacing, radii, typography } = useTheme();
-  const [userId, setUserId] = useState(null);
+  const requestRef = useRef(0);
+  const { userId, userIdRef } = useAuthenticatedUserId(useCallback(() => {
+    requestRef.current += 1;
+    setItems([]);
+    setQuery('');
+    setError('');
+    setLoading(true);
+    if (navigation?.canGoBack?.()) navigation.goBack();
+  }, [navigation]));
   const [items, setItems] = useState([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -19,23 +27,45 @@ export default function SavedMessagesScreen({ navigation }) {
   const visible = useMemo(() => filterSavedMessages(items, query), [items, query]);
 
   const refresh = useCallback(async () => {
-    setLoading(true); setError('');
+    const requestId = ++requestRef.current;
+    if (!userId) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+    const expectedUserId = userId;
+    setLoading(true);
+    setError('');
     try {
-      const user = await getCurrentUser();
-      const id = user?.id || 'me';
-      setUserId(id);
-      setItems(await loadSavedMessages(id));
-    } catch (_) { setError('Saved messages could not be loaded. Please try again.'); }
-    finally { setLoading(false); }
-  }, []);
+      const items = await loadSavedMessages(expectedUserId);
+      if (requestId === requestRef.current && userIdRef.current === expectedUserId) {
+        setItems(Array.isArray(items) ? items : []);
+      }
+    } catch (_) {
+      if (requestId === requestRef.current && userIdRef.current === expectedUserId) {
+        setError('Saved messages could not be loaded. Please try again.');
+      }
+    } finally {
+      if (requestId === requestRef.current) setLoading(false);
+    }
+  }, [userId, userIdRef]);
 
-  useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
+  useFocusEffect(useCallback(() => {
+    refresh();
+    return () => { requestRef.current += 1; };
+  }, [refresh]));
 
   const remove = (item) => Alert.alert('Remove saved message?', 'This removes the local bookmark only. The original message will remain in the conversation.', [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Remove', style: 'destructive', onPress: async () => {
-      try { setItems(await removeSavedMessage(userId, item.id)); }
-      catch (_) { Alert.alert('Could not remove bookmark', 'Please try again.'); }
+      const expectedUserId = userId;
+      if (!expectedUserId || userIdRef.current !== expectedUserId) return;
+      try {
+        const next = await removeSavedMessage(expectedUserId, item.id);
+        if (userIdRef.current === expectedUserId) setItems(next);
+      } catch (_) {
+        if (userIdRef.current === expectedUserId) Alert.alert('Could not remove bookmark', 'Please try again.');
+      }
     } },
   ]);
 
