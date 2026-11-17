@@ -103,6 +103,8 @@ test('chat screen clears account-owned messages, drafts, receipts and outbox on 
   assert.ok(screen.includes('const activeUserIdRef = useRef(undefined)'));
   assert.ok(screen.includes('const messageLoadRequestRef = useRef(0)'));
   assert.ok(screen.includes('const olderLoadRequestRef = useRef(0)'));
+  assert.ok(screen.includes('const resolvedConversationRequestRef = useRef(0)'));
+  assert.ok(screen.includes('const pinnedLoadRequestRef = useRef(0)'));
   assert.ok(screen.includes('setMessages([])'));
   assert.ok(screen.includes('setPendingOutbox([])'));
   assert.ok(screen.includes('setPendingAttachments([])'));
@@ -111,6 +113,8 @@ test('chat screen clears account-owned messages, drafts, receipts and outbox on 
   assert.ok(screen.includes('setParticipantReadState({})'));
   assert.ok(screen.includes('setMediaDraft(null)'));
   assert.ok(screen.includes('setResolved(null)'));
+  assert.ok(screen.includes('requestId !== resolvedConversationRequestRef.current'));
+  assert.ok(screen.includes('requestId === pinnedLoadRequestRef.current'));
   assert.ok(screen.includes('Your account changed. Reopen this conversation from Chats.'));
   assert.ok(screen.includes('if (navigation?.canGoBack?.()) navigation.goBack()'));
 });
