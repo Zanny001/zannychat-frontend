@@ -161,6 +161,17 @@ export default function PrivacySecurityScreen({ navigation }) {
       Alert.alert('Live account required', 'Account deletion requires your connected account and backend. No account data has been deleted.');
       return;
     }
+    const { data: currentAuthData, error: currentAuthError } = await supabase.auth.getUser();
+    const currentUserId = currentAuthError ? null : currentAuthData?.user?.id;
+    if (!currentUserId) {
+      Alert.alert('Session expired', 'Sign in again before deleting your account.');
+      return;
+    }
+    if (authUserIdRef.current !== currentUserId) {
+      await refreshAuthProviders();
+      Alert.alert('Account changed', 'Your active account changed. Review the current account details and retry account deletion.');
+      return;
+    }
     if (deleteConfirmation !== 'DELETE') {
       Alert.alert('Confirm account deletion', 'Type DELETE exactly to confirm this permanent action.');
       return;
@@ -174,9 +185,7 @@ export default function PrivacySecurityScreen({ navigation }) {
       return;
     }
     if (authProviders.google && !deletePassword) {
-      const { data: currentAuthData, error: currentAuthError } = await supabase.auth.getUser();
-      const currentUserId = currentAuthError ? null : currentAuthData?.user?.id;
-      if (!currentUserId || googleReauthVerifiedUserId !== currentUserId) {
+      if (googleReauthVerifiedUserId !== currentUserId) {
         if (googleReauthMismatch) {
           Alert.alert('Google account mismatch', 'The Google account used for verification does not match the account you are deleting. Sign back into the original account.');
         } else {
