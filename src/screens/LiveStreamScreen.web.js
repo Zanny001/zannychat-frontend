@@ -16,6 +16,7 @@ import { backendFetch } from '../services/backendClient';
 import { useTheme } from '../theme/ThemeContext';
 
 const LIVE_REACTION_EMOJI = Object.freeze({ heart: '❤️', clap: '👏', laugh: '😂', wow: '😮', fire: '🔥', idea: '💡', support: '🙌' });
+const isDocumentVisible = () => typeof document === 'undefined' || document.visibilityState !== 'hidden';
 
 function FloatingReaction({ item, index, onComplete }) {
   const progress = useSharedValue(0);
@@ -129,6 +130,11 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [comments, setComments] = useState([]);
   const [floatingReactions, setFloatingReactions] = useState([]);
   const seenReactionIds = useRef(new Set());
+  const commentsRefreshInFlight = useRef(false);
+  const guestStatusRefreshInFlight = useRef(false);
+  const guestRequestsRefreshInFlight = useRef(false);
+  const replayRefreshInFlight = useRef(false);
+  const studioParticipantsRefreshInFlight = useRef(false);
   const [draft, setDraft] = useState('');
   const [guestStatus, setGuestStatus] = useState('none');
   const [guestApproved, setGuestApproved] = useState(false);
@@ -139,12 +145,17 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [panel, setPanel] = useState('');
 
   const refreshReplay = useCallback(async () => {
-    if (!stream?.id || !creatorMode || !replayEnabled) return;
+    if (!stream?.id || !creatorMode || !replayEnabled || !isDocumentVisible() || replayRefreshInFlight.current) return;
+    replayRefreshInFlight.current = true;
     try {
       const result = await backendFetch(`/live/${stream.id}/replays`);
       const rows = Array.isArray(result?.replays) ? result.replays : [];
       setReplay(rows.find((item) => ['starting', 'recording', 'processing', 'ready', 'failed'].includes(item.status)) || null);
-    } catch (_) {}
+    } catch (_) {
+      // Keep the last known replay state during transient network failures.
+    } finally {
+      replayRefreshInFlight.current = false;
+    }
   }, [stream?.id, creatorMode, replayEnabled]);
 
   useEffect(() => {
@@ -345,7 +356,7 @@ export default function LiveStreamScreen({ route, navigation }) {
     let active = true;
     const room = roomRef.current;
     const heartbeat = () => {
-      if (!active || roomRef.current?.state !== 'connected') return;
+      if (!active || !isDocumentVisible() || roomRef.current?.state !== 'connected') return;
       backendFetch(`/live/${stream.id}/heartbeat`, { method: 'POST' })
         .catch((error) => { if (active) console.warn('[live] presence heartbeat failed:', error?.message || error); });
     };
@@ -362,10 +373,12 @@ export default function LiveStreamScreen({ route, navigation }) {
   }, [stream?.id, status, connection?.token]);
 
   const refreshComments = useCallback(async () => {
-    if (!stream?.id) return;
+    if (!stream?.id || !isDocumentVisible() || commentsRefreshInFlight.current) return;
+    commentsRefreshInFlight.current = true;
     try {
       const result = await backendFetch(`/live/${stream.id}/comments`);
       setComments(Array.isArray(result?.comments) ? result.comments : []);
+      setError('');
       const incomingReactions = (Array.isArray(result?.reactions) ? result.reactions : [])
         .filter((item) => item?.id && !seenReactionIds.current.has(item.id));
       incomingReactions.forEach((item) => {
@@ -378,12 +391,13 @@ export default function LiveStreamScreen({ route, navigation }) {
         setFloatingReactions((current) => [...current, ...incomingReactions].slice(-16));
       }
     } catch (err) { setError((current) => current || err?.message || 'Comments unavailable.'); }
+    finally { commentsRefreshInFlight.current = false; }
   }, [stream?.id]);
 
   useEffect(() => {
     if (!stream?.id) return undefined;
     refreshComments();
-    const timer = setInterval(refreshComments, 4000);
+    const timer = setInterval(refreshComments, 6000);
     return () => clearInterval(timer);
   }, [stream?.id, refreshComments]);
 
@@ -391,13 +405,19 @@ export default function LiveStreamScreen({ route, navigation }) {
     if (!stream?.id || creatorMode || publisherMode || !stream.allow_guests) return undefined;
     let active = true;
     const check = async () => {
+      if (!active || !isDocumentVisible() || guestStatusRefreshInFlight.current) return;
+      guestStatusRefreshInFlight.current = true;
       try {
         const result = await backendFetch(`/live/${stream.id}/guest-status`);
         if (active) { setGuestStatus(result?.status || 'none'); setGuestApproved(result?.status === 'accepted'); }
-      } catch (_) {}
+      } catch (_) {
+        // Preserve the last known guest approval state during transient failures.
+      } finally {
+        guestStatusRefreshInFlight.current = false;
+      }
     };
     check();
-    const timer = setInterval(check, 4000);
+    const timer = setInterval(check, 6000);
     return () => { active = false; clearInterval(timer); };
   }, [stream?.id, creatorMode, publisherMode, stream?.allow_guests]);
 
@@ -415,6 +435,8 @@ export default function LiveStreamScreen({ route, navigation }) {
     if (!creatorMode || !stream?.id || !stream.allow_guests) return undefined;
     let active = true;
     const refreshGuestRequests = async () => {
+      if (!active || !isDocumentVisible() || guestRequestsRefreshInFlight.current) return;
+      guestRequestsRefreshInFlight.current = true;
       try {
         const result = await backendFetch(`/live/${stream.id}/guest-requests`);
         if (!active) return;
@@ -427,10 +449,14 @@ export default function LiveStreamScreen({ route, navigation }) {
         incoming.forEach((item) => seenGuestRequestIds.current.add(item.user_id));
         setGuestRequests(incoming);
         if (hasNewRequest) setPanel('guestRequests');
-      } catch (_) {}
+      } catch (_) {
+        // Keep existing guest requests visible while the network recovers.
+      } finally {
+        guestRequestsRefreshInFlight.current = false;
+      }
     };
     refreshGuestRequests();
-    const timer = setInterval(refreshGuestRequests, 3500);
+    const timer = setInterval(refreshGuestRequests, 5000);
     return () => { active = false; clearInterval(timer); };
   }, [creatorMode, stream?.id, stream?.allow_guests]);
 
@@ -546,12 +572,17 @@ export default function LiveStreamScreen({ route, navigation }) {
     if (!creatorMode || panel !== 'stage' || !stream?.id) return undefined;
     let active = true;
     const refreshStudioParticipants = () => {
+      if (!active || !isDocumentVisible() || studioParticipantsRefreshInFlight.current) return;
+      studioParticipantsRefreshInFlight.current = true;
       backendFetch(`/live/${stream.id}/participants`)
         .then((result) => {
           if (active) setParticipants(Array.isArray(result?.participants) ? result.participants : []);
         })
         .catch((refreshError) => {
           if (active) console.warn('[live] creator studio refresh failed:', refreshError?.message || refreshError);
+        })
+        .finally(() => {
+          studioParticipantsRefreshInFlight.current = false;
         });
     };
     const interval = setInterval(refreshStudioParticipants, 15_000);
