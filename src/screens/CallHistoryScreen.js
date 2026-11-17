@@ -184,7 +184,7 @@ export default function CallHistoryScreen({ navigation }) {
             </GlassCard> : null}
         ListFooterComponent={<View>{refreshing ? <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.md }} /> : null}
           {!loading && calls.length > 0 ? <Text style={[typography.small, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>Deleting a record hides it only from your history</Text> : null}
-        </View></View>}
+        </View>}
       />
     </SafeAreaView>
   );
