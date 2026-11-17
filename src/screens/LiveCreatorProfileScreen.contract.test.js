@@ -24,6 +24,7 @@ test('creator profile clears account-owned studio data and invalidates requests 
   assert.ok(source.includes('latestUser?.id !== expectedUserId'));
   assert.ok(source.includes('if (requestId === refreshRequestRef.current) setLoading(false)'));
   assert.ok(source.includes('data?.subscription?.unsubscribe?.()'));
+  assert.ok(source.includes('return () => { refreshRequestRef.current += 1; }'));
 });
 
 test('creator broadcast and replay deletions cannot mutate another account\'s refreshed studio state', () => {
