@@ -18,6 +18,7 @@ import { clearChatFoldersForUser } from './chatFolders';
 import { clearMemberFavoritesForUser } from '../utils/memberFavorites';
 import { supabase, SUPABASE_ENABLED, SUPABASE_URL } from './supabaseClient';
 import { backendFetch, BACKEND_ENABLED } from './backendClient';
+import { validateMessageCursor } from '../utils/messagePagination';
 import { getActiveVoipPushToken, getActiveApnsAlertToken } from './voipPushTokenState';
 import { isMissingRpcFunction } from './rpcErrors';
 import { cleanupExpoPushTokensForSignOut } from './pushTokenCleanup';
@@ -1378,14 +1379,23 @@ export async function fetchMessages(conversationId, { limit = 30, before = null 
     return { messages: mockMessageStore[conversationId] || [], hasMore: false };
   }
 
+  const cursor = before && typeof before === 'object' ? validateMessageCursor(before) : null;
   let query = supabase
     .from('messages')
     .select('*, sender:profiles!sender_id(name)')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
     .limit(limit);
 
-  if (before) query = query.lt('created_at', before);
+  if (cursor) {
+    // Stable keyset cursor: rows with the same timestamp are ordered by UUID too.
+    // The timestamp is kept verbatim so PostgreSQL microseconds are not truncated.
+    query = query.or(`created_at.lt.${cursor.created_at},and(created_at.eq.${cursor.created_at},id.lt.${cursor.id})`);
+  } else if (typeof before === 'string' && before) {
+    // Backward compatibility for older callers; new pagination should pass the full cursor.
+    query = query.lt('created_at', before);
+  }
 
   const { data, error } = await query;
   if (error) throw error;
