@@ -68,3 +68,24 @@ test('My status ring prioritizes the signed-in profile photo over the latest sto
   assert.ok(ownStatus.indexOf('myProfile?.avatarUrl') >= 0);
   assert.ok(ownStatus.indexOf('myProfile?.avatarUrl') < ownStatus.indexOf('ownStatusGroup?.latest?.media_url'));
 });
+
+
+test('account changes clear Status reactions, replies, privacy selections and active overlays', () => {
+  assert.ok(screen.includes('setReactingStatusIds([])'));
+  assert.ok(screen.includes('reactionLocksRef.current.clear()'));
+  assert.ok(screen.includes('setRepliesHasMore(false)'));
+  assert.ok(screen.includes('setReplyCursor(null)'));
+  assert.ok(screen.includes('setReplyText(\'\')'));
+  assert.ok(screen.includes('setSendingReply(false)'));
+  assert.ok(screen.includes('replyPageLockRef.current = false'));
+  assert.ok(screen.includes('setPrivacyContacts([])'));
+  assert.ok(screen.includes('setPrivacyModalOpen(false)'));
+  assert.ok(screen.includes('setPrivacyBusy(false)'));
+  assert.ok(screen.includes('setPrivacyLoadError(\'\')'));
+  assert.ok(screen.includes('setPrivacySearch(\'\')'));
+  assert.ok(screen.includes("setPrivacyMode('exclude')"));
+  assert.ok(screen.includes('setSelectedAudienceIds([])'));
+  assert.ok(screen.includes('setStatusPaused(false)'));
+  assert.ok(screen.includes('setMediaLoadError(false)'));
+  assert.ok(screen.includes('requestedStoryOpenRef.current = null'));
+});
