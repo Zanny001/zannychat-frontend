@@ -29,6 +29,10 @@ export default function ProfileScreen({ navigation }) {
       let active = true;
       setLoading(true);
       setProfileError('');
+      // Do not keep another account's profile or LIVE impact visible while
+      // the current session's profile request is resolving.
+      setUser(null);
+      setLiveImpact(null);
       (async () => {
         try {
           const profile = await getCurrentUser();
@@ -46,6 +50,7 @@ export default function ProfileScreen({ navigation }) {
           }
         } catch (_) {
           if (active) {
+            setUser(null);
             setProfileError("We couldn't load your profile. Check your connection and try again.");
             setLiveImpact(null);
           }
