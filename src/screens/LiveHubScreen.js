@@ -99,6 +99,9 @@ export default function LiveHubScreen({ navigation, route }) {
       // Capture the identity before issuing account-scoped LIVE requests.
       // If auth changes while they are in flight, discard the old response.
       const startingUser = await getCurrentUser().catch(() => null);
+      // An auth event may have invalidated this refresh while identity was
+      // being resolved; never let that stale lookup overwrite the new owner.
+      if (requestId !== refreshRequestRef.current) return;
       const expectedUserId = startingUser?.id || null;
       if (activeUserIdRef.current !== expectedUserId) {
         activeUserIdRef.current = expectedUserId;
