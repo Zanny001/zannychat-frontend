@@ -23,6 +23,8 @@ class AccountDeletionReauthBindingTests(unittest.TestCase):
     def test_pending_reauth_remains_user_bound_and_time_limited(self):
         source = (ROOT / "src/screens/PrivacySecurityScreen.js").read_text(encoding="utf-8")
         self.assertIn("userId: data.user.id,", source)
+        self.assertIn("const ACCOUNT_DELETE_REAUTH_TTL_MS = 4 * 60 * 1000 + 30 * 1000;", source)
+        self.assertIn("confirm deletion within five minutes.", source)
         self.assertIn("expiresAt: Date.now() + ACCOUNT_DELETE_REAUTH_TTL_MS", source)
         self.assertIn("pending.userId === data.user.id", source)
 
