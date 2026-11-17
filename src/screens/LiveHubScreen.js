@@ -35,6 +35,8 @@ export default function LiveHubScreen({ navigation, route }) {
   const [replayLoaded, setReplayLoaded] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
   const pendingReplayPollStartedAt = useRef(0);
+  const refreshRequestRef = useRef(0);
+  const activeUserIdRef = useRef(null);
   const [followingIds, setFollowingIds] = useState([]);
   const [followingCreators, setFollowingCreators] = useState([]);
   const [title, setTitle] = useState('');
@@ -54,8 +56,9 @@ export default function LiveHubScreen({ navigation, route }) {
   const handledLiveNotificationRef = useRef(null);
 
   const refreshPendingReplays = useCallback(async () => {
+    const expectedUserId = currentUserId;
     const pending = replays.filter((item) => ['starting', 'recording', 'processing'].includes(item.status));
-    if (!pending.length) return;
+    if (!expectedUserId || !pending.length) return;
     const results = await Promise.all(pending.map(async (item) => {
       try {
         const result = await backendFetch(`/live/${item.streamId}/replays`);
@@ -65,6 +68,8 @@ export default function LiveHubScreen({ navigation, route }) {
         return null;
       }
     }));
+    const latestUser = await getCurrentUser().catch(() => null);
+    if (latestUser?.id !== expectedUserId) return;
     const updates = new Map(results.filter(Boolean));
     if (updates.size) {
       setReplays((current) => {
@@ -78,7 +83,7 @@ export default function LiveHubScreen({ navigation, route }) {
         return changed ? next : current;
       });
     }
-  }, [replays]);
+  }, [currentUserId, replays]);
 
   const visibleStreams = filterLiveStreams(streams, {
     filter: activeFilter,
@@ -87,16 +92,37 @@ export default function LiveHubScreen({ navigation, route }) {
   });
 
   const refresh = useCallback(async () => {
+    const requestId = ++refreshRequestRef.current;
     setLoading(true);
     try {
-      const [publicResult, followedResult, followResult, inviteResult, replayResult, currentUser] = await Promise.all([
+      // Capture the identity before issuing account-scoped LIVE requests.
+      // If auth changes while they are in flight, discard the old response.
+      const startingUser = await getCurrentUser().catch(() => null);
+      const expectedUserId = startingUser?.id || null;
+      if (activeUserIdRef.current !== expectedUserId) {
+        activeUserIdRef.current = expectedUserId;
+        setStreams([]);
+        setInvitations([]);
+        setReplays([]);
+        setReplayLoaded(false);
+        setReplayError('');
+        setFollowingCreators([]);
+        setFollowingIds([]);
+        setInviteCandidates([]);
+        setSelectedInvitees([]);
+        setCurrentUserId(expectedUserId);
+      }
+
+      const [publicResult, followedResult, followResult, inviteResult, replayResult] = await Promise.all([
         backendFetch('/live').then((result) => ({ result, error: null })).catch((error) => ({ result: { streams: [] }, error })),
         backendFetch('/live/following/streams').catch(() => ({ streams: [] })),
         backendFetch('/live/following').catch(() => ({ following: [] })),
         backendFetch('/live/invitations').catch(() => ({ invitations: [] })),
         backendFetch('/live/replays').then((result) => ({ result, error: null })).catch((error) => ({ result: { replays: [] }, error })),
-        getCurrentUser().catch(() => null),
       ]);
+      const latestUser = await getCurrentUser().catch(() => null);
+      if (requestId !== refreshRequestRef.current || latestUser?.id !== expectedUserId) return;
+
       const allStreams = [...(publicResult?.result?.streams || []), ...(followedResult?.streams || [])];
       setStreams([...new Map(allStreams.map((item) => [item.id, item])).values()]);
       setFollowingCreators(followResult?.following || []);
@@ -105,14 +131,15 @@ export default function LiveHubScreen({ navigation, route }) {
       setReplays(Array.isArray(replayResult?.result?.replays) ? replayResult.result.replays : []);
       setReplayLoaded(!replayResult?.error);
       setReplayError(replayResult?.error ? 'LIVE replays are temporarily unavailable. Please try again.' : '');
-      setCurrentUserId(currentUser?.id || null);
+      setCurrentUserId(expectedUserId);
       setError(publicResult?.error?.message || '');
     } catch (e) {
+      if (requestId !== refreshRequestRef.current) return;
       setError(e?.message || 'LIVE discovery is unavailable.');
       setReplayLoaded(false);
       setReplayError('LIVE replays could not be refreshed. Please try again.');
     } finally {
-      setLoading(false);
+      if (requestId === refreshRequestRef.current) setLoading(false);
     }
   }, []);
 
