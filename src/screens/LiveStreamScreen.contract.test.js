@@ -365,3 +365,17 @@ test('LIVE polling pauses in the background, avoids overlapping reads and uses g
   assert.ok(screen.includes('setInterval(refreshGuestRequests, 5000)'));
   assert.ok(screen.includes('if (!active || !isAppForeground() || room.state !== \'connected\' || !streamId) return;'));
 });
+
+
+test('web LIVE polling pauses in hidden tabs and prevents overlapping reads', () => {
+  const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(web.includes("const isDocumentVisible = () => typeof document === 'undefined' || document.visibilityState !== 'hidden'"));
+  assert.ok(web.includes('!isDocumentVisible() || commentsRefreshInFlight.current'));
+  assert.ok(web.includes('!isDocumentVisible() || guestStatusRefreshInFlight.current'));
+  assert.ok(web.includes('!isDocumentVisible() || guestRequestsRefreshInFlight.current'));
+  assert.ok(web.includes('!isDocumentVisible() || studioParticipantsRefreshInFlight.current'));
+  assert.ok(web.includes('setInterval(refreshComments, 6000)'));
+  assert.ok(web.includes('setInterval(check, 6000)'));
+  assert.ok(web.includes('setInterval(refreshGuestRequests, 5000)'));
+  assert.ok(web.includes('if (!active || !isDocumentVisible() || roomRef.current?.state !== \'connected\') return;'));
+});
