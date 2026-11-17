@@ -415,7 +415,7 @@ export default function PrivacySecurityScreen({ navigation }) {
           {authProviders.google && (
             <View style={{ marginBottom: spacing.md }}>
               <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 20, marginBottom: spacing.sm }]}>
-                Google accounts can verify ownership with Google instead of a local password. After Google returns to ZannyChat, reopen Privacy & security and confirm deletion within ten minutes. We verify that the same account returned.
+                Google accounts can verify ownership with Google instead of a local password. After Google returns to ZannyChat, reopen Privacy & security and confirm deletion within five minutes. We verify that the same account returned.
               </Text>
               {googleReauthVerifiedUserId != null && googleReauthVerifiedUserId === authUserIdRef.current && (
                 <Text style={[typography.caption, { color: colors.success || colors.primary, marginBottom: spacing.sm }]}>Google verification confirmed for this account.</Text>
