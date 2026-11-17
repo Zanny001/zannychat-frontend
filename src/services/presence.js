@@ -10,6 +10,7 @@ let appStateSubscription = null;
 let started = false;
 let inFlight = false;
 let lifecycleVersion = 0;
+let presenceOwnerId = null;
 let onlineIds = new Set();
 const listeners = new Set();
 
