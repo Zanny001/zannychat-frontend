@@ -41,6 +41,7 @@ export default function PrivacySecurityScreen({ navigation }) {
   const [googleReauthMismatch, setGoogleReauthMismatch] = useState(false);
   const authUserIdRef = useRef(null);
   const blockedRequestRef = useRef(0);
+  const authProviderRequestRef = useRef(0);
 
   const refreshBlockedUsers = useCallback(async (expectedUserId = null) => {
     const requestId = ++blockedRequestRef.current;
@@ -64,7 +65,9 @@ export default function PrivacySecurityScreen({ navigation }) {
 
   const refreshAuthProviders = useCallback(async () => {
     if (!SUPABASE_ENABLED || !supabase) return;
+    const requestId = ++authProviderRequestRef.current;
     const { data, error } = await supabase.auth.getUser();
+    if (requestId !== authProviderRequestRef.current) return;
     if (error || !data?.user) {
       authUserIdRef.current = null;
       setAuthProviders({ email: false, google: false });
@@ -118,6 +121,7 @@ export default function PrivacySecurityScreen({ navigation }) {
       const nextUserId = session?.user?.id || null;
       if (authUserIdRef.current !== nextUserId) {
         authUserIdRef.current = nextUserId;
+        authProviderRequestRef.current += 1;
         blockedRequestRef.current += 1;
         setBlocked([]);
         setAuthProviders({ email: false, google: false });
@@ -134,6 +138,7 @@ export default function PrivacySecurityScreen({ navigation }) {
       // A same-user Google reauthentication still needs to consume the
       // account-bound one-time marker saved before OAuth navigation.
       if (nextUserId && event === 'SIGNED_IN') {
+        authProviderRequestRef.current += 1;
         Promise.resolve().then(() => refreshAuthProviders().catch(() => {}));
       }
     });
