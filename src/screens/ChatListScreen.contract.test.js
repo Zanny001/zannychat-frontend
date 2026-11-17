@@ -22,3 +22,8 @@ test('Chats header actions and search field keep moderate accessible dimensions'
   assert.match(screen, /searchBar: \{ minHeight: 48/);
   assert.match(screen, /accessibilityLabel="See all moments" style=\{\{ minHeight: 48/);
 });
+
+
+test('chat story tray reads status seen markers from the current account only', () => {
+  assert.ok(screen.includes('readSeenStatusIds(AsyncStorage, user?.id)'));
+});
