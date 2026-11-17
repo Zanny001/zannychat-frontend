@@ -6,7 +6,7 @@ const screen = readFileSync(new URL('../screens/StatusUpdatesScreen.js', import.
 
 test('Status feed renders grouped story entries with owner and update count', () => {
   assert.match(screen, /groupStatusUpdates\(statuses\)/);
-  assert.match(screen, /groupedStatuses\.map\(\(group\)/);
+  assert.match(screen, /data=\{groupedStatuses\}/);\n  assert.match(screen, /renderItem=\{\(\{ item: group \}\)/);\n  assert.match(screen, /data=\{friendStatusGroups\}/);
   assert.match(screen, /group\.statuses\.length/);
   assert.match(screen, /group\.latest/);
 });
