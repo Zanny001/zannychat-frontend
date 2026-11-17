@@ -1,4 +1,5 @@
 import { normalizeEvent } from '../utils/eventRules';
+import { validateEventCursor, validateEventPageArgs, sliceEventPage } from '../utils/eventPagination';
 import { supabase, SUPABASE_ENABLED } from './supabaseClient';
 function requireConnection() { if (!SUPABASE_ENABLED || !supabase) throw new Error('Events require a configured account connection.'); }
 export async function listConversationEvents(conversationId) {
@@ -7,6 +8,28 @@ export async function listConversationEvents(conversationId) {
   if (error) throw error;
   return data || [];
 }
+export async function listConversationEventPage(conversationId, { limit = 40, cursor = null } = {}) {
+  requireConnection();
+  if (typeof conversationId !== 'string' || !conversationId.trim()) throw new Error('A valid conversation is required.');
+  ({ limit } = validateEventPageArgs(limit));
+  const safeCursor = validateEventCursor(cursor);
+  const now = new Date().toISOString();
+  let query = supabase.from('conversation_events')
+    .select('id,conversation_id,creator_id,title,description,starts_at,location,created_at,conversation_event_rsvps(user_id,response,updated_at)')
+    .eq('conversation_id', conversationId)
+    .gte('starts_at', now);
+  if (safeCursor) {
+    // Ascending keyset pagination remains stable when events are created while the list is open.
+    query = query.or(`starts_at.gt.${safeCursor.starts_at},and(starts_at.eq.${safeCursor.starts_at},id.gt.${safeCursor.id})`);
+  }
+  const { data, error } = await query
+    .order('starts_at', { ascending: true })
+    .order('id', { ascending: true })
+    .range(0, limit);
+  if (error) throw error;
+  return sliceEventPage(data, limit);
+}
+
 export async function createConversationEvent(conversationId, fields) {
   requireConnection();
   const event = normalizeEvent(fields);
