@@ -36,7 +36,9 @@ async function refreshVisiblePresence() {
   } catch (_) {
     // A transient network failure must not turn unknown users into "offline".
   } finally {
-    inFlight = false;
+    // An older request must not release the in-flight lock for a newer
+    // authenticated lifecycle after sign-out/account switching.
+    if (version === lifecycleVersion) inFlight = false;
   }
 }
 
