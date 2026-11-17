@@ -328,3 +328,10 @@ These three profile surfaces remain separate: public identity, another person's 
 | 19 | Contact Discovery | Imported-contact preview is explicitly capped at 100; matching is private and never reveals which numbers were checked. | Source pass complete; privacy and multi-account acceptance pending |
 
 Follow-up: blocked-user collection has no explicit UI cap and should receive a dedicated management/virtualization pass if real accounts can accumulate large block lists. Do not weaken privacy, password or account-deletion checks to simplify the interface.
+
+
+### Dependency audit freshness — important correction
+
+- The checked-in `npm-audit-report.json` reports 27 findings (18 high, 9 moderate), but GitHub history shows that report was last updated on 2026-10-14. It is stale relative to the current Expo 57.0.32 / React Native 0.86.3 lockfile.
+- Its suggested `fixAvailable` values include downgrades to Expo 44 and React Native 0.72, which are not safe remediation for this application. Do not apply those suggestions or run `npm audit fix --force`.
+- A fresh `npm audit --json` against the current lockfile and current advisory database is required before making dependency changes. Separate build-tool-only findings from packages that ship in the runtime bundle; upgrade only within the supported Expo SDK 57 / React Native 0.86 compatibility line after regression tests.
