@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -199,6 +200,9 @@ export default function ChatScreen({ route, navigation }) {
   const targetLookupForRef = useRef(null);
   const targetLookupPagesRef = useRef(0);
   const automaticRetryInFlightRef = useRef(false);
+  const activeUserIdRef = useRef(undefined);
+  const messageLoadRequestRef = useRef(0);
+  const olderLoadRequestRef = useRef(0);
 
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(audioRecorder, 200);
@@ -208,8 +212,80 @@ export default function ChatScreen({ route, navigation }) {
   // mode EVERY message rendered as "theirs". The fix is knowing the
   // actual signed-in user id and comparing against both.
   useEffect(() => {
-    getCurrentUser().then((u) => setMyUserId(u?.id || 'me'));
-  }, []);
+    const applyUserId = (nextUserId) => {
+      if (activeUserIdRef.current === undefined) {
+        activeUserIdRef.current = nextUserId;
+        setMyUserId(nextUserId || (SUPABASE_ENABLED ? null : 'me'));
+        return;
+      }
+      if (activeUserIdRef.current === nextUserId) return;
+      activeUserIdRef.current = nextUserId;
+      messageLoadRequestRef.current += 1;
+      olderLoadRequestRef.current += 1;
+      setMyUserId(nextUserId);
+      // A chat is bound to its original authenticated participant. Never keep
+      // its messages, local outbox, receipts or media drafts visible after an
+      // account switch; leave the route so the new account must reopen access.
+      setMessages([]);
+      setLoadingMessages(false);
+      setMessageLoadError('Your account changed. Reopen this conversation from Chats.');
+      setOlderLoadError('');
+      setHasMore(false);
+      setLoadingOlder(false);
+      setReplyingTo(null);
+      setEditing(null);
+      setReactions({});
+      setParticipantReadState({});
+      setMessageDeliveryState({});
+      setPendingOutbox([]);
+      setPendingAttachments([]);
+      setRetryingOutbox(false);
+      setRetryingAttachments(false);
+      setPinnedMessages([]);
+      setPeerTyping(false);
+      setOnlineIds(new Set());
+      setSuggestions([]);
+      setSendError('');
+      setUploading(false);
+      setSummarizing(false);
+      setFullscreenImage(null);
+      setMediaDraft(null);
+      setMediaCaption('');
+      setResolved(null);
+      setFlags({ isMuted: false, isArchived: false });
+      setActiveSheet(null);
+      setDeleteMessageTarget(null);
+      setDeletingMessage(false);
+      setDeleteMessageError('');
+      setSearchOpen(false);
+      setSearchQuery('');
+      setActiveSearchIndex(0);
+      senderNamesRef.current = {};
+      stickToBottom.current = true;
+      handledTargetMessageRef.current = null;
+      targetLookupForRef.current = null;
+      targetLookupPagesRef.current = 0;
+      automaticRetryInFlightRef.current = false;
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+      if (navigation?.canGoBack?.()) navigation.goBack();
+    };
+
+    if (SUPABASE_ENABLED && supabase?.auth?.onAuthStateChange) {
+      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+        applyUserId(session?.user?.id || null);
+      });
+      return () => data?.subscription?.unsubscribe?.();
+    }
+
+    let active = true;
+    getCurrentUser().then((user) => {
+      if (active) applyUserId(user?.id || 'me');
+    }).catch(() => {
+      if (active) applyUserId(null);
+    });
+    return () => { active = false; };
+  }, [navigation]);
 
   useEffect(() => {
     const unsubscribe = subscribeToMessageDeliveryReceipts(conversation.id, (receipt) => {
@@ -247,24 +323,39 @@ export default function ChatScreen({ route, navigation }) {
   }, [conversation.id]);
 
   const load = useCallback(async () => {
+    const requestId = ++messageLoadRequestRef.current;
+    if (SUPABASE_ENABLED && !myUserId) {
+      setMessages([]);
+      setLoadingMessages(false);
+      return;
+    }
     setLoadingMessages(true);
     setMessageLoadError('');
     try {
       const { messages: data, hasMore: more } = await fetchMessages(conversation.id, { limit: MESSAGE_PAGE_SIZE });
+      if (requestId !== messageLoadRequestRef.current || activeUserIdRef.current !== myUserId) return;
       data.forEach((m) => {
         if (m.senderName) senderNamesRef.current[m.senderId] = m.senderName;
       });
       setMessages(data);
       fetchMessageDeliveryState(conversation.id, data.map((message) => message.id))
-        .then((state) => setMessageDeliveryState((prev) => ({ ...prev, ...state }))).catch(() => {});
+        .then((state) => {
+          if (requestId === messageLoadRequestRef.current && activeUserIdRef.current === myUserId) {
+            setMessageDeliveryState((prev) => ({ ...prev, ...state }));
+          }
+        }).catch(() => {});
       markMessagesDelivered(conversation.id, data, myUserId).catch(() => {});
       setHasMore(more);
       stickToBottom.current = true;
-      fetchReactions(data.map((m) => m.id)).then(setReactions).catch(() => {});
+      fetchReactions(data.map((m) => m.id)).then((state) => {
+        if (requestId === messageLoadRequestRef.current && activeUserIdRef.current === myUserId) setReactions(state);
+      }).catch(() => {});
     } catch (error) {
-      setMessageLoadError(error?.message || 'Could not load messages. Check your connection and try again.');
+      if (requestId === messageLoadRequestRef.current && activeUserIdRef.current === myUserId) {
+        setMessageLoadError(error?.message || 'Could not load messages. Check your connection and try again.');
+      }
     } finally {
-      setLoadingMessages(false);
+      if (requestId === messageLoadRequestRef.current) setLoadingMessages(false);
     }
   }, [conversation.id, myUserId]);
 
