@@ -4,7 +4,7 @@
  * account-wide sign-out. Never turn a failed token lookup into an all-device
  * delete.
  */
-import { clearExpoPushToken, readExpoPushToken } from './pushTokenDeviceStorage';
+import { clearExpoPushToken, readExpoPushToken } from './pushTokenDeviceStorage.js';
 
 export async function deletePushTokenRows({ supabase, userId, expoPushToken = null }) {
   if (!supabase || typeof supabase.from !== 'function') {
