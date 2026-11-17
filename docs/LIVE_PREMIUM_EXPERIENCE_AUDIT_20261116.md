@@ -97,6 +97,7 @@ Frontend PR #120 changes the current polling safeguards:
 - Guest-request refresh interval: 3.5s → 5s.
 - Guest approval status refresh interval: 4s → 6s.
 - Creator Studio participant refresh remains 15s, but now skips background requests.
+- LIVE Hub's bounded pending-replay poll now runs only while the Hub is focused and the app is foregrounded; the existing five-minute polling cap is retained.
 - Native and web refresh paths now skip work while the app is backgrounded or browser tab is hidden, respectively, and suppress overlapping requests with in-flight guards.
 - LIVE participant heartbeat on native and web also skips background ticks; LiveKit Connected/Reconnected events still trigger immediate heartbeat.
 - A transient comment-fetch failure remains visible as a recoverable banner and is cleared after a successful refresh; transient guest/replay poll errors preserve last known state rather than interrupting the creator controls.
