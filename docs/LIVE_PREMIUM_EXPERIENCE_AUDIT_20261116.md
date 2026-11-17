@@ -86,3 +86,20 @@ The earlier production note that there were zero replay rows/objects remains acc
 - Frontend PR #117 adds explicit replay service error and empty states in LIVE Hub; its native/web CI and preview are still being validated.
 
 Official protocol references reviewed: https://docs.livekit.io/reference/other/egress/api/ and https://docs.livekit.io/intro/basics/rooms-participants-tracks/webhooks-events/
+
+
+### LIVE polling load and foreground lifecycle review — 2026-11-17
+
+A source-level pass found that the active LIVE screen polled comments/reactions every 4 seconds, creator guest requests every 3.5 seconds, and guest approval every 4 seconds. Each comments read fans out to several service-role database lookups (stream/participant, comments, block lists, profile names, recent reactions, reaction block list). The backend's authenticated LIVE router also applies a 90-request/minute per-user ceiling. At scale, polling every active viewer creates avoidable request and database load; it is not equivalent to a realtime event transport.
+
+Frontend PR #120 changes the current polling safeguards:
+- Comment/reaction refresh interval: 4s → 6s.
+- Guest-request refresh interval: 3.5s → 5s.
+- Guest approval status refresh interval: 4s → 6s.
+- Creator Studio participant refresh remains 15s, but now skips background requests.
+- LIVE Hub's bounded pending-replay poll now runs only while the Hub is focused and the app is foregrounded; the existing five-minute polling cap is retained.
+- Native and web refresh paths now skip work while the app is backgrounded or browser tab is hidden, respectively, and suppress overlapping requests with in-flight guards.
+- LIVE participant heartbeat on native and web also skips background ticks; LiveKit Connected/Reconnected events still trigger immediate heartbeat.
+- A transient comment-fetch failure remains visible as a recoverable banner and is cleared after a successful refresh; transient guest/replay poll errors preserve last known state rather than interrupting the creator controls.
+
+This is a pragmatic load reduction, not the final realtime architecture. The next scale milestone should replace comment/reaction and guest-request polling with authenticated event delivery (LiveKit data messages or appropriately scoped Supabase Realtime), retaining server-side authorization, moderation, persistence, and reconnect reconciliation. Do not remove persistence or privacy checks merely to reduce latency. Before claiming scale readiness, load-test concurrent viewers, creator stage actions, database query volume, Render request rate and reconnect storms.

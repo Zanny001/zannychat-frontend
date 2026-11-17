@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Platform, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, FlatList, Platform, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
@@ -116,13 +116,14 @@ export default function LiveHubScreen({ navigation, route }) {
   }, [refresh]));
 
   const hasPendingReplays = replays.some((item) => ['starting', 'recording', 'processing'].includes(item.status));
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     if (!hasPendingReplays) {
       pendingReplayPollStartedAt.current = 0;
       return undefined;
     }
     if (!pendingReplayPollStartedAt.current) pendingReplayPollStartedAt.current = Date.now();
     const interval = setInterval(() => {
+      if (AppState.currentState && AppState.currentState !== 'active') return;
       if (Date.now() - pendingReplayPollStartedAt.current >= 5 * 60 * 1000) {
         clearInterval(interval);
         return;
@@ -130,7 +131,7 @@ export default function LiveHubScreen({ navigation, route }) {
       refreshPendingReplays();
     }, 15000);
     return () => clearInterval(interval);
-  }, [hasPendingReplays, refreshPendingReplays]);
+  }, [hasPendingReplays, refreshPendingReplays]));
 
   const openReplay = (item) => navigation.navigate('LiveReplay', { replay: item });
 

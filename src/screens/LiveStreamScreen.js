@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -19,6 +19,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 
 const LIVE_REACTION_EMOJI = Object.freeze({ heart: '❤️', clap: '👏', laugh: '😂', wow: '😮', fire: '🔥', idea: '💡', support: '🙌' });
+const isAppForeground = () => !AppState.currentState || AppState.currentState === 'active';
 
 async function chooseNativeAudioOutput() {
   try {
@@ -89,7 +90,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
   useEffect(() => {
     let active = true;
     const heartbeat = () => {
-      if (!active || room.state !== 'connected' || !streamId) return;
+      if (!active || !isAppForeground() || room.state !== 'connected' || !streamId) return;
       backendFetch(`/live/${streamId}/heartbeat`, { method: 'POST' })
         .catch((error) => { if (active) console.warn('[live] presence heartbeat failed:', error?.message || error); });
     };
@@ -386,6 +387,11 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [guestRequestStatus, setGuestRequestStatus] = useState('none');
   const [floatingReactions, setFloatingReactions] = useState([]);
   const seenReactionIds = useRef(new Set());
+  const commentsRefreshInFlight = useRef(false);
+  const guestStatusRefreshInFlight = useRef(false);
+  const guestRequestsRefreshInFlight = useRef(false);
+  const replayRefreshInFlight = useRef(false);
+  const studioParticipantsRefreshInFlight = useRef(false);
   const [cameraEnabled, setCameraEnabled] = useState(publisherMode);
   useEffect(() => {
     setDemotedToViewer(false);
@@ -442,13 +448,18 @@ export default function LiveStreamScreen({ route, navigation }) {
   }, [streamId]);
 
   const refreshReplay = useCallback(async () => {
-    if (!stream?.id || !creatorMode || !replayEnabled) return;
+    if (!stream?.id || !creatorMode || !replayEnabled || !isAppForeground() || replayRefreshInFlight.current) return;
+    replayRefreshInFlight.current = true;
     try {
       const result = await backendFetch(`/live/${stream.id}/replays`);
       const rows = Array.isArray(result?.replays) ? result.replays : [];
       const latest = rows.find((item) => ['starting', 'recording', 'processing', 'ready', 'failed'].includes(item.status));
       setReplay(latest || null);
-    } catch (_) {}
+    } catch (_) {
+      // Keep the last known replay state during transient network failures.
+    } finally {
+      replayRefreshInFlight.current = false;
+    }
   }, [stream?.id, creatorMode, replayEnabled]);
 
   useEffect(() => {
@@ -485,10 +496,12 @@ export default function LiveStreamScreen({ route, navigation }) {
   const toggleMicrophone = (enabled) => setMicrophoneEnabled(enabled);
 
   const refreshComments = useCallback(async () => {
-    if (!stream?.id) return;
+    if (!stream?.id || !isAppForeground() || commentsRefreshInFlight.current) return;
+    commentsRefreshInFlight.current = true;
     try {
       const result = await backendFetch(`/live/${stream.id}/comments`);
       setComments(Array.isArray(result?.comments) ? result.comments : []);
+      setError('');
       const incomingReactions = (Array.isArray(result?.reactions) ? result.reactions : [])
         .filter((item) => item?.id && !seenReactionIds.current.has(item.id));
       incomingReactions.forEach((item) => {
@@ -502,13 +515,15 @@ export default function LiveStreamScreen({ route, navigation }) {
       }
     } catch (e) {
       if (!endedRef.current) setError(e?.message || 'LIVE comments are unavailable.');
+    } finally {
+      commentsRefreshInFlight.current = false;
     }
   }, [stream?.id]);
 
   useEffect(() => {
     AudioSession.startAudioSession().catch(() => {});
     refreshComments();
-    const interval = setInterval(refreshComments, 4000);
+    const interval = setInterval(refreshComments, 6000);
     return () => {
       clearInterval(interval);
       AudioSession.stopAudioSession();
@@ -519,13 +534,19 @@ export default function LiveStreamScreen({ route, navigation }) {
     if (!stream?.id || creatorMode || publisherMode || !stream.allow_guests) return undefined;
     let active = true;
     const checkApproval = async () => {
+      if (!active || !isAppForeground() || guestStatusRefreshInFlight.current) return;
+      guestStatusRefreshInFlight.current = true;
       try {
         const result = await backendFetch(`/live/${stream.id}/guest-status`);
         if (active) { setGuestRequestStatus(result?.status || 'none'); setGuestApproved(result?.status === 'accepted'); }
-      } catch (_) {}
+      } catch (_) {
+        // Guest approval is also delivered by push; keep the last known state on poll failure.
+      } finally {
+        guestStatusRefreshInFlight.current = false;
+      }
     };
     checkApproval();
-    const interval = setInterval(checkApproval, 4000);
+    const interval = setInterval(checkApproval, 6000);
     return () => { active = false; clearInterval(interval); };
   }, [stream?.id, creatorMode, publisherMode, stream?.allow_guests]);
 
@@ -543,6 +564,8 @@ export default function LiveStreamScreen({ route, navigation }) {
     if (!creatorMode || !stream?.id || !stream.allow_guests) return undefined;
     let active = true;
     const refreshGuestRequests = async () => {
+      if (!active || !isAppForeground() || guestRequestsRefreshInFlight.current) return;
+      guestRequestsRefreshInFlight.current = true;
       try {
         const result = await backendFetch(`/live/${stream.id}/guest-requests`);
         if (!active) return;
@@ -557,10 +580,14 @@ export default function LiveStreamScreen({ route, navigation }) {
         // Surface each new request once; allow the creator to switch to other
         // stage controls without the poll repeatedly stealing panel focus.
         if (hasNewRequest) setShowGuestRequests(true);
-      } catch (_) {}
+      } catch (_) {
+        // Avoid surfacing transient polling failures as creator-control failures.
+      } finally {
+        guestRequestsRefreshInFlight.current = false;
+      }
     };
     refreshGuestRequests();
-    const interval = setInterval(refreshGuestRequests, 3500);
+    const interval = setInterval(refreshGuestRequests, 5000);
     return () => { active = false; clearInterval(interval); };
   }, [creatorMode, stream?.id, stream?.allow_guests]);
 
@@ -660,12 +687,17 @@ export default function LiveStreamScreen({ route, navigation }) {
     if (!creatorMode || !showParticipants || !stream?.id) return undefined;
     let active = true;
     const refreshStudioParticipants = () => {
+      if (!active || !isAppForeground() || studioParticipantsRefreshInFlight.current) return;
+      studioParticipantsRefreshInFlight.current = true;
       backendFetch(`/live/${stream.id}/participants`)
         .then((result) => {
           if (active) setParticipants(Array.isArray(result?.participants) ? result.participants : []);
         })
         .catch((refreshError) => {
           if (active) console.warn('[live] creator studio refresh failed:', refreshError?.message || refreshError);
+        })
+        .finally(() => {
+          studioParticipantsRefreshInFlight.current = false;
         });
     };
     const interval = setInterval(refreshStudioParticipants, 15_000);
