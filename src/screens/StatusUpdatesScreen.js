@@ -400,7 +400,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
       try { const page = await listStatusReplies(item.id); setReplies(page.rows); setRepliesHasMore(page.hasMore); setReplyCursor(page.nextBefore); try { const names = await resolveStatusUserNames(page.rows.map((reply) => reply.sender_id)); setStatusUserNames((old) => ({ ...old, ...names })); } catch { /* Keep the ID fallback if profile lookup is unavailable. */ } }
       catch (e) { console.warn('Status replies could not be loaded'); }
     }
-  }, []);
+ }, [myProfile?.id]);
 
   useEffect(() => {
     const requestedUserId = route?.params?.userId;
