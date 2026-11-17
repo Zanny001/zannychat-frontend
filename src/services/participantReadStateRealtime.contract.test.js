@@ -11,7 +11,7 @@ test('participant read-state snapshot starts only after the realtime channel is 
   assert.ok(start >= 0);
   assert.match(implementation, /subscribeToParticipantReadState/);
   assert.ok(implementation.includes('onSubscribed: () =>'));
-  assert.match(implementation, /fetchParticipantReadState(conversationId)/);
+  assert.ok(implementation.includes('fetchParticipantReadState(conversationId)'));
   assert.doesNotMatch(implementation, /setInterval/);
 });
 
