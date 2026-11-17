@@ -1,11 +1,11 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { SafeAreaView, ScrollView, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import GlassCard from '../components/GlassCard';
 import { useTheme } from '../theme/ThemeContext';
-import { getCurrentUser } from '../services/api';
+import { useAuthenticatedUserId } from '../hooks/useAuthenticatedUserId';
 import { loadChatFolders, saveChatFolder, deleteChatFolder } from '../services/chatFolders';
 
 const INCLUSIONS = [
@@ -22,7 +22,19 @@ const EXCLUSIONS = [
 
 export default function ChatFoldersScreen({ navigation }) {
   const { colors, spacing, radii, typography } = useTheme();
-  const [userId, setUserId] = useState(null);
+  const requestRef = useRef(0);
+  const { userId, userIdRef } = useAuthenticatedUserId(useCallback(() => {
+    requestRef.current += 1;
+    setFolders([]);
+    setName('');
+    setRules(['unread']);
+    setExcluded(['archived']);
+    setLoading(true);
+    setSaving(false);
+    setEditingId(null);
+    setError('');
+    if (navigation?.canGoBack?.()) navigation.goBack();
+  }, [navigation]));
   const [folders, setFolders] = useState([]);
   const [name, setName] = useState('');
   const [rules, setRules] = useState(['unread']);
@@ -33,41 +45,65 @@ export default function ChatFoldersScreen({ navigation }) {
   const [error, setError] = useState('');
 
   const refresh = useCallback(async () => {
+    const requestId = ++requestRef.current;
+    if (!userId) {
+      setFolders([]);
+      setLoading(false);
+      return;
+    }
+    const expectedUserId = userId;
     setLoading(true);
     setError('');
     try {
-      const user = await getCurrentUser();
-      const id = user?.id || 'guest';
-      setUserId(id);
-      setFolders(await loadChatFolders(id));
-    } catch (_) { setError('Could not load chat folders.'); }
-    finally { setLoading(false); }
-  }, []);
-  useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
+      const folders = await loadChatFolders(expectedUserId);
+      if (requestId === requestRef.current && userIdRef.current === expectedUserId) {
+        setFolders(Array.isArray(folders) ? folders : []);
+      }
+    } catch (_) {
+      if (requestId === requestRef.current && userIdRef.current === expectedUserId) {
+        setFolders([]);
+        setError('Could not load chat folders.');
+      }
+    } finally {
+      if (requestId === requestRef.current) setLoading(false);
+    }
+  }, [userId, userIdRef]);
+  useFocusEffect(useCallback(() => {
+    refresh();
+    return () => { requestRef.current += 1; };
+  }, [refresh]));
 
   const toggle = (list, setList, key) => setList((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]);
   const create = async () => {
     const cleanName = name.trim();
     if (!cleanName) { setError('Enter a name for this folder.'); return; }
+    const expectedUserId = userId;
+    if (!expectedUserId || userIdRef.current !== expectedUserId) return;
     setSaving(true); setError('');
     try {
       const isEditing = Boolean(editingId);
-      const next = await saveChatFolder(userId, { id: editingId || `folder-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name: cleanName, rules, excluded, createdAt: folders.find((folder) => folder.id === editingId)?.createdAt || new Date().toISOString() });
+      const next = await saveChatFolder(expectedUserId, { id: editingId || `folder-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name: cleanName, rules, excluded, createdAt: folders.find((folder) => folder.id === editingId)?.createdAt || new Date().toISOString() });
+      if (userIdRef.current !== expectedUserId) return;
       setFolders(next); setName(''); setRules(['unread']); setExcluded(['archived']); setEditingId(null);
       Alert.alert(isEditing ? 'Folder updated' : 'Folder created', `${cleanName} is ready. It will appear in your Chats filters.`);
-    } catch (err) { setError(err?.message || 'Could not save this folder.'); }
-    finally { setSaving(false); }
+    } catch (err) {
+      if (userIdRef.current === expectedUserId) setError(err?.message || 'Could not save this folder.');
+    } finally {
+      if (userIdRef.current === expectedUserId) setSaving(false);
+    }
   };
   const edit = (folder) => { setEditingId(folder.id); setName(folder.name); setRules([...folder.rules]); setExcluded([...folder.excluded]); setError(''); };
   const cancelEdit = () => { setEditingId(null); setName(''); setRules(['unread']); setExcluded(['archived']); setError(''); };
   const remove = (folder) => Alert.alert('Delete folder?', `Delete “${folder.name}”? Your chats and messages will not be deleted.`, [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Delete', style: 'destructive', onPress: async () => {
+      const expectedUserId = userId;
+      if (!expectedUserId || userIdRef.current !== expectedUserId) return;
       try {
-        const next = await deleteChatFolder(userId, folder.id);
-        setFolders(next);
+        const next = await deleteChatFolder(expectedUserId, folder.id);
+        if (userIdRef.current === expectedUserId) setFolders(next);
       } catch (_) {
-        setError('Could not delete this folder. Please try again.');
+        if (userIdRef.current === expectedUserId) setError('Could not delete this folder. Please try again.');
       }
     } },
   ]);
