@@ -36,3 +36,22 @@ test('New Chat quick actions wrap cleanly instead of overflowing narrow phones',
   assert.match(screen, /quickAction: \{ flexGrow: 1, flexBasis: 128, minWidth: 128 \}/);
   assert.match(screen, /qrRow: \{[\s\S]*?minHeight: 48,[\s\S]*?\}/);
 });
+
+
+test('New Chat clears account-owned contacts and favorites when auth changes', () => {
+  assert.ok(screen.includes("import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient'"));
+  assert.ok(screen.includes('const activeUserIdRef = useRef(undefined)'));
+  assert.ok(screen.includes('supabase.auth.onAuthStateChange'));
+  assert.ok(screen.includes('setContacts([])'));
+  assert.ok(screen.includes('setFavoriteIds([])'));
+  assert.ok(screen.includes('setDiscoveredContacts([])'));
+  assert.ok(screen.includes('setFavoriteStorageKey(key)'));
+  assert.ok(screen.includes('activeUserIdRef.current !== userId'));
+  assert.ok(screen.includes('data?.subscription?.unsubscribe?.()'));
+});
+
+test('New Chat favorite writes stay bound to the account whose directory is visible', () => {
+  assert.ok(screen.includes('const expectedUserId = activeUserIdRef.current'));
+  assert.ok(screen.includes('const expectedStorageKey = favoriteStorageKey'));
+  assert.ok(screen.includes('activeUserIdRef.current !== expectedUserId'));
+});
