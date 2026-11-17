@@ -77,9 +77,9 @@ export function stopPresence() {
   appStateSubscription = null;
   const wasStarted = started;
   started = false;
-  if (wasStarted) heartbeat(false).catch(() => {});
   onlineIds = new Set();
   notify();
+  return wasStarted ? heartbeat(false).catch(() => {}) : Promise.resolve();
 }
 
 export function subscribePresence(cb) {
