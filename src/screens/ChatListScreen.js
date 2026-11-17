@@ -295,6 +295,7 @@ export default function ChatListScreen({ navigation }) {
   async function updateConversationFlag(conversation, field, persist) {
     if (!conversation?.id) return;
     const actionKey = `${conversation.id}:${field}`;
+    const expectedUserId = activeUserIdRef.current;
     if (pendingConversationActions.current.has(actionKey)) return;
     const previousValue = Boolean(conversation[field]);
     const nextValue = !previousValue;
@@ -303,12 +304,14 @@ export default function ChatListScreen({ navigation }) {
     patchConversation(conversation.id, { [field]: nextValue });
     try {
       await persist(conversation.id, nextValue);
+      if (activeUserIdRef.current !== expectedUserId) return;
     } catch (error) {
+      if (activeUserIdRef.current !== expectedUserId) return;
       // Roll back only the field involved; preserve unrelated newer updates.
       patchConversation(conversation.id, { [field]: previousValue });
       setConversationActionError(`Couldn't save ${field === 'isFavorite' ? 'favorite' : field === 'isMuted' ? 'mute setting' : 'archive setting'}. Please try again.`);
     } finally {
-      pendingConversationActions.current.delete(actionKey);
+      if (activeUserIdRef.current === expectedUserId) pendingConversationActions.current.delete(actionKey);
     }
   }
 
@@ -327,6 +330,7 @@ export default function ChatListScreen({ navigation }) {
   async function performDeleteConversation(conversation) {
     if (!conversation || deleting) return;
 
+    const expectedUserId = activeUserIdRef.current;
     const previous = conversations;
     setDeleting(true);
     setDeleteError('');
@@ -336,9 +340,11 @@ export default function ChatListScreen({ navigation }) {
 
     try {
       await deleteConversationForCurrentUser(conversation.id);
+      if (activeUserIdRef.current !== expectedUserId) return;
       setDeleteTarget(null);
       setSheetFor(null);
     } catch (error) {
+      if (activeUserIdRef.current !== expectedUserId) return;
       setConversations(previous);
       const message = error?.message || 'Please try again.';
       setDeleteError(message);
@@ -346,7 +352,7 @@ export default function ChatListScreen({ navigation }) {
         window.alert('Could not delete chat: ' + message);
       }
     } finally {
-      setDeleting(false);
+      if (activeUserIdRef.current === expectedUserId) setDeleting(false);
     }
   }
 
