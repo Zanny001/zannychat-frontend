@@ -209,7 +209,10 @@ export default function StatusUpdatesScreen({ navigation, route }) {
     seenStatusIdsRef.current = [];
     setSeenStatusIds([]);
     setStatusDurations(DEFAULT_STATUS_DURATIONS);
-    if (!userId) return () => { active = false; };
+    if (!userId) {
+      setLoading(false);
+      return () => { active = false; };
+    }
 
     readSeenStatusIds(AsyncStorage, userId).then((ids) => {
       if (active) { seenStatusIdsRef.current = ids; setSeenStatusIds(ids); }
