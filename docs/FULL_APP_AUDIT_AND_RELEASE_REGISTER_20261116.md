@@ -316,3 +316,15 @@ The first 11 screens now have a source-level performance and interaction pass. T
 | 15 | Edit Profile | Form uses keyboard-aware ScrollView with handled taps, profile/cover media upload, visibility controls, preview and explicit save state. | Source pass complete; upload and account-privacy acceptance pending |
 
 These three profile surfaces remain separate: public identity, another person's public profile and private profile editing. Creator Studio and private analytics are not merged into the public profile.
+
+
+### Screens 16–19 — account, privacy and notifications
+
+| Sequence | Experience | Source-level finding | Status |
+|---:|---|---|---|
+| 16 | Privacy & Security | Includes privacy checkup, blocked-user management, password change and re-authenticated account deletion. Account deletion explains partial local cleanup honestly. Blocked-user rows are currently mapped inside ScrollView without a product cap. | Security logic reviewed; blocked-list scaling and real deletion acceptance remain open |
+| 17 | Settings | Theme palettes, custom colour controls, text scaling, high contrast, reduced motion, accessibility switches and sign-out. Palette/options arrays are fixed-size settings, so ScrollView is appropriate. | Source pass complete; visual/accessibility matrix pending |
+| 18 | Notifications | Static preference and quiet-hours controls with keyboard-aware ScrollView; no unbounded feed rendering found. | Source pass complete; real push-delivery acceptance pending |
+| 19 | Contact Discovery | Imported-contact preview is explicitly capped at 100; matching is private and never reveals which numbers were checked. | Source pass complete; privacy and multi-account acceptance pending |
+
+Follow-up: blocked-user collection has no explicit UI cap and should receive a dedicated management/virtualization pass if real accounts can accumulate large block lists. Do not weaken privacy, password or account-deletion checks to simplify the interface.
