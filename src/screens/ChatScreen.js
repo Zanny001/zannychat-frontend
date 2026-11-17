@@ -305,7 +305,7 @@ export default function ChatScreen({ route, navigation }) {
     getCurrentUser().then((user) => {
       if (active) applyUserId(user?.id || 'me');
     }).catch(() => {
-      if (active) applyUserId(null);
+      if (active) applyUserId('me');
     });
     return () => { active = false; };
   }, [navigation]);
