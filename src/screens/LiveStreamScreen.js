@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AudioSession, LiveKitRoom, VideoTrack, isTrackReference, useRoomContext, useTracks } from '@livekit/react-native';
 import { RoomEvent, Track } from 'livekit-client';
 import { backendFetch } from '../services/backendClient';
+import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 
@@ -415,6 +416,8 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [error, setError] = useState('');
   const endedRef = useRef(false);
   const leaveRef = useRef(null);
+  const liveAuthOwnerRef = useRef(undefined);
+  const connectionRequestRef = useRef(0);
 
   useEffect(() => {
     if (!streamId) {
@@ -428,6 +431,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       return undefined;
     }
     let active = true;
+    const requestId = ++connectionRequestRef.current;
     setConnection(null);
     setConnectionLoading(true);
     setError('');
@@ -437,15 +441,18 @@ export default function LiveStreamScreen({ route, navigation }) {
             || !nextConnection?.token || !nextConnection?.livekitUrl) {
           throw new Error('The server did not return a complete LIVE room connection.');
         }
-        if (active) setConnection(nextConnection);
+        if (active && requestId === connectionRequestRef.current) setConnection(nextConnection);
       })
       .catch((joinError) => {
-        if (active) setError(joinError?.message || 'Could not join this LIVE stream.');
+        if (active && requestId === connectionRequestRef.current) setError(joinError?.message || 'Could not join this LIVE stream.');
       })
       .finally(() => {
-        if (active) setConnectionLoading(false);
+        if (active && requestId === connectionRequestRef.current) setConnectionLoading(false);
       });
-    return () => { active = false; };
+    return () => {
+      active = false;
+      if (connectionRequestRef.current === requestId) connectionRequestRef.current += 1;
+    };
   }, [streamId]);
 
   const refreshReplay = useCallback(async () => {
@@ -591,6 +598,43 @@ export default function LiveStreamScreen({ route, navigation }) {
     const interval = setInterval(refreshGuestRequests, 5000);
     return () => { active = false; clearInterval(interval); };
   }, [canManageGuests, stream?.id]);
+
+  useEffect(() => {
+    if (!SUPABASE_ENABLED || !supabase?.auth?.onAuthStateChange) return undefined;
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUserId = session?.user?.id || null;
+      // INITIAL_SESSION establishes the owner; only a later identity change
+      // should terminate an already active LIVE room.
+      if (liveAuthOwnerRef.current === undefined) {
+        liveAuthOwnerRef.current = nextUserId;
+        return;
+      }
+      if (liveAuthOwnerRef.current === nextUserId) return;
+      liveAuthOwnerRef.current = nextUserId;
+      connectionRequestRef.current += 1;
+      // Stop publisher/viewer tracks immediately and prevent the old join
+      // request from restoring a connection after sign-out/account switch.
+      endedRef.current = true;
+      setConnection(null);
+      setConnectionLoading(false);
+      setCameraEnabled(false);
+      setMicrophoneEnabled(false);
+      setReplayEnabled(false);
+      setReplay(null);
+      setComments([]);
+      setReports([]);
+      setParticipants([]);
+      setGuestRequests([]);
+      setFloatingReactions([]);
+      setGuestApproved(false);
+      setGuestRequestStatus('none');
+      setShowGuestRequests(false);
+      setShowParticipants(false);
+      setError('Your account changed. You left this LIVE. Reopen it from LIVE Hub.');
+      if (navigation?.canGoBack?.()) navigation.goBack();
+    });
+    return () => data?.subscription?.unsubscribe?.();
+  }, [navigation]);
 
   const leave = async () => {
     if (!stream?.id || endedRef.current || busy) return;
