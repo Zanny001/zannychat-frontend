@@ -240,7 +240,9 @@ export default function ChatListScreen({ navigation }) {
   // Older conversations page in on scroll — created_at desc pages from
   // the API, re-sorted into the list by actual last activity.
   async function handleLoadMore() {
-    if (loadingMore || !hasMore) return;
+    if (loadingMore || !hasMore || (SUPABASE_ENABLED && !activeUserIdRef.current)) return;
+    const requestId = ++loadMoreRequestRef.current;
+    const expectedUserId = activeUserIdRef.current;
     setLoadingMore(true);
     setLoadMoreError('');
     try {
@@ -248,6 +250,7 @@ export default function ChatListScreen({ navigation }) {
         limit: PAGE_SIZE,
         offset: conversations.length,
       });
+      if (requestId !== loadMoreRequestRef.current || activeUserIdRef.current !== expectedUserId) return;
       if (!Array.isArray(older)) throw new Error('The server returned an invalid chat page.');
       setConversations((prev) => {
         const seen = new Set(prev.map((c) => c.id));
@@ -262,10 +265,12 @@ export default function ChatListScreen({ navigation }) {
       });
       setHasMore(Boolean(more));
     } catch (err) {
-      // Keep pagination available and give the user an explicit retry path.
-      setLoadMoreError(err?.message || 'Could not load older chats. Check your connection and try again.');
+      if (requestId === loadMoreRequestRef.current && activeUserIdRef.current === expectedUserId) {
+        // Keep pagination available and give the user an explicit retry path.
+        setLoadMoreError(err?.message || 'Could not load older chats. Check your connection and try again.');
+      }
     } finally {
-      setLoadingMore(false);
+      if (requestId === loadMoreRequestRef.current) setLoadingMore(false);
     }
   }
 
