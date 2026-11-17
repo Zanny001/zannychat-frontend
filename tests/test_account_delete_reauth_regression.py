@@ -18,6 +18,8 @@ class AccountDeletionReauthBindingTests(unittest.TestCase):
         source = (ROOT / "src/screens/PrivacySecurityScreen.js").read_text(encoding="utf-8")
         self.assertIn("const { data: currentAuthData, error: currentAuthError } = await supabase.auth.getUser();", source)
         self.assertIn("googleReauthVerifiedUserId !== currentUserId", source)
+        self.assertIn("authUserIdRef.current !== currentUserId", source)
+        self.assertIn("await refreshAuthProviders();", source)
         self.assertIn("googleReauthVerifiedUserId === authUserIdRef.current", source)
 
     def test_pending_reauth_remains_user_bound_and_time_limited(self):
