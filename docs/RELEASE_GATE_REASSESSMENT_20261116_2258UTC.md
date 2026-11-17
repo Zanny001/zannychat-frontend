@@ -29,12 +29,12 @@ The existing `vercel.json` also rewrites every path to `/index.html`, uses `npm 
 
 ## Vercel authorization and deployment
 
-- The Vercel team is `zanny-chat` / `team_P8IYvDiidDlhUHaQBe1RN1Wg`, Hobby plan, with zero linked projects returned by the connected context.
+- The Vercel team is `zanny-chat` / `team_P8IYvDiidDlhUHaQBe1RN1Wg`, Hobby plan. GitHub's Vercel integration bot identifies the `zannychat` project (`prj_OOi2wCB33VrD2oV1DiuGqmhezByZ`) and posts Ready PR preview URLs. The separately connected Vercel API integration returns zero projects for team-scoped search and 404 for project/deployment inspection; this is an access-scope discrepancy, not proof that the project is absent.
 - A fresh team-consent request was generated on 2026-11-17. The team owner must open the current one-time link supplied in this conversation, review the permissions and approve. It expires after ten minutes.
-- Project creation previously returned HTTP 403. Do not retry project creation until approval is completed.
-- The GitHub commit currently reports a Vercel status check as pending, but a direct Vercel deployment-history query for the exact commit returned zero records and lookup of the check's deployment identifier returned 404. Treat this as an unresolved/stale integration check, not as evidence of a preview deployment.
-- Subsequent GitHub commit statuses on the new push-token PRs report the Vercel check as failed with the target `upgradeToPro=build-rate-limit`. The team still lists zero linked projects and exact-commit deployment history returns zero records. This is an external Vercel build-rate-limit/plan gate, not a frontend test failure; no paid upgrade was initiated under the ₦0 constraint.
-- No Vercel project, alias, preview deployment, or production deployment is claimed by this addendum.
+- Project creation previously returned HTTP 403. Do not retry project creation until owner authorization and project visibility are reconciled; GitHub bot evidence already indicates that a `zannychat` project exists, so do not create a duplicate.
+- GitHub Vercel bot comments confirm Ready previews for exact PR commits (including PR #119), while later bot comments report `api-deployments-free-per-day` after more than 100 deployments in 24 hours. A Ready preview is not evidence of production readiness.
+- The connected Vercel API integration returns zero team-scoped projects and 404 for project/deployment inspection despite the GitHub bot's project ID evidence. The intended production alias `zannychat.vercel.app` remains unverified; no production deployment is claimed.
+- Do not upgrade the Hobby plan or trigger further builds under the ₦0 budget. Reduce redundant PR-triggered builds, use Netlify previews for source acceptance, and re-check Vercel after the daily quota resets and API access is reconciled.
 
 ## Release gates that remain open
 
@@ -51,3 +51,19 @@ The existing `vercel.json` also rewrites every path to `/index.html`, uses `npm 
 - No production database schema, RLS policy, storage policy, Auth setting, or index was changed in this reassessment.
 - No CSP was deployed or changed; current policy gap is documented pending origin inventory and Report-Only validation.
 - This is a documentation-only audit checkpoint; all runtime and physical-device gates remain explicitly open.
+
+
+### Follow-up release checkpoint — 2026-11-17
+
+- LIVE replay UI error/empty-state handling (PR #117) is merged, but Egress-to-private-storage-to-signed-playback remains a runtime acceptance gate because production replay inventory was empty.
+- Account-deletion Google reauthentication is hardened and merged (PR #132); both relevant frontend workflows passed. Client proof is bound to the current Supabase user and expires at 4m30s, below the backend five-minute auth_time rule.
+- Expo push-token device persistence/revocation (PR #119) is merged with frontend, Advanced Calling and Premium LIVE workflow success. Real push delivery and account-switch/logout still require device acceptance.
+- PR #135 is merged; it clears account-owned Status privacy, reply, reaction and overlay state on shared-device account switches. PR #137 remains open to fix the ChatList story tray's missing account ID when reading seen markers.
+- No paid Vercel upgrade, production deploy, or physical-device acceptance is claimed.
+
+
+### Production hosting evidence — 2026-11-17
+
+Netlify's project record reports its current production deploy as Ready, but that deploy is commit `27d76827e2259d14e00e2717fd0b8ebc35b63011` from 2026-11-15. GitHub main is 57 commits ahead. Recent PR previews are Ready, but production remains stale. Do not tell users the latest LIVE, push-token, account-deletion or Status fixes are live until a new main deploy completes and the production smoke suite passes.
+
+PR #135 and PR #137 Netlify previews both reached Ready. PR #135 Premium LIVE/frontend quality passed; Advanced Calling checks were still in progress at the latest check. PR #137's Advanced Calling and Premium LIVE workflows were still in progress at the latest check. PR #137 fixes a missed account ID argument in ChatList story-seen state; it is not yet merged.
