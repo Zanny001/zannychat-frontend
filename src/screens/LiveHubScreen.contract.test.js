@@ -110,3 +110,44 @@ test('LIVE Hub replay polling pauses when the screen is unfocused or the app is 
   assert.ok(screen.includes('pendingReplayPollStartedAt.current'));
   assert.ok(screen.includes('return () => clearInterval(interval)'));
 });
+
+
+test('LIVE hub invalidates account-scoped responses and clears private data on account changes', () => {
+  assert.ok(screen.includes('const refreshRequestRef = useRef(0)'));
+  assert.ok(screen.includes('const activeUserIdRef = useRef(null)'));
+  assert.ok(screen.includes('const startingUser = await getCurrentUser().catch(() => null)'));
+  assert.ok(screen.includes('const expectedUserId = startingUser?.id || null'));
+  assert.ok(screen.includes('if (activeUserIdRef.current !== expectedUserId)'));
+  assert.ok(screen.includes('setInvitations([])'));
+  assert.ok(screen.includes('setReplays([])'));
+  assert.ok(screen.includes('setFollowingIds([])'));
+  assert.ok(screen.includes('setSelectedInvitees([])'));
+  assert.ok(screen.includes('const latestUser = await getCurrentUser().catch(() => null)'));
+  assert.ok(screen.includes('latestUser?.id !== expectedUserId'));
+  assert.ok(screen.includes('requestId !== refreshRequestRef.current'));
+  assert.ok(screen.includes('if (requestId === refreshRequestRef.current) setLoading(false)'));
+});
+
+test('pending LIVE replay polling refuses to apply results after an account switch', () => {
+  assert.ok(screen.includes('const expectedUserId = currentUserId'));
+  assert.ok(screen.includes('if (!expectedUserId || !pending.length) return'));
+  assert.ok(screen.includes('if (latestUser?.id !== expectedUserId) return'));
+});
+
+
+test('LIVE hub clears private state immediately when Supabase auth owner changes', () => {
+  assert.ok(screen.includes("import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient'"));
+  assert.ok(screen.includes('supabase.auth.onAuthStateChange'));
+  assert.ok(screen.includes('const nextUserId = session?.user?.id || null'));
+  assert.ok(screen.includes('if (activeUserIdRef.current === nextUserId) return'));
+  assert.ok(screen.includes('refreshRequestRef.current += 1'));
+  assert.ok(screen.includes('setCurrentUserId(nextUserId)'));
+  assert.ok(screen.includes('setInvitations([])'));
+  assert.ok(screen.includes('setReplays([])'));
+  assert.ok(screen.includes('setSelectedInvitees([])'));
+  assert.ok(screen.includes('setTitle(\'\')'));
+  assert.ok(screen.includes("setVisibility('public')"));
+  assert.ok(screen.includes('setShowComposer(false)'));
+  assert.ok(screen.includes('if (nextUserId) Promise.resolve().then(() => refresh())'));
+  assert.ok(screen.includes('data?.subscription?.unsubscribe?.()'));
+});
