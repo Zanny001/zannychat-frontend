@@ -10,10 +10,15 @@ export function getStatusDurationStorageKey(userId) {
 
 export function normalizeStatusDurationPreferences(value) {
   const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const normalize = (kind) => {
+    const value = source[kind];
+    if (value == null || value === '' || !Number.isFinite(Number(value))) return DEFAULT_STATUS_DURATIONS[kind];
+    return getStatusDurationMs({ media_kind: kind }, { [kind]: value });
+  };
   return {
-    text: getStatusDurationMs({ media_kind: 'text' }, source),
-    image: getStatusDurationMs({ media_kind: 'image' }, source),
-    video: getStatusDurationMs({ media_kind: 'video' }, source),
+    text: normalize('text'),
+    image: normalize('image'),
+    video: normalize('video'),
   };
 }
 
