@@ -1,8 +1,10 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
+import { getCurrentUser } from '../services/api';
+import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
 import GlassCard from '../components/GlassCard';
 import Avatar from '../components/Avatar';
@@ -25,19 +27,53 @@ export default function LiveCreatorProfileScreen({ navigation }) {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const activeUserIdRef = useRef(null);
+  const refreshRequestRef = useRef(0);
 
   const refresh = useCallback(async () => {
+    const requestId = ++refreshRequestRef.current;
     setLoading(true);
     try {
+      const startingUser = await getCurrentUser().catch(() => null);
+      const expectedUserId = startingUser?.id || null;
+      if (activeUserIdRef.current !== expectedUserId) {
+        activeUserIdRef.current = expectedUserId;
+        setSummary(null);
+      }
+      if (!expectedUserId) {
+        setSummary(null);
+        setError('Sign in to view your LIVE creator profile.');
+        return;
+      }
       const result = await backendFetch('/live/creators/me/profile');
+      const latestUser = await getCurrentUser().catch(() => null);
+      if (requestId !== refreshRequestRef.current || latestUser?.id !== expectedUserId) return;
       setSummary(result || null);
       setError('');
     } catch (e) {
-      setError(e?.message || 'Your LIVE creator profile is temporarily unavailable.');
+      if (requestId === refreshRequestRef.current) {
+        setSummary(null);
+        setError(e?.message || 'Your LIVE creator profile is temporarily unavailable.');
+      }
     } finally {
-      setLoading(false);
+      if (requestId === refreshRequestRef.current) setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!SUPABASE_ENABLED || !supabase?.auth?.onAuthStateChange) return undefined;
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUserId = session?.user?.id || null;
+      if (activeUserIdRef.current === nextUserId) return;
+      activeUserIdRef.current = nextUserId;
+      refreshRequestRef.current += 1;
+      setSummary(null);
+      setError('');
+      setLoading(Boolean(nextUserId));
+      if (nextUserId) Promise.resolve().then(() => refresh());
+    });
+    return () => data?.subscription?.unsubscribe?.();
+  }, [refresh]);
 
   useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
 
@@ -53,8 +89,11 @@ export default function LiveCreatorProfileScreen({ navigation }) {
       confirmText: 'Delete',
     });
     if (!confirmed) return;
+    const expectedUserId = activeUserIdRef.current;
     try {
       await backendFetch('/live/' + encodeURIComponent(item.id), { method: 'DELETE' });
+      const latestUser = await getCurrentUser().catch(() => null);
+      if (!expectedUserId || latestUser?.id !== expectedUserId) return;
       setSummary((current) => {
         if (!current) return current;
         const removedReplays = (current.replays?.recent || []).filter((row) => row.stream_id === item.id);
@@ -81,8 +120,11 @@ export default function LiveCreatorProfileScreen({ navigation }) {
       confirmText: 'Delete',
     });
     if (!confirmed) return;
+    const expectedUserId = activeUserIdRef.current;
     try {
       await backendFetch('/live/replays/' + encodeURIComponent(item.id), { method: 'DELETE' });
+      const latestUser = await getCurrentUser().catch(() => null);
+      if (!expectedUserId || latestUser?.id !== expectedUserId) return;
       setSummary((current) => current ? ({
         ...current,
         replays: { ...current.replays, total: Math.max(0, Number(current.replays?.total || 0) - 1), ready: Math.max(0, Number(current.replays?.ready || 0) - (item.status === 'ready' ? 1 : 0)), recent: (current.replays?.recent || []).filter((row) => row.id !== item.id) },
