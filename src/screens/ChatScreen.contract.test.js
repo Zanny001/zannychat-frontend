@@ -95,3 +95,41 @@ test('read receipts use scoped Realtime updates rather than a five-second RPC po
   assert.doesNotMatch(screen, /fetchParticipantReadState\(conversation\.id\)/);
   assert.match(screen, /advance the read cursor immediately/);
 });
+
+
+test('chat screen clears account-owned messages, drafts, receipts and outbox on auth change', () => {
+  assert.ok(screen.includes("import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient'"));
+  assert.ok(screen.includes('supabase.auth.onAuthStateChange'));
+  assert.ok(screen.includes('const activeUserIdRef = useRef(undefined)'));
+  assert.ok(screen.includes('const messageLoadRequestRef = useRef(0)'));
+  assert.ok(screen.includes('const olderLoadRequestRef = useRef(0)'));
+  assert.ok(screen.includes('setMessages([])'));
+  assert.ok(screen.includes('setPendingOutbox([])'));
+  assert.ok(screen.includes('setPendingAttachments([])'));
+  assert.ok(screen.includes('setMessageDeliveryState({})'));
+  assert.ok(screen.includes('setParticipantReadState({})'));
+  assert.ok(screen.includes('setMediaDraft(null)'));
+  assert.ok(screen.includes('setResolved(null)'));
+  assert.ok(screen.includes('Your account changed. Reopen this conversation from Chats.'));
+  assert.ok(screen.includes('if (navigation?.canGoBack?.()) navigation.goBack()'));
+});
+
+test('chat history and outbox work cannot publish or retry after the authenticated owner changes', () => {
+  assert.ok(screen.includes('requestId !== messageLoadRequestRef.current'));
+  assert.ok(screen.includes('activeUserIdRef.current !== myUserId'));
+  assert.ok(screen.includes('requestId !== olderLoadRequestRef.current'));
+  assert.ok(screen.includes('activeUserIdRef.current !== expectedUserId'));
+  assert.ok(screen.includes('activeUserIdRef.current !== myUserId)) return'));
+  assert.ok(screen.includes('messageLoadRequestRef.current += 1'));
+  assert.ok(screen.includes('olderLoadRequestRef.current += 1'));
+});
+
+test('chat Realtime subscriptions are rebound and filtered for the active user', () => {
+  assert.match(screen, /subscribeToMessageDeliveryReceipts\(conversation\.id/);
+  assert.match(screen, /subscribeToMessages\(conversation\.id/);
+  assert.match(screen, /subscribeToReactions\(/);
+  assert.match(screen, /subscribeToTyping\(conversation\.id/);
+  assert.match(screen, /subscribeToParticipantUpdates\(conversation\.id/);
+  assert.match(screen, /activeUserIdRef\.current !== myUserId/);
+  assert.match(screen, /\}, \[conversation\.id, myUserId\]\)/);
+});
