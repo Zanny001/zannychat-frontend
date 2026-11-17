@@ -1526,6 +1526,14 @@ export async function sendMessage(conversationId, text, replyToId = null, reques
 // function. In mock mode this is a no-op (there's nothing to push
 // realtime updates), which keeps ChatScreen's cleanup logic identical
 // in both modes.
+export function subscribeToConversationListChanges(onChange) {
+  return subscribeToConversationListEvents({
+    supabase,
+    enabled: SUPABASE_ENABLED,
+    onChange,
+  });
+}
+
 export function subscribeToMessages(conversationId, onInsert) {
   if (!SUPABASE_ENABLED) {
     return () => {};
