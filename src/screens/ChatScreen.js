@@ -508,6 +508,10 @@ export default function ChatScreen({ route, navigation }) {
   useFocusEffect(
     useCallback(() => {
       load();
+      return () => {
+        messageLoadRequestRef.current += 1;
+        olderLoadRequestRef.current += 1;
+      };
     }, [load])
   );
 
