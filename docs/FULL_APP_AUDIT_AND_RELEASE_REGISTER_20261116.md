@@ -195,6 +195,10 @@ The current replay budget is five minutes per recording, 50 minutes total per ca
 ### Release checkpoint — 2026-11-17 (follow-up)
 
 - PR #117 has now been merged at `0c6bb83d5b4ed3a6e430ebeee951feb47172e0f2`. It improves truthful replay loading/empty states only; it does not create recordings or prove playback.
-- PR #132 (Google account deletion reauthentication binding) remains open at the latest check. Premium LIVE quality passed; Advanced Calling client checks were still running the Android Kotlin compile step. Netlify preview was Ready. Vercel GitHub integration reported the daily deployment cap exceeded; no production deploy is claimed.
+- PR #132 (Google account deletion reauthentication binding) has now merged at `1f3d8e6e9f744e0b9d3f205a9bd46033c8be6324`. Both Advanced Calling client checks (including Android Kotlin compile, iOS prebuild, Expo exports and integrity suites) and Premium LIVE quality passed. Netlify preview was Ready. Vercel GitHub integration reported the daily deployment cap exceeded; no production deploy is claimed.
 - PR #119 is merged and its three relevant workflows passed. The GitHub Vercel bot reported a Ready preview for commit `4e05798bfe458eb1265094484022291366b48486` at `https://zannychat-git-fix-push-token-device-persistence-zanny-chat.vercel.app`, but the same PR's Vercel bot also reported `api-deployments-free-per-day`. Treat the Ready event as a preview for that exact commit only; it does not establish the current main deployment or the production alias.
 - The connected Vercel API integration could not independently inspect the bot-reported project/deployment: team-scoped project search returned zero projects and direct project/deployment lookups returned 404. Preserve both facts rather than claiming the project does not exist or that it is fully accessible.
+
+
+- PR #123 was closed as superseded: the account-scoped read-marker implementation is already on main from PR #130. Its additional account-change UI reset was independently ported into PR #135 so that the older branch cannot overwrite the current storage key contract.
+- PR #135 adds the missing Status screen reset for account-specific privacy recipients, contacts, reply drafts/pagination, reaction locks, and active overlays. It remains under CI and has not been merged yet.
