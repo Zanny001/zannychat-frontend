@@ -58,7 +58,7 @@ The existing `vercel.json` also rewrites every path to `/index.html`, uses `npm 
 - LIVE replay UI error/empty-state handling (PR #117) is merged, but Egress-to-private-storage-to-signed-playback remains a runtime acceptance gate because production replay inventory was empty.
 - Account-deletion Google reauthentication is hardened and merged (PR #132); both relevant frontend workflows passed. Client proof is bound to the current Supabase user and expires at 4m30s, below the backend five-minute auth_time rule.
 - Expo push-token device persistence/revocation (PR #119) is merged with frontend, Advanced Calling and Premium LIVE workflow success. Real push delivery and account-switch/logout still require device acceptance.
-- PR #135 remains open to clear remaining account-owned Status UI state on shared-device account switches.
+- PR #135 is merged; it clears account-owned Status privacy, reply, reaction and overlay state on shared-device account switches. PR #137 remains open to fix the ChatList story tray's missing account ID when reading seen markers.
 - No paid Vercel upgrade, production deploy, or physical-device acceptance is claimed.
 
 
