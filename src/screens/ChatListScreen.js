@@ -10,7 +10,7 @@ import Avatar from '../components/Avatar';
 import GlassCard from '../components/GlassCard';
 import Knot from '../components/Knot';
 import ActionSheet from '../components/ActionSheet';
-import { fetchConversations, toggleFavorite, setConversationFlags, deleteConversationForCurrentUser, getCurrentUser } from '../services/api';
+import { fetchConversations, subscribeToConversationListChanges, toggleFavorite, setConversationFlags, deleteConversationForCurrentUser, getCurrentUser } from '../services/api';
 import { startPresence, subscribePresence } from '../services/presence';
 import { SUPABASE_ENABLED } from '../services/supabaseClient';
 import { hexToRgba } from '../utils/color';
@@ -57,6 +57,7 @@ export default function ChatListScreen({ navigation }) {
   const [deleteError, setDeleteError] = useState('');
   const [conversationActionError, setConversationActionError] = useState('');
   const pendingConversationActions = useRef(new Set());
+  const loadRequestRef = useRef(0);
 
 
   // Real presence: every "online" dot used to be mock data (the
@@ -69,16 +70,22 @@ export default function ChatListScreen({ navigation }) {
   }, []);
 
   const load = useCallback(async () => {
+    const requestId = ++loadRequestRef.current;
     setLoadError('');
     try {
       const { conversations: data, hasMore: more } = await fetchConversations({ limit: PAGE_SIZE, offset: 0 });
-      setConversations(Array.isArray(data) ? data : []);
-      setHasMore(Boolean(more));
+      // A slower earlier focus/realtime refresh must not overwrite a newer list.
+      if (requestId === loadRequestRef.current) {
+        setConversations(Array.isArray(data) ? data : []);
+        setHasMore(Boolean(more));
+      }
     } catch (error) {
-      setLoadError(error?.message || 'Could not load your chats. Check your connection and try again.');
+      if (requestId === loadRequestRef.current) {
+        setLoadError(error?.message || 'Could not load your chats. Check your connection and try again.');
+      }
       throw error;
     } finally {
-      setInitialLoading(false);
+      if (requestId === loadRequestRef.current) setInitialLoading(false);
     }
   }, []);
 
@@ -108,6 +115,26 @@ export default function ChatListScreen({ navigation }) {
       }
     })();
     return () => { alive = false; };
+  }, [load]));
+
+  // Keep the inbox current while it stays focused. Realtime payloads are
+  // only invalidation signals; fetchConversations remains the authoritative,
+  // RLS-protected source for previews, unread counts and ordering.
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    let refreshTimer = null;
+    const unsubscribe = subscribeToConversationListChanges(() => {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => {
+        refreshTimer = null;
+        if (active) load().catch(() => {});
+      }, 250);
+    });
+    return () => {
+      active = false;
+      if (refreshTimer) clearTimeout(refreshTimer);
+      unsubscribe();
+    };
   }, [load]));
 
   async function handleRefresh() {
