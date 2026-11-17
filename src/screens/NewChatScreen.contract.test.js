@@ -41,6 +41,8 @@ test('New Chat quick actions wrap cleanly instead of overflowing narrow phones',
 test('New Chat clears account-owned contacts and favorites when auth changes', () => {
   assert.ok(screen.includes("import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient'"));
   assert.ok(screen.includes('const activeUserIdRef = useRef(undefined)'));
+  assert.ok(screen.includes('const accountChangedRef = useRef(false)'));
+  assert.ok(screen.includes('if (accountChangedRef.current || loadingContacts || !targetUserId'));
   assert.ok(screen.includes('supabase.auth.onAuthStateChange'));
   assert.ok(screen.includes('setContacts([])'));
   assert.ok(screen.includes('setFavoriteIds([])'));
