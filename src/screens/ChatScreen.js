@@ -289,6 +289,7 @@ export default function ChatScreen({ route, navigation }) {
 
   useEffect(() => {
     const unsubscribe = subscribeToMessageDeliveryReceipts(conversation.id, (receipt) => {
+      if (activeUserIdRef.current !== myUserId) return;
       if (!receipt?.message_id || !receipt?.user_id) return;
       setMessageDeliveryState((prev) => ({
         ...prev,
@@ -296,7 +297,7 @@ export default function ChatScreen({ route, navigation }) {
       }));
     });
     return unsubscribe;
-  }, [conversation.id]);
+  }, [conversation.id, myUserId]);
 
   useEffect(() => {
     if (!myUserId) return;
@@ -411,6 +412,7 @@ export default function ChatScreen({ route, navigation }) {
   // refresh-on-return are handled by useFocusEffect below.
   useEffect(() => {
     const unsubscribe = subscribeToMessages(conversation.id, (newMessage) => {
+      if (activeUserIdRef.current !== myUserId) return;
       if (newMessage?.senderId && newMessage.senderId !== myUserId) markMessagesDelivered(conversation.id, [newMessage], myUserId).catch(() => {});
       setMessages((prev) => {
         // Realtime doesn't exclude the sender — our own message, already
@@ -445,6 +447,7 @@ export default function ChatScreen({ route, navigation }) {
   // carry message_id/user_id at all.
   useEffect(() => {
     const unsubscribe = subscribeToReactions((payload) => {
+      if (activeUserIdRef.current !== myUserId) return;
       const row = payload.new || payload.old;
       if (!row?.message_id) return;
       setReactions((prev) => {
@@ -460,12 +463,13 @@ export default function ChatScreen({ route, navigation }) {
       });
     });
     return unsubscribe;
-  }, []);
+  }, [myUserId]);
 
   // Typing indicators — broadcast-only (ephemeral by nature), showing
   // "typing…" for a few seconds after the peer's last keystroke event.
   useEffect(() => {
     const unsubscribe = subscribeToTyping(conversation.id, ({ userId }) => {
+      if (activeUserIdRef.current !== myUserId) return;
       if (!userId || userId === myUserId) return;
       setPeerTyping(true);
       clearTimeout(typingTimeoutRef.current);
@@ -480,16 +484,19 @@ export default function ChatScreen({ route, navigation }) {
   // Real presence (Supabase Presence) — the header's online state comes
   // from who's actually connected right now, not a column nothing used
   // to update.
-  useEffect(() => subscribePresence(setOnlineIds), []);
+  useEffect(() => subscribePresence((ids) => {
+    if (activeUserIdRef.current === myUserId) setOnlineIds(ids);
+  }), [myUserId]);
 
   // Subscribes before taking the initial read-state snapshot. Realtime UPDATEs
   // then advance the read cursor immediately without a five-second RPC poll.
   useEffect(() => {
     const unsubscribe = subscribeToParticipantUpdates(conversation.id, (updated) => {
+      if (activeUserIdRef.current !== myUserId) return;
       setParticipantReadState((prev) => ({ ...prev, [updated.user_id]: updated.last_read_at }));
     });
     return unsubscribe;
-  }, [conversation.id]);
+  }, [conversation.id, myUserId]);
 
   // Marks this conversation read on every focus (not just mount) — the
   // case that matters is leaving and coming back to a conversation that
