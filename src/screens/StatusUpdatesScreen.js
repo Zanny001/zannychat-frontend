@@ -171,10 +171,21 @@ export default function StatusUpdatesScreen({ navigation, route }) {
   useEffect(() => {
     let active = true;
     const userId = myProfile?.id;
-    // Never carry one account's seen state into another account on a shared device.
+    // Invalidate in-flight work and clear account-owned view state before
+    // loading the next account's markers or status feed.
+    statusRefreshRequestRef.current += 1;
     seenStatusIdsRef.current = [];
     setSeenStatusIds([]);
     setSeenStatusReady(false);
+    setStatuses([]);
+    setReactions({});
+    setMutedUsers([]);
+    setExcludedUsers([]);
+    setStatusUserNames({});
+    setViewing(null);
+    setReplies([]);
+    setRepliesHasMore(false);
+    setReplyCursor(null);
     if (!userId) return () => { active = false; };
     readSeenStatusIds(AsyncStorage, userId).then((ids) => {
       if (!active) return;
