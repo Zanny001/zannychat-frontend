@@ -863,7 +863,7 @@ export async function deleteAccount(currentPassword) {
   ].map((cleanup) => cleanup.catch(() => false)));
   const localCleanupComplete = cleanupResults.every(Boolean);
   let localSessionCleared = true;
-  stopPresence();
+  await stopPresence();
   try {
     const signOutResult = await supabase.auth.signOut({ scope: 'local' });
     localSessionCleared = !signOutResult?.error;
@@ -948,7 +948,7 @@ export async function signOutThisDevice() {
   if (!SUPABASE_ENABLED || !supabase) throw new Error('Session management requires a connected account.');
   await removeExpoPushTokensBeforeSignOut('local');
   await removeVoipTokensBeforeSignOut('local');
-  stopPresence();
+  await stopPresence();
   const { error } = await supabase.auth.signOut({ scope: 'local' });
   if (error) throw error;
   return { signedOut: true, scope: 'local' };
@@ -958,7 +958,7 @@ export async function signOutEverywhere() {
   if (!SUPABASE_ENABLED || !supabase) throw new Error('Session management requires a connected account.');
   await removeExpoPushTokensBeforeSignOut('global');
   await removeVoipTokensBeforeSignOut('global');
-  stopPresence();
+  await stopPresence();
   const { error } = await supabase.auth.signOut({ scope: 'global' });
   if (error) throw error;
   return { signedOut: true, scope: 'global' };
@@ -969,7 +969,7 @@ export async function signOut() {
   // Settings logout is device-local; global revocation is explicit in Devices & sessions.
   await removeExpoPushTokensBeforeSignOut('local');
   await removeVoipTokensBeforeSignOut('local');
-  stopPresence();
+  await stopPresence();
   const { error } = await supabase.auth.signOut({ scope: 'local' });
   if (error) throw error;
 }
