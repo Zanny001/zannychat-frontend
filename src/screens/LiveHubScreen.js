@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
 import { getCurrentUser } from '../services/api';
+import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 import { confirmAction, showAppAlert } from '../utils/appDialogs';
@@ -142,6 +143,40 @@ export default function LiveHubScreen({ navigation, route }) {
       if (requestId === refreshRequestRef.current) setLoading(false);
     }
   }, []);
+
+  // Auth can change while this tab remains mounted. Clear account-owned LIVE
+  // state immediately, invalidate in-flight requests, and refresh only after
+  // Supabase has published the new session.
+  useEffect(() => {
+    if (!SUPABASE_ENABLED || !supabase?.auth?.onAuthStateChange) return undefined;
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUserId = session?.user?.id || null;
+      if (activeUserIdRef.current === nextUserId) return;
+      activeUserIdRef.current = nextUserId;
+      refreshRequestRef.current += 1;
+      setCurrentUserId(nextUserId);
+      setStreams([]);
+      setInvitations([]);
+      setReplays([]);
+      setReplayLoaded(false);
+      setReplayError('');
+      setFollowingCreators([]);
+      setFollowingIds([]);
+      setInviteCandidates([]);
+      setSelectedInvitees([]);
+      setTitle('');
+      setDescription('');
+      setVisibility('public');
+      setAllowGuests(false);
+      setSearchQuery('');
+      setActiveFilter('all');
+      setShowComposer(false);
+      setLoading(Boolean(nextUserId));
+      setError('');
+      if (nextUserId) Promise.resolve().then(() => refresh());
+    });
+    return () => data?.subscription?.unsubscribe?.();
+  }, [refresh]);
 
   useFocusEffect(useCallback(() => {
     pendingReplayPollStartedAt.current = Date.now();
