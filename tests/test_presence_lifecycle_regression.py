@@ -16,6 +16,7 @@ class PresenceLifecycleRegressionTests(unittest.TestCase):
         self.assertIn("if (listeners.size === 0) stopPresence();", source)
         self.assertIn("lifecycleVersion += 1;", source)
         self.assertIn("version !== lifecycleVersion", source)
+        self.assertIn("if (version === lifecycleVersion) inFlight = false;", source)
 
     def test_chat_list_uses_subscription_owned_presence_lifecycle(self):
         source = self.read("src/screens/ChatListScreen.js")
