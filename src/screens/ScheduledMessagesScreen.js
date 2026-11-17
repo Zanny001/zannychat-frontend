@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, SafeAreaView, FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
@@ -87,8 +87,19 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Scheduled messages" subtitle="Plan a message for later" onBack={() => navigation.goBack()} />
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl }}>
-        <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+      <FlatList
+        style={{ flex: 1 }}
+        data={items}
+        keyExtractor={(item) => String(item.id)}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={7}
+        contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, flexGrow: 1 }}
+        ListHeaderComponent={
+          <View>
+            <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
             <Ionicons name="time-outline" size={22} color={colors.primary} />
             <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>New scheduled message</Text>
@@ -135,19 +146,12 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
           <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Pending messages</Text>
           <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh scheduled messages" style={{ padding: spacing.xs }}><Ionicons name="refresh-outline" size={19} color={colors.primary} /></TouchableOpacity>
         </View>
-        {loading ? <ActivityIndicator color={colors.primary} style={{ padding: spacing.xl }} /> : error ? (
-          <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
-            <Text accessibilityRole="alert" style={[typography.body, { color: colors.textSecondary }]}>{error}</Text>
-            <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh scheduled messages"><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity>
-          </GlassCard>
-        ) : items.length === 0 ? (
-          <View style={{ alignItems: 'center', paddingVertical: spacing.xl }}>
-            <Ionicons name="calendar-clear-outline" size={34} color={colors.textSecondary} />
-            <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginTop: spacing.sm }]}>Nothing scheduled yet</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>Messages you schedule will appear here until they are sent or cancelled.</Text>
+            {loading && items.length ? <ActivityIndicator color={colors.primary} style={{ padding: spacing.md }} /> : null}
+            {error && items.length ? <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text accessibilityRole="alert" style={[typography.body, { color: colors.textSecondary }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh scheduled messages"><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
           </View>
-        ) : items.map((item) => (
-          <GlassCard key={item.id} style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+        }
+        renderItem={({ item }) => (
+          <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm }}>
               <View style={{ width: 38, height: 38, borderRadius: 13, backgroundColor: `${colors.primary}20`, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="time-outline" size={19} color={colors.primary} /></View>
               <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
@@ -160,8 +164,13 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
             </View>
             <Text selectable style={[typography.body, { color: colors.textPrimary }]}>{item.text}</Text>
           </GlassCard>
-        ))}
-      </ScrollView>
+        )}
+        ListEmptyComponent={
+          loading ? <ActivityIndicator color={colors.primary} style={{ padding: spacing.xl }} />
+            : error ? <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text accessibilityRole="alert" style={[typography.body, { color: colors.textSecondary }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh scheduled messages"><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard>
+            : <View style={{ alignItems: 'center', paddingVertical: spacing.xl }}><Ionicons name="calendar-clear-outline" size={34} color={colors.textSecondary} /><Text style={[typography.bodyStrong, { color: colors.textPrimary, marginTop: spacing.sm }]}>Nothing scheduled yet</Text><Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>Messages you schedule will appear here until they are sent or cancelled.</Text></View>
+        }
+      />
     </SafeAreaView>
   );
 }
