@@ -82,5 +82,6 @@ test('status read markers are isolated by authenticated account and reset on acc
   assert.ok(screen.includes('setPrivacyModalOpen(false)'));
   assert.ok(screen.includes('reactionLocksRef.current.clear()'));
   assert.ok(screen.includes('setReplyText(\'\')'));
+  assert.ok(screen.includes('if (!userId) {\n      setLoading(false);'));
   assert.equal(screen.includes('zannychat.status-seen.v1'), false);
 });
