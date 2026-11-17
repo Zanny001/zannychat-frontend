@@ -84,7 +84,7 @@ test('removed web guests remain viewers after LiveKit publishing permission is r
 
 
 test('web LIVE creator sees incoming guest requests in an automatically refreshed actionable panel', () => {
-  assert.ok(web.includes("setInterval(refreshGuestRequests, 3500)"));
+  assert.ok(web.includes("setInterval(refreshGuestRequests, 5000)"));
   assert.ok(web.includes("if (hasNewRequest) setPanel('guestRequests')"));
   assert.ok(web.includes('Guest requests ('));
   assert.ok(web.includes("reviewGuestRequest(item.user_id, 'accepted')"));
@@ -162,4 +162,11 @@ test('web LIVE creator-only controls derive from the authenticated server role, 
 test('web LIVE synchronizes initial camera and microphone controls with each server-issued publisher token', () => {
   assert.ok(web.includes('setCamera(publisherMode);'));
   assert.ok(web.includes('setMic(publisherMode);'));
+});
+
+
+test('web LIVE guest request polling pauses while the tab is hidden and avoids duplicate requests', () => {
+  assert.ok(web.includes('const isDocumentVisible = () => typeof document === \'undefined\' || document.visibilityState !== \'hidden\''));
+  assert.ok(web.includes('!isDocumentVisible() || guestRequestsRefreshInFlight.current'));
+  assert.ok(web.includes('setInterval(refreshGuestRequests, 5000)'));
 });
