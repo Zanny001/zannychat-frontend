@@ -2,6 +2,8 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persistExpoPushToken } from './pushTokenDeviceStorage';
 import { supabase, SUPABASE_ENABLED } from './supabaseClient';
 import { updateCallStatus, getCallParticipantName } from './calls';
 import { getNotificationPrefs, loadNotificationPrefs } from './notificationPrefs';
@@ -109,6 +111,14 @@ export async function registerForPushNotifications(expectedUserId = null) {
         { onConflict: 'expo_push_token' }
       );
     if (tokenError) throw tokenError;
+
+    // Keep this device's token locally so device-local sign-out can revoke
+    // exactly this token without depending on a fresh Expo token request.
+    try {
+      await persistExpoPushToken({ storage: AsyncStorage, userId: authData.user.id, token });
+    } catch (storageError) {
+      console.warn('[push] device token could not be cached for sign-out cleanup:', storageError?.message || storageError);
+    }
 
     return token;
   } catch (err) {
