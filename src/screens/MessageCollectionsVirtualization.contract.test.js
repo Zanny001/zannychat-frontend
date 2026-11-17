@@ -8,6 +8,7 @@ const collections = [
   ['SavedMessagesScreen.js', 'saved messages'],
   ['DraftsScreen.js', 'drafts'],
   ['PinnedMessagesScreen.js', 'pinned messages'],
+  ['ChatFoldersScreen.js', 'chat folders'],
   ['SharedMediaScreen.js', 'shared media'],
 ];
 
@@ -45,4 +46,11 @@ test('shared media retains bounded pagination and virtualizes each media tab', (
   assert.match(shared, /initialNumToRender=\{12\}/);
   assert.match(shared, /windowSize=\{7\}/);
   assert.match(shared, /ListFooterComponent=/);
+});
+
+test('custom chat folders remain accessible in the virtualized list header and empty state', () => {
+  const folders = read('ChatFoldersScreen.js');
+  assert.match(folders, /ListHeaderComponent=/);
+  assert.match(folders, /ListEmptyComponent=/);
+  assert.match(folders, /Your folders/);
 });
