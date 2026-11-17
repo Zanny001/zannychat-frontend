@@ -21,6 +21,8 @@ test('creator profile clears account-owned studio data and invalidates requests 
   assert.ok(source.includes('refreshRequestRef.current += 1'));
   assert.ok(source.includes('const startingUser = await getCurrentUser().catch(() => null)'));
   assert.ok(source.includes('const latestUser = await getCurrentUser().catch(() => null)'));
+  assert.ok(source.includes('if (requestId !== refreshRequestRef.current) return;'));
+  assert.ok(source.includes('An auth event may have invalidated this refresh'));
   assert.ok(source.includes('latestUser?.id !== expectedUserId'));
   assert.ok(source.includes('if (requestId === refreshRequestRef.current) setLoading(false)'));
   assert.ok(source.includes('data?.subscription?.unsubscribe?.()'));
