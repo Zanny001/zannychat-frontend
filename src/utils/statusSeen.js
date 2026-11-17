@@ -10,13 +10,30 @@ export function markStatusSeen(currentIds, statusId) {
   return normalizeSeenStatusIds([...(Array.isArray(currentIds) ? currentIds : []), statusId.trim()]);
 }
 
-export async function readSeenStatusIds(storage) {
-  if (!storage || typeof storage.getItem !== 'function') return [];
+export function statusSeenStorageKey(userId) {
+  if (typeof userId !== 'string' || !userId.trim()) return null;
+  return `zannychat.status-seen.v2:${userId.trim()}`;
+}
+
+export async function readSeenStatusIds(storage, userId) {
+  const key = statusSeenStorageKey(userId);
+  if (!key || !storage || typeof storage.getItem !== 'function') return [];
   try {
-    const raw = await storage.getItem('zannychat.status-seen.v1');
+    const raw = await storage.getItem(key);
     return raw ? normalizeSeenStatusIds(JSON.parse(raw)) : [];
   } catch {
     return [];
+  }
+}
+
+export async function writeSeenStatusIds(storage, userId, ids) {
+  const key = statusSeenStorageKey(userId);
+  if (!key || !storage || typeof storage.setItem !== 'function') return false;
+  try {
+    await storage.setItem(key, JSON.stringify(normalizeSeenStatusIds(ids)));
+    return true;
+  } catch {
+    return false;
   }
 }
 
