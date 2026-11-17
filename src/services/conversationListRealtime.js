@@ -20,7 +20,11 @@ export function subscribeToConversationListEvents({ supabase, enabled = true, on
       schema: 'public',
       table: 'conversation_participants',
     }, onChange)
-    .subscribe();
+    .subscribe((status) => {
+      // Reconcile once the channel is live to close the fetch/subscribe race
+      // on screen focus; callers can treat this like any other invalidation.
+      if (status === 'SUBSCRIBED') onChange({ eventType: 'SUBSCRIBED' });
+    });
 
   return () => {
     if (typeof supabase.removeChannel === 'function') {
