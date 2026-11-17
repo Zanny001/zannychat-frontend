@@ -12,7 +12,7 @@ import Knot from '../components/Knot';
 import ActionSheet from '../components/ActionSheet';
 import { fetchConversations, subscribeToConversationListChanges, toggleFavorite, setConversationFlags, deleteConversationForCurrentUser, getCurrentUser } from '../services/api';
 import { subscribePresence } from '../services/presence';
-import { SUPABASE_ENABLED } from '../services/supabaseClient';
+import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { hexToRgba } from '../utils/color';
 import { filterConversations as filterChatList } from '../utils/filterConversations';
 import { filterByChatFolder } from '../utils/chatFolders';
@@ -58,6 +58,8 @@ export default function ChatListScreen({ navigation }) {
   const [conversationActionError, setConversationActionError] = useState('');
   const pendingConversationActions = useRef(new Set());
   const loadRequestRef = useRef(0);
+  const loadMoreRequestRef = useRef(0);
+  const activeUserIdRef = useRef(undefined);
 
 
   // Real presence: every "online" dot used to be mock data (the
@@ -68,16 +70,23 @@ export default function ChatListScreen({ navigation }) {
 
   const load = useCallback(async () => {
     const requestId = ++loadRequestRef.current;
+    const expectedUserId = activeUserIdRef.current;
+    if (SUPABASE_ENABLED && !expectedUserId) {
+      setConversations([]);
+      setInitialLoading(false);
+      return;
+    }
     setLoadError('');
     try {
       const { conversations: data, hasMore: more } = await fetchConversations({ limit: PAGE_SIZE, offset: 0 });
-      // A slower earlier focus/realtime refresh must not overwrite a newer list.
-      if (requestId === loadRequestRef.current) {
+      // A slower earlier focus/realtime refresh or previous account must not
+      // overwrite the active account's conversation list.
+      if (requestId === loadRequestRef.current && activeUserIdRef.current === expectedUserId) {
         setConversations(Array.isArray(data) ? data : []);
         setHasMore(Boolean(more));
       }
     } catch (error) {
-      if (requestId === loadRequestRef.current) {
+      if (requestId === loadRequestRef.current && activeUserIdRef.current === expectedUserId) {
         setLoadError(error?.message || 'Could not load your chats. Check your connection and try again.');
       }
       throw error;
@@ -86,19 +95,89 @@ export default function ChatListScreen({ navigation }) {
     }
   }, []);
 
+  const clearAccountScopedState = useCallback(() => {
+    loadRequestRef.current += 1;
+    loadMoreRequestRef.current += 1;
+    setConversations([]);
+    setStoryGroups([]);
+    setCustomFolders([]);
+    setOwnProfile(null);
+    setInitialLoading(true);
+    setHasMore(false);
+    setLoadingMore(false);
+    setLoadMoreError('');
+    setLoadError('');
+    setQuery('');
+    setActiveFilter('all');
+    setSheetFor(null);
+    setOnlineIds(new Set());
+    setDeleteTarget(null);
+    setDeleting(false);
+    setDeleteError('');
+    setConversationActionError('');
+  }, []);
+
+  useEffect(() => {
+    if (!SUPABASE_ENABLED || !supabase?.auth?.onAuthStateChange) return undefined;
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUserId = session?.user?.id || null;
+      if (activeUserIdRef.current === undefined) {
+        activeUserIdRef.current = nextUserId;
+        return;
+      }
+      if (activeUserIdRef.current === nextUserId) return;
+      activeUserIdRef.current = nextUserId;
+      clearAccountScopedState();
+      if (nextUserId) {
+        Promise.resolve().then(async () => {
+          const user = await getCurrentUser().catch(() => null);
+          if (activeUserIdRef.current !== nextUserId) return;
+          setOwnProfile(user || null);
+          const folders = await loadChatFolders(nextUserId).catch(() => []);
+          if (activeUserIdRef.current !== nextUserId) return;
+          setCustomFolders(folders);
+          await load();
+        }).catch(() => {
+          if (activeUserIdRef.current === nextUserId) setInitialLoading(false);
+        });
+      } else {
+        setInitialLoading(false);
+      }
+    });
+    return () => data?.subscription?.unsubscribe?.();
+  }, [clearAccountScopedState, load]);
+
   useFocusEffect(useCallback(() => {
-    load().catch(() => {});
     let alive = true;
     (async () => {
       try {
         const user = await getCurrentUser();
-        if (alive) setOwnProfile(user || null);
-        const folders = await loadChatFolders(user?.id || 'guest');
-        if (alive) setCustomFolders(folders);
-      } catch (_) {}
+        if (!alive) return;
+        const userId = user?.id || (SUPABASE_ENABLED ? null : 'guest');
+        if (activeUserIdRef.current !== undefined && activeUserIdRef.current !== userId) {
+          clearAccountScopedState();
+        }
+        activeUserIdRef.current = userId;
+        setOwnProfile(user || null);
+        const folders = await loadChatFolders(userId || 'guest');
+        if (!alive || activeUserIdRef.current !== userId) return;
+        setCustomFolders(folders);
+        await load();
+      } catch (_) {
+        if (alive) {
+          setOwnProfile(null);
+          setCustomFolders([]);
+          setConversations([]);
+          setInitialLoading(false);
+        }
+      }
     })();
-    return () => { alive = false; };
-  }, [load]));
+    return () => {
+      alive = false;
+      loadRequestRef.current += 1;
+      loadMoreRequestRef.current += 1;
+    };
+  }, [load, clearAccountScopedState]));
 
   // The chat-list story tray must use the signed-in account's own read
   // markers. The old call omitted userId, which made the helper return an
