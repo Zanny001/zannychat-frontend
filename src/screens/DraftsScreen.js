@@ -127,7 +127,7 @@ export default function DraftsScreen({ navigation }) {
             );
           }}
         />
-      )}lView>
+      )}
     </SafeAreaView>
   );
 }
