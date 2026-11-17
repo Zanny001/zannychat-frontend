@@ -26,13 +26,13 @@ class PresenceLifecycleRegressionTests(unittest.TestCase):
     def test_every_explicit_signout_path_stops_presence_before_auth_signout(self):
         source = self.read("src/services/api.js")
         self.assertEqual(source.count("stopPresence();"), 4)
-        self.assertIn("stopPresence();\\n  try {\\n    const signOutResult = await supabase.auth.signOut", source)
-        self.assertIn("stopPresence();\\n  const { error } = await supabase.auth.signOut({ scope: 'local' });", source)
-        self.assertIn("stopPresence();\\n  const { error } = await supabase.auth.signOut({ scope: 'global' });", source)
+        self.assertIn("stopPresence();\n  try {\n    const signOutResult = await supabase.auth.signOut", source)
+        self.assertIn("stopPresence();\n  const { error } = await supabase.auth.signOut({ scope: 'local' });", source)
+        self.assertIn("stopPresence();\n  const { error } = await supabase.auth.signOut({ scope: 'global' });", source)
 
     def test_auth_event_is_a_fallback_for_remote_or_external_signout(self):
         source = self.read("App.js")
-        self.assertIn("} else if (event === 'SIGNED_OUT') {\\n          stopPresence();", source)
+        self.assertIn("} else if (event === 'SIGNED_OUT') {\n          stopPresence();", source)
 
 
 if __name__ == "__main__":
