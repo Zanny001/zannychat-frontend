@@ -63,9 +63,9 @@ export default function PrivacySecurityScreen({ navigation }) {
         setBlocked(Array.isArray(entries) ? entries : []);
       }
       return requestId;
-    } catch (error) {
+    } catch {
       if (requestId === blockedRequestRef.current) setBlocked([]);
-      throw error;
+      return requestId;
     }
   }, []);
 
