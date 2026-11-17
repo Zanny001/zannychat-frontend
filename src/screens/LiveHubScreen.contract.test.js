@@ -102,3 +102,11 @@ test('LIVE hub prioritizes discovery and keeps broadcast setup available in a co
   assert.ok(screen.includes('Search LIVE titles or creators'));
   assert.ok(screen.includes('Clear LIVE search'));
 });
+
+
+test('LIVE Hub replay polling pauses when the screen is unfocused or the app is backgrounded', () => {
+  assert.ok(screen.includes('useFocusEffect(useCallback(() => {'));
+  assert.ok(screen.includes('AppState.currentState && AppState.currentState !== \'active\''));
+  assert.ok(screen.includes('pendingReplayPollStartedAt.current'));
+  assert.ok(screen.includes('return () => clearInterval(interval)'));
+});
