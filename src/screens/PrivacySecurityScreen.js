@@ -49,19 +49,20 @@ export default function PrivacySecurityScreen({ navigation }) {
       if (!SUPABASE_ENABLED || !supabase) {
         const entries = await fetchBlockedUsers();
         if (requestId === blockedRequestRef.current) setBlocked(Array.isArray(entries) ? entries : []);
-        return;
+        return requestId;
       }
       const { data: authData, error: authError } = await supabase.auth.getUser();
       const userId = authData?.user?.id || null;
       if (authError || !userId || (expectedUserId && userId !== expectedUserId)) {
         if (requestId === blockedRequestRef.current) setBlocked([]);
-        return;
+        return requestId;
       }
       const entries = await fetchBlockedUsers();
       const { data: latestAuthData } = await supabase.auth.getUser();
       if (requestId === blockedRequestRef.current && latestAuthData?.user?.id === userId) {
         setBlocked(Array.isArray(entries) ? entries : []);
       }
+      return requestId;
     } catch (error) {
       if (requestId === blockedRequestRef.current) setBlocked([]);
       throw error;
@@ -114,8 +115,10 @@ export default function PrivacySecurityScreen({ navigation }) {
     useCallback(() => {
       setLoading(true);
       refreshBlockedUsers()
-        .catch(() => {})
-        .finally(() => setLoading(false));
+        .catch(() => null)
+        .then((requestId) => {
+          if (requestId === blockedRequestRef.current) setLoading(false);
+        });
       refreshAuthProviders().catch(() => {});
     }, [refreshAuthProviders, refreshBlockedUsers])
   );
@@ -137,8 +140,14 @@ export default function PrivacySecurityScreen({ navigation }) {
         setDeletePassword('');
         setDeleteConfirmation('');
         setLoading(Boolean(nextUserId));
-        if (nextUserId) Promise.resolve().then(() => refreshBlockedUsers(nextUserId).catch(() => {}));
-        else setLoading(false);
+        if (nextUserId) {
+          Promise.resolve()
+            .then(() => refreshBlockedUsers(nextUserId))
+            .catch(() => null)
+            .then((requestId) => {
+              if (requestId === blockedRequestRef.current && authUserIdRef.current === nextUserId) setLoading(false);
+            });
+        } else setLoading(false);
       }
       // A same-user Google reauthentication still needs to consume the
       // account-bound one-time marker saved before OAuth navigation.
