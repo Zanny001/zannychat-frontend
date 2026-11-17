@@ -360,3 +360,15 @@ Call release remains gated on two-account and multi-device tests: remote audio i
 | Events | Previous service fetched all past and future events without a limit, then filtered upcoming events on-device. PR #154 adds future-only, 40-item ascending keyset pages and FlatList rendering with RSVP state. | CI pending |
 
 The Channels directory is the next dedicated collection-performance task; its moderator/report/comment actions remain role-scoped and should not be simplified by removing server-side permission checks.
+
+
+### Screens 29–32 — group and contact flows
+
+| Experience | Source-level finding | Status |
+|---|---|---|
+| Create Group | Contact selection already uses FlatList; server validates unique participants and invite permissions. | Source pass complete; multi-account group creation pending |
+| Group Management | Group invite history is capped at 50, but the authenticated roster endpoint returns all members without pagination and the UI previously mapped all members in ScrollView. PR #155 virtualizes the roster while retaining admin-only edits, promotion/removal and self-leave. | UI CI pending; backend cursor pagination remains open |
+| Join Group | Static invite acceptance form; no unbounded collection. | Source pass complete; expired/revoked/max-use invite acceptance pending |
+| QR Contact | Static QR share/scan surface; no unbounded collection. | Source pass complete; camera permission and cross-account scan acceptance pending |
+
+Group roster pagination must be implemented on the trusted backend and must verify the caller's group membership before returning each page. Client-side filtering is not an authorization boundary.
