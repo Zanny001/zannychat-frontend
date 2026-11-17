@@ -394,6 +394,13 @@ test('active LIVE room disconnects and clears publisher controls when auth owner
   assert.ok(screen.includes('setCameraEnabled(false)'));
   assert.ok(screen.includes('setMicrophoneEnabled(false)'));
   assert.ok(screen.includes('setReplay(null)'));
+  assert.ok(screen.includes('setDraft(\'\')'));
+  assert.ok(screen.includes('setBusy(false)'));
+  assert.ok(screen.includes('setReplayBusy(false)'));
+  assert.ok(screen.includes('seenGuestRequestIds.current.clear()'));
+  assert.ok(screen.includes('seenReactionIds.current.clear()'));
+  assert.ok(screen.includes('setReports([])'));
+  assert.ok(screen.includes('setShowReports(false)'));
   assert.ok(screen.includes('Your account changed. You left this LIVE.'));
   assert.ok(screen.includes('if (navigation?.canGoBack?.()) navigation.goBack()'));
   assert.ok(screen.includes('data?.subscription?.unsubscribe?.()'));
