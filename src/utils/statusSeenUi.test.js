@@ -3,11 +3,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const screen = readFileSync(new URL('../screens/StatusUpdatesScreen.js', import.meta.url), 'utf8');
+const seenStorage = readFileSync(new URL('./statusSeen.js', import.meta.url), 'utf8');
 
 test('Status feed loads local seen state and marks opened statuses as seen', () => {
-  assert.match(screen, /readSeenStatusIds\(AsyncStorage\)/);
+  assert.match(screen, /readSeenStatusIds\(AsyncStorage, userId\)/);
   assert.match(screen, /markStatusSeen\(seenStatusIdsRef\.current, item\.id\)/);
-  assert.match(screen, /zannychat\.status-seen\.v1/);
+  assert.match(seenStorage, /STATUS_SEEN_STORAGE_PREFIX = 'zannychat\.status-seen\.v1\.'/);
+  assert.match(screen, /writeSeenStatusIds\(AsyncStorage, myProfile\.id, next\)/);
 });
 
 test('grouped contact stories expose accessible unread counts', () => {
@@ -28,7 +30,7 @@ test('own status groups retain latest-item behavior', () => {
 
 test('status refresh reconciles persisted read markers against active statuses', () => {
   assert.match(screen, /retainActiveSeenStatusIds\(seenStatusIdsRef\.current, rows\)/);
-  assert.match(screen, /AsyncStorage\.setItem\('zannychat\.status-seen\.v1', JSON\.stringify\(activeSeenIds\)\)/);
+  assert.match(screen, /writeSeenStatusIds\(AsyncStorage, myProfile\.id, activeSeenIds\)/);
 });
 
 
