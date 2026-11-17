@@ -79,3 +79,11 @@ test('chat list optimistic actions and deletes cannot restore old-account conver
   assert.ok(screen.includes('if (activeUserIdRef.current === expectedUserId) setDeleting(false)'));
   assert.ok(screen.includes('if (activeUserIdRef.current === expectedUserId) pendingConversationActions.current.delete(actionKey)'));
 });
+
+test('inbox conversation list uses a bounded virtualized render window', () => {
+  assert.ok(screen.includes('initialNumToRender={12}'));
+  assert.ok(screen.includes('maxToRenderPerBatch={10}'));
+  assert.ok(screen.includes('updateCellsBatchingPeriod={50}'));
+  assert.ok(screen.includes('windowSize={9}'));
+  assert.ok(screen.includes('onEndReached={handleLoadMore}'));
+});
