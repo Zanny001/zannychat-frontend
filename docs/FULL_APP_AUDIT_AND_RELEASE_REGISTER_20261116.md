@@ -305,3 +305,14 @@ The first 11 screens now have a source-level performance and interaction pass. T
 - The screen previously rendered all recent status groups and friend avatars through ScrollView mapping. PR #151 replaces the vertical recent-status collection and horizontal friend rail with FlatList virtualization; the story composer, discover shelf and privacy surfaces are preserved.
 - Remaining performance/privacy work: `listActiveStatuses()` still retrieves the active status set without cursor pagination; the status privacy contact picker and private-reply list still use ScrollView mapping. These are explicit follow-up items, not marked complete.
 - Real-device photo/video playback, audience isolation, status expiry, notification and multi-account acceptance remain open.
+
+
+### Screens 13–15 — profile sequence
+
+| Sequence | Experience | Source-level finding | Status |
+|---:|---|---|---|
+| 13 | Own Profile | Static profile dashboard with theme-aware surfaces and 48-point primary actions; no unbounded feed collection found. | Source pass complete; visual/device review pending |
+| 14 | Peer Profile | Public profile uses a bounded detail list, 76-point quick-action tiles and 48-point photo-viewer close control. | Source pass complete; privacy and media acceptance pending |
+| 15 | Edit Profile | Form uses keyboard-aware ScrollView with handled taps, profile/cover media upload, visibility controls, preview and explicit save state. | Source pass complete; upload and account-privacy acceptance pending |
+
+These three profile surfaces remain separate: public identity, another person's public profile and private profile editing. Creator Studio and private analytics are not merged into the public profile.
