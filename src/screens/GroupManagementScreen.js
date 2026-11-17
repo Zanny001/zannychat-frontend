@@ -120,8 +120,16 @@ ${invite.token}` });
     {loading ? <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} /> : error ? <View style={{ padding: spacing.lg }}>
       <Text style={[typography.body, { color: colors.textSecondary }]}>{error}</Text>
       <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading group members" style={{ paddingVertical: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity>
-    </View> : <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xl }}>
-      <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
+    </View> : <FlatList
+      data={visibleMembers}
+      keyExtractor={(member) => String(member.id)}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+      initialNumToRender={12}
+      maxToRenderPerBatch={12}
+      windowSize={7}
+      contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xl, flexGrow: 1 }}
+      ListHeaderComponent={<View><GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Manage members</Text>
         <Text style={[typography.caption, { color: colors.textSecondary }]}>{isAdmin ? 'You are a group admin. Changes are verified by the server.' : 'You can review members and leave the group. Only admins can change other members.'}</Text>
       </GlassCard>
@@ -167,11 +175,11 @@ ${invite.token}` });
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
           {[['all', 'Everyone'], ['admins', 'Admins'], ['members', 'Members']].map(([value, label]) => <TouchableOpacity key={value} onPress={() => setMemberRoleFilter(value)} accessibilityRole="radio" accessibilityLabel={`Show ${label.toLowerCase()} in group members`} accessibilityState={{ checked: memberRoleFilter === value }} style={[actionStyle, { backgroundColor: memberRoleFilter === value ? colors.primary : 'transparent', borderColor: memberRoleFilter === value ? colors.primary : colors.border }]}><Text style={[typography.caption, { color: memberRoleFilter === value ? (colors.onPrimary) : colors.textPrimary }]}>{label}</Text></TouchableOpacity>)}
         </View>
-      </GlassCard>
-      {visibleMembers.map((member) => {
+      </GlassCard></View>}
+      renderItem={({ item: member }) => {
         const isSelf = member.id === currentUserId;
         const busy = busyId === member.id;
-        return <GlassCard key={member.id} style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+        return <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
             <Avatar name={member.profile?.name || 'Member'} imageUrl={member.profile?.avatarUrl} size={42} />
             <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
@@ -194,9 +202,9 @@ ${invite.token}` });
             </TouchableOpacity> : null}
           </View> : null}
         </GlassCard>;
-      })}
-      {!visibleMembers.length ? <Text style={[typography.caption, { color: colors.textSecondary, paddingVertical: spacing.md }]}>{members.length ? 'No members match your search and filter.' : 'No group members were returned.'}</Text> : null}
-      <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Member changes require a working backend session and migration 0019. If an action fails, your membership has not been changed by this screen.</Text>
-    </ScrollView>}
+      }}
+      ListEmptyComponent={<Text style={[typography.caption, { color: colors.textSecondary, paddingVertical: spacing.md }]}>{members.length ? 'No members match your search and filter.' : 'No group members were returned.'}</Text>}
+      ListFooterComponent={<Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>{footer.replace(/^<Text[^>]*>|<\/Text>$/g,'')}</Text>}
+    />}
   </SafeAreaView>;
 }
