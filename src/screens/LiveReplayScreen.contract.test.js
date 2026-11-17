@@ -53,3 +53,13 @@ test('private replay playback is revoked from the visible player when the auth o
   assert.ok(screen.includes('}, [replayId, attempt, player, currentUserId])'));
   assert.ok(screen.includes('data?.subscription?.unsubscribe?.()'));
 });
+
+
+test('Supabase auth events are the single source for initial and changed replay identity', () => {
+  assert.ok(screen.includes('if (SUPABASE_ENABLED && supabase?.auth?.onAuthStateChange)'));
+  assert.ok(screen.includes('Supabase emits INITIAL_SESSION through this same listener'));
+  assert.ok(screen.includes('// Mock mode has no Supabase auth event source.'));
+  const mockFallback = screen.indexOf('// Mock mode has no Supabase auth event source.');
+  const identityLookup = screen.indexOf('getCurrentUser().then((user) =>');
+  assert.ok(mockFallback >= 0 && identityLookup > mockFallback);
+});
