@@ -25,3 +25,10 @@ test('profile actions use accessible Pressable controls with 48pt targets', () =
   assert.ok(profile.includes('accessibilityHint='));
   assert.ok(profile.includes('minHeight: 48'));
 });
+
+
+test('profile refresh clears previous account data before loading and on failure', () => {
+  assert.ok(profile.includes('setUser(null)'));
+  assert.ok(profile.includes('setLiveImpact(null)'));
+  assert.ok(profile.includes('// Do not keep another account'));
+});
