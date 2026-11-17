@@ -379,3 +379,58 @@ test('web LIVE polling pauses in hidden tabs and prevents overlapping reads', ()
   assert.ok(web.includes('setInterval(refreshGuestRequests, 5000)'));
   assert.ok(web.includes('if (!active || !isDocumentVisible() || roomRef.current?.state !== \'connected\') return;'));
 });
+
+
+test('active LIVE room disconnects and clears publisher controls when auth owner changes', () => {
+  assert.ok(screen.includes("import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient'"));
+  assert.ok(screen.includes('const liveAuthOwnerRef = useRef(undefined)'));
+  assert.ok(screen.includes('const connectionRequestRef = useRef(0)'));
+  assert.ok(screen.includes('supabase.auth.onAuthStateChange'));
+  assert.ok(screen.includes('liveAuthOwnerRef.current === undefined'));
+  assert.ok(screen.includes('liveAuthOwnerRef.current === nextUserId'));
+  assert.ok(screen.includes('connectionRequestRef.current += 1'));
+  assert.ok(screen.includes('endedRef.current = true'));
+  assert.ok(screen.includes('setConnection(null)'));
+  assert.ok(screen.includes('setCameraEnabled(false)'));
+  assert.ok(screen.includes('setMicrophoneEnabled(false)'));
+  assert.ok(screen.includes('setReplay(null)'));
+  assert.ok(screen.includes('setDraft(\'\')'));
+  assert.ok(screen.includes('setBusy(false)'));
+  assert.ok(screen.includes('setReplayBusy(false)'));
+  assert.ok(screen.includes('seenGuestRequestIds.current.clear()'));
+  assert.ok(screen.includes('seenReactionIds.current.clear()'));
+  assert.ok(screen.includes('setReports([])'));
+  assert.ok(screen.includes('setShowReports(false)'));
+  assert.ok(screen.includes('Your account changed. You left this LIVE.'));
+  assert.ok(screen.includes('if (navigation?.canGoBack?.()) navigation.goBack()'));
+  assert.ok(screen.includes('data?.subscription?.unsubscribe?.()'));
+});
+
+test('an in-flight LIVE join cannot restore the old account connection after auth changes', () => {
+  assert.ok(screen.includes('const requestId = ++connectionRequestRef.current'));
+  assert.ok(screen.includes('requestId === connectionRequestRef.current'));
+  assert.ok(screen.includes('if (connectionRequestRef.current === requestId) connectionRequestRef.current += 1'));
+});
+
+
+test('native and web LIVE rooms disconnect and clear account-owned state on auth changes', () => {
+  const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  for (const source of [screen, web]) {
+    assert.ok(source.includes("import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient'"));
+    assert.ok(source.includes('supabase.auth.onAuthStateChange'));
+    assert.ok(source.includes('const liveAuthOwnerRef = useRef(undefined)'));
+    assert.ok(source.includes('const connectionRequestRef = useRef(0)'));
+    assert.ok(source.includes('connectionRequestRef.current += 1'));
+    assert.ok(source.includes('endedRef.current = true'));
+    assert.ok(source.includes('setConnection(null)'));
+    assert.ok(source.includes('setReplay(null)'));
+    assert.ok(source.includes('setComments([])'));
+    assert.ok(source.includes('setGuestRequests([])'));
+    assert.ok(source.includes('Your account changed. You left this LIVE.'));
+    assert.ok(source.includes('requestId === connectionRequestRef.current'));
+    assert.ok(source.includes('data?.subscription?.unsubscribe?.()'));
+  }
+  assert.ok(web.includes('roomRef.current?.disconnect()'));
+  assert.ok(web.includes('setRemoteVideoTracks([])'));
+  assert.ok(web.includes('setRemoteAudioParticipants([])'));
+});
