@@ -23,7 +23,9 @@ class PresenceLifecycleRegressionTests(unittest.TestCase):
     def test_chat_list_uses_subscription_owned_presence_lifecycle(self):
         source = self.read("src/screens/ChatListScreen.js")
         self.assertIn("import { subscribePresence } from '../services/presence';", source)
-        self.assertIn("useEffect(() => subscribePresence(setOnlineIds), []);", source)
+        self.assertIn("useEffect(() => subscribePresence((ids) => {", source)
+        self.assertIn("activeUserIdRef.current === ownProfile?.id", source)
+        self.assertIn("}), [ownProfile?.id]);", source)
         self.assertNotIn("startPresence", source)
 
     def test_every_explicit_signout_path_stops_presence_before_auth_signout(self):
