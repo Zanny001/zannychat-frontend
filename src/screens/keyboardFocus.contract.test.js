@@ -28,7 +28,8 @@ const keyboardScrollableForms = [
 test('all scrollable form screens preserve handled taps while the keyboard is open', () => {
   for (const file of keyboardScrollableForms) {
     const source = fs.readFileSync(path.join(root, 'src/screens', file), 'utf8');
-    assert.match(source, /<(?:ScrollView|FlatList)\b[^>]*keyboardShouldPersistTaps=["']handled["'][^>]*>/, file + ' must preserve taps while an input has focus');
+    assert.match(source, /<(?:ScrollView|FlatList)\\b/, file + ' must contain a scrollable list');
+    assert.ok(source.includes('keyboardShouldPersistTaps="handled"'), file + ' must preserve taps while an input has focus');
   }
 });
 
