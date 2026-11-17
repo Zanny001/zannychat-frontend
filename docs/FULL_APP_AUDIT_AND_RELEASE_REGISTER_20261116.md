@@ -200,3 +200,12 @@ The current replay budget is five minutes per recording, 50 minutes total per ca
 - The stale duplicate PR #123 was closed as superseded by merged PR #130; the older v2 storage-key implementation was not merged over the current main-branch account-scoped storage contract.
 - PR #135 is open and under CI. It closes an additional shared-device privacy gap by clearing account-specific Status privacy recipients, contact lists, reply drafts/pagination, reaction locks and overlays on account switch. This supplements (not replaces) the already merged account-scoped Status seen markers and duration preferences.
 - PR #134's documentation checkpoint has been refreshed to include the above changes; its Netlify preview reached Ready. The production Netlify deploy remains credit-limited, and Vercel preview builds are daily-quota limited. No paid upgrade or production deployment is claimed.
+
+
+### Production deploy evidence — 2026-11-17 09:09 UTC
+
+- Netlify site `zannychat` reports a current published production deployment in state `ready`: deploy `6af9a18fac2953aa5dda53f5`, created 2026-11-15 12:11:59 UTC, branch `main`, commit `27d76827e2259d14e00e2717fd0b8ebc35b63011`.
+- The current GitHub `main` is 57 commits ahead of that production commit. Therefore Netlify is reachable and serving a Ready build, but it is materially stale relative to the latest merged source. Do not describe recent fixes as production-live until a new main deployment is ready and smoke-tested.
+- The latest Netlify PR previews for PR #135 (Status account-switch UI reset) and PR #137 (ChatList story read-marker account scope) both reached `ready`; preview readiness does not promote either change to production.
+- PR #137 is under Advanced Calling and Premium LIVE CI. It corrects a missed call site: `ChatListScreen` omitted the required account ID when reading Status seen markers, causing the story tray to treat all statuses as unseen. The PR scopes the read to `ownProfile.id` and invalidates stale feed loads on profile change.
+- PR #135 is under Advanced Calling CI; its Premium LIVE and frontend quality/unit/integrity workflow passed. Its Vercel GitHub bot reports a Ready preview for the exact commit, but Vercel also reports the daily Hobby deployment cap exceeded. The intended production alias is still unverified.
