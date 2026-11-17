@@ -10,7 +10,7 @@ function makeRealtimeClient() {
       subscriptions.push({ type, filter, callback });
       return this;
     },
-    subscribe() { return this; },
+    subscribe(callback) { callback?.('SUBSCRIBED'); return this; },
   };
   return {
     subscriptions,
@@ -36,7 +36,8 @@ test('inbox subscribes to message and participant changes and removes the channe
     ['postgres_changes', 'conversation_participants'],
   ]);
   client.subscriptions[0].callback({ eventType: 'INSERT', new: { conversation_id: 'c1' } });
-  assert.equal(events.length, 1);
+  assert.equal(events.length, 2);
+  assert.equal(events[0].eventType, 'SUBSCRIBED');
   unsubscribe();
   assert.deepEqual(client.removed, [client.channelInstance]);
 });
