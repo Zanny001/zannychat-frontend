@@ -190,7 +190,7 @@ test('LIVE video tiles use a responsive moderate 16:9 frame instead of oversized
 
 
 test('LIVE creator receives continuously refreshed in-screen guest requests without relying on push notifications', () => {
-  assert.ok(screen.includes("setInterval(refreshGuestRequests, 3500)"));
+  assert.ok(screen.includes("setInterval(refreshGuestRequests, 5000)"));
   assert.ok(screen.includes('if (hasNewRequest) setShowGuestRequests(true)'));
   assert.ok(screen.includes('Guest requests ({guestRequests.length})'));
   assert.ok(screen.includes("onReviewGuestRequest(item.user_id, 'accepted')"));
@@ -351,4 +351,17 @@ test('web Creator Studio can appoint and remove moderators with creator-only sta
   assert.ok(webSource.includes("method: makeModerator ? 'POST' : 'DELETE'"));
   assert.ok(webSource.includes("label={item.moderator ? 'Remove moderator' : 'Make moderator'}"));
   assert.ok(webSource.includes("panel === 'stage' && creatorMode"));
+});
+
+
+test('LIVE polling pauses in the background, avoids overlapping reads and uses gentler intervals', () => {
+  assert.ok(screen.includes('const isAppForeground = () => !AppState.currentState || AppState.currentState === \'active\''));
+  assert.ok(screen.includes('if (!stream?.id || !isAppForeground() || commentsRefreshInFlight.current) return;'));
+  assert.ok(screen.includes('if (!active || !isAppForeground() || guestStatusRefreshInFlight.current) return;'));
+  assert.ok(screen.includes('if (!active || !isAppForeground() || guestRequestsRefreshInFlight.current) return;'));
+  assert.ok(screen.includes('if (!active || !isAppForeground() || studioParticipantsRefreshInFlight.current) return;'));
+  assert.ok(screen.includes('setInterval(refreshComments, 6000)'));
+  assert.ok(screen.includes('setInterval(checkApproval, 6000)'));
+  assert.ok(screen.includes('setInterval(refreshGuestRequests, 5000)'));
+  assert.ok(screen.includes('if (!active || !isAppForeground() || room.state !== \'connected\' || !streamId) return;'));
 });
