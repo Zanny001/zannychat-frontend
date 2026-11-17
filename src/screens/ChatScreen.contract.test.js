@@ -126,6 +126,7 @@ test('chat history and outbox work cannot publish or retry after the authenticat
   assert.ok(screen.includes('requestId !== olderLoadRequestRef.current'));
   assert.ok(screen.includes('activeUserIdRef.current !== expectedUserId'));
   assert.ok(screen.includes('activeUserIdRef.current !== myUserId)) return'));
+  assert.ok(screen.includes('sendMessage(conversation.id, item.text, item.replyToId, item.requestId, expectedUserId)'));
   assert.ok(screen.includes('messageLoadRequestRef.current += 1'));
   assert.ok(screen.includes('olderLoadRequestRef.current += 1'));
 });
