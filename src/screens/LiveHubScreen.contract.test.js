@@ -133,3 +133,21 @@ test('pending LIVE replay polling refuses to apply results after an account swit
   assert.ok(screen.includes('if (!expectedUserId || !pending.length) return'));
   assert.ok(screen.includes('if (latestUser?.id !== expectedUserId) return'));
 });
+
+
+test('LIVE hub clears private state immediately when Supabase auth owner changes', () => {
+  assert.ok(screen.includes("import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient'"));
+  assert.ok(screen.includes('supabase.auth.onAuthStateChange'));
+  assert.ok(screen.includes('const nextUserId = session?.user?.id || null'));
+  assert.ok(screen.includes('if (activeUserIdRef.current === nextUserId) return'));
+  assert.ok(screen.includes('refreshRequestRef.current += 1'));
+  assert.ok(screen.includes('setCurrentUserId(nextUserId)'));
+  assert.ok(screen.includes('setInvitations([])'));
+  assert.ok(screen.includes('setReplays([])'));
+  assert.ok(screen.includes('setSelectedInvitees([])'));
+  assert.ok(screen.includes('setTitle(\'\')'));
+  assert.ok(screen.includes("setVisibility('public')"));
+  assert.ok(screen.includes('setShowComposer(false)'));
+  assert.ok(screen.includes('if (nextUserId) Promise.resolve().then(() => refresh())'));
+  assert.ok(screen.includes('data?.subscription?.unsubscribe?.()'));
+});
