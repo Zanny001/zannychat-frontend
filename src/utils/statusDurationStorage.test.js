@@ -8,9 +8,14 @@ import {
 } from './statusDurationStorage.js';
 
 test('normalizes duration preferences and clamps values to supported bounds', () => {
-  assert.deepEqual(normalizeStatusDurationPreferences({ text: 1000, image: 20000, video: 999999 }), {
+  assert.deepEqual(normalizeStatusDurationPreferences({ text: 1000, image: 20000, video: 999999, }), {
     text: 5000,
     image: 20000,
+    video: 60000,
+  });
+  assert.deepEqual(normalizeStatusDurationPreferences({ text: null, image: '', video: 'bad' }), {
+    text: 10000,
+    image: 15000,
     video: 60000,
   });
 });
