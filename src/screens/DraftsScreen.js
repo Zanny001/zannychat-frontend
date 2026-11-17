@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { SafeAreaView, ScrollView, View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView, FlatList, View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
@@ -70,57 +70,64 @@ export default function DraftsScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Drafts" subtitle="Unsent messages on this device" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl }}>
-        <GlassCard glow style={{ marginBottom: spacing.md }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ width: 44, height: 44, borderRadius: 15, backgroundColor: `${colors.primary}20`, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="document-text-outline" size={22} color={colors.primary} />
-            </View>
-            <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.md }}>
-              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Pick up where you left off</Text>
-              <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>Drafts stay on this device and do not sync across devices.</Text>
-            </View>
-          </View>
+      {loading ? (
+        <View style={{ alignItems: 'center', paddingVertical: spacing.xxl }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Finding your drafts…</Text></View>
+      ) : error && drafts.length === 0 ? (
+        <GlassCard style={{ margin: spacing.md }}>
+          <Text accessibilityRole="alert" style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{error}</Text>
+          <TouchableOpacity onPress={load} accessibilityRole="button" accessibilityLabel="Retry loading drafts" style={{ minHeight: 48, alignSelf: 'center', marginTop: spacing.md, backgroundColor: colors.primary, borderRadius: radii.pill, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}><Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Try again</Text></TouchableOpacity>
         </GlassCard>
-
-        {loading ? (
-          <View style={{ alignItems: 'center', paddingVertical: spacing.xxl }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Finding your drafts…</Text></View>
-        ) : error && drafts.length === 0 ? (
-          <GlassCard>
-            <Text accessibilityRole="alert" style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{error}</Text>
-            <TouchableOpacity onPress={load} accessibilityRole="button" accessibilityLabel="Retry loading drafts" style={{ minHeight: 48, alignSelf: 'center', marginTop: spacing.md, backgroundColor: colors.primary, borderRadius: radii.pill, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}><Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Try again</Text></TouchableOpacity>
-          </GlassCard>
-        ) : drafts.length === 0 ? (
-          <View style={{ alignItems: 'center', paddingHorizontal: spacing.xl, paddingVertical: spacing.xxl }}>
-            <View style={{ width: 68, height: 68, borderRadius: 24, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="checkmark-done-outline" size={30} color={colors.textSecondary} /></View>
-            <Text style={[typography.heading, { color: colors.textPrimary, marginTop: spacing.md }]}>All caught up</Text>
-            <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>Unsent messages you write will appear here automatically.</Text>
-          </View>
-        ) : (
-          <View>
-            {error ? <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.sm }]}>{error}</Text> : null}
-            {drafts.map((draft) => {
-          const conversation = conversations.find((item) => item.id === draft.conversationId);
-          const title = conversation?.participant?.name || conversation?.name || 'Conversation';
-          return (
-            <GlassCard key={draft.id} style={{ marginBottom: spacing.sm }}>
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                <TouchableOpacity onPress={() => openDraft(draft)} accessibilityRole="button" accessibilityLabel={`Continue draft for ${title}`} style={{ flex: 1, minHeight: 64, flexDirection: 'row', alignItems: 'flex-start' }}>
-                  <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: `${colors.accent}18`, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.accent} /></View>
-                  <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.md }}>
-                    <Text style={[typography.bodyStrong, { color: colors.textPrimary }]} numberOfLines={1}>{title}</Text>
-                    <Text style={[typography.body, { color: colors.textSecondary, marginTop: 5 }]} numberOfLines={3}>{draft.text}</Text>
-                    <Text style={[typography.caption, { color: colors.primary, marginTop: spacing.sm }]}>{updatedLabel(draft.updatedAt).toUpperCase()}  ·  CONTINUE DRAFT</Text>
+      ) : (
+        <FlatList
+          data={drafts}
+          keyExtractor={(draft) => String(draft.id)}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, flexGrow: 1 }}
+          ListHeaderComponent={
+            <View>
+              <GlassCard glow style={{ marginBottom: spacing.md }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={{ width: 44, height: 44, borderRadius: 15, backgroundColor: `${colors.primary}20`, alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name="document-text-outline" size={22} color={colors.primary} />
                   </View>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => confirmDelete(draft)} accessibilityRole="button" accessibilityLabel={`Delete draft for ${title}`} hitSlop={8} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', marginLeft: spacing.xs }}><Ionicons name="trash-outline" size={18} color={colors.danger} /></TouchableOpacity>
-              </View>
-            </GlassCard>
-          );
-            })}
-          </View>
-        )}
-      </ScrollView>
+                  <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.md }}>
+                    <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Pick up where you left off</Text>
+                    <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>Drafts stay on this device and do not sync across devices.</Text>
+                  </View>
+                </View>
+              </GlassCard>
+              {error ? <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.sm }]}>{error}</Text> : null}
+            </View>
+          }
+          ListEmptyComponent={
+            <View style={{ alignItems: 'center', paddingHorizontal: spacing.xl, paddingVertical: spacing.xxl }}>
+              <View style={{ width: 68, height: 68, borderRadius: 24, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="checkmark-done-outline" size={30} color={colors.textSecondary} /></View>
+              <Text style={[typography.heading, { color: colors.textPrimary, marginTop: spacing.md }]}>All caught up</Text>
+              <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>Unsent messages you write will appear here automatically.</Text>
+            </View>
+          }
+          renderItem={({ item: draft }) => {
+            const conversation = conversations.find((item) => item.id === draft.conversationId);
+            const title = conversation?.participant?.name || conversation?.name || 'Conversation';
+            return (
+              <GlassCard style={{ marginBottom: spacing.sm }}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                  <TouchableOpacity onPress={() => openDraft(draft)} accessibilityRole="button" accessibilityLabel={`Continue draft for ${title}`} style={{ flex: 1, minHeight: 64, flexDirection: 'row', alignItems: 'flex-start' }}>
+                    <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: `${colors.accent}18`, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.accent} /></View>
+                    <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.md }}>
+                      <Text style={[typography.bodyStrong, { color: colors.textPrimary }]} numberOfLines={1}>{title}</Text>
+                      <Text style={[typography.body, { color: colors.textSecondary, marginTop: 5 }]} numberOfLines={3}>{draft.text}</Text>
+                      <Text style={[typography.caption, { color: colors.primary, marginTop: spacing.sm }]}>{updatedLabel(draft.updatedAt).toUpperCase()}  ·  CONTINUE DRAFT</Text>
+                    </View>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => confirmDelete(draft)} accessibilityRole="button" accessibilityLabel={`Delete draft for ${title}`} hitSlop={8} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', marginLeft: spacing.xs }}><Ionicons name="trash-outline" size={18} color={colors.danger} /></TouchableOpacity>
+                </View>
+              </GlassCard>
+            );
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }
