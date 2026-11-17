@@ -295,3 +295,13 @@ No paid-plan upgrade, production database mutation, blanket RLS change, object d
 | 11 | Chat Appearance | Canvas choices are a small fixed settings list; ScrollView is appropriate. Preview clearly states appearance changes do not modify message content. | Source pass complete |
 
 The first 11 screens now have a source-level performance and interaction pass. This does not replace the planned individual visual review of spacing, safe areas, contrast, light/dark/custom palette behaviour, keyboard handling, accessibility and real-device presentation.
+
+
+### Screen 12 — Stories / Status Updates
+
+- The current screen already prioritises the signed-in user's profile avatar for "My status", falling back to the user's own image story only when no profile picture is available. This preserves the previously requested profile-picture behaviour.
+- Status composition supports text/photo/video, 30-second video and 50 MB media limits, 6/12/24/48-hour expiry, contacts/selected/only-me audiences, excluded contacts, muted accounts, reactions, private replies and per-status viewer counts.
+- The current service applies client-side visibility filtering as defence in depth while database RLS and recipient policies remain the security boundary.
+- The screen previously rendered all recent status groups and friend avatars through ScrollView mapping. PR #151 replaces the vertical recent-status collection and horizontal friend rail with FlatList virtualization; the story composer, discover shelf and privacy surfaces are preserved.
+- Remaining performance/privacy work: `listActiveStatuses()` still retrieves the active status set without cursor pagination; the status privacy contact picker and private-reply list still use ScrollView mapping. These are explicit follow-up items, not marked complete.
+- Real-device photo/video playback, audience isolation, status expiry, notification and multi-account acceptance remain open.
