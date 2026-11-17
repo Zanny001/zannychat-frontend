@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, RefreshControl, ScrollView, ActivityIndicator, Modal } from 'react-native';
+import { AppState, View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, RefreshControl, ScrollView, ActivityIndicator, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useTheme } from '../theme/ThemeContext';
@@ -124,15 +124,20 @@ export default function ChatListScreen({ navigation }) {
     let active = true;
     let refreshTimer = null;
     const unsubscribe = subscribeToConversationListChanges(() => {
+      if (AppState.currentState && AppState.currentState !== 'active') return;
       if (refreshTimer) clearTimeout(refreshTimer);
       refreshTimer = setTimeout(() => {
         refreshTimer = null;
         if (active) load().catch(() => {});
       }, 250);
     });
+    const appStateSubscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && active) load().catch(() => {});
+    });
     return () => {
       active = false;
       if (refreshTimer) clearTimeout(refreshTimer);
+      appStateSubscription?.remove?.();
       unsubscribe();
     };
   }, [load]));
