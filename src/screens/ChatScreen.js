@@ -57,7 +57,6 @@ import {
   uploadVoiceNote,
   sendAttachment,
   markConversationRead,
-  fetchParticipantReadState,
   subscribeToParticipantUpdates,
   markMessagesDelivered,
   fetchMessageDeliveryState,
@@ -380,12 +379,9 @@ export default function ChatScreen({ route, navigation }) {
   // to update.
   useEffect(() => subscribePresence(setOnlineIds), []);
 
-  // Fetches who's read up to where, then keeps that live — when the
-  // other participant opens this conversation, their last_read_at
-  // updates, Realtime pushes it here, and the affected bubbles' ticks
-  // flip to "read" without needing a refresh.
+  // Subscribes before taking the initial read-state snapshot. Realtime UPDATEs
+  // then advance the read cursor immediately without a five-second RPC poll.
   useEffect(() => {
-    fetchParticipantReadState(conversation.id).then(setParticipantReadState);
     const unsubscribe = subscribeToParticipantUpdates(conversation.id, (updated) => {
       setParticipantReadState((prev) => ({ ...prev, [updated.user_id]: updated.last_read_at }));
     });
