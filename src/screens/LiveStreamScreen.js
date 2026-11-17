@@ -501,6 +501,7 @@ export default function LiveStreamScreen({ route, navigation }) {
     try {
       const result = await backendFetch(`/live/${stream.id}/comments`);
       setComments(Array.isArray(result?.comments) ? result.comments : []);
+      setError('');
       const incomingReactions = (Array.isArray(result?.reactions) ? result.reactions : [])
         .filter((item) => item?.id && !seenReactionIds.current.has(item.id));
       incomingReactions.forEach((item) => {
