@@ -68,3 +68,15 @@ test('My status ring prioritizes the signed-in profile photo over the latest sto
   assert.ok(ownStatus.indexOf('myProfile?.avatarUrl') >= 0);
   assert.ok(ownStatus.indexOf('myProfile?.avatarUrl') < ownStatus.indexOf('ownStatusGroup?.latest?.media_url'));
 });
+
+
+test('status read markers are isolated by authenticated account and reset on account change', () => {
+  assert.ok(screen.includes('readSeenStatusIds(AsyncStorage, userId)'));
+  assert.ok(screen.includes('writeSeenStatusIds(AsyncStorage, myProfile.id'));
+  assert.ok(screen.includes('seenStatusReady'));
+  assert.ok(screen.includes('seenStatusIdsRef.current = []'));
+  assert.ok(screen.includes('statusRefreshRequestRef.current += 1'));
+  assert.ok(screen.includes('setStatuses([])'));
+  assert.ok(screen.includes('setViewing(null)'));
+  assert.equal(screen.includes('zannychat.status-seen.v1'), false);
+});
