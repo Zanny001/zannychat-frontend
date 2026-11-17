@@ -10,13 +10,41 @@ export function markStatusSeen(currentIds, statusId) {
   return normalizeSeenStatusIds([...(Array.isArray(currentIds) ? currentIds : []), statusId.trim()]);
 }
 
-export async function readSeenStatusIds(storage) {
-  if (!storage || typeof storage.getItem !== 'function') return [];
+export const LEGACY_STATUS_SEEN_STORAGE_KEY = 'zannychat.status-seen.v1';
+export const STATUS_SEEN_STORAGE_PREFIX = 'zannychat.status-seen.v1.';
+
+export function getSeenStatusStorageKey(userId) {
+  if (userId == null || String(userId).trim() === '') return null;
+  return `${STATUS_SEEN_STORAGE_PREFIX}${encodeURIComponent(String(userId))}`;
+}
+
+export async function readSeenStatusIds(storage, userId) {
+  const key = getSeenStatusStorageKey(userId);
+  if (!storage || typeof storage.getItem !== 'function' || !key) return [];
   try {
-    const raw = await storage.getItem('zannychat.status-seen.v1');
+    // Never attribute the legacy unscoped read markers to whichever account
+    // happens to sign in next.
+    if (typeof storage.removeItem === 'function') {
+      try { await storage.removeItem(LEGACY_STATUS_SEEN_STORAGE_KEY); } catch { /* Ignore legacy cleanup failure. */ }
+    }
+    const raw = await storage.getItem(key);
     return raw ? normalizeSeenStatusIds(JSON.parse(raw)) : [];
   } catch {
     return [];
+  }
+}
+
+export async function writeSeenStatusIds(storage, userId, ids) {
+  const key = getSeenStatusStorageKey(userId);
+  if (!storage || typeof storage.setItem !== 'function' || !key) return false;
+  try {
+    await storage.setItem(key, JSON.stringify(normalizeSeenStatusIds(ids)));
+    if (typeof storage.removeItem === 'function') {
+      try { await storage.removeItem(LEGACY_STATUS_SEEN_STORAGE_KEY); } catch { /* New account-scoped data is already persisted. */ }
+    }
+    return true;
+  } catch {
+    return false;
   }
 }
 

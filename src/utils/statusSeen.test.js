@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { firstUnseenStatus, markStatusSeen, markStatusesSeen, normalizeSeenStatusIds, readSeenStatusIds, retainActiveSeenStatusIds, unreadStatusCount } from './statusSeen.js';
+import { firstUnseenStatus, getSeenStatusStorageKey, markStatusSeen, markStatusesSeen, normalizeSeenStatusIds, readSeenStatusIds, retainActiveSeenStatusIds, unreadStatusCount, writeSeenStatusIds } from './statusSeen.js';
 
 test('normalizes seen IDs, removes duplicates, and ignores invalid values', () => {
   assert.deepEqual(normalizeSeenStatusIds(['a', 'a', '', null, ' b ']), ['a', 'b']);
@@ -16,10 +16,30 @@ test('marks all IDs in a status group seen without duplicates or invalid IDs', (
   assert.deepEqual(markStatusesSeen(['seen'], null), ['seen']);
 });
 
-test('reads persisted seen IDs and safely handles unavailable storage', async () => {
-  assert.deepEqual(await readSeenStatusIds({ getItem: async () => '["s1","s1"]' }), ['s1']);
-  assert.deepEqual(await readSeenStatusIds({ getItem: async () => 'not-json' }), []);
-  assert.deepEqual(await readSeenStatusIds(null), []);
+test('stores and reads seen IDs under a user-specific key', async () => {
+  const values = new Map();
+  const storage = {
+    async getItem(key) { return values.get(key) ?? null; },
+    async setItem(key, value) { values.set(key, value); },
+    async removeItem(key) { values.delete(key); },
+  };
+  assert.equal(getSeenStatusStorageKey(''), null);
+  assert.equal(getSeenStatusStorageKey('user-a'), 'zannychat.status-seen.v1.user-a');
+  assert.equal(await writeSeenStatusIds(storage, 'user-a', ['s1', 's1']), true);
+  assert.deepEqual(await readSeenStatusIds(storage, 'user-a'), ['s1']);
+  assert.deepEqual(await readSeenStatusIds(storage, 'user-b'), []);
+});
+
+test('does not migrate the legacy global seen marker to an account', async () => {
+  const values = new Map([['zannychat.status-seen.v1', '["legacy"]']]);
+  const storage = {
+    async getItem(key) { return values.get(key) ?? null; },
+    async removeItem(key) { values.delete(key); },
+  };
+  assert.deepEqual(await readSeenStatusIds(storage, 'user-a'), []);
+  assert.equal(values.has('zannychat.status-seen.v1'), false);
+  assert.deepEqual(await readSeenStatusIds(null, 'user-a'), []);
+  assert.deepEqual(await readSeenStatusIds({ getItem: async () => 'not-json' }, 'user-a'), []);
 });
 
 test('counts unread statuses in a group and never marks own statuses unread', () => {

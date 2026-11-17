@@ -25,7 +25,8 @@ import { isStatusActiveAt, removeExpiredStatuses } from '../utils/statusExpiry';
 import { normalizeStatusMediaUrl } from '../utils/statusMediaRecovery';
 import { clearStatusDraft, readStatusDraft, writeStatusDraft } from '../utils/statusDraftStorage';
 import { groupStatusUpdates } from '../utils/groupStatusUpdates';
-import { firstUnseenStatus, markStatusSeen, markStatusesSeen, readSeenStatusIds, retainActiveSeenStatusIds, unreadStatusCount } from '../utils/statusSeen';
+import { firstUnseenStatus, markStatusSeen, markStatusesSeen, readSeenStatusIds, retainActiveSeenStatusIds, unreadStatusCount, writeSeenStatusIds } from '../utils/statusSeen';
+import { readStatusDurationPreferences, writeStatusDurationPreferences } from '../utils/statusDurationStorage';
 import { deleteStatus, listActiveStatuses, listStatusReactions, normalizeStatusText, publishPhotoStatus, publishVideoStatus, publishTextStatus, recordStatusView, reactToStatus, removeStatusReaction, listStatusReplies, sendStatusReply, listMutedStatusUsers, muteStatusUser, unmuteStatusUser, listStatusContacts, listStatusExclusions, setStatusExcludedUser, resolveStatusUserNames, subscribeToStatusChanges, refreshStatusMediaUrl, STATUS_REACTIONS, STATUS_TEXT_LIMIT } from '../services/statusUpdates';
 
 function StatusVideo({ uri, height = '65%', paused = false, onError }) {
@@ -169,24 +170,39 @@ export default function StatusUpdatesScreen({ navigation, route }) {
 
   useEffect(() => {
     let active = true;
-    readSeenStatusIds(AsyncStorage).then((ids) => { if (active) { seenStatusIdsRef.current = ids; setSeenStatusIds(ids); } }).catch(() => {});
-    AsyncStorage.getItem('zannychat.status-duration-preferences.v1').then((raw) => {
-      if (!active || !raw) return;
-      try {
-        const parsed = JSON.parse(raw);
-        setStatusDurations((current) => ({ ...current, ...parsed }));
-      } catch { /* Ignore corrupt local preferences and keep safe defaults. */ }
-    }).catch(() => { /* Storage can be unavailable; defaults still work. */ });
+    const userId = myProfile?.id;
+    statusRefreshRequestRef.current += 1;
+    setStatuses([]);
+    setReactions({});
+    setViewing(null);
+    setReplies([]);
+    setMutedUsers([]);
+    setExcludedUsers([]);
+    setStatusUserNames({});
+    // Never display the previous account's local read markers or viewer
+    // preferences while the next account's records are loading.
+    seenStatusIdsRef.current = [];
+    setSeenStatusIds([]);
+    setStatusDurations(DEFAULT_STATUS_DURATIONS);
+    if (!userId) return () => { active = false; };
+
+    readSeenStatusIds(AsyncStorage, userId).then((ids) => {
+      if (active) { seenStatusIdsRef.current = ids; setSeenStatusIds(ids); }
+    }).catch(() => {});
+    readStatusDurationPreferences(AsyncStorage, userId).then((preferences) => {
+      if (active) setStatusDurations(preferences);
+    }).catch(() => {});
     return () => { active = false; };
-  }, []);
+  }, [myProfile?.id]);
 
   const changeStatusDuration = useCallback((kind, delta) => {
     const next = adjustStatusDuration(statusDurations, kind, delta);
     setStatusDurations(next);
-    AsyncStorage.setItem('zannychat.status-duration-preferences.v1', JSON.stringify(next)).catch(() => {
-      Alert.alert('Duration not saved', 'This duration will apply for this session, but local storage was unavailable.');
+    if (!myProfile?.id) return;
+    writeStatusDurationPreferences(AsyncStorage, myProfile.id, next).then((saved) => {
+      if (!saved) Alert.alert('Duration not saved', 'This duration will apply for this session, but local storage was unavailable.');
     });
-  }, [statusDurations]);
+  }, [statusDurations, myProfile?.id]);
 
   const refresh = useCallback(async () => {
     // Focus events, realtime updates and manual refreshes can overlap. Only the
@@ -204,7 +220,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
       if (activeSeenIds.length !== seenStatusIdsRef.current.length) {
         seenStatusIdsRef.current = activeSeenIds;
         setSeenStatusIds(activeSeenIds);
-        AsyncStorage.setItem('zannychat.status-seen.v1', JSON.stringify(activeSeenIds)).catch(() => {});
+        if (myProfile?.id) writeSeenStatusIds(AsyncStorage, myProfile.id, activeSeenIds).catch(() => {});
       }
       try {
         const nextReactions = await listStatusReactions(rows.map((row) => row.id));
@@ -235,7 +251,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
     } finally {
       if (isCurrent()) setLoading(false);
     }
-  }, []);
+  }, [myProfile?.id]);
   useFocusEffect(useCallback(() => {
     let focused = true;
     getCurrentUser()
@@ -371,7 +387,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
       const next = markStatusSeen(seenStatusIdsRef.current, item.id);
       seenStatusIdsRef.current = next;
       setSeenStatusIds(next);
-      AsyncStorage.setItem('zannychat.status-seen.v1', JSON.stringify(next)).catch(() => {});
+      if (myProfile?.id) writeSeenStatusIds(AsyncStorage, myProfile.id, next).catch(() => {});
     } setStatusPaused(false); setStatusProgress(0); setReplyText(''); setReplies([]); setRepliesHasMore(false); setReplyCursor(null); replyPageLockRef.current = false;
     if (!item.is_own) {
       try { await recordStatusView(item.id); }
@@ -380,7 +396,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
       try { const page = await listStatusReplies(item.id); setReplies(page.rows); setRepliesHasMore(page.hasMore); setReplyCursor(page.nextBefore); try { const names = await resolveStatusUserNames(page.rows.map((reply) => reply.sender_id)); setStatusUserNames((old) => ({ ...old, ...names })); } catch { /* Keep the ID fallback if profile lookup is unavailable. */ } }
       catch (e) { console.warn('Status replies could not be loaded'); }
     }
-  }, []);
+  }, [myProfile?.id]);
 
   useEffect(() => {
     const requestedUserId = route?.params?.userId;
@@ -455,10 +471,10 @@ export default function StatusUpdatesScreen({ navigation, route }) {
     const next = markStatusesSeen(seenStatusIdsRef.current, contactStatuses);
     seenStatusIdsRef.current = next;
     setSeenStatusIds(next);
-    AsyncStorage.setItem('zannychat.status-seen.v1', JSON.stringify(next)).catch(() => {
-      Alert.alert('Read state not saved', 'Statuses are marked viewed for this session, but local storage was unavailable.');
+    if (myProfile?.id) writeSeenStatusIds(AsyncStorage, myProfile.id, next).then((saved) => {
+      if (!saved) Alert.alert('Read state not saved', 'Statuses are marked viewed for this session, but local storage was unavailable.');
     });
-  }, [statuses]);
+  }, [statuses, myProfile?.id]);
 
   const loadOlderReplies = async () => {
     if (!viewing?.id || !viewing.is_own || !repliesHasMore || !replyCursor || replyPageLockRef.current) return;
