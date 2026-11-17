@@ -266,7 +266,7 @@ export default function SharedMediaScreen({ route, navigation }) {
               <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md }]}>Showing {visibleItems.length} of {currentItems.length} items in loaded messages. Deleted messages are excluded.</Text>
             </View>
           }
-        />ollView>
+        />
       )}
 
       {fullscreenImage ? (
