@@ -335,3 +335,16 @@ Follow-up: blocked-user collection has no explicit UI cap and should receive a d
 - The checked-in `npm-audit-report.json` reports 27 findings (18 high, 9 moderate), but GitHub history shows that report was last updated on 2026-10-14. It is stale relative to the current Expo 57.0.32 / React Native 0.86.3 lockfile.
 - Its suggested `fixAvailable` values include downgrades to Expo 44 and React Native 0.72, which are not safe remediation for this application. Do not apply those suggestions or run `npm audit fix --force`.
 - A fresh `npm audit --json` against the current lockfile and current advisory database is required before making dependency changes. Separate build-tool-only findings from packages that ship in the runtime bundle; upgrade only within the supported Expo SDK 57 / React Native 0.86 compatibility line after regression tests.
+
+
+### Screens 20–24 — calling experience
+
+| Experience | Source-level finding | Status |
+|---|---|---|
+| One-to-one Call | Dedicated media surface; large controls are intentional for in-call reachability. | Source/CI pass; real audio-route, switch-media and reconnect tests pending |
+| Group Call | Participant tiles use FlatList; role/media state remains separate from host/participant management. | Source/CI pass; multi-device acceptance pending |
+| Incoming Call | Static, high-contrast accept/decline surface with accessible call actions. | Source pass; background/terminated app delivery pending |
+| Outgoing Call | Static ringing and cancellation states; no unbounded collection. | Source pass; lifecycle acceptance pending |
+| Call History | Service caps fetches at 100 by default / 200 maximum. The screen previously mapped rows in ScrollView; PR #152 converts history to FlatList while preserving redial, delete, refresh and empty/error states. | CI pending |
+
+Call release remains gated on two-account and multi-device tests: remote audio in both directions, camera/video switch during an active call, group participant addition/removal, Bluetooth/speaker routing, network handoff, background/foreground recovery, CallKit/Android Telecom receiver lifecycle and terminal-state cleanup.
