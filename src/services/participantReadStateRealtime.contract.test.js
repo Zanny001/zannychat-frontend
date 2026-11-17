@@ -10,7 +10,7 @@ const implementation = api.slice(start, end);
 test('participant read-state snapshot starts only after the realtime channel is subscribed', () => {
   assert.ok(start >= 0);
   assert.match(implementation, /subscribeToParticipantReadState/);
-  assert.match(implementation, /onSubscribed:s*()s*=>/);
+  assert.ok(implementation.includes('onSubscribed: () =>'));
   assert.match(implementation, /fetchParticipantReadState(conversationId)/);
   assert.doesNotMatch(implementation, /setInterval/);
 });
