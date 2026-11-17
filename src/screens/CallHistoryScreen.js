@@ -139,7 +139,7 @@ export default function CallHistoryScreen({ navigation }) {
             </GlassCard>
           ) : null}
 
-          {loading ? <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} /> : null}</View>}
+          {loading ? <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} /> : null}</View></View>}
         renderItem={({ item }) => {
           const missed = item.status === 'missed' || (item.status === 'ringing' && Date.parse(item.expires_at) <= Date.now());
             const userId = item.direction === 'incoming' ? item.callee_id : item.caller_id;
