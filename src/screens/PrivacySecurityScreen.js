@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Alert, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,8 +36,9 @@ export default function PrivacySecurityScreen({ navigation }) {
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [authProviders, setAuthProviders] = useState({ email: true, google: false });
   const [reauthenticatingGoogle, setReauthenticatingGoogle] = useState(false);
-  const [googleReauthVerified, setGoogleReauthVerified] = useState(false);
+  const [googleReauthVerifiedUserId, setGoogleReauthVerifiedUserId] = useState(null);
   const [googleReauthMismatch, setGoogleReauthMismatch] = useState(false);
+  const authUserIdRef = useRef(null);
 
   const refreshAuthProviders = useCallback(async () => {
     if (!SUPABASE_ENABLED || !supabase) return;
@@ -49,6 +50,11 @@ export default function PrivacySecurityScreen({ navigation }) {
       ...(Array.isArray(data.user.identities) ? data.user.identities.map((identity) => identity.provider) : []),
     ].filter(Boolean));
     setAuthProviders({ email: providers.has('email'), google: providers.has('google') });
+    if (authUserIdRef.current !== data.user.id) {
+      authUserIdRef.current = data.user.id;
+      setGoogleReauthVerifiedUserId(null);
+      setGoogleReauthMismatch(false);
+    }
 
     const pendingRaw = await AsyncStorage.getItem(ACCOUNT_DELETE_REAUTH_KEY);
     if (!pendingRaw) return;
@@ -57,14 +63,14 @@ export default function PrivacySecurityScreen({ navigation }) {
       const pending = JSON.parse(pendingRaw);
       if (!Number.isFinite(pending.expiresAt) || pending.expiresAt < Date.now()) return;
       if (pending.userId === data.user.id) {
-        setGoogleReauthVerified(true);
+        setGoogleReauthVerifiedUserId(data.user.id);
         setGoogleReauthMismatch(false);
       } else {
-        setGoogleReauthVerified(false);
+        setGoogleReauthVerifiedUserId(null);
         setGoogleReauthMismatch(true);
       }
     } catch {
-      setGoogleReauthVerified(false);
+      setGoogleReauthVerifiedUserId(null);
     }
   }, []);
 
@@ -123,11 +129,12 @@ export default function PrivacySecurityScreen({ navigation }) {
   async function handleGoogleReauthForDeletion() {
     if (!SUPABASE_ENABLED || !supabase || !authProviders.google) return;
     setReauthenticatingGoogle(true);
-    setGoogleReauthVerified(false);
+    setGoogleReauthVerifiedUserId(null);
     setGoogleReauthMismatch(false);
     try {
       const { data, error } = await supabase.auth.getUser();
       if (error || !data?.user?.id) throw new Error('Your session has expired. Sign in again first.');
+      if (authUserIdRef.current !== data.user.id) authUserIdRef.current = data.user.id;
       await AsyncStorage.setItem(ACCOUNT_DELETE_REAUTH_KEY, JSON.stringify({
         userId: data.user.id,
         expiresAt: Date.now() + ACCOUNT_DELETE_REAUTH_TTL_MS,
@@ -165,13 +172,17 @@ export default function PrivacySecurityScreen({ navigation }) {
       Alert.alert('Re-authentication required', 'Sign in again with your account provider before deleting your account.');
       return;
     }
-    if (googleReauthMismatch) {
-      Alert.alert('Google account mismatch', 'The Google account used for verification does not match the account you are deleting. Sign back into the original account.');
-      return;
-    }
-    if (authProviders.google && !deletePassword && !googleReauthVerified) {
-      Alert.alert('Verify with Google first', 'Re-verify the same Google account, return here, and then confirm deletion within ten minutes.');
-      return;
+    if (authProviders.google && !deletePassword) {
+      const { data: currentAuthData, error: currentAuthError } = await supabase.auth.getUser();
+      const currentUserId = currentAuthError ? null : currentAuthData?.user?.id;
+      if (!currentUserId || googleReauthVerifiedUserId !== currentUserId) {
+        if (googleReauthMismatch) {
+          Alert.alert('Google account mismatch', 'The Google account used for verification does not match the account you are deleting. Sign back into the original account.');
+        } else {
+          Alert.alert('Verify with Google first', 'Re-verify the same Google account, return here, and then confirm deletion within ten minutes.');
+        }
+        return;
+      }
     }
     Alert.alert(
       'Permanently delete your account?',
