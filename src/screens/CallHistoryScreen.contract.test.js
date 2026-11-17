@@ -44,3 +44,11 @@ test('upgraded one-to-one calls appear only once as conference history', () => {
   assert.ok(callsService.includes('expires_at,group_room_id'));
   assert.ok(callsService.includes('rows.filter((row) => !row.group_room_id).map((row) => {'));
 });
+
+test('call history uses a virtualized list with stable direct and group call keys', () => {
+  assert.match(callsScreen, /<FlatList\\b/);
+  assert.match(callsScreen, /data=\\{calls\\}/);
+  assert.match(callsScreen, /keyExtractor=/);
+  assert.match(callsScreen, /renderItem=/);
+  assert.doesNotMatch(callsScreen, /calls\\.map\\(/);
+});
