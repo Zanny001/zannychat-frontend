@@ -1,18 +1,26 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { SafeAreaView, ScrollView, View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import GlassCard from '../components/GlassCard';
 import { useTheme } from '../theme/ThemeContext';
-import { getCurrentUser } from '../services/api';
+import { useAuthenticatedUserId } from '../hooks/useAuthenticatedUserId';
 import { loadPinnedMessages, unpinMessageLocally } from '../services/pinnedMessages';
 import { filterPinnedMessages } from '../utils/pinnedMessages';
 
 export default function PinnedMessagesScreen({ route, navigation }) {
   const conversation = route.params?.conversation;
   const { colors, spacing, radii, typography } = useTheme();
-  const [userId, setUserId] = useState(null);
+  const requestRef = useRef(0);
+  const { userId, userIdRef } = useAuthenticatedUserId(useCallback(() => {
+    requestRef.current += 1;
+    setItems([]);
+    setQuery('');
+    setError('');
+    setLoading(true);
+    if (navigation?.canGoBack?.()) navigation.goBack();
+  }, [navigation]));
   const [items, setItems] = useState([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -20,25 +28,46 @@ export default function PinnedMessagesScreen({ route, navigation }) {
   const visible = useMemo(() => filterPinnedMessages(items, query, conversation?.id), [items, query, conversation?.id]);
 
   const refresh = useCallback(async () => {
+    const requestId = ++requestRef.current;
+    if (!userId) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+    const expectedUserId = userId;
     setLoading(true);
     setError('');
     try {
-      const user = await getCurrentUser();
-      const id = user?.id || 'me';
-      setUserId(id);
-      setItems(await loadPinnedMessages(id));
+      const items = await loadPinnedMessages(expectedUserId);
+      if (requestId === requestRef.current && userIdRef.current === expectedUserId) {
+        setItems(Array.isArray(items) ? items : []);
+      }
     } catch (_) {
-      setError('Pinned messages could not be loaded. Please try again.');
-    } finally { setLoading(false); }
-  }, []);
+      if (requestId === requestRef.current && userIdRef.current === expectedUserId) {
+        setItems([]);
+        setError('Pinned messages could not be loaded. Please try again.');
+      }
+    } finally {
+      if (requestId === requestRef.current) setLoading(false);
+    }
+  }, [userId, userIdRef]);
 
-  useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
+  useFocusEffect(useCallback(() => {
+    refresh();
+    return () => { requestRef.current += 1; };
+  }, [refresh]));
 
   const remove = (item) => Alert.alert('Unpin this message?', 'The original message will remain in the conversation.', [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Unpin', style: 'destructive', onPress: async () => {
-      try { setItems(await unpinMessageLocally(userId, item.id)); }
-      catch (_) { Alert.alert('Could not unpin message', 'Please try again.'); }
+      const expectedUserId = userId;
+      if (!expectedUserId || userIdRef.current !== expectedUserId) return;
+      try {
+        const next = await unpinMessageLocally(expectedUserId, item.id);
+        if (userIdRef.current === expectedUserId) setItems(next);
+      } catch (_) {
+        if (userIdRef.current === expectedUserId) Alert.alert('Could not unpin message', 'Please try again.');
+      }
     } },
   ]);
 
