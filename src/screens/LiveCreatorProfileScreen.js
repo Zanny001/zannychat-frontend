@@ -35,6 +35,9 @@ export default function LiveCreatorProfileScreen({ navigation }) {
     setLoading(true);
     try {
       const startingUser = await getCurrentUser().catch(() => null);
+      // An auth event may have invalidated this refresh while identity was
+      // being resolved; do not overwrite the newer owner with a stale result.
+      if (requestId !== refreshRequestRef.current) return;
       const expectedUserId = startingUser?.id || null;
       if (activeUserIdRef.current !== expectedUserId) {
         activeUserIdRef.current = expectedUserId;
