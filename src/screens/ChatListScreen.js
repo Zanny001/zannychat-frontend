@@ -99,7 +99,7 @@ export default function ChatListScreen({ navigation }) {
       try {
         const [statuses, seenIds] = await Promise.all([
           listActiveStatuses(),
-          readSeenStatusIds(AsyncStorage),
+          readSeenStatusIds(AsyncStorage, user?.id),
         ]);
         const profiles = await resolveStatusUserProfiles(statuses.map((status) => status.user_id), user?.id);
         if (alive) setStoryGroups(buildStoryTrayGroups(statuses, profiles, seenIds));
