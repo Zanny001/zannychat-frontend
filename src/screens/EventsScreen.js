@@ -104,9 +104,9 @@ export default function EventsScreen({ navigation, route }) {
     borderColor: colors.border,
     borderRadius: radii.md,
     padding: spacing.md,
-    minWidth: 0,
     minHeight: 48,
     width: '100%',
+    minWidth: 0,
   }];
 
   return (
