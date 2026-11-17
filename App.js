@@ -17,7 +17,7 @@ import {
 import AppNavigator, { navigationRef } from './src/navigation/AppNavigator';
 import VoIPPushRegistrar from './src/components/VoIPPushRegistrar';
 import { createPushRegistrationCoordinator } from './src/services/pushRegistrationCoordinator';
-import { stopPresence } from './src/services/presence';
+import { setPresenceOwner, stopPresence } from './src/services/presence';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -110,6 +110,7 @@ export default function App() {
           authStateObserved = true;
         }
         if (session) {
+          if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') setPresenceOwner(session.user?.id);
           setInitialRoute(isWebRecoveryCallback ? 'PasswordReset' : 'Main');
           // Register the token for the authenticated account. This also handles
           // an account switch without reusing the previous account's guard.
@@ -118,6 +119,7 @@ export default function App() {
           }
         } else if (event === 'SIGNED_OUT') {
           stopPresence();
+          setPresenceOwner(null);
           pushRegistration.reset();
           setInitialRoute('Onboarding');
         } else if (event === 'INITIAL_SESSION') {
@@ -163,6 +165,7 @@ export default function App() {
       }
 
       if (session && !authStateObserved) {
+        setPresenceOwner(session.user?.id);
         registerPushOnce(session.user?.id);
       }
 
