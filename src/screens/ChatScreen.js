@@ -519,7 +519,9 @@ export default function ChatScreen({ route, navigation }) {
   // to the foreground. Stable request IDs preserve server-side idempotency;
   // bounded exponential backoff prevents a bad connection from being hammered.
   const retryQueuedTextMessages = useCallback(async () => {
-    if (!myUserId || !conversation?.id || automaticRetryInFlightRef.current || AppState.currentState !== 'active') return;
+    if (!myUserId || !conversation?.id || automaticRetryInFlightRef.current || AppState.currentState !== 'active'
+        || (SUPABASE_ENABLED && activeUserIdRef.current !== myUserId)) return;
+    const expectedUserId = myUserId;
     automaticRetryInFlightRef.current = true;
     try {
       const queued = await loadPendingMessages(myUserId, conversation.id);
@@ -531,8 +533,10 @@ export default function ChatScreen({ route, navigation }) {
         .sort((a, b) => Date.parse(a.createdAt || 0) - Date.parse(b.createdAt || 0))
         .slice(0, 5);
       for (const item of dueQueued) {
+        if (SUPABASE_ENABLED && activeUserIdRef.current !== expectedUserId) return;
         try {
           const confirmed = await sendMessage(conversation.id, item.text, item.replyToId, item.requestId);
+          if (SUPABASE_ENABLED && activeUserIdRef.current !== expectedUserId) return;
           await removePendingMessage(myUserId, conversation.id, item.requestId);
           setPendingOutbox((items) => items.filter((entry) => entry.requestId !== item.requestId));
           setMessages((items) => items.some((entry) => entry.id === confirmed.id) ? items : [...items, confirmed]);
@@ -551,7 +555,9 @@ export default function ChatScreen({ route, navigation }) {
           // from the retry queue and surfaced inline instead of retrying forever.
         }
       }
-      setPendingOutbox(await loadPendingMessages(myUserId, conversation.id));
+      if (!SUPABASE_ENABLED || activeUserIdRef.current === expectedUserId) {
+        setPendingOutbox(await loadPendingMessages(expectedUserId, conversation.id));
+      }
     } finally { automaticRetryInFlightRef.current = false; }
   }, [myUserId, conversation?.id]);
 
