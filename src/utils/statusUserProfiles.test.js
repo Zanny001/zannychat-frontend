@@ -14,7 +14,8 @@ test('status tray profile resolution uses the privacy-aware conversation directo
 
 test('chat list story tray renders the resolved profile photo instead of a generic color avatar', async () => {
   const screen = await readFile(new URL('../screens/ChatListScreen.js', import.meta.url), 'utf8');
-  assert.match(screen, /resolveStatusUserProfiles\(statuses\.map\(\(status\) => status\.user_id\), user\?\.id\)/);
+  assert.match(screen, /resolveStatusUserProfiles\(statuses\.map\(\(status\) => status\.user_id\), userId\)/);
+  assert.match(screen, /readSeenStatusIds\(AsyncStorage, userId\)/);
   assert.match(screen, /imageUrl=\{group\.avatarUrl\}/);
   assert.match(screen, /color=\{group\.avatarColor \|\| colors\.accent\}/);
 });
