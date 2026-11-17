@@ -11,7 +11,8 @@ test('Google-only accounts have a provider reauthentication path for account del
   assert.match(screen, /startGoogleOAuth\(supabase, \{ prompt: 'select_account' \}\)/);
   assert.match(screen, /ACCOUNT_DELETE_REAUTH_KEY/);
   assert.match(screen, /pending\.userId === data\.user\.id/);
-  assert.match(screen, /googleReauthVerified/);
+  assert.match(screen, /googleReauthVerifiedUserId/);
+  assert.match(screen, /googleReauthVerifiedUserId !== currentUserId/);
   assert.match(screen, /if \(googleReauthMismatch\)/);
 });
 
@@ -29,8 +30,8 @@ test('Google reauthentication asks the provider to select and verify an account'
 });
 
 
-test('Google account deletion copy matches the ten-minute reauthentication window', () => {
-  assert.match(screen, /ACCOUNT_DELETE_REAUTH_TTL_MS = 10 \* 60 \* 1000/);
-  assert.equal((screen.match(/within ten minutes/g) || []).length, 2);
-  assert.doesNotMatch(screen, /within five minutes/);
+test('Google account deletion copy matches the server five-minute reauthentication window', () => {
+  assert.match(screen, /ACCOUNT_DELETE_REAUTH_TTL_MS = 4 \* 60 \* 1000 \+ 30 \* 1000/);
+  assert.match(screen, /within five minutes/);
+  assert.doesNotMatch(screen, /within ten minutes/);
 });
