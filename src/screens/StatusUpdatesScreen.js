@@ -25,7 +25,7 @@ import { isStatusActiveAt, removeExpiredStatuses } from '../utils/statusExpiry';
 import { normalizeStatusMediaUrl } from '../utils/statusMediaRecovery';
 import { clearStatusDraft, readStatusDraft, writeStatusDraft } from '../utils/statusDraftStorage';
 import { groupStatusUpdates } from '../utils/groupStatusUpdates';
-import { firstUnseenStatus, markStatusSeen, markStatusesSeen, readSeenStatusIds, retainActiveSeenStatusIds, unreadStatusCount } from '../utils/statusSeen';
+import { firstUnseenStatus, markStatusSeen, markStatusesSeen, readSeenStatusIds, retainActiveSeenStatusIds, unreadStatusCount, writeSeenStatusIds } from '../utils/statusSeen';
 import { deleteStatus, listActiveStatuses, listStatusReactions, normalizeStatusText, publishPhotoStatus, publishVideoStatus, publishTextStatus, recordStatusView, reactToStatus, removeStatusReaction, listStatusReplies, sendStatusReply, listMutedStatusUsers, muteStatusUser, unmuteStatusUser, listStatusContacts, listStatusExclusions, setStatusExcludedUser, resolveStatusUserNames, subscribeToStatusChanges, refreshStatusMediaUrl, STATUS_REACTIONS, STATUS_TEXT_LIMIT } from '../services/statusUpdates';
 
 function StatusVideo({ uri, height = '65%', paused = false, onError }) {
@@ -103,6 +103,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
   const [privacyMode, setPrivacyMode] = useState('exclude');
   const [selectedAudienceIds, setSelectedAudienceIds] = useState([]);
   const [seenStatusIds, setSeenStatusIds] = useState([]);
+  const [seenStatusReady, setSeenStatusReady] = useState(false);
   const seenStatusIdsRef = useRef([]);
   const requestedStoryOpenRef = useRef(null);
   const mediaRetryLockRef = useRef(false);
@@ -131,7 +132,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
       clearInterval(timer);
       appStateSubscription?.remove?.();
     };
-  }, []);
+  }, [myProfile?.id]);
 
   useEffect(() => {
     let active = true;
@@ -169,7 +170,25 @@ export default function StatusUpdatesScreen({ navigation, route }) {
 
   useEffect(() => {
     let active = true;
-    readSeenStatusIds(AsyncStorage).then((ids) => { if (active) { seenStatusIdsRef.current = ids; setSeenStatusIds(ids); } }).catch(() => {});
+    const userId = myProfile?.id;
+    // Never carry one account's seen state into another account on a shared device.
+    seenStatusIdsRef.current = [];
+    setSeenStatusIds([]);
+    setSeenStatusReady(false);
+    if (!userId) return () => { active = false; };
+    readSeenStatusIds(AsyncStorage, userId).then((ids) => {
+      if (!active) return;
+      seenStatusIdsRef.current = ids;
+      setSeenStatusIds(ids);
+      setSeenStatusReady(true);
+    }).catch(() => {
+      if (active) setSeenStatusReady(true);
+    });
+    return () => { active = false; };
+  }, [myProfile?.id]);
+
+  useEffect(() => {
+    let active = true;
     AsyncStorage.getItem('zannychat.status-duration-preferences.v1').then((raw) => {
       if (!active || !raw) return;
       try {
@@ -189,6 +208,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
   }, [statusDurations]);
 
   const refresh = useCallback(async () => {
+    if (!myProfile?.id || !seenStatusReady) return;
     // Focus events, realtime updates and manual refreshes can overlap. Only the
     // newest request may publish results, otherwise a slow stale response can
     // resurrect expired statuses or overwrite newer privacy/reaction state.
@@ -204,7 +224,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
       if (activeSeenIds.length !== seenStatusIdsRef.current.length) {
         seenStatusIdsRef.current = activeSeenIds;
         setSeenStatusIds(activeSeenIds);
-        AsyncStorage.setItem('zannychat.status-seen.v1', JSON.stringify(activeSeenIds)).catch(() => {});
+        writeSeenStatusIds(AsyncStorage, myProfile.id, activeSeenIds).catch(() => {});
       }
       try {
         const nextReactions = await listStatusReactions(rows.map((row) => row.id));
@@ -235,7 +255,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
     } finally {
       if (isCurrent()) setLoading(false);
     }
-  }, []);
+  }, [myProfile?.id, seenStatusReady]);
   useFocusEffect(useCallback(() => {
     let focused = true;
     getCurrentUser()
@@ -371,7 +391,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
       const next = markStatusSeen(seenStatusIdsRef.current, item.id);
       seenStatusIdsRef.current = next;
       setSeenStatusIds(next);
-      AsyncStorage.setItem('zannychat.status-seen.v1', JSON.stringify(next)).catch(() => {});
+      writeSeenStatusIds(AsyncStorage, myProfile?.id, next).catch(() => {});
     } setStatusPaused(false); setStatusProgress(0); setReplyText(''); setReplies([]); setRepliesHasMore(false); setReplyCursor(null); replyPageLockRef.current = false;
     if (!item.is_own) {
       try { await recordStatusView(item.id); }
@@ -455,10 +475,10 @@ export default function StatusUpdatesScreen({ navigation, route }) {
     const next = markStatusesSeen(seenStatusIdsRef.current, contactStatuses);
     seenStatusIdsRef.current = next;
     setSeenStatusIds(next);
-    AsyncStorage.setItem('zannychat.status-seen.v1', JSON.stringify(next)).catch(() => {
-      Alert.alert('Read state not saved', 'Statuses are marked viewed for this session, but local storage was unavailable.');
+    writeSeenStatusIds(AsyncStorage, myProfile?.id, next).then((saved) => {
+      if (!saved) Alert.alert('Read state not saved', 'Statuses are marked viewed for this session, but local storage was unavailable.');
     });
-  }, [statuses]);
+  }, [statuses, myProfile?.id]);
 
   const loadOlderReplies = async () => {
     if (!viewing?.id || !viewing.is_own || !repliesHasMore || !replyCursor || replyPageLockRef.current) return;
