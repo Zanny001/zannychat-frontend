@@ -24,6 +24,25 @@ export default function LiveReplayScreen({ route, navigation }) {
   });
 
   useEffect(() => {
+    if (SUPABASE_ENABLED && supabase?.auth?.onAuthStateChange) {
+      // Supabase emits INITIAL_SESSION through this same listener, making it
+      // the single source of truth for both initial identity and later changes.
+      // Avoid racing a separate getCurrentUser request against a SIGNED_IN event.
+      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+        const nextUserId = session?.user?.id || null;
+        if (currentUserIdRef.current === nextUserId) return;
+        currentUserIdRef.current = nextUserId;
+        // Stop and hide any previous account's signed playback URL immediately.
+        player.pause();
+        setPlaybackUrl(null);
+        setError(nextUserId ? '' : 'Sign in to access this LIVE replay.');
+        setLoading(Boolean(nextUserId));
+        setCurrentUserId(nextUserId);
+      });
+      return () => data?.subscription?.unsubscribe?.();
+    }
+
+    // Mock mode has no Supabase auth event source.
     let active = true;
     getCurrentUser().then((user) => {
       if (!active) return;
@@ -36,22 +55,6 @@ export default function LiveReplayScreen({ route, navigation }) {
       setCurrentUserId(null);
     });
     return () => { active = false; };
-  }, []);
-
-  useEffect(() => {
-    if (!SUPABASE_ENABLED || !supabase?.auth?.onAuthStateChange) return undefined;
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      const nextUserId = session?.user?.id || null;
-      if (currentUserIdRef.current === nextUserId) return;
-      currentUserIdRef.current = nextUserId;
-      // Stop and hide any previous account's signed playback URL immediately.
-      player.pause();
-      setPlaybackUrl(null);
-      setError(nextUserId ? '' : 'Sign in to access this LIVE replay.');
-      setLoading(Boolean(nextUserId));
-      setCurrentUserId(nextUserId);
-    });
-    return () => data?.subscription?.unsubscribe?.();
   }, [player]);
 
   useEffect(() => {
