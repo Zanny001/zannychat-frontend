@@ -35,3 +35,37 @@ test('Google account deletion copy matches the server five-minute reauthenticati
   assert.match(screen, /within five minutes/);
   assert.doesNotMatch(screen, /within ten minutes/);
 });
+
+
+test('Privacy Security clears blocked users and account-deletion proof when auth owner changes', () => {
+  assert.match(screen, /const blockedRequestRef = useRef\(0\)/);
+  assert.match(screen, /if \(!SUPABASE_ENABLED \|\| !supabase\)/);
+  assert.match(screen, /const entries = await fetchBlockedUsers\(\)/);
+  assert.match(screen, /const authProviderRequestRef = useRef\(0\)/);
+  assert.match(screen, /const requestId = \+\+authProviderRequestRef\.current/);
+  assert.match(screen, /if \(requestId !== authProviderRequestRef\.current\) return/);
+  assert.match(screen, /supabase\.auth\.onAuthStateChange/);
+  assert.match(screen, /const nextUserId = session\?\.user\?\.id \|\| null/);
+  assert.match(screen, /blockedRequestRef\.current \+= 1/);
+  assert.match(screen, /authProviderRequestRef\.current \+= 1/);
+  assert.match(screen, /setBlocked\(\[\]\)/);
+  assert.match(screen, /setGoogleReauthVerifiedUserId\(null\)/);
+  assert.match(screen, /setDeletePassword\(''\)/);
+  assert.match(screen, /setDeleteConfirmation\(''\)/);
+  assert.match(screen, /latestAuthData\?\.user\?\.id === userId/);
+  assert.match(screen, /event === 'SIGNED_IN'/);
+  assert.match(screen, /data\?\.subscription\?\.unsubscribe\?\.\(\)/);
+});
+
+test('blocked-user list refresh is bound to the same authenticated account before and after the request', () => {
+  assert.match(screen, /const userId = authData\?\.user\?\.id \|\| null/);
+  assert.match(screen, /expectedUserId && userId !== expectedUserId/);
+  assert.match(screen, /requestId === blockedRequestRef\.current/);
+});
+
+
+test('blocked-list loading settles only for the latest authenticated account request', () => {
+  assert.match(screen, /return requestId/);
+  assert.match(screen, /if \(requestId === blockedRequestRef\.current\) setLoading\(false\)/);
+  assert.match(screen, /authUserIdRef\.current === nextUserId\) setLoading\(false\)/);
+});
