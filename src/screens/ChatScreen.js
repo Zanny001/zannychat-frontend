@@ -583,7 +583,7 @@ export default function ChatScreen({ route, navigation }) {
       for (const item of dueQueued) {
         if (SUPABASE_ENABLED && activeUserIdRef.current !== expectedUserId) return;
         try {
-          const confirmed = await sendMessage(conversation.id, item.text, item.replyToId, item.requestId);
+          const confirmed = await sendMessage(conversation.id, item.text, item.replyToId, item.requestId, expectedUserId);
           if (SUPABASE_ENABLED && activeUserIdRef.current !== expectedUserId) return;
           await removePendingMessage(myUserId, conversation.id, item.requestId);
           setPendingOutbox((items) => items.filter((entry) => entry.requestId !== item.requestId));
