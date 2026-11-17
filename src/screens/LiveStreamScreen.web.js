@@ -13,6 +13,7 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import { Room, RoomEvent, Track } from 'livekit-client';
 import { backendFetch } from '../services/backendClient';
+import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
 
 const LIVE_REACTION_EMOJI = Object.freeze({ heart: '❤️', clap: '👏', laugh: '😂', wow: '😮', fire: '🔥', idea: '💡', support: '🙌' });
@@ -111,6 +112,8 @@ export default function LiveStreamScreen({ route, navigation }) {
   const audioOnlyParticipants = remoteAudioParticipants.filter((participant) => !remoteVideoTracks.some((entry) => entry.participant.identity === participant.identity));
   const endedRef = useRef(false);
   const leaveRef = useRef(null);
+  const liveAuthOwnerRef = useRef(undefined);
+  const connectionRequestRef = useRef(0);
   const [status, setStatus] = useState('Connecting…');
   useEffect(() => {
     setDemotedToViewer(false);
@@ -143,6 +146,50 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [reports, setReports] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [panel, setPanel] = useState('');
+
+  useEffect(() => {
+    if (!SUPABASE_ENABLED || !supabase?.auth?.onAuthStateChange) return undefined;
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUserId = session?.user?.id || null;
+      if (liveAuthOwnerRef.current === undefined) {
+        liveAuthOwnerRef.current = nextUserId;
+        return;
+      }
+      if (liveAuthOwnerRef.current === nextUserId) return;
+      liveAuthOwnerRef.current = nextUserId;
+      connectionRequestRef.current += 1;
+      endedRef.current = true;
+      roomRef.current?.disconnect();
+      setConnection(null);
+      setConnectionLoading(false);
+      setCamera(false);
+      setMic(false);
+      setDemotedToViewer(false);
+      setStageNotice('');
+      setBusy(false);
+      setDraft('');
+      setReplayEnabled(false);
+      setReplay(null);
+      setReplayBusy(false);
+      setComments([]);
+      setReports([]);
+      setParticipants([]);
+      setGuestRequests([]);
+      setFloatingReactions([]);
+      setRemoteVideoTracks([]);
+      setRemoteAudioParticipants([]);
+      seenGuestRequestIds.current.clear();
+      seenReactionIds.current.clear();
+      setGuestApproved(false);
+      setGuestStatus('none');
+      setPanel('');
+      setAudioBlocked(false);
+      setStatus('Disconnected');
+      setError('Your account changed. You left this LIVE. Reopen it from LIVE Hub.');
+      if (navigation?.canGoBack?.()) navigation.goBack();
+    });
+    return () => data?.subscription?.unsubscribe?.();
+  }, [navigation]);
 
   const refreshReplay = useCallback(async () => {
     if (!stream?.id || !creatorMode || !replayEnabled || !isDocumentVisible() || replayRefreshInFlight.current) return;
@@ -194,6 +241,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       return undefined;
     }
     let active = true;
+    const requestId = ++connectionRequestRef.current;
     setConnection(null);
     setConnectionLoading(true);
     setError('');
@@ -203,18 +251,21 @@ export default function LiveStreamScreen({ route, navigation }) {
             || !nextConnection?.token || !nextConnection?.livekitUrl) {
           throw new Error('The server did not return a complete LIVE room connection.');
         }
-        if (active) setConnection(nextConnection);
+        if (active && requestId === connectionRequestRef.current) setConnection(nextConnection);
       })
       .catch((joinError) => {
-        if (active) {
+        if (active && requestId === connectionRequestRef.current) {
           setError(joinError?.message || 'Could not join this LIVE stream.');
           setStatus('Unable to connect');
         }
       })
       .finally(() => {
-        if (active) setConnectionLoading(false);
+        if (active && requestId === connectionRequestRef.current) setConnectionLoading(false);
       });
-    return () => { active = false; };
+    return () => {
+      active = false;
+      if (connectionRequestRef.current === requestId) connectionRequestRef.current += 1;
+    };
   }, [streamId]);
 
   useEffect(() => {
