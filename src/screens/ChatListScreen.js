@@ -59,6 +59,7 @@ export default function ChatListScreen({ navigation }) {
   const pendingConversationActions = useRef(new Set());
   const loadRequestRef = useRef(0);
   const loadMoreRequestRef = useRef(0);
+  const focusRequestRef = useRef(0);
   const activeUserIdRef = useRef(undefined);
 
 
@@ -117,6 +118,8 @@ export default function ChatListScreen({ navigation }) {
     setDeleting(false);
     setDeleteError('');
     setConversationActionError('');
+    setRefreshing(false);
+    pendingConversationActions.current.clear();
   }, []);
 
   useEffect(() => {
@@ -129,6 +132,7 @@ export default function ChatListScreen({ navigation }) {
       }
       if (activeUserIdRef.current === nextUserId) return;
       activeUserIdRef.current = nextUserId;
+      focusRequestRef.current += 1;
       clearAccountScopedState();
       if (nextUserId) {
         Promise.resolve().then(async () => {
@@ -151,22 +155,26 @@ export default function ChatListScreen({ navigation }) {
 
   useFocusEffect(useCallback(() => {
     let alive = true;
+    const focusRequestId = ++focusRequestRef.current;
     (async () => {
       try {
         const user = await getCurrentUser();
-        if (!alive) return;
+        if (!alive || focusRequestId !== focusRequestRef.current) return;
         const userId = user?.id || (SUPABASE_ENABLED ? null : 'guest');
+        // If an auth event has already published a different owner, this
+        // focus lookup is stale and must not revert the active identity.
         if (activeUserIdRef.current !== undefined && activeUserIdRef.current !== userId) {
+          if (SUPABASE_ENABLED) return;
           clearAccountScopedState();
         }
         activeUserIdRef.current = userId;
         setOwnProfile(user || null);
         const folders = await loadChatFolders(userId || 'guest');
-        if (!alive || activeUserIdRef.current !== userId) return;
+        if (!alive || focusRequestId !== focusRequestRef.current || activeUserIdRef.current !== userId) return;
         setCustomFolders(folders);
         await load();
       } catch (_) {
-        if (alive) {
+        if (alive && focusRequestId === focusRequestRef.current) {
           setOwnProfile(null);
           setCustomFolders([]);
           setConversations([]);
@@ -176,6 +184,7 @@ export default function ChatListScreen({ navigation }) {
     })();
     return () => {
       alive = false;
+      focusRequestRef.current += 1;
       loadRequestRef.current += 1;
       loadMoreRequestRef.current += 1;
     };
