@@ -88,4 +88,5 @@ test('account changes clear Status reactions, replies, privacy selections and ac
   assert.ok(screen.includes('setStatusPaused(false)'));
   assert.ok(screen.includes('setMediaLoadError(false)'));
   assert.ok(screen.includes('requestedStoryOpenRef.current = null'));
+  assert.ok(screen.includes("if (!userId) {\n      setLoading(false);"));
 });
