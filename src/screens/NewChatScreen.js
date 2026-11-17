@@ -58,6 +58,7 @@ export default function NewChatScreen({ navigation, route }) {
   const [onlineIds, setOnlineIds] = useState(new Set());
   const [activeUserId, setActiveUserId] = useState(null);
   const activeUserIdRef = useRef(undefined);
+  const accountChangedRef = useRef(false);
   const favoritesRequestRef = useRef(0);
   const contactsRequestRef = useRef(0);
 
@@ -158,7 +159,7 @@ export default function NewChatScreen({ navigation, route }) {
         setSendingId(null);
         setDirectoryFilter(initialDirectoryFilter);
         setOnlineOnly(false);
-        autoStartedCallRef.current = '';
+        accountChangedRef.current = true;
         if (navigation?.canGoBack?.()) navigation.goBack();
       }
       activeUserIdRef.current = userId;
@@ -279,7 +280,7 @@ export default function NewChatScreen({ navigation, route }) {
   }
 
   useEffect(() => {
-    if (loadingContacts || !targetUserId || !['audio', 'video'].includes(requestedCallType)) return;
+    if (accountChangedRef.current || loadingContacts || !targetUserId || !['audio', 'video'].includes(requestedCallType)) return;
     const key = targetUserId + ':' + requestedCallType;
     if (autoStartedCallRef.current === key) return;
     autoStartedCallRef.current = key;
