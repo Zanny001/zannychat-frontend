@@ -44,7 +44,10 @@ async function refreshVisiblePresence() {
 
 export function setPresenceOwner(userId) {
   const nextOwnerId = typeof userId === 'string' && userId.trim() ? userId.trim() : null;
-  if (presenceOwnerId === nextOwnerId) return;
+  if (presenceOwnerId === nextOwnerId) {
+    if (nextOwnerId && listeners.size > 0 && !started) startPresence();
+    return;
+  }
   presenceOwnerId = nextOwnerId;
 
   // A new auth identity must not inherit the previous account's online list
