@@ -10,6 +10,7 @@ let appStateSubscription = null;
 let started = false;
 let inFlight = false;
 let lifecycleVersion = 0;
+const OFFLINE_HEARTBEAT_FLUSH_MS = 1500;
 let onlineIds = new Set();
 const listeners = new Set();
 
@@ -81,7 +82,28 @@ export function stopPresence() {
   started = false;
   onlineIds = new Set();
   notify();
-  return wasStarted ? heartbeat(false).catch(() => {}) : Promise.resolve();
+
+  // A slow/offline network must never trap sign-out. Flush the offline
+  // heartbeat when it responds, but cap the wait so auth sign-out can proceed.
+  return new Promise((resolve) => {
+    let settled = false;
+    let timer;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      if (timer) clearTimeout(timer);
+      resolve();
+    };
+    timer = setTimeout(finish, OFFLINE_HEARTBEAT_FLUSH_MS);
+    if (!wasStarted) {
+      finish();
+      return;
+    }
+    Promise.resolve()
+      .then(() => heartbeat(false))
+      .catch(() => {})
+      .finally(finish);
+  });
 }
 
 export function subscribePresence(cb) {
