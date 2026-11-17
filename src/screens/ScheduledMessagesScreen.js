@@ -29,7 +29,7 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
     try {
       const [scheduled, conversationResult] = await Promise.all([
         fetchScheduledMessages(),
-        fetchConversations({ limit: 1000, offset: 0 }).catch(() => ({ conversations: [] })),
+        initialConversationId ? Promise.resolve({ conversations: [] }) : fetchConversations({ limit: 100, offset: 0 }).catch(() => ({ conversations: [] })),
       ]);
       setItems(scheduled);
       setConversations(conversationResult.conversations || []);
@@ -38,7 +38,7 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [initialConversationId]);
 
   useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
 
