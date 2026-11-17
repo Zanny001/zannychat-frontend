@@ -62,3 +62,10 @@ test('blocked-user list refresh is bound to the same authenticated account befor
   assert.match(screen, /expectedUserId && userId !== expectedUserId/);
   assert.match(screen, /requestId === blockedRequestRef\.current/);
 });
+
+
+test('blocked-list loading settles only for the latest authenticated account request', () => {
+  assert.match(screen, /return requestId/);
+  assert.match(screen, /if \(requestId === blockedRequestRef\.current\) setLoading\(false\)/);
+  assert.match(screen, /authUserIdRef\.current === nextUserId\) setLoading\(false\)/);
+});
