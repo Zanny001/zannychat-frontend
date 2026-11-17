@@ -100,6 +100,7 @@ test('read receipts use scoped Realtime updates rather than a five-second RPC po
 test('chat screen clears account-owned messages, drafts, receipts and outbox on auth change', () => {
   assert.ok(screen.includes("import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient'"));
   assert.ok(screen.includes('supabase.auth.onAuthStateChange'));
+  assert.ok(screen.includes('if (active) applyUserId(\'me\')'));
   assert.ok(screen.includes('const activeUserIdRef = useRef(undefined)'));
   assert.ok(screen.includes('const messageLoadRequestRef = useRef(0)'));
   assert.ok(screen.includes('const olderLoadRequestRef = useRef(0)'));
