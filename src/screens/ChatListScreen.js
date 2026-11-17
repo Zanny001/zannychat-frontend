@@ -66,7 +66,9 @@ export default function ChatListScreen({ navigation }) {
   // profiles.online column existed but nothing ever set it). Now the
   // app tracks itself on a shared Presence channel and the dots reflect
   // who's actually connected right now. Mock mode keeps its own flags.
-  useEffect(() => subscribePresence(setOnlineIds), []);
+  useEffect(() => subscribePresence((ids) => {
+    if (activeUserIdRef.current === ownProfile?.id || (!SUPABASE_ENABLED && ownProfile?.id == null)) setOnlineIds(ids);
+  }), [ownProfile?.id]);
 
   const load = useCallback(async () => {
     const requestId = ++loadRequestRef.current;
@@ -229,7 +231,7 @@ export default function ChatListScreen({ navigation }) {
       appStateSubscription?.remove?.();
       unsubscribe();
     };
-  }, [load]));
+  }, [load, ownProfile?.id]));
 
   async function handleRefresh() {
     setRefreshing(true);
