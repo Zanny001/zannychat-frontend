@@ -31,6 +31,8 @@ export default function LiveHubScreen({ navigation, route }) {
   const [streams, setStreams] = useState([]);
   const [invitations, setInvitations] = useState([]);
   const [replays, setReplays] = useState([]);
+  const [replayError, setReplayError] = useState('');
+  const [replayLoaded, setReplayLoaded] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
   const pendingReplayPollStartedAt = useRef(0);
   const [followingIds, setFollowingIds] = useState([]);
@@ -88,23 +90,27 @@ export default function LiveHubScreen({ navigation, route }) {
     setLoading(true);
     try {
       const [publicResult, followedResult, followResult, inviteResult, replayResult, currentUser] = await Promise.all([
-        backendFetch('/live'),
+        backendFetch('/live').then((result) => ({ result, error: null })).catch((error) => ({ result: { streams: [] }, error })),
         backendFetch('/live/following/streams').catch(() => ({ streams: [] })),
         backendFetch('/live/following').catch(() => ({ following: [] })),
         backendFetch('/live/invitations').catch(() => ({ invitations: [] })),
-        backendFetch('/live/replays').catch(() => ({ replays: [] })),
+        backendFetch('/live/replays').then((result) => ({ result, error: null })).catch((error) => ({ result: { replays: [] }, error })),
         getCurrentUser().catch(() => null),
       ]);
-      const allStreams = [...(publicResult?.streams || []), ...(followedResult?.streams || [])];
+      const allStreams = [...(publicResult?.result?.streams || []), ...(followedResult?.streams || [])];
       setStreams([...new Map(allStreams.map((item) => [item.id, item])).values()]);
       setFollowingCreators(followResult?.following || []);
       setFollowingIds((followResult?.following || []).map((item) => item.creator_id));
       setInvitations((inviteResult?.invitations || []).filter((item) => item.stream));
-      setReplays(Array.isArray(replayResult?.replays) ? replayResult.replays : []);
+      setReplays(Array.isArray(replayResult?.result?.replays) ? replayResult.result.replays : []);
+      setReplayLoaded(!replayResult?.error);
+      setReplayError(replayResult?.error ? 'LIVE replays are temporarily unavailable. Please try again.' : '');
       setCurrentUserId(currentUser?.id || null);
-      setError('');
+      setError(publicResult?.error?.message || '');
     } catch (e) {
       setError(e?.message || 'LIVE discovery is unavailable.');
+      setReplayLoaded(false);
+      setReplayError('LIVE replays could not be refreshed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -429,7 +435,7 @@ export default function LiveHubScreen({ navigation, route }) {
               </View>
             )}
 
-            {replays.length > 0 && (
+            {(replays.length > 0 || !!replayError || (replayLoaded && !loading)) && (
               <View style={{ paddingHorizontal: spacing.md, marginBottom: spacing.md, gap: spacing.sm }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
                   <Ionicons name="play-circle" size={19} color={colors.primary} />
@@ -437,38 +443,56 @@ export default function LiveHubScreen({ navigation, route }) {
                   <View style={{ flex: 1 }} />
                   <Text style={[typography.caption, { color: colors.textSecondary }]}>{replays.length}</Text>
                 </View>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
-                  {replays.map((item) => (
-                    <GlassCard key={item.id} style={{ width: 232 }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                        <View style={{ width: 40, height: 40, borderRadius: 13, backgroundColor: hexToRgba(colors.primary, 0.12), alignItems: 'center', justifyContent: 'center' }}>
-                          <Ionicons name="film-outline" size={20} color={colors.primary} />
+                {replayError ? (
+                  <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+                    <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Replays could not load</Text>
+                    <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textSecondary }]}>{replayError}</Text>
+                    <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading LIVE replays" style={{ minHeight: 48, paddingHorizontal: spacing.md, borderRadius: radii.md, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={[typography.small, { color: colors.onPrimary, fontWeight: '900' }]}>Retry</Text>
+                    </TouchableOpacity>
+                  </GlassCard>
+                ) : replays.length === 0 ? (
+                  <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                      <Ionicons name="film-outline" size={22} color={colors.primary} />
+                      <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>No saved LIVE replays yet</Text>
+                    </View>
+                    <Text style={[typography.caption, { color: colors.textSecondary }]}>Completed recordings will appear here and remain available for seven days.</Text>
+                  </GlassCard>
+                ) : (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
+                    {replays.map((item) => (
+                      <GlassCard key={item.id} style={{ width: 232 }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                          <View style={{ width: 40, height: 40, borderRadius: 13, backgroundColor: hexToRgba(colors.primary, 0.12), alignItems: 'center', justifyContent: 'center' }}>
+                            <Ionicons name="film-outline" size={20} color={colors.primary} />
+                          </View>
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <Text numberOfLines={2} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.streamTitle || 'LIVE replay'}</Text>
+                            <Text numberOfLines={1} style={[typography.caption, { color: colors.textSecondary }]}>{item.visibility === 'private' ? 'Private' : item.visibility === 'followers' ? 'Followers' : 'Public'} replay</Text>
+                          </View>
                         </View>
-                        <View style={{ flex: 1, minWidth: 0 }}>
-                          <Text numberOfLines={2} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.streamTitle || 'LIVE replay'}</Text>
-                          <Text numberOfLines={1} style={[typography.caption, { color: colors.textSecondary }]}>{item.visibility === 'private' ? 'Private' : item.visibility === 'followers' ? 'Followers' : 'Public'} replay</Text>
-                        </View>
-                      </View>
-                      {item.status === 'ready' ? (
-                        <TouchableOpacity onPress={() => openReplay(item)} accessibilityRole="button" accessibilityLabel={'Watch replay: ' + (item.streamTitle || 'LIVE replay')} style={{ minHeight: 48, borderRadius: radii.md, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.xs }}>
-                          <Ionicons name="play" size={16} color={colors.onPrimary} />
-                          <Text style={[typography.small, { color: colors.onPrimary, fontWeight: '900' }]}>Watch replay</Text>
-                        </TouchableOpacity>
-                      ) : (
-                        <View style={{ minHeight: 42, borderRadius: radii.md, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.xs }}>
-                          {item.status === 'processing' || item.status === 'starting' ? <ActivityIndicator size="small" color={colors.primary} /> : <Ionicons name={item.status === 'recording' ? 'radio-button-on' : 'alert-circle-outline'} size={16} color={item.status === 'recording' ? colors.danger : colors.textSecondary} />}
-                          <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800' }]}>{item.status === 'processing' ? 'Preparing replay…' : item.status === 'starting' ? 'Starting recording…' : item.status === 'recording' ? 'Recording · auto-stops' : 'Replay unavailable'}</Text>
-                        </View>
-                      )}
-                    {item.creatorId === currentUserId && !['starting', 'recording', 'processing'].includes(item.status) ? (
-                        <TouchableOpacity onPress={() => deleteReplay(item)} accessibilityRole="button" accessibilityLabel={'Delete replay: ' + (item.streamTitle || 'LIVE replay')} style={{ minHeight: 48, borderRadius: radii.md, borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.32), alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.xs }}>
-                          <Ionicons name="trash-outline" size={15} color={colors.danger} />
-                          <Text style={[typography.caption, { color: colors.danger, fontWeight: '800' }]}>Delete replay</Text>
-                        </TouchableOpacity>
-                      ) : null}
-                    </GlassCard>
-                  ))}
-                </ScrollView>
+                        {item.status === 'ready' ? (
+                          <TouchableOpacity onPress={() => openReplay(item)} accessibilityRole="button" accessibilityLabel={'Watch replay: ' + (item.streamTitle || 'LIVE replay')} style={{ minHeight: 48, borderRadius: radii.md, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.xs }}>
+                            <Ionicons name="play" size={16} color={colors.onPrimary} />
+                            <Text style={[typography.small, { color: colors.onPrimary, fontWeight: '900' }]}>Watch replay</Text>
+                          </TouchableOpacity>
+                        ) : (
+                          <View style={{ minHeight: 42, borderRadius: radii.md, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.xs }}>
+                            {item.status === 'processing' || item.status === 'starting' ? <ActivityIndicator size="small" color={colors.primary} /> : <Ionicons name={item.status === 'recording' ? 'radio-button-on' : 'alert-circle-outline'} size={16} color={item.status === 'recording' ? colors.danger : colors.textSecondary} />}
+                            <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800' }]}>{item.status === 'processing' ? 'Preparing replay…' : item.status === 'starting' ? 'Starting recording…' : item.status === 'recording' ? 'Recording · auto-stops' : 'Replay unavailable'}</Text>
+                          </View>
+                        )}
+                        {item.creatorId === currentUserId && !['starting', 'recording', 'processing'].includes(item.status) ? (
+                          <TouchableOpacity onPress={() => deleteReplay(item)} accessibilityRole="button" accessibilityLabel={'Delete replay: ' + (item.streamTitle || 'LIVE replay')} style={{ minHeight: 48, borderRadius: radii.md, borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.32), alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.xs }}>
+                            <Ionicons name="trash-outline" size={15} color={colors.danger} />
+                            <Text style={[typography.caption, { color: colors.danger, fontWeight: '800' }]}>Delete replay</Text>
+                          </TouchableOpacity>
+                        ) : null}
+                      </GlassCard>
+                    ))}
+                  </ScrollView>
+                )}
               </View>
             )}
 
