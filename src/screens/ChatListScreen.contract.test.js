@@ -71,3 +71,11 @@ test('chat list realtime and presence subscriptions follow the active account', 
   assert.ok(screen.includes('activeUserIdRef.current === ownProfile?.id'));
   assert.ok(screen.includes('[load, ownProfile?.id]'));
 });
+
+
+test('chat list optimistic actions and deletes cannot restore old-account conversations', () => {
+  assert.ok(screen.includes('const expectedUserId = activeUserIdRef.current'));
+  assert.ok(screen.includes('if (activeUserIdRef.current !== expectedUserId) return'));
+  assert.ok(screen.includes('if (activeUserIdRef.current === expectedUserId) setDeleting(false)'));
+  assert.ok(screen.includes('if (activeUserIdRef.current === expectedUserId) pendingConversationActions.current.delete(actionKey)'));
+});
