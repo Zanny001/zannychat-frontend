@@ -175,7 +175,28 @@ export default function ChatScreen({ route, navigation }) {
   // also stop pushing to this device (enforced server-side).
   const [flags, setFlags] = useState({ isMuted: Boolean(conversation.isMuted), isArchived: Boolean(conversation.isArchived) });
   const [myUserId, setMyUserId] = useState(null);
-  useEffect(() => { let active = true; Promise.all([loadPendingMessages(myUserId, conversation?.id), loadPendingAttachments(myUserId, conversation?.id)]).then(([messages, attachments]) => { if (active) { setPendingOutbox(messages); setPendingAttachments(attachments); } }); return () => { active = false; }; }, [myUserId, conversation?.id]);
+  useEffect(() => {
+    let active = true;
+    if (!myUserId) {
+      setPendingOutbox([]);
+      setPendingAttachments([]);
+      return () => { active = false; };
+    }
+    Promise.all([loadPendingMessages(myUserId, conversation?.id), loadPendingAttachments(myUserId, conversation?.id)])
+      .then(([messages, attachments]) => {
+        if (active && activeUserIdRef.current === myUserId) {
+          setPendingOutbox(messages);
+          setPendingAttachments(attachments);
+        }
+      })
+      .catch(() => {
+        if (active && activeUserIdRef.current === myUserId) {
+          setPendingOutbox([]);
+          setPendingAttachments([]);
+        }
+      });
+    return () => { active = false; };
+  }, [myUserId, conversation?.id]);
   const [pinnedMessages, setPinnedMessages] = useState([]);
   const [peerTyping, setPeerTyping] = useState(false);
   const [onlineIds, setOnlineIds] = useState(new Set());
