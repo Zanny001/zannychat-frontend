@@ -35,3 +35,8 @@ test('inbox refreshes while focused from realtime message and participant change
   assert.ok(screen.includes('state === \'active\' && active'));
   assert.ok(screen.includes('AppState.currentState && AppState.currentState !== \'active\''));
 });
+
+
+test('chat story tray reads status seen markers from the current account only', () => {
+  assert.ok(screen.includes('readSeenStatusIds(AsyncStorage, user?.id)'));
+});
