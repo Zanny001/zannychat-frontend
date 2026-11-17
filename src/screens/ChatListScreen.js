@@ -11,7 +11,7 @@ import GlassCard from '../components/GlassCard';
 import Knot from '../components/Knot';
 import ActionSheet from '../components/ActionSheet';
 import { fetchConversations, subscribeToConversationListChanges, toggleFavorite, setConversationFlags, deleteConversationForCurrentUser, getCurrentUser } from '../services/api';
-import { startPresence, subscribePresence } from '../services/presence';
+import { subscribePresence } from '../services/presence';
 import { SUPABASE_ENABLED } from '../services/supabaseClient';
 import { hexToRgba } from '../utils/color';
 import { filterConversations as filterChatList } from '../utils/filterConversations';
@@ -64,10 +64,7 @@ export default function ChatListScreen({ navigation }) {
   // profiles.online column existed but nothing ever set it). Now the
   // app tracks itself on a shared Presence channel and the dots reflect
   // who's actually connected right now. Mock mode keeps its own flags.
-  useEffect(() => {
-    startPresence();
-    return subscribePresence(setOnlineIds);
-  }, []);
+  useEffect(() => subscribePresence(setOnlineIds), []);
 
   const load = useCallback(async () => {
     const requestId = ++loadRequestRef.current;

@@ -9,6 +9,7 @@ let pollTimer = null;
 let appStateSubscription = null;
 let started = false;
 let inFlight = false;
+let lifecycleVersion = 0;
 let onlineIds = new Set();
 const listeners = new Set();
 
@@ -23,25 +24,34 @@ async function heartbeat(active) {
 }
 
 async function refreshVisiblePresence() {
-  if (!SUPABASE_ENABLED || inFlight || AppState.currentState !== 'active') return;
+  if (!SUPABASE_ENABLED || !started || inFlight || AppState.currentState !== 'active') return;
+  const version = lifecycleVersion;
   inFlight = true;
   try {
     const { data, error } = await supabase.rpc('get_visible_presence');
     if (error) throw error;
+    if (!started || version !== lifecycleVersion) return;
     onlineIds = new Set((data || []).filter((row) => row.is_online).map((row) => row.user_id));
     notify();
   } catch (_) {
     // A transient network failure must not turn unknown users into "offline".
   } finally {
-    inFlight = false;
+    // An older request must not release the in-flight lock for a newer
+    // authenticated lifecycle after sign-out/account switching.
+    if (version === lifecycleVersion) inFlight = false;
   }
 }
 
 export async function startPresence() {
   if (!SUPABASE_ENABLED || started) return;
   started = true;
+  const version = ++lifecycleVersion;
   try { await heartbeat(AppState.currentState === 'active'); } catch (_) {}
+  // A last subscriber may have left while the initial heartbeat was pending.
+  if (!started || version !== lifecycleVersion) return;
   await refreshVisiblePresence();
+  if (!started || version !== lifecycleVersion) return;
+
   heartbeatTimer = setInterval(() => {
     if (AppState.currentState === 'active') heartbeat(true).catch(() => {});
   }, 30000);
@@ -58,20 +68,32 @@ export async function startPresence() {
 }
 
 export function stopPresence() {
+  // Invalidate an in-progress start so it cannot install timers after logout.
+  lifecycleVersion += 1;
   if (heartbeatTimer) clearInterval(heartbeatTimer);
   if (pollTimer) clearInterval(pollTimer);
   heartbeatTimer = null;
   pollTimer = null;
+  inFlight = false;
   appStateSubscription?.remove?.();
   appStateSubscription = null;
-  if (started) heartbeat(false).catch(() => {});
+  const wasStarted = started;
   started = false;
   onlineIds = new Set();
   notify();
+  return wasStarted ? heartbeat(false).catch(() => {}) : Promise.resolve();
 }
 
 export function subscribePresence(cb) {
   listeners.add(cb);
   cb(new Set(onlineIds));
-  return () => listeners.delete(cb);
+  // Presence is active only while at least one authenticated screen observes it.
+  startPresence();
+  let subscribed = true;
+  return () => {
+    if (!subscribed) return;
+    subscribed = false;
+    listeners.delete(cb);
+    if (listeners.size === 0) stopPresence();
+  };
 }
