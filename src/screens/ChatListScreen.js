@@ -96,23 +96,36 @@ export default function ChatListScreen({ navigation }) {
         const folders = await loadChatFolders(user?.id || 'guest');
         if (alive) setCustomFolders(folders);
       } catch (_) {}
-      if (!SUPABASE_ENABLED) {
-        if (alive) setStoryGroups([]);
-        return;
-      }
+    })();
+    return () => { alive = false; };
+  }, [load]));
+
+  // The chat-list story tray must use the signed-in account's own read
+  // markers. The old call omitted userId, which made the helper return an
+  // empty list and rendered every story as unread. Key the feed load to the
+  // profile ID so an account switch invalidates the previous request.
+  useEffect(() => {
+    let alive = true;
+    const userId = ownProfile?.id;
+    setStoryGroups([]);
+    if (!SUPABASE_ENABLED || !userId) return () => { alive = false; };
+
+    (async () => {
       try {
         const [statuses, seenIds] = await Promise.all([
           listActiveStatuses(),
-          readSeenStatusIds(AsyncStorage),
+          readSeenStatusIds(AsyncStorage, userId),
         ]);
-        const profiles = await resolveStatusUserProfiles(statuses.map((status) => status.user_id), user?.id);
+        if (!alive) return;
+        const profiles = await resolveStatusUserProfiles(statuses.map((status) => status.user_id), userId);
         if (alive) setStoryGroups(buildStoryTrayGroups(statuses, profiles, seenIds));
       } catch (_) {
         if (alive) setStoryGroups([]);
       }
     })();
+
     return () => { alive = false; };
-  }, [load]));
+  }, [ownProfile?.id]);
 
   // Keep the inbox current while it stays focused. Realtime payloads are
   // only invalidation signals; fetchConversations remains the authoritative,
