@@ -10,6 +10,7 @@ let appStateSubscription = null;
 let started = false;
 let inFlight = false;
 let lifecycleVersion = 0;
+let presenceOwnerId = null;
 const OFFLINE_HEARTBEAT_FLUSH_MS = 1500;
 let onlineIds = new Set();
 const listeners = new Set();
@@ -43,8 +44,34 @@ async function refreshVisiblePresence() {
   }
 }
 
+export function setPresenceOwner(userId) {
+  const nextOwnerId = typeof userId === 'string' && userId.trim() ? userId.trim() : null;
+  if (presenceOwnerId === nextOwnerId) {
+    if (nextOwnerId && listeners.size > 0 && !started) startPresence();
+    return;
+  }
+  presenceOwnerId = nextOwnerId;
+
+  // A new auth identity must not inherit the previous account's online list
+  // or polling timers. Do not send heartbeat(false) here: Supabase may
+  // already have replaced the previous session token.
+  lifecycleVersion += 1;
+  if (heartbeatTimer) clearInterval(heartbeatTimer);
+  if (pollTimer) clearInterval(pollTimer);
+  heartbeatTimer = null;
+  pollTimer = null;
+  inFlight = false;
+  appStateSubscription?.remove?.();
+  appStateSubscription = null;
+  started = false;
+  onlineIds = new Set();
+  notify();
+
+  if (presenceOwnerId && listeners.size > 0) startPresence();
+}
+
 export async function startPresence() {
-  if (!SUPABASE_ENABLED || started) return;
+  if (!SUPABASE_ENABLED || !presenceOwnerId || started) return;
   started = true;
   const version = ++lifecycleVersion;
   try { await heartbeat(AppState.currentState === 'active'); } catch (_) {}
