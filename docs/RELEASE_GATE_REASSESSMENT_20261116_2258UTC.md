@@ -29,12 +29,12 @@ The existing `vercel.json` also rewrites every path to `/index.html`, uses `npm 
 
 ## Vercel authorization and deployment
 
-- The Vercel team is `zanny-chat` / `team_P8IYvDiidDlhUHaQBe1RN1Wg`, Hobby plan, with zero linked projects returned by the connected context.
+- The Vercel team is `zanny-chat` / `team_P8IYvDiidDlhUHaQBe1RN1Wg`, Hobby plan. GitHub's Vercel integration bot identifies the `zannychat` project (`prj_OOi2wCB33VrD2oV1DiuGqmhezByZ`) and has posted Ready preview URLs. However, the separately connected Vercel API integration returns zero projects for team-scoped search and 404 for project/deployment inspection; treat this as an API connection access-scope discrepancy, not proof the project is absent.
 - A fresh team-consent request was generated on 2026-11-17. The team owner must open the current one-time link supplied in this conversation, review the permissions and approve. It expires after ten minutes.
-- Project creation previously returned HTTP 403. Do not retry project creation until approval is completed.
-- The GitHub commit currently reports a Vercel status check as pending, but a direct Vercel deployment-history query for the exact commit returned zero records and lookup of the check's deployment identifier returned 404. Treat this as an unresolved/stale integration check, not as evidence of a preview deployment.
-- Subsequent GitHub commit statuses on the new push-token PRs report the Vercel check as failed with the target `upgradeToPro=build-rate-limit`. The team still lists zero linked projects and exact-commit deployment history returns zero records. This is an external Vercel build-rate-limit/plan gate, not a frontend test failure; no paid upgrade was initiated under the ₦0 constraint.
-- No Vercel project, alias, preview deployment, or production deployment is claimed by this addendum.
+- Project creation previously returned HTTP 403. Do not retry project creation until the owner authorization is confirmed; GitHub bot evidence now shows the project already exists, so do not create a duplicate.
+- GitHub Vercel bot comments confirm Ready previews for several exact PR commits (for example PR #119), while also reporting `api-deployments-free-per-day` after more than 100 deployments in 24 hours. The Ready preview is not evidence of a production deployment.
+- The connected Vercel API integration returns zero team-scoped projects and 404 on project/deployment inspection despite the GitHub bot's project ID evidence. The intended production alias `zannychat.vercel.app` remains unverified; no production deployment is claimed.
+- Do not upgrade the Hobby plan or trigger further builds under the ₦0 budget. Reduce redundant PR-triggered builds, keep Netlify preview as the current test surface, and re-check Vercel after its daily quota resets and API access is corrected.
 
 ## Release gates that remain open
 
