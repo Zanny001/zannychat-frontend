@@ -372,3 +372,22 @@ The Channels directory is the next dedicated collection-performance task; its mo
 | QR Contact | Static QR share/scan surface; no unbounded collection. | Source pass complete; camera permission and cross-account scan acceptance pending |
 
 Group roster pagination must be implemented on the trusted backend and must verify the caller's group membership before returning each page. Client-side filtering is not an authorization boundary.
+
+
+### Screens 33–43 — scheduled, account-data and authentication flows
+
+| Experience | Source-level finding | Status |
+|---|---|---|
+| Scheduled Messages | Backend caps pending rows at 100. The screen previously mapped pending messages in ScrollView; PR #156 converts the list to FlatList and preserves local-time scheduling and cancellation. Conversation picker is capped at the latest 100 and still needs search for older conversations. | CI pending |
+| Sessions | Security-focused session summary and revoke-other-sessions action; no unbounded client-rendered list found. | Source pass complete; cross-device session revocation acceptance pending |
+| Data Export | Static export request/status surface; no unbounded collection. | Source pass complete; actual export/download/privacy acceptance pending |
+| Data Storage | Media quality and auto-download controls use fixed option arrays; ScrollView is appropriate. | Source pass complete; storage usage accuracy and low-storage device acceptance pending |
+| Help | FAQ is a fixed local array; no unbounded collection. | Source pass complete; support-link and accessibility review pending |
+| Onboarding | Static, responsive onboarding slides; no list virtualization required. | Source pass complete; first-install and reduced-motion review pending |
+| Login | Static credential form with accessible labels and explicit error states. | Source pass complete; password manager/autofill and rate-limit acceptance pending |
+| Signup | Multi-field account creation form with validation and accessible labels. | Source pass complete; duplicate-account and verification acceptance pending |
+| Verify Email | Static verification and resend states. | Source pass complete; delivery, cooldown and expired-code acceptance pending |
+| Password Recovery | Static recovery request form; no unbounded collection. | Source pass complete; anti-enumeration and email delivery acceptance pending |
+| Password Reset | Static reset form with explicit validation and completion state. | Source pass complete; expired/reused token and session invalidation acceptance pending |
+
+The first source-level pass now covers the principal messaging, profile, privacy, status, calling, social, group, scheduled-message and authentication routes. Source review is not equivalent to device acceptance; all production gates remain separately tracked.
