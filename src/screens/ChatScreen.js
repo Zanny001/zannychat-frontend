@@ -590,6 +590,8 @@ export default function ChatScreen({ route, navigation }) {
           setMessages((items) => items.some((entry) => entry.id === confirmed.id) ? items : [...items, confirmed]);
           stickToBottom.current = true;
         } catch (error) {
+          if (error?.code === 'AUTH_USER_CHANGED'
+              || (SUPABASE_ENABLED && activeUserIdRef.current !== expectedUserId)) return;
           if (isPermanentMessageSendError(error)) {
             const removed = await removePendingMessage(myUserId, conversation.id, item.requestId);
             if (removed) setPendingOutbox((items) => items.filter((entry) => entry.requestId !== item.requestId));
