@@ -209,3 +209,63 @@ The current replay budget is five minutes per recording, 50 minutes total per ca
 - The latest Netlify PR previews for PR #135 (Status account-switch UI reset) and PR #137 (ChatList story read-marker account scope) both reached `ready`; preview readiness does not promote either change to production.
 - PR #137 is under Advanced Calling and Premium LIVE CI. It corrects a missed call site: `ChatListScreen` omitted the required account ID when reading Status seen markers, causing the story tray to treat all statuses as unseen. The PR scopes the read to `ownProfile.id` and invalidates stale feed loads on profile change. Its first CI run exposed one stale test assertion that expected the previous `user?.id` call; the assertion was updated to the new `userId` contract and CI restarted.
 - PR #135 has merged after Advanced Calling and Premium LIVE quality workflows passed. Its Vercel GitHub bot reported a Ready preview for the exact commit, but Vercel also reported the daily Hobby deployment cap exceeded. The intended production alias is still unverified.
+
+
+---
+
+## Coordinated programme checkpoint — 2026-11-17 12:00 WAT
+
+This checkpoint supersedes earlier pull-request snapshots in this register. It records source, CI and read-only production evidence; it is not a production acceptance declaration.
+
+### Frontend main and account isolation
+
+- Frontend main at checkpoint: `8ad25aeb5b09a92ef69f7cd4b91b058e20440148`.
+- PR #146 (`fix(chats): isolate inbox data across account changes`) merged as `ccad57d00d7e4a18e71a1d84880d533e3427c49c`. The updated head passed both Advanced calling client checks and Premium status/LIVE quality; its Netlify and Vercel preview checks passed.
+- PR #147 (`fix(chats): isolate New Chat directory across account changes`) merged as `8ad25aeb5b09a92ef69f7cd4b91b058e20440148`. Both GitHub Actions workflows passed and Netlify preview passed. Its Vercel preview reported the team build-rate-limit gate; this was not an application test failure.
+- The merged fixes clear account-owned inbox, folder, presence, pagination, contacts and favourites state on auth changes, and prevent stale asynchronous responses/writes from crossing account boundaries. Real two-account acceptance remains required before production release.
+- LIVE PR #86 remains merged. Creator Studio and HOST/GUEST role separation are already present on current main. PR #88 was closed without merge; its recovered duplicate draft #148 was closed as superseded after confirming the current main code and audit document already contain the implementation. No duplicate LIVE code was merged.
+- Current main's Vercel status is pending at this checkpoint. No production deployment was triggered from this audit.
+
+### Fresh Supabase security and storage review
+
+Read-only catalog and advisor checks against project `vithpppgyjmazxvogvno`:
+
+- Project status: ACTIVE_HEALTHY; organization plan: Free.
+- Latest applied migration observed: `20261117005015_publish_conversations_realtime`. The latest three Realtime publication migrations for conversation participants, message reactions and conversations are present in both the applied ledger and backend repository.
+- Security advisor: 37 RLS-enabled tables without policies (INFO); 28 SECURITY DEFINER functions executable by `authenticated` (WARN); zero such functions executable by `anon`; leaked-password protection disabled (WARN).
+- The 37 no-policy tables have no direct table privileges for `anon` or `authenticated`; they remain backend/service-role-only. Do not add broad RLS policies merely to silence the INFO finding.
+- All 28 authenticated-executable SECURITY DEFINER functions have a pinned search_path. Four do not contain a direct `auth.uid()`/JWT reference: two poll overloads delegate to guarded implementations; avatar/cover path helpers delegate to privacy-guarded profile functions. The reviewed profile/status helpers bind the viewer to `auth.uid()`. The `public` schema does not grant CREATE to anon, authenticated or service_role.
+- Leaked-password protection remains unavailable on the current Free plan. Do not upgrade or add paid spend under the ₦0 constraint; retain this as a documented residual risk.
+- Storage remains: public `avatars` (3 objects), private `private-avatars` (4), private `chat-media` (14), private `status-media` (6), private `live-replays` (0). No object was deleted. The `live-replays` bucket is private, MP4-only and capped at 48,000,000 bytes; no direct client storage policy exists for that bucket.
+
+### LIVE replay: source implementation versus production acceptance
+
+- Current backend source contains the replay start/stop/list/playback routes, managed LiveKit Egress integration, signed playback URLs, webhook signature verification, replay finalizer, stop/recovery/retention worker and focused regression tests.
+- Replay constraints in source/migrations: up to 300 seconds per recording, 48,000,000 bytes per file, 3,000 seconds (50 minutes) per creator per calendar month, seven-day retention and six-minute signed playback URLs. Recording is fail-closed unless replay enablement, build-plan confirmation, LiveKit Egress credentials and private Supabase S3 credentials are configured.
+- Fresh production snapshot: 0 `live_stream_replays` rows, 0 `live-replays` objects, 0 reserved seconds and 2 used quota seconds for November. All 7 stored LIVE stream rows are ended. These facts do not prove an Egress recording, upload, webhook finalisation or playback succeeded.
+- Mandatory acceptance remains: real creator broadcast → Egress MP4 → signed webhook → private bucket object → creator/viewer-authorised signed playback → expiry/deletion and quota reconciliation.
+
+### Backend deployment reconciliation
+
+- Backend GitHub main at checkpoint: `4a64d057a030d5be3ef639991960a3c0494ed989`.
+- GitHub comparison shows 55 commits after the last Render deployment SHA recorded in the prior audit (`c59dac1395f59fcaf12e9bfe7b771d01c45d718f)), including runtime changes to LIVE replay recovery/finalisation, call routes, CORS and other services, as well as migrations and tests.
+- Do not assume the older deployment record is current or that every commit is deployed. Render deployment state must be checked against the current service before production is declared synchronized. No Render service or deployment was changed in this checkpoint.
+
+### Premium interface programme
+
+- The current canonical register tracks 46 screen modules across 48 navigation experiences. The earlier 36-screen list is not the complete current route inventory; reused modules and route aliases must not be counted as separate redesigns.
+- All 46 registered modules have a first-pass source review logged. This is not completion of the visual redesign: individual visual hierarchy, responsive sizes, keyboard/scroll behaviour, accessibility, empty/loading/error states, light/dark/custom palette matrix and device acceptance remain open.
+- A standalone 18-view Crown Aurora LIVE product-design presentation was prepared from the three supplied HTML references. It is a local interaction/design prototype only; sample identities, audience counts and financial labels are illustrative and it is not connected to production services.
+
+### Release blockers retained
+
+1. Two-account browser acceptance for account switching, messaging privacy and creator/guest/viewer LIVE role boundaries.
+2. Two-physical-device Android/iOS acceptance for direct and group calls, remote audio/video, background/foreground recovery, reconnect and terminal call states.
+3. End-to-end LIVE replay recording, private storage, signed playback, expiry and deletion.
+4. Production-configured Android/iOS builds and push/call lifecycle acceptance; source compilation and CI do not replace device tests.
+5. Encrypted persistence design for pending message text; AsyncStorage remains app-private but is not Keychain/Keystore encryption.
+6. No E2EE claim: message content remains plaintext at the application/database layer.
+7. Render deployment SHA reconciliation and Vercel deployment/build availability.
+8. Full visual and interaction acceptance across all 46 registered screen modules.
+
+No paid-plan upgrade, production database mutation, blanket RLS change, object deletion or production deployment was performed for this checkpoint.
