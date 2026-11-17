@@ -248,7 +248,7 @@ The connected account is confirmed as an `OWNER` of the `ZannyChat` Hobby team, 
 
 ## Audit follow-up — 2026-11-17 (do not mark screens complete from source checks alone)
 
-- **Chats / inbox:** PR #121 adds foreground-aware Supabase Realtime invalidation for message and participant changes, debounced refresh, subscription-ready reconciliation and stale-fetch protection. Visual layout, accessibility, pagination and two-account delivery still require acceptance.
+- **Chats / inbox:** PR #121 adds foreground-aware Supabase Realtime invalidation for message, participant and conversation metadata changes, debounced refresh, subscription-ready reconciliation and stale-fetch protection. Visual layout, accessibility, pagination and two-account delivery still require acceptance.
 - **Chat:** PR #124 replaces the five-second read-cursor RPC poll with conversation-scoped Realtime updates. Message composer, offline recovery, attachment and group-read receipts still require device/network acceptance.
 - **Status / Stories:** PR #123 scopes viewed markers to the authenticated account, clears previous-account story/reply/reaction/privacy state and invalidates in-flight reads on account switch. Story viewer, upload, audience privacy and multi-account visual acceptance remain open.
 - **LIVE Hub / LIVE Stream:** PR #120 pauses polling while unfocused/backgrounded, prevents overlapping reads and reduces polling frequency. Creator/guest/viewer role, remote track layout, moderation, replay upload/playback and concurrent-viewer load gates remain open.
