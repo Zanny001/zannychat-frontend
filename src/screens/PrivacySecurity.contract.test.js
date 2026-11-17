@@ -39,6 +39,8 @@ test('Google account deletion copy matches the server five-minute reauthenticati
 
 test('Privacy Security clears blocked users and account-deletion proof when auth owner changes', () => {
   assert.match(screen, /const blockedRequestRef = useRef\(0\)/);
+  assert.match(screen, /if \(!SUPABASE_ENABLED \|\| !supabase\)/);
+  assert.match(screen, /const entries = await fetchBlockedUsers\(\)/);
   assert.match(screen, /const authProviderRequestRef = useRef\(0\)/);
   assert.match(screen, /const requestId = \+\+authProviderRequestRef\.current/);
   assert.match(screen, /if \(requestId !== authProviderRequestRef\.current\) return/);
