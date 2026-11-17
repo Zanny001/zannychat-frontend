@@ -93,5 +93,5 @@ test('permanent failures discovered by automatic recovery are removed instead of
 test('read receipts use scoped Realtime updates rather than a five-second RPC poll', () => {
   assert.match(screen, /subscribeToParticipantUpdates\(conversation\.id/);
   assert.doesNotMatch(screen, /fetchParticipantReadState\(conversation\.id\)/);
-  assert.match(screen, /last_read_at updates immediately/);
+  assert.match(screen, /advance the read cursor immediately/);
 });
