@@ -144,15 +144,27 @@ export default function EventsScreen({ navigation, route }) {
         renderItem={({ item: event }) => {
           const rsvps = event.conversation_event_rsvps || [];
           const mine = rsvps.find((r) => r.user_id === currentUserId)?.response;
+          const going = rsvps.filter((r) => r.response === 'going').length;
+          const maybe = rsvps.filter((r) => r.response === 'maybe').length;
+          const notGoing = rsvps.filter((r) => r.response === 'not_going').length;
+          const options = [
+            { value: 'going', label: 'Going' },
+            { value: 'maybe', label: 'Maybe' },
+            { value: 'not_going', label: 'Can’t go' },
+          ];
           return (
             <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
               <Text style={[typography.bodyStrong, { color: colors.textPrimary, flexShrink: 1 }]}>{event.title}</Text>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>{new Date(event.starts_at).toLocaleString()}</Text>
-              {event.location ? <Text style={[typography.body, { color: colors.textPrimary, flexShrink: 1 }]}>{event.location}</Text> : null}
-              {event.description ? <Text style={[typography.body, { color: colors.textSecondary, flexShrink: 1, lineHeight: 21 }]}>{event.description}</Text> : null}
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>{rsvps.filter((r) => r.response === 'going').length} going · {rsvps.filter((r) => r.response === 'maybe').length} maybe · {rsvps.filter((r) => r.response === 'not_going').length} not going</Text>
+              {event.location ? <Text style={[typography.body, { color: colors.textPrimary }]}>{event.location}</Text> : null}
+              {event.description ? <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 21 }]}>{event.description}</Text> : null}
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>{going} going · {maybe} maybe · {notGoing} not going</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
-                {[['going', 'Going'], ['maybe', 'Maybe'], ['not_going', 'Can’t go']].map(([value, label]) => <TouchableOpacity key={value} onPress={() => respond(event, value)} accessibilityRole="button" accessibilityLabel={'RSVP ' + label} style={{ borderWidth: 1, borderColor: colors.primary, backgroundColor: mine === value ? colors.primary : 'transparent', borderRadius: radii.md, minHeight: 48, paddingVertical: spacing.sm, paddingHorizontal: spacing.md }}><Text style={[typography.caption, { color: mine === value ? colors.onPrimary : colors.primary }]}>{label}</Text></TouchableOpacity>)}
+                {options.map((option) => (
+                  <TouchableOpacity key={option.value} onPress={() => respond(event, option.value)} accessibilityRole="button" accessibilityLabel={'RSVP ' + option.label} style={{ borderWidth: 1, borderColor: colors.primary, backgroundColor: mine === option.value ? colors.primary : 'transparent', borderRadius: radii.md, minHeight: 48, paddingVertical: spacing.sm, paddingHorizontal: spacing.md }}>
+                    <Text style={[typography.caption, { color: mine === option.value ? colors.onPrimary : colors.primary }]}>{option.label}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </GlassCard>
           );
