@@ -263,7 +263,7 @@ test('LIVE end and leave failures do not silently navigate away from an active r
   assert.ok(leave.includes('catch (error)'));
   assert.ok(leave.includes('endedRef.current = false;'));
   assert.ok(leave.includes("creatorMode ? 'Could not end LIVE' : 'Could not leave LIVE'"));
-  assert.ok(leave.indexOf('navigation.goBack()') < leave.indexOf('catch (error)') || leave.includes('navigation.goBack();\n    } catch (error)'));
+  assert.ok(leave.includes("navigation.replace('LiveHub')"));
   const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   const webLeaveStart = web.indexOf('  const leave = async () => {');
   const webLeaveEnd = web.indexOf('\n  const toggleCamera', webLeaveStart);
