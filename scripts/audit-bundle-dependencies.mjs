@@ -77,18 +77,23 @@ function isVulnerable(packageName, version) {
   return false;
 }
 
-function packageInstallPathFromSource(source) {
+function packageFromSource(source) {
   const normalized = String(source).replaceAll(String.fromCharCode(92), '/');
-  const matches = [...normalized.matchAll(/(?:^|\/)(node_modules\/(?:@[^/]+\/)?[^/]+)(?=\/|$)/g)];
-  // Use the deepest node_modules segment so nested copies are not mistaken
-  // for their parent package (for example micromatch/node_modules/picomatch).
-  return matches.at(-1)?.[1] ?? null;
-}
+  const segments = normalized.split('/');
+  let packageInfo = null;
 
-function packageNameFromInstallPath(installPath) {
-  const marker = 'node_modules/';
-  const index = installPath.lastIndexOf(marker);
-  return index === -1 ? null : installPath.slice(index + marker.length);
+  for (let index = 0; index < segments.length; index += 1) {
+    if (segments[index] !== 'node_modules') continue;
+    const packageEnd = segments[index + 1]?.startsWith('@') ? index + 2 : index + 1;
+    if (!segments[packageEnd]) continue;
+
+    packageInfo = {
+      installPath: segments.slice(segments.indexOf('node_modules'), packageEnd + 1).join('/'),
+      packageName: segments.slice(index + 1, packageEnd + 1).join('/'),
+    };
+  }
+
+  return packageInfo;
 }
 
 function collectMaps(directory) {
@@ -128,9 +133,9 @@ for (const target of targets) {
     if (Array.isArray(map.sources)) {
       for (const source of map.sources) {
         sourceCount += 1;
-        const installPath = packageInstallPathFromSource(source);
-        if (!installPath) continue;
-        const packageName = packageNameFromInstallPath(installPath);
+        const packageInfo = packageFromSource(source);
+        if (!packageInfo) continue;
+        const { installPath, packageName } = packageInfo;
         const version = lockPackages[installPath]?.version;
         const hit = `${packageName}@${version ?? 'unknown'}: ${mapPath} -> ${source}`;
 
