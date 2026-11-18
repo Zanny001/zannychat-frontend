@@ -90,6 +90,8 @@ test('web LIVE creator sees incoming guest requests in an automatically refreshe
   assert.ok(web.includes("setInterval(refreshGuestRequests, 5000)"));
   assert.ok(web.includes("if (hasNewRequest) setPanel('guestRequests')"));
   assert.ok(web.includes('Guest requests ('));
+  assert.ok(web.includes('Requested to join your stage'));
+  assert.ok(web.includes('item.name || item.user_id'));
   assert.ok(web.includes("reviewGuestRequest(item.user_id, 'accepted')"));
   assert.ok(web.includes("reviewGuestRequest(item.user_id, 'declined')"));
 });
