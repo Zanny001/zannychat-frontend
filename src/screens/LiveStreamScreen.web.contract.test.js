@@ -49,8 +49,11 @@ test('native LIVE uses the React Native LiveKit SDK and toggles published tracks
 test('web LIVE renders each remote publisher in a labelled multi-participant stage grid', () => {
   assert.ok(web.includes('const [remoteVideoTracks, setRemoteVideoTracks] = useState([])'));
   assert.ok(web.includes('setRemoteVideoTracks((current) => current.some((item) => item.track.sid === track.sid)'));
-  assert.ok(web.includes('[...remoteVideoTracks].sort('));
-  assert.ok(web.includes('<RemoteVideoTile key={item.track.sid}'));
+  assert.ok(web.includes('const orderedRemoteTracks = [...remoteVideoTracks].sort('));
+  assert.ok(web.includes('<RemoteVideoTile'));
+  assert.ok(web.includes('floatingRemoteTracks.slice(0, 4)'));
+  assert.ok(web.includes('mainStage'));
+  assert.ok(web.includes('floating'));
   assert.ok(web.includes('participant.name || participant.identity'));
 });
 
@@ -117,11 +120,16 @@ test('web LIVE uses the participant supplied by LiveKit TrackSubscribed instead 
 });
 
 test('web LIVE renders creator and remote guests together in one responsive stage', () => {
-  assert.ok(web.includes('const videoTileCount = remoteVideoTracks.length + (publisherMode ? 1 : 0)'));
+  assert.ok(web.includes('const mainRemoteTrack = publisherMode ? null :'));
+  assert.ok(web.includes('const floatingRemoteTracks = orderedRemoteTracks.filter('));
   assert.ok(web.includes('ref={localRef}'));
-  assert.ok(web.includes("creatorMode ? 'You · Creator' : 'You · Guest'"));
-  assert.ok(web.includes('<RemoteVideoTile key={item.track.sid}'));
-  assert.ok(web.includes('aspectRatio: 16 / 9'));
+  assert.ok(web.includes("creatorMode ? 'YOU · HOST' : 'YOU · GUEST'"));
+  assert.ok(web.includes('<RemoteVideoTile'));
+  assert.ok(web.includes('floatingRemoteTracks.slice(0, 4)'));
+  assert.ok(web.includes('mainStage'));
+  assert.ok(web.includes('aspectRatio: mainStage || floating ? undefined : 16 / 9'));
+  assert.ok(web.includes('height: mainStage ? \'100%\' : floating ? 132 : undefined'));
+  assert.ok(web.includes('width: mainStage ? \'100%\' : floating ? 96 :'));
 });
 
 test('web LIVE keeps the stage accurate when remote cameras mute, unmute or unpublish', () => {

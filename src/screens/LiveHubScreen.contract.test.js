@@ -40,7 +40,8 @@ test('LIVE hub uses the shared premium theme and supports focused discovery filt
   assert.ok(screen.includes('const visibleStreams = filterLiveStreams(streams'));
   assert.ok(screen.includes('filter: activeFilter'));
   assert.ok(screen.includes('followingIds'));
-  assert.ok(screen.includes('Your stage. Your people.'));
+  assert.ok(screen.includes('Your stage.'));
+  assert.ok(screen.includes('Your people.'));
 });
 
 test('browser Go LIVE requests camera and microphone permission before creating a stream', () => {

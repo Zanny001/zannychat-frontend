@@ -73,12 +73,18 @@ test('LIVE publishers can independently disable camera while keeping microphone 
   assert.ok(screen.includes('audio={publisherMode} video={publisherMode}'));
 });
 
-test('LIVE stage supports multiple named video tiles in a responsive two-column grid', () => {
-  assert.ok(screen.includes("numColumns={stageGridVideos.length === 1 && !spotlightVideo ? 1 : 2}"));
+test('LIVE stage uses an edge-to-edge creator canvas with floating, focusable guest video tiles', () => {
+  assert.ok(screen.includes('StyleSheet.absoluteFillObject'));
+  assert.ok(screen.includes('const mainStageVideo = focusedStageVideo || spotlightVideo || creatorVideo || videos[0] || null'));
+  assert.ok(screen.includes('const floatingGuestVideos = mainStageVideo'));
+  assert.ok(screen.includes('floatingGuestVideos.slice(0, 3)'));
+  assert.ok(screen.includes('width: 88, height: 118'));
+  assert.ok(screen.includes('setFocusedStageIdentity(item.participant.identity)'));
   assert.ok(screen.includes('item.participant.name || item.participant.identity'));
   assert.ok(screen.includes('Track.Source.Microphone'));
   assert.ok(screen.includes('Audio only'));
   assert.ok(screen.includes('LIVE audio is on'));
+  assert.ok(screen.includes('objectFit="cover"'));
 });
 
 test('LIVE reactions are animated over the stage and use the shared seven-reaction vocabulary', () => {
@@ -124,7 +130,8 @@ test('web LIVE creator stage manager has parity with native guest controls', () 
   const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.ok(webSource.includes('/guests/invite'));
   assert.ok(webSource.includes('/mute'));
-  assert.ok(webSource.includes("label={panel === 'stage' ? 'Close Creator Studio' : 'Creator Studio'}"));
+  assert.ok(webSource.includes('label="Creator Studio"'));
+  assert.ok(webSource.includes('label="Close"'));
   assert.ok(webSource.includes('Remove guest'));
   assert.ok(webSource.includes("role === 'guest').length}/5</Text>"));
   assert.ok(webSource.includes('Creator Studio'));
@@ -176,16 +183,22 @@ test('native and web LIVE guests only activate publisher media when the server g
   assert.ok(webSource.includes("connection?.role === 'guest' && connection?.canPublish && !demotedToViewer"));
 });
 
-test('LIVE video tiles use a responsive moderate 16:9 frame instead of oversized fixed heights', () => {
+test('native and web LIVE stages are immersive with floating, focusable guest video tiles', () => {
   const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
-  assert.ok(screen.includes('aspectRatio: 16 / 9'));
-  assert.ok(screen.includes('maxHeight: 315'));
-  assert.ok(screen.includes('maxHeight: stageGridVideos.length === 1 && !spotlightVideo ? 315 : 180'));
-  assert.ok(screen.includes("numColumns={stageGridVideos.length === 1 && !spotlightVideo ? 1 : 2}"));
-  assert.ok(webSource.includes('aspectRatio: 16 / 9'));
-  assert.ok(webSource.includes('maxWidth: spotlight || single ? 560 : 520'));
-  assert.ok(webSource.includes('single={videoTileCount === 1}'));
-  assert.ok(!webSource.includes('minHeight: spotlight ? 310 : 190'));
+  assert.ok(screen.includes('VideoTrack trackRef={mainStageVideo} objectFit="cover"'));
+  assert.ok(screen.includes('VideoTrack trackRef={item} objectFit="cover"'));
+  assert.ok(screen.includes('StyleSheet.absoluteFillObject'));
+  assert.ok(screen.includes('width: 88, height: 118'));
+  assert.ok(screen.includes('floatingGuestVideos.slice(0, 3)'));
+  assert.ok(webSource.includes('mainStage'));
+  assert.ok(webSource.includes('floating'));
+  assert.ok(webSource.includes('floatingRemoteTracks.slice(0, 4)'));
+  assert.ok(webSource.includes('setFocusedStageIdentity(item.participant.identity)'));
+  assert.ok(webSource.includes('commentsVisible'));
+  assert.ok(webSource.includes('showOverlayMenu'));
+  assert.ok(webSource.includes('position: mainStage ? \'absolute\''));
+  assert.ok(webSource.includes('objectFit = \'cover\''));
+  assert.ok(!webSource.includes('minHeight: 220, marginHorizontal: 12'));
 });
 
 
@@ -283,7 +296,9 @@ test('native LIVE viewers explicitly auto-subscribe to creator and guest media t
 test('native LIVE stage uses a premium horizontally scrollable action rail on compact screens', () => {
   assert.ok(screen.includes('ScrollView, StatusBar'));
   assert.ok(screen.includes('showsHorizontalScrollIndicator={false}'));
-  assert.ok(screen.includes('paddingTop: 120'));
+  assert.ok(screen.includes("top: Platform.OS === 'android' ? 38 : 52"));
+  assert.ok(screen.includes('StyleSheet.absoluteFillObject'));
+  assert.ok(screen.includes('showOverlayMenu && <ScrollView'));
   assert.ok(screen.includes('width: 48, height: 48'));
   assert.ok(screen.includes('minWidth: 48, minHeight: 48'));
   assert.equal(screen.includes('minWidth: 48, height: 44'), false);
@@ -312,7 +327,7 @@ test('native and web LIVE synchronize camera and microphone controls with each s
 
 test('LIVE creator stage labels host and guests distinctly on native and web tiles', () => {
   assert.ok(screen.includes('creatorId={stream.creator_id}'));
-  assert.ok(screen.includes("spotlightVideo.participant.identity === creatorId ? 'HOST' : 'GUEST'"));
+  assert.ok(screen.includes("mainStageVideo.participant.identity === creatorId ? 'HOST' : 'LIVE GUEST'"));
   assert.ok(screen.includes("item.participant.identity === creatorId ? 'HOST' : 'GUEST'"));
   const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.ok(webSource.includes('creatorId={stream.creator_id}'));

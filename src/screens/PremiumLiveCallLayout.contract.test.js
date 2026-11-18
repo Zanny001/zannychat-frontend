@@ -8,24 +8,30 @@ test('LIVE hub primary controls keep consistent 48-point targets', () => {
   const source = read('LiveHubScreen.js');
   assert.match(source, /minHeight: 48, paddingHorizontal: 10/);
   assert.match(source, /width: 48, height: 48, borderRadius: 15/);
-  assert.match(source, /minHeight: 48, flexDirection: 'row', alignItems: 'center'/);
-  assert.match(source, /minHeight: 48, borderRadius: radii\.md, backgroundColor: colors\.primary/);
   assert.match(source, /minHeight: 48, paddingHorizontal: spacing\.md, borderRadius: 18/);
+  assert.match(source, /minHeight: 52/);
+  assert.match(source, /borderRadius: radii\.md/);
+  assert.match(source, /accessibilityLabel="Go LIVE"/);
 });
 
-test('Native LIVE stage retains its moderate 16:9 frame and accessible controls', () => {
+test('Native LIVE stage uses immersive full-screen video with floating guests and accessible controls', () => {
   const source = read('LiveStreamScreen.js');
-  assert.match(source, /aspectRatio: 16 \/ 9, maxWidth: 560, maxHeight: 315/);
+  assert.match(source, /StyleSheet\.absoluteFillObject/);
+  assert.match(source, /VideoTrack trackRef=\{mainStageVideo\} objectFit="cover"/);
+  assert.match(source, /VideoTrack trackRef=\{item\} objectFit="cover"/);
+  assert.match(source, /floatingGuestVideos\.slice\(0, 3\)/);
+  assert.match(source, /width: 88, height: 118/);
   assert.match(source, /minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center'/);
   assert.match(source, /minHeight: 48, minWidth: 132/);
-  assert.match(source, /minWidth: 48, minHeight: 48/);
 });
 
 test('Web LIVE actions and moderation controls keep 48-point targets', () => {
   const source = read('LiveStreamScreen.web.js');
   assert.match(source, /minHeight: 48, paddingHorizontal: 13/);
-  assert.match(source, /minWidth: 48, minHeight: 48, justifyContent: "center"/);
-  assert.match(source, /aspectRatio: 16 \/ 9/);
+  assert.match(source, /minWidth: 48, minHeight: 48, justifyContent: 'center'/);
+  assert.match(source, /aspectRatio: mainStage \|\| floating \? undefined : 16 \/ 9/);
+  assert.match(source, /height: mainStage \? '100%' : floating \? 132 : undefined/);
+  assert.match(source, /width: mainStage \? '100%' : floating \? 96 :/);
 });
 
 test('Native and web call invite actions are not undersized', () => {

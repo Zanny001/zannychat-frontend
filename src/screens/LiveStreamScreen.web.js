@@ -52,7 +52,7 @@ function FloatingReaction({ item, index, onComplete }) {
   );
 }
 
-function RemoteVideoTile({ track, participant, colors, creatorId, spotlight = false, single = false }) {
+function RemoteVideoTile({ track, participant, colors, creatorId, spotlight = false, single = false, mainStage = false, floating = false, focused = false, onFocus }) {
   const containerRef = useRef(null);
   useEffect(() => {
     const element = track.attach();
@@ -60,7 +60,7 @@ function RemoteVideoTile({ track, participant, colors, creatorId, spotlight = fa
     element.playsInline = true;
     element.style.width = '100%';
     element.style.height = '100%';
-    element.style.objectFit = 'contain';
+    element.style.objectFit = 'cover';
     containerRef.current?.replaceChildren(element);
     return () => {
       track.detach(element);
@@ -68,16 +68,40 @@ function RemoteVideoTile({ track, participant, colors, creatorId, spotlight = fa
     };
   }, [track]);
   return (
-    <View style={{ width: spotlight || single ? '100%' : '48%', maxWidth: spotlight || single ? 560 : 520, minWidth: spotlight || single ? 0 : 140, aspectRatio: 16 / 9, borderRadius: 16, overflow: 'hidden', backgroundColor: '#050509', borderWidth: spotlight ? 2 : 1, borderColor: spotlight ? colors.accent : colors.border }}>
+    <TouchableOpacity
+      activeOpacity={0.9}
+      onPress={onFocus}
+      accessibilityRole="button"
+      accessibilityLabel={`Focus ${participant.name || participant.identity} video`}
+      style={{
+        position: mainStage ? 'absolute' : floating ? 'relative' : 'relative',
+        top: mainStage ? 0 : undefined,
+        right: mainStage ? 0 : undefined,
+        bottom: mainStage ? 0 : undefined,
+        left: mainStage ? 0 : undefined,
+        width: mainStage ? '100%' : floating ? 96 : spotlight || single ? '100%' : '48%',
+        height: mainStage ? '100%' : floating ? 132 : undefined,
+        maxWidth: mainStage ? '100%' : floating ? 96 : spotlight || single ? 560 : 520,
+        minWidth: mainStage || floating ? 0 : spotlight || single ? 0 : 140,
+        aspectRatio: mainStage || floating ? undefined : 16 / 9,
+        borderRadius: mainStage ? 0 : floating ? 17 : 16,
+        overflow: 'hidden',
+        backgroundColor: '#050509',
+        borderWidth: mainStage ? 0 : focused || spotlight ? 2 : 1,
+        borderColor: focused || spotlight ? colors.accent : colors.border,
+        zIndex: mainStage ? 0 : floating ? 4 : 1,
+        boxShadow: floating ? '0 12px 30px rgba(0,0,0,0.42)' : undefined,
+      }}
+    >
       <View ref={containerRef} collapsable={false} style={{ width: '100%', height: '100%' }} />
-      {spotlight && <View style={{ position: 'absolute', top: 8, left: 8, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: colors.accent }}><Text style={{ color: colors.onAccent, fontWeight: '900', fontSize: 10 }}>SPOTLIGHT</Text></View>}
+      {spotlight && !mainStage && <View style={{ position: 'absolute', top: 8, left: 8, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: colors.accent }}><Text style={{ color: colors.onAccent, fontWeight: '900', fontSize: 10 }}>SPOTLIGHT</Text></View>}
       <View style={{ position: 'absolute', top: 8, right: 8, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.72)' }}>
         <Text style={{ color: '#FFFFFF', fontSize: 9, fontWeight: '900' }}>{participant.identity === creatorId ? 'HOST' : 'GUEST'}</Text>
       </View>
-      <View style={{ position: 'absolute', left: 8, bottom: 8, maxWidth: '88%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.65)' }}>
-        <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>{participant.name || participant.identity}</Text>
+      <View style={{ position: 'absolute', left: 8, bottom: 8, maxWidth: '88%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.72)' }}>
+        <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: floating ? 11 : 12, fontWeight: '700' }}>{participant.name || participant.identity}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -146,6 +170,9 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [reports, setReports] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [panel, setPanel] = useState('');
+  const [showOverlayMenu, setShowOverlayMenu] = useState(false);
+  const [commentsVisible, setCommentsVisible] = useState(true);
+  const [focusedStageIdentity, setFocusedStageIdentity] = useState('');
 
   useEffect(() => {
     if (!SUPABASE_ENABLED || !supabase?.auth?.onAuthStateChange) return undefined;
@@ -718,145 +745,158 @@ export default function LiveStreamScreen({ route, navigation }) {
 
   if (!stream || !connection) return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}><Text style={[typography.body, { color: colors.textPrimary }]}>This LIVE room is unavailable.</Text><Action colors={colors} label="Go back" onPress={() => navigation.goBack()} /></SafeAreaView>;
 
-  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-    <View style={{ flexDirection: 'row', alignItems: 'center', padding: 12, gap: 10 }}>
-      <Text style={[typography.small, { color: colors.danger }]}>● LIVE</Text>
-      <Text numberOfLines={1} style={[typography.heading, { color: colors.textPrimary, flex: 1, minWidth: 0 }]}>{stream.title}</Text>
-      <Text style={[typography.caption, { color: colors.textSecondary }]}>{status}</Text>
+  const orderedRemoteTracks = [...remoteVideoTracks].sort((a, b) =>
+    Number(b.participant.attributes?.zannychat_spotlight === 'true') - Number(a.participant.attributes?.zannychat_spotlight === 'true')
+  );
+  const mainRemoteTrack = publisherMode ? null : (
+    orderedRemoteTracks.find((item) => item.participant.identity === focusedStageIdentity)
+    || orderedRemoteTracks.find((item) => item.participant.attributes?.zannychat_spotlight === 'true')
+    || orderedRemoteTracks.find((item) => item.participant.identity === stream.creator_id)
+    || orderedRemoteTracks[0]
+    || null
+  );
+  const floatingRemoteTracks = orderedRemoteTracks.filter((item) => item.track.sid !== mainRemoteTrack?.track.sid);
+
+  return <SafeAreaView style={{ flex: 1, minHeight: '100%', backgroundColor: '#05050B', position: 'relative', overflow: 'hidden' }}>
+    <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#05050B' }}>
+      {publisherMode ? (
+        <>
+          <View ref={localRef} collapsable={false} style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#090914' }} />
+          {!camera && <View pointerEvents="none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: '#111019' }}><Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 18 }}>Camera off</Text><Text style={{ color: 'rgba(255,255,255,0.68)', marginTop: 6 }}>Your voice is still live</Text></View>}
+          <View style={{ position: 'absolute', left: 22, bottom: 112, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: 'rgba(5,5,11,0.66)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
+            <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '800' }}>{creatorMode ? 'YOU · HOST' : 'YOU · GUEST'}</Text>
+          </View>
+        </>
+      ) : mainRemoteTrack ? (
+        <RemoteVideoTile
+          key={mainRemoteTrack.track.sid}
+          track={mainRemoteTrack.track}
+          participant={mainRemoteTrack.participant}
+          colors={colors}
+          creatorId={stream.creator_id}
+          spotlight={mainRemoteTrack.participant.attributes?.zannychat_spotlight === 'true'}
+          mainStage
+          focused
+          onFocus={() => setFocusedStageIdentity(mainRemoteTrack.participant.identity)}
+        />
+      ) : (
+        <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', padding: 28, backgroundColor: '#0B0A16' }}>
+          <View style={{ width: 84, height: 84, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(126,93,255,0.18)', borderWidth: 1, borderColor: 'rgba(126,93,255,0.38)' }}><Text style={{ color: '#FFFFFF', fontSize: 30 }}>✦</Text></View>
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '900', marginTop: 16 }}>{audioOnlyParticipants.length || localAudioOnly ? 'LIVE audio is on' : 'The stage is warming up'}</Text>
+          <Text style={{ color: 'rgba(255,255,255,0.66)', textAlign: 'center', marginTop: 7, maxWidth: 340, lineHeight: 21 }}>{audioOnlyParticipants.length || localAudioOnly ? 'The conversation continues while cameras are off.' : "Waiting for the creator's video. It will appear here when their camera is on."}</Text>
+        </View>
+      )}
+      <View pointerEvents="box-none" style={{ position: 'absolute', top: 88, right: 14, bottom: 150, justifyContent: 'center', alignItems: 'flex-end', gap: 10 }}>
+        {floatingRemoteTracks.slice(0, 4).map((item) => (
+          <RemoteVideoTile
+            key={item.track.sid}
+            track={item.track}
+            participant={item.participant}
+            colors={colors}
+            creatorId={stream.creator_id}
+            floating
+            focused={focusedStageIdentity === item.participant.identity}
+            spotlight={item.participant.attributes?.zannychat_spotlight === 'true'}
+            onFocus={() => setFocusedStageIdentity(item.participant.identity)}
+          />
+        ))}
+      </View>
+      {audioOnlyParticipants.length > 0 && <View style={{ position: 'absolute', top: 86, left: 16, maxWidth: 230, padding: 10, borderRadius: 13, backgroundColor: 'rgba(5,5,11,0.72)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
+        {audioOnlyParticipants.slice(0, 3).map((participant) => <Text key={participant.identity} style={{ color: '#FFFFFF', fontSize: 11, marginVertical: 2 }}>{participant.identity === stream.creator_id ? 'HOST' : 'GUEST'} · {participant.name || participant.identity} · Audio only</Text>)}
+      </View>}
+      <View ref={remoteAudioRef} collapsable={false} style={{ width: 1, height: 1, opacity: 0 }} />
+      <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+        {floatingReactions.map((item, index) => <FloatingReaction key={item.id} item={item} index={index} onComplete={removeFloatingReaction} />)}
+      </View>
     </View>
-    {!!error && <Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger, paddingHorizontal: 14, paddingBottom: 8 }]}>{error}</Text>}
-    {!!stageNotice && <Text accessibilityRole="status" style={[typography.caption, { color: colors.accent, paddingHorizontal: 14, paddingBottom: 8 }]}>{stageNotice}</Text>}
-    {guestApproved && !publisherMode && <Text accessibilityRole="status" style={[typography.caption, { color: colors.accent, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: colors.surface }]}>The creator invited you to the LIVE stage. Tap “Join the stage” below to connect your camera and microphone.</Text>}
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 20 }}>
-      <View style={{ minHeight: 220, marginHorizontal: 12, borderRadius: 18, overflow: 'hidden', backgroundColor: '#050509', position: 'relative' }}>
-        {(() => {
-          const videoTileCount = remoteVideoTracks.length + (publisherMode ? 1 : 0);
-          return (
-            <>
-              {!videoTileCount && !audioOnlyParticipants.length && !localAudioOnly && <Text style={{ color: colors.textSecondary, textAlign: 'center', padding: 12 }}>Waiting for the creator's video. It will appear here when their camera is on.</Text>}
-              {!videoTileCount && (audioOnlyParticipants.length > 0 || localAudioOnly) && (
-                <View style={{ alignItems: 'center', padding: 18 }}>
-                  <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 17 }}>LIVE audio is on</Text>
-                  <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 6 }}>The stage is continuing with microphones while cameras are off.</Text>
-                </View>
-              )}
-              {!!videoTileCount && (
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'stretch', gap: 8, padding: 8 }}>
-                  {publisherMode && (
-                    <View style={{ width: videoTileCount === 1 ? '100%' : '48%', maxWidth: videoTileCount === 1 ? 560 : 520, minWidth: videoTileCount === 1 ? 0 : 140, aspectRatio: 16 / 9, borderRadius: 16, overflow: 'hidden', backgroundColor: '#050509', borderWidth: 1, borderColor: colors.accent }}>
-                      <View ref={localRef} collapsable={false} style={{ width: '100%', height: '100%' }} />
-                      {!camera && <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: '#111019' }}><Text style={{ color: '#FFFFFF', fontWeight: '800' }}>Camera off</Text></View>}
-                      <View style={{ position: 'absolute', left: 8, bottom: 8, maxWidth: '88%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.65)' }}>
-                        <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>{creatorMode ? 'You · Creator' : 'You · Guest'}</Text>
-                      </View>
-                    </View>
-                  )}
-                  {[...remoteVideoTracks].sort((a, b) => Number(b.participant.attributes?.zannychat_spotlight === 'true') - Number(a.participant.attributes?.zannychat_spotlight === 'true')).map((item) => <RemoteVideoTile key={item.track.sid} track={item.track} participant={item.participant} colors={colors} creatorId={stream.creator_id} spotlight={item.participant.attributes?.zannychat_spotlight === 'true'} single={videoTileCount === 1} />)}
-                </View>
-              )}
-              {audioOnlyParticipants.length > 0 && (
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, padding: 8 }}>
-                  {audioOnlyParticipants.map((participant) => <View key={participant.identity} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
-                    <Text style={{ color: colors.textPrimary, fontSize: 12 }}>{participant.identity === stream.creator_id ? 'HOST' : 'GUEST'} · {participant.name || participant.identity} · Audio only</Text>
-                  </View>)}
-                </View>
-              )}
-            </>
-          );
-        })()}
-        <View ref={remoteAudioRef} collapsable={false} style={{ width: 1, height: 1, opacity: 0 }} />
-        <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-          {floatingReactions.map((item, index) => (
-            <FloatingReaction key={item.id} item={item} index={index} onComplete={removeFloatingReaction} />
-          ))}
-        </View>
+
+    <View pointerEvents="box-none" style={{ position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 18, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: 'rgba(5,5,11,0.58)' }}>
+      <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 9, backgroundColor: colors.danger }}><Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '900', letterSpacing: 1 }}>● LIVE</Text></View>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '900' }}>{stream.title}</Text>
+        <Text numberOfLines={1} style={{ color: 'rgba(255,255,255,0.68)', fontSize: 11, marginTop: 2 }}>{status}</Text>
       </View>
-      {audioBlocked && <View style={{ padding: 12 }}><Action colors={colors} label="Enable LIVE audio" onPress={() => roomRef.current?.startAudio().then(() => setAudioBlocked(false)).catch((err) => setError(err?.message || 'Audio playback is blocked.'))} /></View>}
-      {publisherMode && <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, padding: 12 }}>
-        <Action colors={colors} label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={toggleCamera} />
-        <Action colors={colors} label={mic ? 'Mute mic' : 'Unmute mic'} onPress={toggleMic} />
-      </View>}
-      {creatorMode && stream.allow_guests && <View style={{ paddingHorizontal: 12, paddingBottom: 10, flexDirection: 'row', gap: 8 }}>
-        <Action colors={colors} label={panel === 'stage' ? 'Close Creator Studio' : 'Creator Studio'} onPress={loadParticipants} />
-        <Action colors={colors} label={`Guest requests (${guestRequests.length})`} onPress={() => setPanel(panel === 'guestRequests' ? '' : 'guestRequests')} />
-      </View>}
-      {creatorMode && replayEnabled && <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}><Action colors={colors} label={replayBusy ? 'Updating replay…' : replay?.status === 'ready' ? 'Watch saved LIVE replay' : replay?.status === 'recording' ? 'Stop LIVE replay' : replay?.status === 'processing' || replay?.status === 'starting' ? 'Preparing replay…' : 'Start LIVE replay'} disabled={replayBusy || ['starting', 'processing'].includes(replay?.status)} onPress={replay?.status === 'ready' ? viewReplay : replay?.status === 'recording' ? stopReplay : confirmStartReplay} /></View>}
-      {moderatorMode && <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}><Action colors={colors} label={panel === 'reports' ? 'Close safety reports' : 'Safety reports'} onPress={loadReports} /></View>}
-      {panel === 'stage' && creatorMode && <View style={{ margin: 12, padding: 12, borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <View>
-            <Text style={{ color: colors.textPrimary, fontWeight: '900' }}>Creator Studio</Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>Live audience and stage controls</Text>
-          </View>
-          <View style={{ paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, backgroundColor: colors.surfaceAlt }}>
-            <Text style={{ color: colors.accent, fontWeight: '900', fontSize: 10 }}>HOST</Text>
-          </View>
-        </View>
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
-          <View style={{ flex: 1, minWidth: 0, padding: 10, borderRadius: 12, backgroundColor: colors.surfaceAlt }}>
-            <Text style={{ color: colors.textPrimary, fontWeight: '900', fontSize: 20 }}>{participants.filter((item) => item.joined && item.role === 'viewer').length}</Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Viewers listed</Text>
-          </View>
-          <View style={{ flex: 1, minWidth: 0, padding: 10, borderRadius: 12, backgroundColor: colors.surfaceAlt }}>
-            <Text style={{ color: colors.textPrimary, fontWeight: '900', fontSize: 20 }}>{participants.filter((item) => item.joined && item.role === 'guest').length}/5</Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Guests on stage</Text>
-          </View>
-          <View style={{ flex: 1, minWidth: 0, padding: 10, borderRadius: 12, backgroundColor: colors.surfaceAlt }}>
-            <Text style={{ color: colors.textPrimary, fontWeight: '900', fontSize: 20 }}>{Math.max(0, 5 - participants.filter((item) => item.joined && item.role === 'guest').length)}</Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Open slots</Text>
-          </View>
-        </View>
-        {participants.map((item) => <View key={item.userId} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border }}>
-          <Text style={{ color: colors.textPrimary, flex: 1, minWidth: 100 }}>{item.name}{item.stage ? ' · On stage' : !item.joined ? ' · offline' : ''}</Text>
-          {stream.allow_guests && item.joined && item.role === 'viewer' && <Action colors={colors} label={item.guestInvited ? 'Invited' : 'Invite to stage'} disabled={busy || item.guestInvited} onPress={() => inviteGuest(item.userId)} />}
-          {item.stage && <Action colors={colors} label={item.microphoneMuted ? 'Unmute mic' : 'Mute mic'} onPress={() => muteGuest(item.userId, !item.microphoneMuted)} />}
-          {item.stage && <Action colors={colors} label={item.spotlighted ? 'Unspotlight' : 'Spotlight'} onPress={() => spotlightGuest(item.userId, !item.spotlighted)} />}
-          {item.stage && <Action colors={colors} label="Remove guest" danger onPress={() => removeGuest(item.userId)} />}
-          {(item.moderator || item.joined) && <Action colors={colors} label={item.moderator ? 'Remove moderator' : 'Make moderator'} danger={item.moderator} onPress={() => setModerator(item.userId, !item.moderator)} />}
-        </View>)}
-        {!participants.length && <Text style={{ color: colors.textSecondary }}>No connected viewers or guests yet.</Text>}
-      </View>}
-      {panel === 'guestRequests' && creatorMode && <View style={{ margin: 12, padding: 12, borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.accent }}>
-        <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 8 }}>Viewer requests to join your LIVE stage ({guestRequests.length})</Text>
-        {guestRequests.map((item) => <View key={item.user_id} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border }}>
-          <Text style={{ color: colors.textPrimary, flex: 1, minWidth: 100 }}>{item.name || 'Viewer'}</Text>
-          <Action colors={colors} label="Approve" onPress={() => reviewGuestRequest(item.user_id, 'accepted')} />
-          <Action colors={colors} label="Decline" danger onPress={() => reviewGuestRequest(item.user_id, 'declined')} />
-        </View>)}
-        {!guestRequests.length && <Text style={{ color: colors.textSecondary }}>No pending guest requests.</Text>}
-      </View>}
-      {panel === 'reports' && <View style={{ margin: 12, padding: 12, borderRadius: 14, backgroundColor: colors.surface }}>
-        <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 8 }}>LIVE safety reports</Text>
-        {reports.map((item) => <View key={item.id} style={{ paddingVertical: 7 }}>
-          <Text style={{ color: colors.textPrimary }}>{item.reason} · {item.status}</Text>
-          {item.status === 'open' && <Action colors={colors} label="Review" onPress={() => reviewReport(item.id, 'reviewing')} />}
-          {['open','reviewing'].includes(item.status) && <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
-            <Action colors={colors} label="Resolve" onPress={() => reviewReport(item.id, 'resolved')} /><Action colors={colors} label="Dismiss" onPress={() => reviewReport(item.id, 'dismissed')} />
-          </View>}
-        </View>)}
-      </View>}
-      {!publisherMode && stream.allow_guests && <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}>
-        {guestApproved ? <Action colors={colors} label="Join the stage" onPress={joinGuest} /> : <Action colors={colors} label={guestStatus === 'requested' ? 'Guest request pending' : 'Request to join on stage'} disabled={guestStatus === 'requested'} onPress={requestGuest} />}
-      </View>}
-      <View style={{ paddingHorizontal: 14, paddingTop: 6 }}>
-        <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 8 }}>LIVE chat</Text>
-        {comments.map((item) => <View key={item.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 5, gap: 8 }}>
-          <Text style={{ color: colors.accent, fontWeight: '800' }}>{item.user_name || 'ZannyChat user'}</Text>
-          <Text style={{ color: colors.textPrimary, flex: 1 }}>{item.body}</Text>
-          {moderatorMode && <TouchableOpacity onPress={() => hideComment(item.id)} accessibilityRole="button" accessibilityLabel="Hide comment" style={{ minWidth: 48, minHeight: 48, justifyContent: "center", alignItems: "center" }}><Text style={{ color: colors.danger }}>Hide</Text></TouchableOpacity>}
-        </View>)}
-        {!comments.length && <Text style={{ color: colors.textSecondary, paddingVertical: 8 }}>Be the first to say hello.</Text>}
+      <Action colors={colors} label="☰" accessibilityLabel="Open LIVE controls menu" onPress={() => setShowOverlayMenu((value) => !value)} />
+      <Action colors={colors} label={creatorMode ? 'End' : 'Leave'} danger disabled={busy} onPress={leave} />
+    </View>
+
+    {!!error && <View pointerEvents="box-none" style={{ position: 'absolute', top: 78, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(100,20,35,0.86)' }}><Text accessibilityRole="alert" style={{ color: '#FFFFFF', fontSize: 12 }}>{error}</Text></View>}
+    {!!stageNotice && <View pointerEvents="box-none" style={{ position: 'absolute', top: 118, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(30,70,90,0.86)' }}><Text accessibilityRole="status" style={{ color: '#FFFFFF', fontSize: 12 }}>{stageNotice}</Text></View>}
+    {guestApproved && !publisherMode && <View pointerEvents="box-none" style={{ position: 'absolute', top: 82, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(30,70,90,0.88)' }}><Text accessibilityRole="status" style={{ color: '#FFFFFF', fontSize: 12 }}>The creator invited you to the LIVE stage. Use the menu to join.</Text></View>}
+
+    <View pointerEvents="box-none" style={{ position: 'absolute', left: 14, bottom: 96, width: 'min(390px, 70%)', maxHeight: '42%', gap: 8 }}>
+      {commentsVisible && comments.slice(-4).map((item) => <View key={item.id} style={{ alignSelf: 'flex-start', maxWidth: '100%', flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingHorizontal: 11, paddingVertical: 8, borderRadius: 14, backgroundColor: 'rgba(5,5,11,0.68)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
+        <Text style={{ color: '#B9A9FF', fontSize: 11, fontWeight: '900' }}>{item.user_name || 'ZannyChat user'}</Text>
+        <Text style={{ color: '#FFFFFF', fontSize: 12, flexShrink: 1 }}>{item.body}</Text>
+        {moderatorMode && <TouchableOpacity onPress={() => hideComment(item.id)} accessibilityRole="button" accessibilityLabel="Hide comment" style={{ minWidth: 48, minHeight: 48, justifyContent: 'center', alignItems: 'center' }}><Text style={{ color: '#FF9EAB', fontSize: 11 }}>Hide</Text></TouchableOpacity>}
+      </View>)}
+      {!comments.length && commentsVisible && <Text style={{ color: 'rgba(255,255,255,0.68)', fontSize: 12, padding: 8 }}>Be the first to say hello.</Text>}
+    </View>
+
+    <View pointerEvents="box-none" style={{ position: 'absolute', left: 14, right: 14, bottom: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <TextInput value={draft} onChangeText={(v) => setDraft(v.slice(0, 500))} maxLength={500} placeholder="Say something kind…" placeholderTextColor="rgba(255,255,255,0.62)" accessibilityLabel="LIVE chat message" style={{ flex: 1, minWidth: 0, color: '#FFFFFF', backgroundColor: 'rgba(8,8,18,0.78)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', borderRadius: 18, paddingHorizontal: 15, paddingVertical: 12 }} />
+      <Action colors={colors} label="Send" disabled={busy || !draft.trim()} onPress={sendComment} />
+    </View>
+
+    <View pointerEvents="box-none" style={{ position: 'absolute', right: 14, bottom: 150, gap: 8, alignItems: 'center' }}>
+      {Object.entries(LIVE_REACTION_EMOJI).map(([reaction, emoji]) => <Action key={reaction} colors={colors} label={emoji} accessibilityLabel={'Send ' + reaction + ' reaction'} onPress={() => react(reaction)} />)}
+    </View>
+
+    {audioBlocked && <View style={{ position: 'absolute', top: '45%', alignSelf: 'center' }}><Action colors={colors} label="Enable LIVE audio" onPress={() => roomRef.current?.startAudio().then(() => setAudioBlocked(false)).catch((err) => setError(err?.message || 'Audio playback is blocked.'))} /></View>}
+
+    {showOverlayMenu && <View style={{ position: 'absolute', top: 76, right: 14, width: 230, padding: 10, borderRadius: 18, backgroundColor: 'rgba(12,11,24,0.96)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)', gap: 7, zIndex: 20 }}>
+      <Action colors={colors} label={commentsVisible ? 'Hide comments' : 'Show comments'} onPress={() => { setCommentsVisible((value) => !value); setShowOverlayMenu(false); }} />
+      {publisherMode && <Action colors={colors} label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={() => { toggleCamera(); setShowOverlayMenu(false); }} />}
+      {publisherMode && <Action colors={colors} label={mic ? 'Mute microphone' : 'Unmute microphone'} onPress={() => { toggleMic(); setShowOverlayMenu(false); }} />}
+      {creatorMode && stream.allow_guests && <Action colors={colors} label="Creator Studio" onPress={() => { loadParticipants(); setShowOverlayMenu(false); }} />}
+      {creatorMode && stream.allow_guests && <Action colors={colors} label={`Guest requests (${guestRequests.length})`} onPress={() => { setPanel(panel === 'guestRequests' ? '' : 'guestRequests'); setShowOverlayMenu(false); }} />}
+      {creatorMode && replayEnabled && <Action colors={colors} label={replayBusy ? 'Updating replay…' : replay?.status === 'ready' ? 'Watch saved LIVE replay' : replay?.status === 'recording' ? 'Stop replay' : replay?.status === 'processing' || replay?.status === 'starting' ? 'Preparing replay…' : 'Start replay'} disabled={replayBusy || ['starting', 'processing'].includes(replay?.status)} onPress={() => { replay?.status === 'ready' ? viewReplay() : replay?.status === 'recording' ? stopReplay() : confirmStartReplay(); setShowOverlayMenu(false); }} />}
+      {moderatorMode && <Action colors={colors} label="Safety reports" onPress={() => { loadReports(); setShowOverlayMenu(false); }} />}
+      {!publisherMode && stream.allow_guests && <Action colors={colors} label={guestApproved ? 'Join the stage' : guestStatus === 'requested' ? 'Request pending' : 'Request to join'} disabled={guestStatus === 'requested'} onPress={() => { guestApproved ? joinGuest() : requestGuest(); setShowOverlayMenu(false); }} />}
+      {!creatorMode && <Action colors={colors} label="Report LIVE" onPress={() => { report(); setShowOverlayMenu(false); }} />}
+      <Action colors={colors} label="Close menu" onPress={() => setShowOverlayMenu(false)} />
+    </View>}
+
+    {!!panel && <View style={{ position: 'absolute', top: 82, right: 14, bottom: 92, width: 360, maxWidth: '92%', padding: 14, borderRadius: 20, backgroundColor: 'rgba(12,11,24,0.97)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', zIndex: 18 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '900' }}>{panel === 'stage' ? 'Creator Studio' : panel === 'guestRequests' ? 'Guest requests' : 'LIVE safety reports'}</Text>
+        <Action colors={colors} label="Close" onPress={() => setPanel('')} />
       </View>
-      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 9, paddingHorizontal: 12, paddingTop: 6 }}>
-        {Object.entries(LIVE_REACTION_EMOJI).map(([reaction, emoji]) => <Action key={reaction} colors={colors} label={emoji} accessibilityLabel={'Send ' + reaction + ' reaction'} onPress={() => react(reaction)} />)}
-      </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 }}>
-        <TextInput value={draft} onChangeText={(v) => setDraft(v.slice(0, 500))} maxLength={500} placeholder="Say something kind…" placeholderTextColor={colors.textSecondary} accessibilityLabel="LIVE chat message" style={{ flex: 1, color: colors.textPrimary, backgroundColor: colors.surface, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 }} />
-        <Action colors={colors} label="Send" disabled={busy || !draft.trim()} onPress={sendComment} />
-        {!creatorMode && <Action colors={colors} label="Report" onPress={report} />}
-      </View>
-    </ScrollView>
-    <View style={{ alignItems: 'center', padding: 12, borderTopWidth: 1, borderTopColor: colors.border }}><Action colors={colors} label={creatorMode ? 'End LIVE' : 'Leave LIVE'} danger disabled={busy} onPress={leave} /></View>
-    {busy && <View style={{ position: 'absolute', top: '50%', alignSelf: 'center' }}><ActivityIndicator color={colors.textPrimary} /></View>}
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 8 }}>
+        {panel === 'stage' && creatorMode && <>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={{ flex: 1, padding: 10, borderRadius: 12, backgroundColor: colors.surfaceAlt }}><Text style={{ color: colors.textPrimary, fontWeight: '900', fontSize: 20 }}>{participants.filter((item) => item.joined && item.role === 'viewer').length}</Text><Text style={{ color: colors.textSecondary, fontSize: 11 }}>Viewers listed</Text></View>
+            <View style={{ flex: 1, padding: 10, borderRadius: 12, backgroundColor: colors.surfaceAlt }}><Text style={{ color: colors.textPrimary, fontWeight: '900', fontSize: 20 }}>{participants.filter((item) => item.joined && item.role === 'guest').length}/5</Text><Text style={{ color: colors.textSecondary, fontSize: 11 }}>Guests</Text></View>
+            <View style={{ flex: 1, padding: 10, borderRadius: 12, backgroundColor: colors.surfaceAlt }}><Text style={{ color: colors.textPrimary, fontWeight: '900', fontSize: 20 }}>{Math.max(0, 5 - participants.filter((item) => item.joined && item.role === 'guest').length)}</Text><Text style={{ color: colors.textSecondary, fontSize: 11 }}>Open slots</Text></View>
+          </View>
+          {participants.map((item) => <View key={item.userId} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 7, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border }}>
+            <Text style={{ color: colors.textPrimary, flex: 1, minWidth: 100 }}>{item.name}{item.stage ? ' · On stage' : !item.joined ? ' · offline' : ''}</Text>
+            {stream.allow_guests && item.joined && item.role === 'viewer' && <Action colors={colors} label={item.guestInvited ? 'Invited' : 'Invite'} disabled={busy || item.guestInvited} onPress={() => inviteGuest(item.userId)} />}
+            {item.stage && <Action colors={colors} label={item.microphoneMuted ? 'Unmute' : 'Mute'} onPress={() => muteGuest(item.userId, !item.microphoneMuted)} />}
+            {item.stage && <Action colors={colors} label={item.spotlighted ? 'Unspotlight' : 'Spotlight'} onPress={() => spotlightGuest(item.userId, !item.spotlighted)} />}
+            {item.stage && <Action colors={colors} label="Remove guest" danger onPress={() => removeGuest(item.userId)} />}
+            {(item.moderator || item.joined) && <Action colors={colors} label={item.moderator ? 'Remove moderator' : 'Make moderator'} danger={item.moderator} onPress={() => setModerator(item.userId, !item.moderator)} />}
+          </View>)}
+          {!participants.length && <Text style={{ color: colors.textSecondary }}>No connected viewers or guests yet.</Text>}
+        </>}
+        {panel === 'guestRequests' && creatorMode && <>
+          {guestRequests.map((item) => <View key={item.user_id} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border }}>
+            <Text style={{ color: colors.textPrimary, flex: 1, minWidth: 100 }}>{item.name || 'Viewer'}</Text>
+            <Action colors={colors} label="Approve" onPress={() => reviewGuestRequest(item.user_id, 'accepted')} />
+            <Action colors={colors} label="Decline" danger onPress={() => reviewGuestRequest(item.user_id, 'declined')} />
+          </View>)}
+          {!guestRequests.length && <Text style={{ color: colors.textSecondary }}>No pending guest requests.</Text>}
+        </>}
+        {panel === 'reports' && <>
+          {reports.map((item) => <View key={item.id} style={{ paddingVertical: 7 }}>
+            <Text style={{ color: colors.textPrimary }}>{item.reason} · {item.status}</Text>
+            {item.status === 'open' && <Action colors={colors} label="Review" onPress={() => reviewReport(item.id, 'reviewing')} />}
+            {['open','reviewing'].includes(item.status) && <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}><Action colors={colors} label="Resolve" onPress={() => reviewReport(item.id, 'resolved')} /><Action colors={colors} label="Dismiss" onPress={() => reviewReport(item.id, 'dismissed')} /></View>}
+          </View>)}
+          {!reports.length && <Text style={{ color: colors.textSecondary }}>No open safety reports.</Text>}
+        </>}
+      </ScrollView>
+    </View>}
+    {busy && <View pointerEvents="none" style={{ position: 'absolute', top: '50%', alignSelf: 'center' }}><ActivityIndicator color="#FFFFFF" /></View>}
   </SafeAreaView>;
 }
