@@ -350,7 +350,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
             <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 6 }}>Guest requests ({guestRequests.length})</Text>
             <FlatList keyboardShouldPersistTaps="handled" data={guestRequests} keyExtractor={(item) => item.user_id} renderItem={({ item }) => (
               <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 7, borderTopWidth: 1, borderTopColor: colors.border }}>
-                <Text numberOfLines={1} style={{ color: colors.textPrimary, flex: 1, fontSize: 12 }}>{item.name}</Text>
+                <View style={{ flex: 1, minWidth: 0 }}><Text numberOfLines={1} style={{ color: colors.textPrimary, fontSize: 12, fontWeight: '800' }}>{item.name || item.user_id}</Text><Text style={{ color: colors.textSecondary, fontSize: 10, marginTop: 2 }}>Requested to join your stage</Text></View>
                 <TouchableOpacity onPress={() => onReviewGuestRequest(item.user_id, 'accepted')} accessibilityRole="button" accessibilityLabel={`Approve LIVE guest request from ${item.name}`}><Text style={{ color: colors.success, fontWeight: '800', fontSize: 11, marginRight: 10 }}>Approve</Text></TouchableOpacity>
                 <TouchableOpacity onPress={() => onReviewGuestRequest(item.user_id, 'declined')} accessibilityRole="button" accessibilityLabel={`Decline LIVE guest request from ${item.name}`}><Text style={{ color: colors.danger, fontWeight: '800', fontSize: 11 }}>Decline</Text></TouchableOpacity>
               </View>
@@ -798,7 +798,7 @@ export default function LiveStreamScreen({ route, navigation }) {
           studioParticipantsRefreshInFlight.current = false;
         });
     };
-    const interval = setInterval(refreshStudioParticipants, 15_000);
+    const interval = setInterval(refreshStudioParticipants, 5_000);
     return () => {
       active = false;
       clearInterval(interval);
