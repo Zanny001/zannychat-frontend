@@ -56,7 +56,7 @@ function FloatingReaction({ item, index, onComplete }) {
 function FloatingLocalVideoTile({ containerRef, colors, role }) {
   const viewport = Dimensions.get('window');
   const bounds = { width: Math.max(180, viewport.width - 28), height: Math.max(220, viewport.height - 238) };
-  const [frame, setFrame] = useState(() => ({ x: Math.max(0, bounds.width - 156), y: Math.min(Math.max(0, bounds.height - 208), 150), width: 156, height: 208 }));
+  const [frame, setFrame] = useState(() => ({ x: Math.min(12, Math.max(0, bounds.width - 156)), y: Math.min(Math.max(0, bounds.height - 208), 150), width: 156, height: 208 }));
   const frameRef = useRef(frame);
   frameRef.current = frame;
   const dragOrigin = useRef(frame);
