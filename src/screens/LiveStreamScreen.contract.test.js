@@ -76,9 +76,11 @@ test('LIVE publishers can independently disable camera while keeping microphone 
 test('LIVE stage uses an edge-to-edge creator canvas with floating, focusable guest video tiles', () => {
   assert.ok(screen.includes('StyleSheet.absoluteFillObject'));
   assert.ok(screen.includes('const mainStageVideo = focusedStageVideo || spotlightVideo || creatorVideo || videos[0] || null'));
-  assert.ok(screen.includes('const floatingGuestVideos = mainStageVideo'));
-  assert.ok(screen.includes('floatingGuestVideos.slice(0, 3)'));
-  assert.ok(screen.includes('width: 88, height: 118'));
+  assert.ok(screen.includes('const floatingGuestVideos = themedVideoChat ? videos : mainStageVideo'));
+  assert.ok(screen.includes('floatingGuestVideos.slice(0, 5)'));
+  assert.ok(screen.includes('function NativeFloatingGuestTile'));
+  assert.ok(screen.includes('PanResponder.create'));
+  assert.ok(screen.includes('width: frame.width, height: frame.height'));
   assert.ok(screen.includes('setFocusedStageIdentity(item.participant.identity)'));
   assert.ok(screen.includes('item.participant.name || item.participant.identity'));
   assert.ok(screen.includes('Track.Source.Microphone'));
@@ -197,8 +199,10 @@ test('native and web LIVE stages are immersive with floating, focusable guest vi
   assert.ok(screen.includes('VideoTrack trackRef={mainStageVideo} objectFit="cover"'));
   assert.ok(screen.includes('VideoTrack trackRef={item} objectFit="cover"'));
   assert.ok(screen.includes('StyleSheet.absoluteFillObject'));
-  assert.ok(screen.includes('width: 88, height: 118'));
-  assert.ok(screen.includes('floatingGuestVideos.slice(0, 3)'));
+  assert.ok(screen.includes('function NativeFloatingGuestTile'));
+  assert.ok(screen.includes('PanResponder.create'));
+  assert.ok(screen.includes('width: frame.width, height: frame.height'));
+  assert.ok(screen.includes('floatingGuestVideos.slice(0, 5)'));
   assert.ok(webSource.includes('mainStage'));
   assert.ok(webSource.includes('floating'));
   assert.ok(webSource.includes('floatingRemoteTracks.slice(0, 4)'));
