@@ -210,6 +210,13 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
               </View>
               <Text style={[typography.heading, { color: colors.textPrimary, marginTop: 18, textAlign: 'center' }]}>{audioOnlyParticipants.length || hasLocalAudioOnly ? 'LIVE audio is on' : creatorMode ? 'Your LIVE is starting' : 'Waiting for the creator video'}</Text>
               <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: 8, lineHeight: 20 }]}>{audioOnlyParticipants.length || hasLocalAudioOnly ? 'The conversation continues while cameras are off.' : 'Your LIVE stage will appear here when video is available.'}</Text>
+              {audioOnlyParticipants.map((track) => (
+                <View key={track.participant.identity} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 13, backgroundColor: hexToRgba(colors.surface, 0.9), borderWidth: 1, borderColor: colors.border }}>
+                  <Ionicons name="mic" size={15} color={colors.accent} />
+                  <Text style={[typography.small, { color: colors.textPrimary }]}>{track.participant.identity === creatorId ? 'HOST' : 'GUEST'} · {track.participant.name || track.participant.identity} · Audio only</Text>
+                </View>
+              ))}
+              {hasLocalAudioOnly && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 13, backgroundColor: hexToRgba(colors.surface, 0.9), borderWidth: 1, borderColor: colors.border }}><Ionicons name="mic" size={15} color={colors.accent} /><Text style={[typography.small, { color: colors.textPrimary }]}>You · {creatorMode ? 'Host' : 'Guest'} · Audio only</Text></View>}
             </View>
           )}
           {floatingGuestVideos.length > 0 && (
