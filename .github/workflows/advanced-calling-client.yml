@@ -6,7 +6,7 @@ concurrency:
 
 on:
   push:
-    branches: [main, feat/advanced-calling-live-1.2.241, fix/livekit-remote-track-participant-stage]
+    branches: [main, feat/advanced-calling-live-1.2.241, fix/livekit-remote-track-participant-stage, security/bundle-reachability-audit-20261118]
   pull_request:
     branches: [main, feat/advanced-calling-live-1.2.241, fix/livekit-remote-track-participant-stage]
 
