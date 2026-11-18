@@ -11,6 +11,19 @@ on:
     branches: [main, feat/advanced-calling-live-1.2.241, fix/livekit-remote-track-participant-stage]
 
 jobs:
+  dependency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Audit npm dependency vulnerabilities
+        run: npm audit --audit-level=high
+
   client-quality:
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -26,8 +39,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Audit npm dependency vulnerabilities
-        run: npm audit --audit-level=high
       - name: Create non-production Firebase config for compile-only CI
         run: |
           if [ ! -f google-services.json ]; then

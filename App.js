@@ -15,6 +15,7 @@ import {
   subscribeToNotificationTaps,
 } from './src/services/notifications';
 import AppNavigator, { navigationRef } from './src/navigation/AppNavigator';
+import AppErrorBoundary from './src/components/AppErrorBoundary';
 import VoIPPushRegistrar from './src/components/VoIPPushRegistrar';
 import { createPushRegistrationCoordinator } from './src/services/pushRegistrationCoordinator';
 import { setPresenceOwner, stopPresence } from './src/services/presence';
@@ -222,6 +223,7 @@ export default function App() {
   }
 
   return (
+    <AppErrorBoundary>
     <GestureHandlerRootView
       style={{ flex: 1 }}
       onLayout={onLayoutRootView}
@@ -230,9 +232,10 @@ export default function App() {
         <ThemeProvider>
           <ThemedStatusBar />
           <VoIPPushRegistrar />
-          <AppNavigator initialRouteName={initialRoute} isAuthenticated={initialRoute === 'Main'} />
+          <AppNavigator key={initialRoute} initialRouteName={initialRoute} isAuthenticated={initialRoute === 'Main'} />
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
+    </AppErrorBoundary>
   );
 }
