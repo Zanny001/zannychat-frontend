@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, PanResponder, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -52,8 +52,31 @@ function FloatingReaction({ item, index, onComplete }) {
   );
 }
 
-function RemoteVideoTile({ track, participant, colors, creatorId, spotlight = false, single = false, mainStage = false, floating = false, focused = false, onFocus }) {
+function RemoteVideoTile({ track, participant, colors, creatorId, spotlight = false, single = false, mainStage = false, floating = false, focused = false, onFocus, floatingIndex = 0 }) {
   const containerRef = useRef(null);
+  const viewport = Dimensions.get('window');
+  const bounds = { width: Math.max(180, viewport.width - 28), height: Math.max(220, viewport.height - 238) };
+  const [frame, setFrame] = useState(() => ({ x: Math.max(0, viewport.width - 28 - 156), y: Math.max(0, floatingIndex * 142), width: 156, height: 208 }));
+  const gestureOrigin = useRef(frame);
+  const resizeOrigin = useRef(frame);
+  const dragResponder = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onMoveShouldSetPanResponder: (_event, gesture) => floating && (Math.abs(gesture.dx) > 4 || Math.abs(gesture.dy) > 4),
+    onPanResponderGrant: () => { gestureOrigin.current = frame; },
+    onPanResponderMove: (_event, gesture) => {
+      const origin = gestureOrigin.current;
+      setFrame((current) => ({ ...current, x: Math.max(0, Math.min(bounds.width - current.width, origin.x + gesture.dx)), y: Math.max(0, Math.min(bounds.height - current.height, origin.y + gesture.dy)) }));
+    },
+  })).current;
+  const resizeResponder = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => floating,
+    onMoveShouldSetPanResponder: () => floating,
+    onPanResponderGrant: () => { resizeOrigin.current = frame; },
+    onPanResponderMove: (_event, gesture) => {
+      const origin = resizeOrigin.current;
+      setFrame((current) => ({ ...current, width: Math.max(116, Math.min(360, Math.min(bounds.width - current.x, origin.width + gesture.dx))), height: Math.max(154, Math.min(480, Math.min(bounds.height - current.y, origin.height + gesture.dy))) }));
+    },
+  })).current;
   useEffect(() => {
     const element = track.attach();
     element.autoplay = true;
@@ -62,49 +85,23 @@ function RemoteVideoTile({ track, participant, colors, creatorId, spotlight = fa
     element.style.height = '100%';
     element.style.objectFit = 'cover';
     containerRef.current?.replaceChildren(element);
-    return () => {
-      track.detach(element);
-      containerRef.current?.replaceChildren();
-    };
+    return () => { track.detach(element); containerRef.current?.replaceChildren(); };
   }, [track]);
   return (
-    <TouchableOpacity
-      activeOpacity={0.9}
-      onPress={onFocus}
-      accessibilityRole="button"
-      accessibilityLabel={`Focus ${participant.name || participant.identity} video`}
-      style={{
-        position: mainStage ? 'absolute' : floating ? 'relative' : 'relative',
-        top: mainStage ? 0 : undefined,
-        right: mainStage ? 0 : undefined,
-        bottom: mainStage ? 0 : undefined,
-        left: mainStage ? 0 : undefined,
-        width: mainStage ? '100%' : floating ? 96 : spotlight || single ? '100%' : '48%',
-        height: mainStage ? '100%' : floating ? 132 : undefined,
-        maxWidth: mainStage ? '100%' : floating ? 96 : spotlight || single ? 560 : 520,
-        minWidth: mainStage || floating ? 0 : spotlight || single ? 0 : 140,
-        aspectRatio: mainStage || floating ? undefined : 16 / 9,
-        borderRadius: mainStage ? 0 : floating ? 17 : 16,
-        overflow: 'hidden',
-        backgroundColor: '#050509',
-        borderWidth: mainStage ? 0 : focused || spotlight ? 2 : 1,
-        borderColor: focused || spotlight ? colors.accent : colors.border,
-        zIndex: mainStage ? 0 : floating ? 4 : 1,
-        boxShadow: floating ? '0 12px 30px rgba(0,0,0,0.42)' : undefined,
-      }}
-    >
+    <TouchableOpacity activeOpacity={0.9} onPress={onFocus} accessibilityRole="button" accessibilityLabel={(floating ? 'Move or focus ' : 'Focus ') + (participant.name || participant.identity) + ' video tile'} {...(floating ? dragResponder.panHandlers : {})} style={{
+      position: mainStage || floating ? 'absolute' : 'relative', top: mainStage ? 0 : floating ? frame.y : undefined, right: mainStage ? 0 : undefined, bottom: mainStage ? 0 : undefined, left: mainStage ? 0 : floating ? frame.x : undefined,
+      width: mainStage ? '100%' : floating ? frame.width : spotlight || single ? '100%' : '48%', height: mainStage ? '100%' : floating ? frame.height : undefined,
+      maxWidth: mainStage ? '100%' : floating ? 360 : spotlight || single ? 560 : 520, minWidth: mainStage || floating ? 0 : spotlight || single ? 0 : 140, aspectRatio: mainStage || floating ? undefined : 16 / 9,
+      borderRadius: mainStage ? 0 : floating ? 17 : 16, overflow: 'hidden', backgroundColor: '#050509', borderWidth: mainStage ? 0 : focused || spotlight ? 2 : 1, borderColor: focused || spotlight ? colors.accent : colors.border, zIndex: mainStage ? 0 : floating ? 4 : 1, boxShadow: floating ? '0 12px 30px rgba(0,0,0,0.42)' : undefined,
+    }}>
       <View ref={containerRef} collapsable={false} style={{ width: '100%', height: '100%' }} />
-      {spotlight && !mainStage && <View style={{ position: 'absolute', top: 8, left: 8, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: colors.accent }}><Text style={{ color: colors.onAccent, fontWeight: '900', fontSize: 10 }}>SPOTLIGHT</Text></View>}
-      <View style={{ position: 'absolute', top: 8, right: 8, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.72)' }}>
-        <Text style={{ color: '#FFFFFF', fontSize: 9, fontWeight: '900' }}>{participant.identity === creatorId ? 'HOST' : 'GUEST'}</Text>
-      </View>
-      <View style={{ position: 'absolute', left: 8, bottom: 8, maxWidth: '88%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.72)' }}>
-        <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: floating ? 11 : 12, fontWeight: '700' }}>{participant.name || participant.identity}</Text>
-      </View>
+      {spotlight && !mainStage && <View pointerEvents="none" style={{ position: 'absolute', top: 8, left: 8, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: colors.accent }}><Text style={{ color: colors.onAccent, fontWeight: '900', fontSize: 10 }}>SPOTLIGHT</Text></View>}
+      <View pointerEvents="none" style={{ position: 'absolute', top: 8, right: 8, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.72)' }}><Text style={{ color: '#FFFFFF', fontSize: 9, fontWeight: '900' }}>{participant.identity === creatorId ? 'HOST' : 'GUEST'}</Text></View>
+      <View pointerEvents="none" style={{ position: 'absolute', left: 8, bottom: 8, maxWidth: '88%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.72)' }}><Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: floating ? 11 : 12, fontWeight: '700' }}>{participant.name || participant.identity}</Text></View>
+      {floating && <View {...resizeResponder.panHandlers} accessibilityRole="adjustable" accessibilityLabel={'Resize ' + (participant.name || participant.identity) + ' video tile'} style={{ position: 'absolute', right: 0, bottom: 0, width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderTopLeftRadius: 12, backgroundColor: 'rgba(0,0,0,0.76)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.38)' }}><Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '900' }}>↘</Text></View>}
     </TouchableOpacity>
   );
 }
-
 function Action({ colors, label, accessibilityLabel, onPress, disabled = false, danger = false }) {
   const { typography } = useTheme();
   return <TouchableOpacity disabled={disabled} onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel || label} accessibilityState={{ disabled }} style={{ minHeight: 48, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 12, backgroundColor: danger ? colors.danger : colors.surfaceAlt, justifyContent: 'center', alignItems: 'center', opacity: disabled ? 0.5 : 1 }}>
@@ -801,8 +798,8 @@ export default function LiveStreamScreen({ route, navigation }) {
           <Text style={{ color: 'rgba(255,255,255,0.66)', textAlign: 'center', marginTop: 7, maxWidth: 340, lineHeight: 21 }}>{audioOnlyParticipants.length || localAudioOnly ? 'The conversation continues while cameras are off.' : "Waiting for the creator's video. It will appear here when their camera is on."}</Text>
         </View>
       )}
-      <View pointerEvents="box-none" style={{ position: 'absolute', top: 88, right: 14, bottom: 150, justifyContent: 'center', alignItems: 'flex-end', gap: 10 }}>
-        {floatingRemoteTracks.slice(0, 4).map((item) => (
+      <View pointerEvents="box-none" style={{ position: 'absolute', top: 88, left: 14, right: 14, bottom: 150 }}>
+        {floatingRemoteTracks.slice(0, 4).map((item, floatingIndex) => (
           <RemoteVideoTile
             key={item.track.sid}
             track={item.track}
@@ -810,6 +807,7 @@ export default function LiveStreamScreen({ route, navigation }) {
             colors={colors}
             creatorId={stream.creator_id}
             floating
+            floatingIndex={floatingIndex}
             focused={focusedStageIdentity === item.participant.identity}
             spotlight={item.participant.attributes?.zannychat_spotlight === 'true'}
             onFocus={() => setFocusedStageIdentity(item.participant.identity)}
