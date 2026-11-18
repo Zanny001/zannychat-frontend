@@ -106,4 +106,21 @@ Do not:
 
 ## Current disposition
 
-The production JavaScript bundle reachability assessment passed for all three platforms, and the full client-quality suite passed in both workflow runs. The known npm audit failure remains visible and enforced: 28 findings (4 moderate, 24 high, 0 critical). No dependency versions were changed as part of this tracking record. A formal, time-bounded risk disposition is still required before treating the remaining build-tooling findings as accepted. PRs #162 and #166 remain unmerged pending review and an explicit decision on the outstanding dependency risk.
+The production JavaScript bundle reachability assessment passed for all three platforms, and the full client-quality suite passed in both workflow runs. The known npm audit failure remains visible and enforced: 28 findings (4 moderate, 24 high, 0 critical). No dependency versions were changed as part of this tracking record. ### Formal temporary risk acceptance — 2026-11-18
+
+**Decision:** The repository/product owner explicitly authorized temporary acceptance of the remaining dependency risk on 2026-11-18, after reviewing the 28-finding npm audit, the SDK 57 compatibility constraints, and the successful three-platform production JavaScript bundle reachability assessment.
+
+**Scope of acceptance:** This exception is limited to the currently identified transitive build/development-tooling findings in the existing Expo SDK 57 dependency tree. It does not declare the findings fixed, does not assert that native binaries or server-side components are unaffected, and does not waive the npm audit gate. The audit continues to fail visibly and must not be suppressed.
+
+**Controls retained:**
+- Keep the npm audit high-severity CI job enforced.
+- Do not apply unreviewed overrides, force installs, or unsupported Expo/React Native downgrades.
+- Keep the source-map reachability scan and client-quality checks required.
+- Recheck upstream advisories and published compatible fixes at the review date.
+- Revoke this exception immediately if new evidence indicates affected package code is shipped or exploitable in a production execution path.
+
+**Review and expiry:** Review this exception no later than **2026-12-02**. It expires automatically on **2026-12-18** unless a fresh written risk review renews it. The target is to remove the affected dependency paths through compatible upstream releases before expiry.
+
+**Residual risk:** A malicious or adversarially crafted input reaching the affected build tooling could still trigger the reported resource-exhaustion behavior during development or build operations. The successful source-map scans only establish that affected package sources were not present in the inspected production JavaScript bundles; they do not eliminate build-time risk.
+
+This is a temporary project-level risk decision, not a declaration of full security compliance or a clean dependency audit. PR #162 has been merged. PR #166 records the audit controls and temporary disposition; production deployment remains a separate approval step.
