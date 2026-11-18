@@ -207,14 +207,24 @@ export default function LiveHubScreen({ navigation, route }) {
   const openReplay = (item) => navigation.navigate('LiveReplay', { replay: item });
 
   const deleteReplay = async (item) => {
+    const expectedUserId = activeUserIdRef.current;
+    if (!item?.id || !expectedUserId || item.creatorId !== expectedUserId
+      || ['starting', 'recording', 'processing'].includes(item.status)) return;
+    const beforeConfirmUser = await getCurrentUser().catch(() => null);
+    if (beforeConfirmUser?.id !== expectedUserId || activeUserIdRef.current !== expectedUserId) return;
     const confirmed = await confirmAction({
       title: 'Delete LIVE replay?',
       message: 'The saved video file will be permanently deleted. This cannot be undone.',
       confirmText: 'Delete',
     });
     if (!confirmed) return;
+    const latestUser = await getCurrentUser().catch(() => null);
+    if (latestUser?.id !== expectedUserId || activeUserIdRef.current !== expectedUserId
+      || item.creatorId !== expectedUserId) return;
     try {
       await backendFetch('/live/replays/' + encodeURIComponent(item.id), { method: 'DELETE' });
+      const userAfterDelete = await getCurrentUser().catch(() => null);
+      if (userAfterDelete?.id !== expectedUserId || activeUserIdRef.current !== expectedUserId) return;
       setReplays((current) => current.filter((replay) => replay.id !== item.id));
     } catch (e) {
       showAppAlert('Could not delete replay', e?.message || 'Please try again.');
