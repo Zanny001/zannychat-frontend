@@ -268,10 +268,10 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
           )} ListEmptyComponent={<Text style={{ color: colors.textSecondary, paddingVertical: 8 }}>Be the first to say hello.</Text>} />
         </View>
         {showParticipants && creatorMode && (
-          <View style={{ maxHeight: 260, marginHorizontal: 14, marginBottom: 8, padding: 10, borderRadius: 14, backgroundColor: hexToRgba(colors.surface, 0.94), borderWidth: 1, borderColor: colors.border }}>
+          <View style={{ maxHeight: 280, marginHorizontal: 14, marginBottom: 10, padding: 15, borderRadius: 21, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.accent, 0.28) }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <View>
-                <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Creator Studio</Text>
+                <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 17 }]}>Creator Studio</Text>
                 <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>Live audience and stage controls</Text>
               </View>
               <View style={{ paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, backgroundColor: hexToRgba(colors.accent, 0.14) }}>
@@ -279,7 +279,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
               </View>
             </View>
             <View style={{ flexDirection: 'row', gap: 7, marginBottom: 10 }}>
-              <View style={{ flex: 1, minWidth: 0, padding: 9, borderRadius: 12, backgroundColor: colors.surface }}>
+              <View style={{ flex: 1, minWidth: 0, padding: 11, borderRadius: 14, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border }}>
                 <Text style={[typography.heading, { color: colors.textPrimary }]}>{connectedViewerCount}</Text>
                 <Text style={[typography.caption, { color: colors.textSecondary }]}>Viewers listed</Text>
               </View>
@@ -315,7 +315,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
           </View>
         )}
         {showGuestRequests && canManageGuests && (
-          <View style={{ maxHeight: 190, marginHorizontal: 14, marginBottom: 8, padding: 10, borderRadius: 14, backgroundColor: hexToRgba(colors.surface, 0.94), borderWidth: 1, borderColor: colors.border }}>
+          <View style={{ maxHeight: 210, marginHorizontal: 14, marginBottom: 10, padding: 14, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.24) }}>
             <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 6 }}>Guest requests ({guestRequests.length})</Text>
             <FlatList keyboardShouldPersistTaps="handled" data={guestRequests} keyExtractor={(item) => item.user_id} renderItem={({ item }) => (
               <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 7, borderTopWidth: 1, borderTopColor: colors.border }}>
@@ -327,7 +327,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
           </View>
         )}
         {showReports && moderatorMode && (
-          <View style={{ maxHeight: 190, marginHorizontal: 14, marginBottom: 8, padding: 10, borderRadius: 14, backgroundColor: hexToRgba(colors.surface, 0.94), borderWidth: 1, borderColor: colors.border }}>
+          <View style={{ maxHeight: 210, marginHorizontal: 14, marginBottom: 10, padding: 14, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.22) }}>
             <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 6 }}>LIVE safety reports ({reports.length})</Text>
             <FlatList keyboardShouldPersistTaps="handled" data={reports} keyExtractor={(item) => item.id} renderItem={({ item }) => (
               <View style={{ paddingVertical: 7, borderTopWidth: 1, borderTopColor: colors.border }}>
@@ -342,9 +342,9 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
             )} ListEmptyComponent={<Text style={{ color: colors.textSecondary, fontSize: 12 }}>No reports have been submitted.</Text>} />
           </View>
         )}
-        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 9, paddingHorizontal: 12, paddingTop: 8 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingTop: 9 }}>
           {Object.entries(LIVE_REACTION_EMOJI).map(([reaction, emoji]) => (
-            <TouchableOpacity key={reaction} disabled={busy} onPress={() => onReact(reaction)} accessibilityRole="button" accessibilityLabel={'Send ' + reaction + ' reaction'} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.surface, 0.78), borderWidth: 1, borderColor: colors.border, paddingHorizontal: 8, borderRadius: 13 }}>
+            <TouchableOpacity key={reaction} disabled={busy} onPress={() => onReact(reaction)} accessibilityRole="button" accessibilityLabel={'Send ' + reaction + ' reaction'} style={{ minWidth: 46, minHeight: 46, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.surface, 0.92), borderWidth: 1, borderColor: colors.border, paddingHorizontal: 7, borderRadius: 16 }}>
               <Text style={{ fontSize: 20 }}>{emoji}</Text>
             </TouchableOpacity>
           ))}
