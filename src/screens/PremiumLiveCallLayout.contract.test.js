@@ -18,9 +18,9 @@ test('Native LIVE stage uses immersive full-screen video with floating guests an
   const source = read('LiveStreamScreen.js');
   assert.match(source, /StyleSheet\.absoluteFillObject/);
   assert.match(source, /VideoTrack trackRef=\{mainStageVideo\} objectFit="cover"/);
-  assert.match(source, /VideoTrack trackRef=\{item\} objectFit="cover"/);
-  assert.match(source, /floatingGuestVideos\.slice\(0, 3\)/);
-  assert.match(source, /width: 88, height: 118/);
+  assert.match(source, /VideoTrack trackRef=\{track\} objectFit="cover"/);
+  assert.match(source, /floatingGuestVideos\.slice\(0, 5\)/);
+  assert.match(source, /function NativeFloatingGuestTile/);
   assert.match(source, /minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center'/);
   assert.match(source, /minHeight: 48, minWidth: 132/);
 });
