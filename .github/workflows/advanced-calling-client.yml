@@ -21,6 +21,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Test bundle dependency reachability scanner
+        run: node --test scripts/audit-bundle-dependencies.test.mjs
       - name: Create non-production Firebase config for compile-only bundle analysis
         run: |
           if [ ! -f google-services.json ]; then
