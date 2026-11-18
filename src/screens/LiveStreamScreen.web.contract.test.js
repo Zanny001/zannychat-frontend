@@ -92,6 +92,14 @@ test('web LIVE creator sees incoming guest requests in an automatically refreshe
   assert.ok(web.includes('Guest requests ('));
   assert.ok(web.includes("reviewGuestRequest(item.user_id, 'accepted')"));
   assert.ok(web.includes("reviewGuestRequest(item.user_id, 'declined')"));
+  assert.ok(web.includes('item.name || item.user_id'));
+  assert.ok(web.includes('Requested to join your stage'));
+});
+
+test('web LIVE creator can permanently remove a joined viewer or guest from the room', () => {
+  assert.ok(web.includes('removeParticipant'));
+  assert.ok(web.includes('Remove from LIVE'));
+  assert.ok(web.includes('participants/${userId}'));
 });
 
 test('web viewer-to-guest token handoff preserves LIVE room membership until actual navigation away', () => {
