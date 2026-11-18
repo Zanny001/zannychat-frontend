@@ -207,9 +207,9 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
             </View>
           )}
           {floatingGuestVideos.length > 0 && (
-            <View pointerEvents="box-none" style={{ position: 'absolute', right: 12, top: '27%', bottom: 242, justifyContent: 'center', gap: 10 }}>
-              {floatingGuestVideos.slice(0, 4).map((item) => (
-                <View key={item.participant.identity} style={{ width: 104, height: 138, borderRadius: 18, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1.5, borderColor: spotlightUserId === item.participant.identity ? colors.accent : 'rgba(255,255,255,0.82)', shadowColor: '#000000', shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 9 }}>
+            <View pointerEvents="box-none" style={{ position: 'absolute', right: 12, top: '25%', bottom: 250, justifyContent: 'center', gap: 8 }}>
+              {floatingGuestVideos.slice(0, 3).map((item) => (
+                <View key={item.participant.identity} style={{ width: 88, height: 118, borderRadius: 17, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1.5, borderColor: spotlightUserId === item.participant.identity ? colors.accent : 'rgba(255,255,255,0.82)', shadowColor: '#000000', shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 9 }}>
                   <VideoTrack trackRef={item} style={{ width: '100%', height: '100%' }} />
                   <View style={{ position: 'absolute', left: 5, right: 5, bottom: 5, paddingHorizontal: 7, paddingVertical: 5, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.72)' }}>
                     <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '800' }}>{item.participant.name || item.participant.identity}</Text>
@@ -217,7 +217,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
                   </View>
                 </View>
               ))}
-              {floatingGuestVideos.length > 4 && <View style={{ alignSelf: 'flex-end', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.72)' }}><Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 11 }}>+{floatingGuestVideos.length - 4}</Text></View>}
+              {floatingGuestVideos.length > 3 && <View style={{ alignSelf: 'flex-end', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.72)' }}><Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 11 }}>+{floatingGuestVideos.length - 3}</Text></View>}
             </View>
           )}
           {videos.length > 0 && (audioOnlyParticipants.length > 0 || hasLocalAudioOnly) && (
@@ -326,9 +326,9 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
             )} ListEmptyComponent={<Text style={{ color: colors.textSecondary, fontSize: 12 }}>No reports have been submitted.</Text>} />
           </View>
         )}
-        <View style={{ position: 'absolute', left: 12, right: 120, bottom: Platform.OS === 'ios' ? 157 : 145, zIndex: 18, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', gap: 5, paddingHorizontal: 0, paddingTop: 0 }}>
+        <View style={{ position: 'absolute', left: 12, right: 120, bottom: Platform.OS === 'ios' ? 157 : 145, zIndex: 18, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', gap: 3, paddingHorizontal: 0, paddingTop: 0 }}>
           {Object.entries(LIVE_REACTION_EMOJI).map(([reaction, emoji]) => (
-            <TouchableOpacity key={reaction} disabled={busy} onPress={() => onReact(reaction)} accessibilityRole="button" accessibilityLabel={'Send ' + reaction + ' reaction'} style={{ minWidth: 38, minHeight: 38, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.surface, 0.92), borderWidth: 1, borderColor: colors.border, paddingHorizontal: 7, borderRadius: 16 }}>
+            <TouchableOpacity key={reaction} disabled={busy} onPress={() => onReact(reaction)} accessibilityRole="button" accessibilityLabel={'Send ' + reaction + ' reaction'} style={{ minWidth: 34, minHeight: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.surface, 0.92), borderWidth: 1, borderColor: colors.border, paddingHorizontal: 7, borderRadius: 16 }}>
               <Text style={{ fontSize: 20 }}>{emoji}</Text>
             </TouchableOpacity>
           ))}
