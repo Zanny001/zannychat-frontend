@@ -57,12 +57,14 @@ function RemoteVideoTile({ track, participant, colors, creatorId, spotlight = fa
   const viewport = Dimensions.get('window');
   const bounds = { width: Math.max(180, viewport.width - 28), height: Math.max(220, viewport.height - 238) };
   const [frame, setFrame] = useState(() => ({ x: Math.max(0, viewport.width - 28 - 156), y: Math.max(0, floatingIndex * 142), width: 156, height: 208 }));
+  const frameRef = useRef(frame);
+  frameRef.current = frame;
   const gestureOrigin = useRef(frame);
   const resizeOrigin = useRef(frame);
   const dragResponder = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => false,
     onMoveShouldSetPanResponder: (_event, gesture) => floating && (Math.abs(gesture.dx) > 4 || Math.abs(gesture.dy) > 4),
-    onPanResponderGrant: () => { gestureOrigin.current = frame; },
+    onPanResponderGrant: () => { gestureOrigin.current = frameRef.current; },
     onPanResponderMove: (_event, gesture) => {
       const origin = gestureOrigin.current;
       setFrame((current) => ({ ...current, x: Math.max(0, Math.min(bounds.width - current.width, origin.x + gesture.dx)), y: Math.max(0, Math.min(bounds.height - current.height, origin.y + gesture.dy)) }));
@@ -71,7 +73,7 @@ function RemoteVideoTile({ track, participant, colors, creatorId, spotlight = fa
   const resizeResponder = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => floating,
     onMoveShouldSetPanResponder: () => floating,
-    onPanResponderGrant: () => { resizeOrigin.current = frame; },
+    onPanResponderGrant: () => { resizeOrigin.current = frameRef.current; },
     onPanResponderMove: (_event, gesture) => {
       const origin = resizeOrigin.current;
       setFrame((current) => ({ ...current, width: Math.max(116, Math.min(360, Math.min(bounds.width - current.x, origin.width + gesture.dx))), height: Math.max(154, Math.min(480, Math.min(bounds.height - current.y, origin.height + gesture.dy))) }));
