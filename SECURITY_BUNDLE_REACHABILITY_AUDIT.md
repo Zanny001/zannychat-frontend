@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The npm audit findings must be assessed separately from whether vulnerable package code is included in ZannyChat's shipped JavaScript. This check exports the production web, Android, and iOS JavaScript bundles with source maps and inspects the source-map module paths.
+The npm audit findings must be assessed separately from whether vulnerable package code is included in ZannyChat's shipped JavaScript. This check exports the production web, Android, and iOS JavaScript bundles with source maps and inspects source-map module paths and resolves each package copy against the exact npm lockfile.
 
 This is an exposure assessment only. It does **not** remove vulnerable packages, clear npm audit, prove every possible runtime behaviour safe, or replace dependency remediation.
 
@@ -14,9 +14,9 @@ The `bundle-exposure-audit` job in `.github/workflows/advanced-calling-client.ym
 2. Creates only a placeholder Firebase configuration for compile-time export; it is not a production credential.
 3. Exports web, Android, and iOS production bundles with `--source-maps`.
 4. Uses `scripts/audit-bundle-dependencies.mjs` to inspect source-map entries.
-5. Fails closed if an export is missing, a source map cannot be parsed, or a `minimatch` / `picomatch` package source is present in a production bundle.
+5. Resolves nested `node_modules` paths to the exact lockfile entry, then checks the affected ranges for `minimatch`, `picomatch`, and `glob`. Patched versions are reported but do not fail the check. Unknown package versions fail closed.
 
-The script separately reports `glob` and relevant Expo CLI/config/fingerprint modules. These are contextual build-tool signals, not additional vulnerabilities asserted by this script.
+The script separately reports relevant Expo CLI/config/fingerprint modules. It does not treat a patched `glob` release (14.0.2 or later within the applicable range) or patched `minimatch` release (11.0.1 or later) as vulnerable.
 
 Source maps are generated only in the ephemeral CI workspace. They are not uploaded as artifacts or deployed.
 
