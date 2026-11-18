@@ -139,6 +139,7 @@ test('web LIVE renders separate category-themed video chat and chair-based audio
   assert.ok(web.includes("experienceMode === 'audio_room'"));
   assert.ok(web.includes('LiveCategoryBackdrop'));
   assert.ok(web.includes('FloatingLocalVideoTile'));
+  assert.ok(web.includes('x: Math.min(12, Math.max(0, bounds.width - 156))'));
   assert.ok(web.includes('💺'));
   assert.ok(web.includes('mediaVideoEnabled'));
 });
