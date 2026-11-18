@@ -132,6 +132,15 @@ test('web LIVE renders creator and remote guests together in one responsive stag
   assert.ok(web.includes('width: mainStage ? \'100%\' : floating ? 96 :'));
 });
 
+test('web LIVE renders separate category-themed video chat and chair-based audio room experiences', () => {
+  assert.ok(web.includes("experienceMode === 'video_chat'"));
+  assert.ok(web.includes("experienceMode === 'audio_room'"));
+  assert.ok(web.includes('LiveCategoryBackdrop'));
+  assert.ok(web.includes('FloatingLocalVideoTile'));
+  assert.ok(web.includes('💺'));
+  assert.ok(web.includes('mediaVideoEnabled'));
+});
+
 test('web LIVE keeps the stage accurate when remote cameras mute, unmute or unpublish', () => {
   assert.ok(web.includes('const onUnpublished = (publication, participant) =>'));
   assert.ok(web.includes('const onTrackMuted = (publication, participant) =>'));
