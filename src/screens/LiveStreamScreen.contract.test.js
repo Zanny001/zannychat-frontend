@@ -82,7 +82,7 @@ test('LIVE stage uses an edge-to-edge creator canvas with floating, focusable gu
   assert.ok(screen.includes('PanResponder.create'));
   assert.ok(screen.includes('width: frame.width, height: frame.height'));
   assert.ok(screen.includes('setFocusedStageIdentity(item.participant.identity)'));
-  assert.ok(screen.includes('item.participant.name || item.participant.identity'));
+  assert.ok(screen.includes('track.participant.name || track.participant.identity'));
   assert.ok(screen.includes('Track.Source.Microphone'));
   assert.ok(screen.includes('Audio only'));
   assert.ok(screen.includes('LIVE audio is on'));
@@ -143,7 +143,7 @@ test('web LIVE creator stage manager has parity with native guest controls', () 
   assert.ok(webSource.includes('/mute'));
   assert.ok(webSource.includes('label="Creator Studio"'));
   assert.ok(webSource.includes('label="Close"'));
-  assert.ok(webSource.includes('Remove guest'));
+  assert.ok(webSource.includes('Remove from LIVE'));
   assert.ok(webSource.includes("role === 'guest').length}/5</Text>"));
   assert.ok(webSource.includes('Creator Studio'));
   assert.ok(webSource.includes('Viewers listed'));
@@ -197,7 +197,7 @@ test('native and web LIVE guests only activate publisher media when the server g
 test('native and web LIVE stages are immersive with floating, focusable guest video tiles', () => {
   const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.ok(screen.includes('VideoTrack trackRef={mainStageVideo} objectFit="cover"'));
-  assert.ok(screen.includes('VideoTrack trackRef={item} objectFit="cover"'));
+  assert.ok(screen.includes('VideoTrack trackRef={track} objectFit="cover"'));
   assert.ok(screen.includes('StyleSheet.absoluteFillObject'));
   assert.ok(screen.includes('function NativeFloatingGuestTile'));
   assert.ok(screen.includes('PanResponder.create'));
@@ -341,7 +341,7 @@ test('native and web LIVE synchronize camera and microphone controls with each s
 test('LIVE creator stage labels host and guests distinctly on native and web tiles', () => {
   assert.ok(screen.includes('creatorId={stream.creator_id}'));
   assert.ok(screen.includes("mainStageVideo.participant.identity === creatorId ? 'HOST' : 'LIVE GUEST'"));
-  assert.ok(screen.includes("item.participant.identity === creatorId ? 'HOST' : 'GUEST'"));
+  assert.ok(screen.includes("track.participant.identity === creatorId ? 'HOST' : spotlighted ? '✦ SPOTLIGHT' : 'GUEST'"));
   const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.ok(webSource.includes('creatorId={stream.creator_id}'));
   assert.ok(webSource.includes("participant.identity === creatorId ? 'HOST' : 'GUEST'"));
