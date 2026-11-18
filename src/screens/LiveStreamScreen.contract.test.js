@@ -130,7 +130,8 @@ test('web LIVE creator stage manager has parity with native guest controls', () 
   const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.ok(webSource.includes('/guests/invite'));
   assert.ok(webSource.includes('/mute'));
-  assert.ok(webSource.includes("label={panel === 'stage' ? 'Close Creator Studio' : 'Creator Studio'}"));
+  assert.ok(webSource.includes('label="Creator Studio"'));
+  assert.ok(webSource.includes('label="Close"'));
   assert.ok(webSource.includes('Remove guest'));
   assert.ok(webSource.includes("role === 'guest').length}/5</Text>"));
   assert.ok(webSource.includes('Creator Studio'));
