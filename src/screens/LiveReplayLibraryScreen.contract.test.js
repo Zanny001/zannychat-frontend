@@ -12,6 +12,7 @@ test('LIVE replay library loads private account-scoped replay data from the exis
 });
 
 test('LIVE replay library separates ready, processing and unavailable recordings', () => {
+  assert.ok(screen.includes("value: 'mine'"));
   assert.ok(screen.includes("value: 'ready'"));
   assert.ok(screen.includes("value: 'processing'"));
   assert.ok(screen.includes("value: 'failed'"));
@@ -22,6 +23,7 @@ test('LIVE replay library separates ready, processing and unavailable recordings
 
 test('only ready recordings can open the existing signed playback screen', () => {
   assert.ok(screen.includes("item.status === 'ready'"));
+  assert.ok(screen.includes('item.creatorId === currentUserId'));
   assert.ok(screen.includes("navigation.navigate('LiveReplay', { replay: item })"));
   assert.ok(screen.includes("backendFetch('/live/replays/' + encodeURIComponent(item.id), { method: 'DELETE' })"));
   assert.ok(screen.includes('if (!item?.id || PENDING.has(item.status)) return'));
