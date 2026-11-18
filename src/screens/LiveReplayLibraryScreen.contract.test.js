@@ -4,7 +4,7 @@ import fs from 'node:fs';
 
 const screen = fs.readFileSync(new URL('./LiveReplayLibraryScreen.js', import.meta.url), 'utf8');
 
-test('LIVE replay library loads private account-scoped replay data from the existing backend route', () => {
+test('LIVE replay library loads authenticated account-scoped replay data from the existing backend route', () => {
   assert.ok(screen.includes("backendFetch('/live/replays')"));
   assert.ok(screen.includes('getCurrentUser()'));
   assert.ok(screen.includes('latest?.id !== expectedUserId'));
@@ -26,7 +26,8 @@ test('only ready recordings can open the existing signed playback screen', () =>
   assert.ok(screen.includes('item.creatorId === currentUserId'));
   assert.ok(screen.includes("navigation.navigate('LiveReplay', { replay: item })"));
   assert.ok(screen.includes("backendFetch('/live/replays/' + encodeURIComponent(item.id), { method: 'DELETE' })"));
-  assert.ok(screen.includes('if (!item?.id || PENDING.has(item.status)) return'));
+  assert.ok(screen.includes('item.creatorId !== activeUserIdRef.current'));
+  assert.ok(screen.includes('if (!item?.id || item.creatorId !== activeUserIdRef.current || PENDING.has(item.status)) return'));
 });
 
 test('replay library supports accessible filters, refresh, errors and empty states', () => {
