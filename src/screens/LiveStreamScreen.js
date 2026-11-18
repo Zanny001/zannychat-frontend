@@ -155,13 +155,13 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
   }, [microphoneEnabled, onToggleMicrophone, room]);
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={{ flex: 1, backgroundColor: '#100F18' }}>
-        <View style={{ position: 'absolute', zIndex: 2, top: 10, left: 14, right: 14, padding: 8, borderRadius: 20, backgroundColor: hexToRgba('#090A14', 0.92), borderWidth: 1, borderColor: hexToRgba(colors.accent, 0.28) }}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{ position: 'absolute', zIndex: 2, top: 10, left: 14, right: 14, padding: 8, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.94), borderWidth: 1, borderColor: hexToRgba(colors.accent, 0.28) }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View style={{ backgroundColor: colors.danger, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 12 }}>
               <Text style={[typography.small, { color: colors.onDanger, fontWeight: '900', letterSpacing: 0.5 }]}>● LIVE</Text>
             </View>
-            <Text numberOfLines={1} style={[typography.bodyStrong, { color: '#FFFFFF', flex: 1, minWidth: 0 }]}>{title}</Text>
+            <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary, flex: 1, minWidth: 0 }]}>{title}</Text>
             <TouchableOpacity onPress={onEnd} accessibilityRole="button" accessibilityLabel={creatorMode ? 'End LIVE stream' : 'Leave LIVE stream'} style={{ backgroundColor: hexToRgba(colors.surface, 0.92), borderWidth: 1, borderColor: colors.border, width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 14 }}>
               <Ionicons name="close" size={20} color={colors.textPrimary} />
             </TouchableOpacity>
