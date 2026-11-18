@@ -382,11 +382,11 @@ export default function LiveHubScreen({ navigation, route }) {
                   <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.8 }]}>ZANNYCHAT</Text>
                   <Text style={[typography.small, { color: colors.textSecondary, fontWeight: '700', letterSpacing: 1.1 }]}>LIVE STAGE</Text>
                 </View>
-                <TouchableOpacity onPress={() => navigation.navigate('LiveCreatorProfile')} accessibilityRole="button" accessibilityLabel="Open LIVE creator profile" style={{ minHeight: 46, paddingHorizontal: spacing.sm, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <TouchableOpacity onPress={() => navigation.navigate('LiveCreatorProfile')} accessibilityRole="button" accessibilityLabel="Open LIVE creator profile" style={{ minHeight: 48, paddingHorizontal: 10, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <Ionicons name="person-circle-outline" size={19} color={colors.primary} />
                   <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: '800' }]}>Studio</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh LIVE streams" style={{ width: 46, height: 46, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh LIVE streams" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="refresh" size={18} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
