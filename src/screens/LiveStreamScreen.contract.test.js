@@ -191,8 +191,8 @@ test('native and web LIVE stages are immersive with floating, focusable guest vi
   assert.ok(screen.includes('VideoTrack trackRef={mainStageVideo} objectFit="cover"'));
   assert.ok(screen.includes('VideoTrack trackRef={item} objectFit="cover"'));
   assert.ok(screen.includes('StyleSheet.absoluteFillObject'));
-  assert.ok(screen.includes('width: 88, height: 118'));
-  assert.ok(screen.includes('floatingGuestVideos.slice(0, 3)'));
+  assert.ok(screen.includes('function NativeFloatingGuestTile'));
+  assert.ok(screen.includes('floatingGuestVideos.slice(0, 5)'));
   assert.ok(webSource.includes('mainStage'));
   assert.ok(webSource.includes('floating'));
   assert.ok(webSource.includes('floatingRemoteTracks.slice(0, 4)'));
