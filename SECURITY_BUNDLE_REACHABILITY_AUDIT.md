@@ -22,7 +22,7 @@ Source maps are generated only in the ephemeral CI workspace. They are not uploa
 
 ## Interpretation
 
-- **No vulnerable package source found:** evidence that the inspected production JavaScript bundles do not include source files from `minimatch` or `picomatch`. The dependency audit remains open because the packages are still installed in the build dependency graph.
+- **No vulnerable package source found:** evidence that the inspected production JavaScript bundles do not include source files from affected versions of `minimatch`, `picomatch`, or `glob`. The dependency audit remains open because affected package versions are still installed in the build dependency graph.
 - **Vulnerable package source found:** treat the relevant platform as potentially exposed. Identify the import path and owning package before changing dependencies.
 - **Missing or invalid source maps:** inconclusive; the job fails rather than treating missing evidence as a pass.
 
