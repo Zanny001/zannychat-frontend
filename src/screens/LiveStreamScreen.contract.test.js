@@ -263,7 +263,7 @@ test('LIVE end and leave failures do not silently navigate away from an active r
   assert.ok(leave.includes('catch (error)'));
   assert.ok(leave.includes('endedRef.current = false;'));
   assert.ok(leave.includes("creatorMode ? 'Could not end LIVE' : 'Could not leave LIVE'"));
-  assert.ok(leave.indexOf('navigation.goBack()') < leave.indexOf('catch (error)') || leave.includes('navigation.goBack();\n    } catch (error)'));
+  assert.ok(leave.includes("navigation.replace('LiveHub')"));
   const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   const webLeaveStart = web.indexOf('  const leave = async () => {');
   const webLeaveEnd = web.indexOf('\n  const toggleCamera', webLeaveStart);
@@ -271,7 +271,7 @@ test('LIVE end and leave failures do not silently navigate away from an active r
   assert.ok(webLeave.includes('endedRef.current = false;'));
   assert.ok(webLeave.includes('catch (err)'));
   assert.ok(webLeave.includes("roomRef.current?.disconnect()")); 
-  assert.ok(webLeave.indexOf('navigation.goBack()') < webLeave.indexOf('catch (err)') || webLeave.includes('navigation.goBack();\n    } catch (err)'));
+  assert.ok(webLeave.includes("navigation.replace('LiveHub')"));
 });
 
 
@@ -448,4 +448,11 @@ test('native and web LIVE rooms disconnect and clear account-owned state on auth
   assert.ok(web.includes('roomRef.current?.disconnect()'));
   assert.ok(web.includes('setRemoteVideoTracks([])'));
   assert.ok(web.includes('setRemoteAudioParticipants([])'));
+});
+
+
+test('native LIVE automatically exits when the server confirms the stream has ended', () => {
+  assert.ok(screen.includes("['LIVE stream has ended', 'LIVE stream not found'].includes(e?.message)"));
+  assert.ok(screen.includes("navigation.replace('LiveHub')"));
+  assert.ok(screen.includes('setConnection(null)'));
 });
