@@ -87,6 +87,9 @@ export default function LiveCreatorProfileScreen({ navigation }) {
   const impact = summary?.impact || {};
   const streams = summary?.streams || {};
   const replays = summary?.replays || {};
+  // The creator-profile API only returns the signed-in creator's own replay rows;
+  // older payloads omit creator_id, so fall back to the authenticated profile id.
+  const getReplayCreatorId = (item) => item?.creator_id || profile.id;
 
   const deleteBroadcast = async (item) => {
     const confirmed = await confirmAction({
@@ -121,7 +124,7 @@ export default function LiveCreatorProfileScreen({ navigation }) {
 
   const deleteReplay = async (item) => {
     const expectedUserId = activeUserIdRef.current;
-    if (!item?.id || !expectedUserId || item.creator_id !== expectedUserId
+    if (!item?.id || !expectedUserId || getReplayCreatorId(item) !== expectedUserId
       || ['starting', 'recording', 'processing'].includes(item.status)) return;
     const beforeConfirmUser = await getCurrentUser().catch(() => null);
     if (beforeConfirmUser?.id !== expectedUserId || activeUserIdRef.current !== expectedUserId) return;
@@ -133,7 +136,7 @@ export default function LiveCreatorProfileScreen({ navigation }) {
     if (!confirmed) return;
     const latestUser = await getCurrentUser().catch(() => null);
     if (latestUser?.id !== expectedUserId || activeUserIdRef.current !== expectedUserId
-      || item.creator_id !== expectedUserId) return;
+      || getReplayCreatorId(item) !== expectedUserId) return;
     try {
       await backendFetch('/live/replays/' + encodeURIComponent(item.id), { method: 'DELETE' });
       const userAfterDelete = await getCurrentUser().catch(() => null);
@@ -236,7 +239,7 @@ export default function LiveCreatorProfileScreen({ navigation }) {
                 <View style={{ flex: 1 }}><Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>LIVE replay</Text><Text style={[typography.caption, { color: item.status === 'failed' ? colors.danger : colors.textSecondary }]}>{item.status === 'ready' ? 'Ready to watch' : item.status === 'failed' ? 'Recording unavailable' : item.status === 'processing' ? 'Preparing replay…' : item.status === 'starting' ? 'Starting recording…' : item.status === 'recording' ? 'Recording in progress…' : 'Unavailable'}</Text></View>
                 {item.status === 'ready' ? <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} /> : null}
               </TouchableOpacity>
-              {item.creator_id === activeUserIdRef.current && !['starting', 'recording', 'processing'].includes(item.status) ? <TouchableOpacity onPress={() => deleteReplay(item)} accessibilityRole="button" accessibilityLabel="Delete LIVE replay" style={{ width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.danger + '18' }}><Ionicons name="trash-outline" size={17} color={colors.danger} /></TouchableOpacity> : null}
+              {getReplayCreatorId(item) === activeUserIdRef.current && !['starting', 'recording', 'processing'].includes(item.status) ? <TouchableOpacity onPress={() => deleteReplay(item)} accessibilityRole="button" accessibilityLabel="Delete LIVE replay" style={{ width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.danger + '18' }}><Ionicons name="trash-outline" size={17} color={colors.danger} /></TouchableOpacity> : null}
             </View>
           )) : <Text style={[typography.caption, { color: colors.textSecondary }]}>Your saved replay collection will appear here.</Text>}
         </GlassCard>
