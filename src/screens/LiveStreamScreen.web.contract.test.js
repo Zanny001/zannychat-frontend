@@ -51,7 +51,7 @@ test('web LIVE renders each remote publisher in a labelled multi-participant sta
   assert.ok(web.includes('setRemoteVideoTracks((current) => current.some((item) => item.track.sid === track.sid)'));
   assert.ok(web.includes('const orderedRemoteTracks = [...remoteVideoTracks].sort('));
   assert.ok(web.includes('<RemoteVideoTile'));
-  assert.ok(web.includes('floatingRemoteTracks.slice(0, 4)'));
+  assert.ok(web.includes('floatingRemoteTracks.slice(0, 5)'));
   assert.ok(web.includes('mainStage'));
   assert.ok(web.includes('floating'));
   assert.ok(web.includes('participant.name || participant.identity'));
@@ -127,7 +127,7 @@ test('web LIVE renders creator and remote guests together in one responsive stag
   assert.ok(web.includes('ref={localRef}'));
   assert.ok(web.includes("creatorMode ? 'YOU · HOST' : 'YOU · GUEST'"));
   assert.ok(web.includes('<RemoteVideoTile'));
-  assert.ok(web.includes('floatingRemoteTracks.slice(0, 4)'));
+  assert.ok(web.includes('floatingRemoteTracks.slice(0, 5)'));
   assert.ok(web.includes('mainStage'));
   assert.ok(web.includes('aspectRatio: mainStage || floating ? undefined : 16 / 9'));
   assert.ok(web.includes('height: mainStage ? \'100%\' : floating ? frame.height : undefined'));
