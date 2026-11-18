@@ -28,7 +28,7 @@ test('Native LIVE stage uses immersive full-screen video with floating guests an
 test('Web LIVE actions and moderation controls keep 48-point targets', () => {
   const source = read('LiveStreamScreen.web.js');
   assert.match(source, /minHeight: 48, paddingHorizontal: 13/);
-  assert.match(source, /minWidth: 48, minHeight: 48, justifyContent: "center"/);
+  assert.match(source, /minWidth: 48, minHeight: 48, justifyContent: 'center'/);
   assert.match(source, /aspectRatio: 16 \/ 9/);
 });
 
