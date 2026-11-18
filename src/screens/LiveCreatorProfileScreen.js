@@ -215,7 +215,12 @@ export default function LiveCreatorProfileScreen({ navigation }) {
         <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Replay collection</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>{replays.total || 0} total</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>{replays.total || 0} total</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('LiveReplayLibrary')} accessibilityRole="button" accessibilityLabel="Open full LIVE replay library" style={{ minHeight: 40, paddingHorizontal: spacing.sm, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={[typography.caption, { color: colors.primary, fontWeight: '900' }]}>View all</Text>
+              </TouchableOpacity>
+            </View>
           </View>
           {(replays.recent || []).length ? replays.recent.map((item) => (
             <View key={item.id} style={{ paddingVertical: 9, borderTopWidth: 1, borderTopColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>

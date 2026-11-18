@@ -507,6 +507,9 @@ export default function LiveHubScreen({ navigation, route }) {
                   <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>LIVE replays</Text>
                   <View style={{ flex: 1 }} />
                   <Text style={[typography.caption, { color: colors.textSecondary }]}>{replays.length}</Text>
+                  <TouchableOpacity onPress={() => navigation.navigate('LiveReplayLibrary')} accessibilityRole="button" accessibilityLabel="Open full LIVE replay library" style={{ minHeight: 40, paddingHorizontal: spacing.sm, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={[typography.caption, { color: colors.primary, fontWeight: '900' }]}>View library</Text>
+                  </TouchableOpacity>
                 </View>
                 {replayError ? (
                   <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
