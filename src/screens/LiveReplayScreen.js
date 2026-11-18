@@ -148,6 +148,10 @@ export default function LiveReplayScreen({ route, navigation }) {
             </TouchableOpacity>}
           </View>
         )}
+        <View style={{ width: '100%', maxWidth: 760, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 13, paddingVertical: 10, borderRadius: 14, backgroundColor: hexToRgba(colors.primary, 0.08), borderWidth: 1, borderColor: colors.border }}>
+          <Ionicons name="shield-checkmark-outline" size={16} color={colors.primary} />
+          <Text style={[typography.caption, { color: colors.textSecondary, flex: 1 }]}>Secure replay · audience access rules apply · seven-day expiry</Text>
+        </View>
       </View>
     </SafeAreaView>
   );
