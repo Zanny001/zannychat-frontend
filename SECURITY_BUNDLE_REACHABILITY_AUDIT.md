@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The npm audit findings must be assessed separately from whether vulnerable package code is included in ZannyChat's shipped JavaScript. This check exports the production web, Android, and iOS JavaScript bundles with source maps and inspects source-map module paths and resolves each package copy against the exact npm lockfile.
+The npm audit findings must be assessed separately from whether vulnerable package code is included in ZannyChat's shipped JavaScript. This check exports the production web, Android, and iOS JavaScript bundles with source maps and inspects source-map module paths, resolving each package copy against the exact npm lockfile.
 
 This is an exposure assessment only. It does **not** remove vulnerable packages, clear npm audit, prove every possible runtime behaviour safe, or replace dependency remediation.
 
@@ -20,13 +20,34 @@ The script separately reports relevant Expo CLI/config/fingerprint modules. It d
 
 Source maps are generated only in the ephemeral CI workspace. They are not uploaded as artifacts or deployed.
 
-## Interpretation
+## Verified results — 2026-11-18
+
+Two independent workflow runs on PR #166 completed the bundle reachability job successfully:
+
+- Run #1282: [44253559291](https://github.com/Zanny001/zannychat-frontend/actions/runs/44253559291)
+- Run #1283: [44253585349](https://github.com/Zanny001/zannychat-frontend/actions/runs/44253585349)
+
+Both runs produced the same result:
+
+| Platform | Source maps | Source entries inspected | Vulnerable package sources | Related Expo/build-tool sources |
+|---|---:|---:|---:|---:|
+| Web | 2 | 1,550 | 0 | 0 |
+| Android | 1 | 2,314 | 0 | 0 |
+| iOS | 1 | 2,317 | 0 | 0 |
+
+**Result:** zero source-map module entries from affected `minimatch`, `picomatch`, or `glob` versions were found in all three inspected production JavaScript exports. The scanner's tests also passed, including vulnerable root/nested packages, patched versions, missing maps, empty maps, and unknown lockfile mappings.
+
+The separate `client-quality` job passed in both runs. The Premium status and LIVE quality workflow also passed.
+
+The separate `dependency-audit` job still fails with **28 findings (4 moderate, 24 high, 0 critical)**. This assessment therefore does not mark the dependency audit as clean.
+
+## Interpretation and limitations
 
 - **No vulnerable package source found:** evidence that the inspected production JavaScript bundles do not include source files from affected versions of `minimatch`, `picomatch`, or `glob`. The dependency audit remains open because affected package versions are still installed in the build dependency graph.
 - **Vulnerable package source found:** treat the relevant platform as potentially exposed. Identify the import path and owning package before changing dependencies.
 - **Missing or invalid source maps:** inconclusive; the job fails rather than treating missing evidence as a pass.
 
-Source-map reachability is not a complete security proof. It does not inspect native binaries, server-side dependencies, runtime-loaded remote code, or dynamically generated code that has no corresponding source-map entry.
+Source-map reachability is not a complete security proof. It does not inspect native binaries, server-side dependencies, runtime-loaded remote code, or dynamically generated code that has no corresponding source-map entry. The zero counts apply only to the inspected production JavaScript source-map graphs.
 
 ## Dependency remediation constraints
 
@@ -44,6 +65,6 @@ Source-map reachability is not a complete security proof. It does not inspect na
 - Expo source-map bundle analysis guidance: https://docs.expo.dev/guides/analyzing-bundles/
 - picomatch upstream proposed fixes (not official releases): https://github.com/micromatch/picomatch/pull/237 and https://github.com/micromatch/picomatch/pull/238
 
-## Current status
+## Current disposition
 
-Pending CI execution on this branch. No dependency version or lockfile changes are made by this audit instrumentation. The audit is not considered resolved until CI evidence is reviewed and any remaining dependency findings have a documented, time-bounded disposition.
+Production JavaScript bundle reachability checks passed on web, Android, and iOS. This is a bounded exposure finding, not a dependency remediation. The npm audit findings remain open and enforced. No dependency version or lockfile changes are made by this audit instrumentation. PRs #162 and #166 remain unmerged pending review and an explicit decision on the outstanding dependency risk.
