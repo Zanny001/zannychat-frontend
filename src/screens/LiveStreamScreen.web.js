@@ -704,6 +704,18 @@ export default function LiveStreamScreen({ route, navigation }) {
       setParticipants((items) => items.map((item) => item.userId === userId ? { ...item, microphoneMuted: result.microphoneMuted } : item));
     } catch (err) { setError(err?.message || 'Could not update guest microphone.'); }
   };
+  const removeParticipant = async (userId) => {
+    const participant = participants.find((item) => item.userId === userId);
+    const displayName = participant?.name || 'this participant';
+    if (typeof window !== 'undefined' && !window.confirm('Remove ' + displayName + ' from this LIVE stream? They will be disconnected and blocked from rejoining this stream.')) return;
+    try {
+      await backendFetch(`/live/${stream.id}/participants/${userId}`, { method: 'DELETE' });
+      setParticipants((items) => items.filter((item) => item.userId !== userId));
+    } catch (err) {
+      setError(err?.message || 'Could not remove participant from LIVE.');
+    }
+  };
+
   const removeGuest = async (userId) => {
     const guest = participants.find((item) => item.userId === userId);
     if (typeof window !== 'undefined' && !window.confirm(`Remove ${guest?.name || 'this guest'} from the LIVE stage?`)) return;
@@ -889,7 +901,8 @@ export default function LiveStreamScreen({ route, navigation }) {
             {stream.allow_guests && item.joined && item.role === 'viewer' && <Action colors={colors} label={item.guestInvited ? 'Invited' : 'Invite'} disabled={busy || item.guestInvited} onPress={() => inviteGuest(item.userId)} />}
             {item.stage && <Action colors={colors} label={item.microphoneMuted ? 'Unmute' : 'Mute'} onPress={() => muteGuest(item.userId, !item.microphoneMuted)} />}
             {item.stage && <Action colors={colors} label={item.spotlighted ? 'Unspotlight' : 'Spotlight'} onPress={() => spotlightGuest(item.userId, !item.spotlighted)} />}
-            {item.stage && <Action colors={colors} label="Remove guest" danger onPress={() => removeGuest(item.userId)} />}
+            {item.stage && <Action colors={colors} label="Move to audience" onPress={() => removeGuest(item.userId)} />}
+            {item.joined && <Action colors={colors} label="Remove from LIVE" danger onPress={() => removeParticipant(item.userId)} />}
             {(item.moderator || item.joined) && <Action colors={colors} label={item.moderator ? 'Remove moderator' : 'Make moderator'} danger={item.moderator} onPress={() => setModerator(item.userId, !item.moderator)} />}
           </View>)}
           {!participants.length && <Text style={{ color: colors.textSecondary }}>No connected viewers or guests yet.</Text>}
