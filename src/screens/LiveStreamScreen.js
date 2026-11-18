@@ -86,6 +86,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
   const { colors, typography } = useTheme();
   const room = useRoomContext();
   const [showOverlayMenu, setShowOverlayMenu] = useState(false);
+  const [focusedStageIdentity, setFocusedStageIdentity] = useState(null);
   const connectedViewerCount = participants.filter((item) => item.joined && item.role === 'viewer').length;
   const onStageGuestCount = participants.filter((item) => item.joined && item.role === 'guest').length;
   const availableGuestSlots = Math.max(0, 5 - onStageGuestCount);
@@ -132,7 +133,8 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
   const videos = tracks.filter(isTrackReference);
   const spotlightVideo = videos.find((track) => track.participant.identity === spotlightUserId);
   const creatorVideo = videos.find((track) => track.participant.identity === creatorId);
-  const mainStageVideo = spotlightVideo || creatorVideo || videos[0] || null;
+  const focusedStageVideo = videos.find((track) => track.participant.identity === focusedStageIdentity);
+  const mainStageVideo = focusedStageVideo || spotlightVideo || creatorVideo || videos[0] || null;
   const floatingGuestVideos = mainStageVideo
     ? videos.filter((track) => track.participant.identity !== mainStageVideo.participant.identity)
     : [];
@@ -193,7 +195,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
               <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 190, backgroundColor: 'rgba(4,5,12,0.34)' }} />
               <View pointerEvents="none" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 330, backgroundColor: 'rgba(4,5,12,0.56)' }} />
               <View style={{ position: 'absolute', left: 16, bottom: 330, maxWidth: '72%', paddingHorizontal: 11, paddingVertical: 8, borderRadius: 13, backgroundColor: 'rgba(5,6,14,0.62)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' }}>
-                <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '900', letterSpacing: 1 }}>{spotlightVideo ? '✦ SPOTLIGHT' : mainStageVideo.participant.identity === creatorId ? 'HOST' : 'LIVE GUEST'}</Text>
+                <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '900', letterSpacing: 1 }}>{spotlightVideo?.participant.identity === mainStageVideo.participant.identity ? '✦ SPOTLIGHT' : mainStageVideo.participant.identity === creatorId ? 'HOST' : 'LIVE GUEST'}</Text>
                 <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '800', marginTop: 3 }}>{mainStageVideo.participant.name || mainStageVideo.participant.identity}</Text>
               </View>
             </View>
@@ -209,13 +211,13 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
           {floatingGuestVideos.length > 0 && (
             <View pointerEvents="box-none" style={{ position: 'absolute', right: 12, top: '25%', bottom: 250, justifyContent: 'center', gap: 8 }}>
               {floatingGuestVideos.slice(0, 3).map((item) => (
-                <View key={item.participant.identity} style={{ width: 88, height: 118, borderRadius: 17, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1.5, borderColor: spotlightUserId === item.participant.identity ? colors.accent : 'rgba(255,255,255,0.82)', shadowColor: '#000000', shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 9 }}>
+                <TouchableOpacity key={item.participant.identity} onPress={() => setFocusedStageIdentity(item.participant.identity)} activeOpacity={0.88} accessibilityRole="button" accessibilityLabel={'Focus LIVE video for ' + (item.participant.name || item.participant.identity)} style={{ width: 88, height: 118, borderRadius: 17, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1.5, borderColor: focusedStageIdentity === item.participant.identity || spotlightUserId === item.participant.identity ? colors.accent : 'rgba(255,255,255,0.82)', shadowColor: '#000000', shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 9 }}>
                   <VideoTrack trackRef={item} style={{ width: '100%', height: '100%' }} />
                   <View style={{ position: 'absolute', left: 5, right: 5, bottom: 5, paddingHorizontal: 7, paddingVertical: 5, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.72)' }}>
                     <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '800' }}>{item.participant.name || item.participant.identity}</Text>
                     <Text style={{ color: '#D9D9E8', fontSize: 8, fontWeight: '800', marginTop: 1 }}>{item.participant.identity === creatorId ? 'HOST' : 'GUEST'}</Text>
                   </View>
-                </View>
+                </TouchableOpacity>
               ))}
               {floatingGuestVideos.length > 3 && <View style={{ alignSelf: 'flex-end', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.72)' }}><Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 11 }}>+{floatingGuestVideos.length - 3}</Text></View>}
             </View>
