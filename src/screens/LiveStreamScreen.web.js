@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, PanResponder, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
