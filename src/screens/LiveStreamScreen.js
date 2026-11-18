@@ -213,7 +213,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
             </View>
           )}
           {floatingGuestVideos.length > 0 && (
-            <View pointerEvents="box-none" style={{ position: 'absolute', right: 12, top: '25%', bottom: 250, justifyContent: 'center', gap: 8 }}>
+            <View pointerEvents="box-none" style={{ position: 'absolute', right: 12, top: '25%', bottom: 260, justifyContent: 'center', gap: 8 }}>
               {floatingGuestVideos.slice(0, 3).map((item) => (
                 <TouchableOpacity key={item.participant.identity} onPress={() => setFocusedStageIdentity(item.participant.identity)} activeOpacity={0.88} accessibilityRole="button" accessibilityLabel={'Focus LIVE video for ' + (item.participant.name || item.participant.identity)} style={{ width: 88, height: 118, borderRadius: 17, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1.5, borderColor: focusedStageIdentity === item.participant.identity || spotlightUserId === item.participant.identity ? colors.accent : 'rgba(255,255,255,0.82)', shadowColor: '#000000', shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 9 }}>
                   <VideoTrack trackRef={item} objectFit="cover" style={{ width: '100%', height: '100%' }} />
@@ -237,7 +237,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
           </View>
         </View>
         {publisherMode && (
-          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, position: 'absolute', left: 14, right: 14, bottom: Platform.OS === 'ios' ? 88 : 76, zIndex: 18, marginHorizontal: 0, marginTop: 0, paddingHorizontal: 10, paddingVertical: 9, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.94), borderWidth: 1, borderColor: colors.border }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, position: 'absolute', left: 14, right: 14, bottom: Platform.OS === 'ios' ? 88 : 92, zIndex: 18, marginHorizontal: 0, marginTop: 0, paddingHorizontal: 10, paddingVertical: 9, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.94), borderWidth: 1, borderColor: colors.border }}>
             <TouchableOpacity onPress={handleToggleCamera} accessibilityRole="button" accessibilityLabel={cameraEnabled ? 'Turn camera off and keep audio live' : 'Turn camera on'} style={{ minHeight: 48, minWidth: 132, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 12, borderRadius: 14, backgroundColor: cameraEnabled ? hexToRgba(colors.accent, 0.2) : hexToRgba(colors.surface, 0.9), borderWidth: 1, borderColor: colors.border }}>
               <Ionicons name={cameraEnabled ? 'videocam' : 'videocam-off'} size={18} color={colors.textPrimary} />
               <Text style={[typography.small, { color: colors.textPrimary }]}>{cameraEnabled ? 'Camera on' : 'Camera off'}</Text>
@@ -248,7 +248,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
             </TouchableOpacity>
           </View>
         )}
-        {showComments && <View style={{ position: 'absolute', left: 14, right: 126, bottom: Platform.OS === 'ios' ? 220 : 208, zIndex: 17, maxHeight: 72, marginHorizontal: 0, marginTop: 0, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 17, backgroundColor: 'rgba(8,9,18,0.52)', borderWidth: 1, borderColor: colors.border }}>
+        {showComments && <View style={{ position: 'absolute', left: 14, right: 126, bottom: Platform.OS === 'ios' ? 220 : 224, zIndex: 17, maxHeight: 72, marginHorizontal: 0, marginTop: 0, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 17, backgroundColor: 'rgba(8,9,18,0.52)', borderWidth: 1, borderColor: colors.border }}>
           <FlatList keyboardShouldPersistTaps="handled" data={comments.slice(-2)} keyExtractor={(item) => item.id} renderItem={({ item }) => (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 }}>
               <Text numberOfLines={1} style={[typography.small, { color: colors.accent, flexShrink: 1, maxWidth: '38%' }]}>{item.user_name || 'ZannyChat user'}</Text>
@@ -332,14 +332,14 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
             )} ListEmptyComponent={<Text style={{ color: colors.textSecondary, fontSize: 12 }}>No reports have been submitted.</Text>} />
           </View>
         )}
-        {showComments && <View style={{ position: 'absolute', left: 12, right: 120, bottom: Platform.OS === 'ios' ? 157 : 145, zIndex: 18, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', gap: 3, paddingHorizontal: 0, paddingTop: 0 }}>
+        {showComments && <View style={{ position: 'absolute', left: 12, right: 120, bottom: Platform.OS === 'ios' ? 157 : 161, zIndex: 18, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', gap: 3, paddingHorizontal: 0, paddingTop: 0 }}>
           {Object.entries(LIVE_REACTION_EMOJI).map(([reaction, emoji]) => (
             <TouchableOpacity key={reaction} disabled={busy} onPress={() => onReact(reaction)} accessibilityRole="button" accessibilityLabel={'Send ' + reaction + ' reaction'} style={{ minWidth: 34, minHeight: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.surface, 0.92), borderWidth: 1, borderColor: colors.border, paddingHorizontal: 7, borderRadius: 16 }}>
               <Text style={{ fontSize: 20 }}>{emoji}</Text>
             </TouchableOpacity>
           ))}
         </View>}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, position: 'absolute', left: 12, right: 12, bottom: Platform.OS === 'ios' ? 24 : 12, zIndex: 19, marginHorizontal: 0, marginTop: 0, marginBottom: 0, padding: 8, paddingBottom: 8, borderRadius: 20, backgroundColor: 'rgba(8,9,18,0.88)', borderWidth: 1, borderColor: colors.border }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, position: 'absolute', left: 12, right: 12, bottom: Platform.OS === 'ios' ? 24 : 28, zIndex: 19, marginHorizontal: 0, marginTop: 0, marginBottom: 0, padding: 8, paddingBottom: 8, borderRadius: 20, backgroundColor: 'rgba(8,9,18,0.88)', borderWidth: 1, borderColor: colors.border }}>
           <TextInput value={draft} onChangeText={(v) => setDraft(v.slice(0, 500))} maxLength={500} placeholder="Say something kind…" placeholderTextColor={colors.textSecondary} style={{ flex: 1, minWidth: 0, backgroundColor: colors.surfaceAlt, color: colors.textPrimary, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 11 }} />
           <TouchableOpacity disabled={busy || !draft.trim()} onPress={onComment} accessibilityRole="button" accessibilityLabel="Send LIVE comment" style={{ backgroundColor: colors.primary, padding: 12, borderRadius: 14 }}><Ionicons name="send" size={19} color={colors.onPrimary} /></TouchableOpacity>
 
