@@ -449,3 +449,10 @@ test('native and web LIVE rooms disconnect and clear account-owned state on auth
   assert.ok(web.includes('setRemoteVideoTracks([])'));
   assert.ok(web.includes('setRemoteAudioParticipants([])'));
 });
+
+
+test('native LIVE automatically exits when the server confirms the stream has ended', () => {
+  assert.ok(screen.includes("['LIVE stream has ended', 'LIVE stream not found'].includes(e?.message)"));
+  assert.ok(screen.includes("navigation.replace('LiveHub')"));
+  assert.ok(screen.includes('setConnection(null)'));
+});
