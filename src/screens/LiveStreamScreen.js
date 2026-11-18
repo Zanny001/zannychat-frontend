@@ -252,7 +252,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
             </View>
           )}
           {floatingGuestVideos.length > 0 && (
-            <View pointerEvents="box-none" style={{ position: 'absolute', left: 12, right: 12, top: 120, bottom: 250 }}>
+            <View pointerEvents="box-none" style={{ position: 'absolute', left: 12, right: 12, top: themedVideoChat ? 174 : 120, bottom: 250 }}>
               {floatingGuestVideos.slice(0, 5).map((item, index) => (
                 <NativeFloatingGuestTile key={item.participant.identity} track={item} colors={colors} creatorId={creatorId}
                   index={index} focused={focusedStageIdentity === item.participant.identity}
