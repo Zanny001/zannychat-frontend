@@ -85,7 +85,7 @@ function FloatingReaction({ item, index, onComplete }) {
 function NativeFloatingGuestTile({ track, colors, focused, spotlighted, onFocus, index = 0 }) {
   const viewport = Dimensions.get('window');
   const bounds = { width: Math.max(180, viewport.width - 24), height: Math.max(180, viewport.height - 370) };
-  const [frame, setFrame] = useState(() => ({ x: Math.max(0, viewport.width - 24 - 156), y: Math.max(0, index * 142), width: 156, height: 208 }));
+  const [frame, setFrame] = useState(() => ({ x: Math.max(0, viewport.width - 24 - 156), y: Math.min(Math.max(0, bounds.height - 208), index * 142), width: 156, height: 208 }));
   const frameRef = useRef(frame);
   frameRef.current = frame;
   const dragOrigin = useRef(frame);
