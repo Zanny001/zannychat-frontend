@@ -271,7 +271,7 @@ test('LIVE end and leave failures do not silently navigate away from an active r
   assert.ok(webLeave.includes('endedRef.current = false;'));
   assert.ok(webLeave.includes('catch (err)'));
   assert.ok(webLeave.includes("roomRef.current?.disconnect()")); 
-  assert.ok(webLeave.indexOf('navigation.goBack()') < webLeave.indexOf('catch (err)') || webLeave.includes('navigation.goBack();\n    } catch (err)'));
+  assert.ok(webLeave.includes("navigation.replace('LiveHub')"));
 });
 
 
