@@ -450,6 +450,16 @@ export default function LiveStreamScreen({ route, navigation }) {
     };
   }, [stream?.id, status, connection?.token]);
 
+  const exitEndedStream = useCallback(() => {
+    if (endedRef.current) return;
+    endedRef.current = true;
+    roomRef.current?.disconnect();
+    setBusy(false);
+    setStatus('LIVE ended');
+    // replace, rather than goBack, also handles direct/deep-linked LIVE entry.
+    navigation.replace('LiveHub');
+  }, [navigation]);
+
   const refreshComments = useCallback(async () => {
     if (!stream?.id || !isDocumentVisible() || commentsRefreshInFlight.current) return;
     commentsRefreshInFlight.current = true;
@@ -468,9 +478,14 @@ export default function LiveStreamScreen({ route, navigation }) {
       if (incomingReactions.length) {
         setFloatingReactions((current) => [...current, ...incomingReactions].slice(-16));
       }
-    } catch (err) { setError((current) => current || err?.message || 'Comments unavailable.'); }
-    finally { commentsRefreshInFlight.current = false; }
-  }, [stream?.id]);
+    } catch (err) {
+      if (!endedRef.current && ['LIVE stream has ended', 'LIVE stream not found'].includes(err?.message)) {
+        exitEndedStream();
+      } else if (!endedRef.current) {
+        setError((current) => current || err?.message || 'Comments unavailable.');
+      }
+    } finally { commentsRefreshInFlight.current = false; }
+  }, [stream?.id, exitEndedStream]);
 
   useEffect(() => {
     if (!stream?.id) return undefined;
@@ -546,7 +561,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       await backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' });
       roomRef.current?.disconnect();
       setBusy(false);
-      navigation.goBack();
+      navigation.replace('LiveHub');
     } catch (err) {
       endedRef.current = false;
       setBusy(false);
