@@ -638,30 +638,41 @@ export default function LiveHubScreen({ navigation, route }) {
           </View>
         }
         renderItem={({ item }) => (
-          <GlassCard style={{ marginHorizontal: spacing.md, marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              <TouchableOpacity disabled={busy} onPress={() => joinLive(item)} accessibilityRole="button" accessibilityLabel={'Join LIVE: ' + item.title} style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                <View style={{ width: 48, height: 48, borderRadius: 16, backgroundColor: hexToRgba(colors.danger, 0.1), alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="videocam" size={23} color={colors.danger} />
+          <GlassCard glow style={{ marginHorizontal: spacing.md, marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+            <TouchableOpacity disabled={busy} onPress={() => joinLive(item)} accessibilityRole="button" accessibilityLabel={'Join LIVE: ' + item.title} accessibilityState={{ disabled: busy, busy }} style={{ gap: spacing.sm }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, backgroundColor: hexToRgba(colors.danger, 0.12), borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.25) }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 4, backgroundColor: colors.danger }} />
+                  <Text style={[typography.caption, { color: colors.danger, fontWeight: '900', letterSpacing: 1 }]}>LIVE NOW</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                  <Ionicons name={item.visibility === 'private' ? 'lock-closed-outline' : item.visibility === 'followers' ? 'people-outline' : 'globe-outline'} size={14} color={colors.textSecondary} />
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>{item.visibility === 'followers' ? 'Followers' : item.visibility === 'private' ? 'Invite only' : 'Public'}</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                <View style={{ width: 52, height: 52, borderRadius: 18, backgroundColor: hexToRgba(colors.primary, 0.15), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.28), alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="videocam" size={24} color={colors.primary} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.xs }}>
-                    <Text numberOfLines={2} style={[typography.bodyStrong, { color: colors.textPrimary, flexShrink: 1 }]}>{item.title}</Text>
-                    <View style={{ paddingHorizontal: 7, paddingVertical: 3, borderRadius: 10, backgroundColor: hexToRgba(colors.danger, 0.1) }}>
-                      <Text style={[typography.caption, { color: colors.danger, fontWeight: '900' }]}>● LIVE</Text>
-                    </View>
-                  </View>
-                  {!!item.description && <Text numberOfLines={2} style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>{item.description}</Text>}
-                  <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 5 }]}>{item.visibility === 'followers' ? 'Followers only' : item.visibility === 'private' ? 'Private invitation' : 'Public broadcast'}</Text>
+                  <Text numberOfLines={2} style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 16 }]}>{item.title || 'LIVE conversation'}</Text>
+                  <Text numberOfLines={1} style={[typography.caption, { color: colors.textSecondary, marginTop: 4 }]}>{item.creator_name || 'ZannyChat creator'}</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
-              </TouchableOpacity>
-              {item.creator_id && !item.is_creator && (
-                <TouchableOpacity disabled={busy} onPress={() => toggleFollow(item.creator_id)} accessibilityRole="button" accessibilityLabel={followingIds.includes(item.creator_id) ? `Unfollow ${item.creator_name || item.title || 'LIVE creator'}` : `Follow ${item.creator_name || item.title || 'LIVE creator'}`} accessibilityState={{ disabled: busy, busy }} style={{ paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, borderRadius: radii.md, backgroundColor: followingIds.includes(item.creator_id) ? colors.surface : colors.primary + '18', borderWidth: 1, borderColor: colors.border }}>
-                  <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>{followingIds.includes(item.creator_id) ? 'Following' : 'Follow'}</Text>
+                <View style={{ width: 40, height: 40, borderRadius: 14, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="arrow-up-right" size={19} color={colors.onPrimary} />
+                </View>
+              </View>
+              {!!item.description && <Text numberOfLines={2} style={[typography.caption, { color: colors.textSecondary, lineHeight: 19 }]}>{item.description}</Text>}
+            </TouchableOpacity>
+            {item.creator_id && !item.is_creator ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm }}>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>Be part of the conversation</Text>
+                <TouchableOpacity disabled={busy} onPress={() => toggleFollow(item.creator_id)} accessibilityRole="button" accessibilityLabel={followingIds.includes(item.creator_id) ? `Unfollow ${item.creator_name || item.title || 'LIVE creator'}` : `Follow ${item.creator_name || item.title || 'LIVE creator'}`} accessibilityState={{ disabled: busy, busy }} style={{ minHeight: 40, paddingHorizontal: spacing.md, borderRadius: 13, backgroundColor: followingIds.includes(item.creator_id) ? colors.surface : hexToRgba(colors.primary, 0.13), borderWidth: 1, borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Ionicons name={followingIds.includes(item.creator_id) ? 'checkmark' : 'add'} size={15} color={colors.primary} />
+                  <Text style={[typography.caption, { color: colors.primary, fontWeight: '900' }]}>{followingIds.includes(item.creator_id) ? 'Following' : 'Follow creator'}</Text>
                 </TouchableOpacity>
-              )}
-            </View>
+              </View>
+            ) : null}
           </GlassCard>
         )}
         ListEmptyComponent={!loading && !error ? (
