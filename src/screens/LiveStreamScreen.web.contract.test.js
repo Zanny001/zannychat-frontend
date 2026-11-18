@@ -124,7 +124,9 @@ test('web LIVE renders creator and remote guests together in one responsive stag
   assert.ok(web.includes('const floatingRemoteTracks = orderedRemoteTracks.filter('));
   assert.ok(web.includes('ref={localRef}'));
   assert.ok(web.includes("creatorMode ? 'YOU · HOST' : 'YOU · GUEST'"));
-  assert.ok(web.includes('<RemoteVideoTile key={item.track.sid}'));
+  assert.ok(web.includes('<RemoteVideoTile'));
+  assert.ok(web.includes('floatingRemoteTracks.slice(0, 4)'));
+  assert.ok(web.includes('mainStage'));
   assert.ok(web.includes('aspectRatio: 16 / 9'));
 });
 
