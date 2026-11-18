@@ -30,8 +30,8 @@ test('Web LIVE actions and moderation controls keep 48-point targets', () => {
   assert.match(source, /minHeight: 48, paddingHorizontal: 13/);
   assert.match(source, /minWidth: 48, minHeight: 48, justifyContent: 'center'/);
   assert.match(source, /aspectRatio: mainStage \|\| floating \? undefined : 16 \/ 9/);
-  assert.match(source, /height: mainStage \? '100%' : floating \? 132 : undefined/);
-  assert.match(source, /width: mainStage \? '100%' : floating \? 96 :/);
+  assert.match(source, /height: mainStage \? '100%' : floating \? frame.height : undefined/);
+  assert.match(source, /width: mainStage \? '100%' : floating \? frame.width :/);
 });
 
 test('Native and web call invite actions are not undersized', () => {
