@@ -120,7 +120,7 @@ test('web LIVE uses the participant supplied by LiveKit TrackSubscribed instead 
 });
 
 test('web LIVE renders creator and remote guests together in one responsive stage', () => {
-  assert.ok(web.includes('const mainRemoteTrack = publisherMode || experienceMode === 'video_chat' ? null :'));
+  assert.ok(web.includes("const mainRemoteTrack = publisherMode || experienceMode === 'video_chat' ? null :"));
   assert.ok(web.includes('const floatingRemoteTracks = orderedRemoteTracks.filter('));
   assert.ok(web.includes('ref={localRef}'));
   assert.ok(web.includes("creatorMode ? 'YOU · HOST' : 'YOU · GUEST'"));
