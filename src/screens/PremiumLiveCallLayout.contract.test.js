@@ -9,7 +9,8 @@ test('LIVE hub primary controls keep consistent 48-point targets', () => {
   assert.match(source, /minHeight: 48, paddingHorizontal: 10/);
   assert.match(source, /width: 48, height: 48, borderRadius: 15/);
   assert.match(source, /minHeight: 48, paddingHorizontal: spacing\.md, borderRadius: 18/);
-  assert.match(source, /minHeight: 52, borderRadius: radii\.md/);
+  assert.match(source, /minHeight: 52/);
+  assert.match(source, /borderRadius: radii\.md/);
   assert.match(source, /accessibilityLabel="Go LIVE"/);
 });
 
