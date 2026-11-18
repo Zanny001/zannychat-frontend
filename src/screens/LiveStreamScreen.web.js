@@ -820,7 +820,7 @@ export default function LiveStreamScreen({ route, navigation }) {
           {experienceMode === 'audio_room' && <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 9, marginTop: 16, maxWidth: 350 }}>
             {localAudioOnly && <View style={{ minWidth: 112, alignItems: 'center', padding: 12, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.28)' }}><Text style={{ fontSize: 34 }}>💺</Text><Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '900', marginTop: 5 }}>YOU · {creatorMode ? 'HOST' : 'GUEST'}</Text></View>}
             {audioOnlyParticipants.map((person) => <View key={person.identity} style={{ minWidth: 112, alignItems: 'center', padding: 12, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' }}><Text style={{ fontSize: 34 }}>💺</Text><Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '900', marginTop: 5, maxWidth: 120 }}>{person.name || person.identity}</Text><Text style={{ color: '#B9C5FF', fontSize: 9, marginTop: 3 }}>{person.identity === stream.creator_id ? 'HOST' : 'GUEST'}</Text></View>)}
-          </View>
+          </View>}
         </View>
       )}
       <View pointerEvents="box-none" style={{ position: 'absolute', top: 88, left: 14, right: 14, bottom: 150 }}>
