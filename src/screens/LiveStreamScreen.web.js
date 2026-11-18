@@ -794,7 +794,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   return <SafeAreaView style={{ flex: 1, minHeight: '100%', backgroundColor: '#05050B', position: 'relative', overflow: 'hidden' }}>
     <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#05050B' }}>
       {publisherMode && experienceMode !== 'audio_room' ? (
-        experienceMode === 'video_chat' ? <FloatingLocalVideoTile containerRef={localRef} colors={colors} role={creatorMode ? 'HOST' : 'GUEST'} /> : <>
+        experienceMode === 'video_chat' ? <><LiveCategoryBackdrop category={category} title={stream.title} mode={experienceMode} /><FloatingLocalVideoTile containerRef={localRef} colors={colors} role={creatorMode ? 'HOST' : 'GUEST'} /></> : <>
           <View ref={localRef} collapsable={false} style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#090914' }} />
           {!camera && <View pointerEvents="none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: '#111019' }}><Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 18 }}>Camera off</Text><Text style={{ color: 'rgba(255,255,255,0.68)', marginTop: 6 }}>Your voice is still live</Text></View>}
           <View style={{ position: 'absolute', left: 22, bottom: 112, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: 'rgba(5,5,11,0.66)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}><Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '800' }}>{creatorMode ? 'YOU · HOST' : 'YOU · GUEST'}</Text></View>
