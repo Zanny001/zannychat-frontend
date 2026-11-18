@@ -182,17 +182,22 @@ test('native and web LIVE guests only activate publisher media when the server g
   assert.ok(webSource.includes("connection?.role === 'guest' && connection?.canPublish && !demotedToViewer"));
 });
 
-test('native LIVE uses a full-screen cover-cropped stage while web tiles remain moderate and responsive', () => {
+test('native and web LIVE stages are immersive with floating, focusable guest video tiles', () => {
   const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.ok(screen.includes('VideoTrack trackRef={mainStageVideo} objectFit="cover"'));
   assert.ok(screen.includes('VideoTrack trackRef={item} objectFit="cover"'));
   assert.ok(screen.includes('StyleSheet.absoluteFillObject'));
   assert.ok(screen.includes('width: 88, height: 118'));
   assert.ok(screen.includes('floatingGuestVideos.slice(0, 3)'));
-  assert.ok(webSource.includes('aspectRatio: 16 / 9'));
-  assert.ok(webSource.includes('maxWidth: spotlight || single ? 560 : 520'));
-  assert.ok(webSource.includes('single={videoTileCount === 1}'));
-  assert.ok(!webSource.includes('minHeight: spotlight ? 310 : 190'));
+  assert.ok(webSource.includes('mainStage'));
+  assert.ok(webSource.includes('floating'));
+  assert.ok(webSource.includes('floatingRemoteTracks.slice(0, 4)'));
+  assert.ok(webSource.includes('setFocusedStageIdentity(item.participant.identity)'));
+  assert.ok(webSource.includes('commentsVisible'));
+  assert.ok(webSource.includes('showOverlayMenu'));
+  assert.ok(webSource.includes('position: mainStage ? \'absolute\''));
+  assert.ok(webSource.includes('objectFit = \'cover\''));
+  assert.ok(!webSource.includes('minHeight: 220, marginHorizontal: 12'));
 });
 
 
