@@ -156,11 +156,11 @@ export default function LiveCreatorProfileScreen({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, gap: spacing.md }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-          <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Back to LIVE hub" style={{ width: 46, height: 46, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+          <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Back to LIVE hub" style={{ width: 48, height: 48, minHeight: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
-            <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.6 }]}>ZANNYCHAT · LIVE</Text>
+            <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.6 }]}>ZANNYCHAT · LIVE · Creator profile</Text>
             <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 25 }]}>Creator studio</Text>
           </View>
           <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh creator profile" style={{ width: 46, height: 46, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
