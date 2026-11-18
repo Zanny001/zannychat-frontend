@@ -137,6 +137,12 @@ test('web LIVE renders creator and remote guests together in one responsive stag
   assert.ok(web.includes('Resize '));
 });
 
+test('web LIVE creator can revoke a viewer or guest from the room, not only demote a guest', () => {
+  assert.ok(web.includes("router.delete('/:streamId/participants/:userId'") || web.includes('participants/${userId}'));
+  assert.ok(web.includes('Remove from LIVE'));
+  assert.ok(web.includes('removeParticipant'));
+});
+
 test('web LIVE keeps the stage accurate when remote cameras mute, unmute or unpublish', () => {
   assert.ok(web.includes('const onUnpublished = (publication, participant) =>'));
   assert.ok(web.includes('const onTrackMuted = (publication, participant) =>'));
