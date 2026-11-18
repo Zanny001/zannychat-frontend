@@ -53,6 +53,14 @@ test('LIVE viewers can request guest access and creators can approve or decline 
   assert.ok(screen.includes("`/live/${stream.id}/guest-requests/${userId}`"));
   assert.ok(screen.includes("onReviewGuestRequest(item.user_id, 'accepted')"));
   assert.ok(screen.includes("onReviewGuestRequest(item.user_id, 'declined')"));
+  assert.ok(screen.includes('item.name || item.user_id'));
+  assert.ok(screen.includes('Requested to join your stage'));
+});
+
+test('native LIVE creator can permanently remove a joined viewer or guest from the room', () => {
+  assert.ok(screen.includes('onRemoveParticipant'));
+  assert.ok(screen.includes('Remove from LIVE'));
+  assert.ok(screen.includes('participants/${userId}'));
 });
 
 
