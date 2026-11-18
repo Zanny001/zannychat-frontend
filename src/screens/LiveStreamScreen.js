@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, AppState, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, Dimensions, FlatList, KeyboardAvoidingView, PanResponder, Platform, SafeAreaView, StyleSheet, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -83,6 +83,30 @@ function FloatingReaction({ item, index, onComplete }) {
   );
 }
 
+function NativeFloatingGuestTile({ track, colors, focused, spotlighted, onFocus, index = 0, creatorId }) {
+  const viewport = Dimensions.get('window');
+  const bounds = { width: Math.max(180, viewport.width - 24), height: Math.max(180, viewport.height - 370) };
+  const [frame, setFrame] = useState(() => ({ x: Math.max(0, bounds.width - 156), y: Math.min(Math.max(0, bounds.height - 208), index * 142), width: 156, height: 208 }));
+  const frameRef = useRef(frame); frameRef.current = frame;
+  const dragOrigin = useRef(frame); const resizeOrigin = useRef(frame);
+  const drag = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onMoveShouldSetPanResponder: (_event, gesture) => Math.abs(gesture.dx) > 4 || Math.abs(gesture.dy) > 4,
+    onPanResponderGrant: () => { dragOrigin.current = frameRef.current; },
+    onPanResponderMove: (_event, gesture) => { const origin = dragOrigin.current; setFrame((current) => ({ ...current, x: Math.max(0, Math.min(bounds.width - current.width, origin.x + gesture.dx)), y: Math.max(0, Math.min(bounds.height - current.height, origin.y + gesture.dy)) })); },
+  })).current;
+  const resize = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderGrant: () => { resizeOrigin.current = frameRef.current; },
+    onPanResponderMove: (_event, gesture) => { const origin = resizeOrigin.current; setFrame((current) => ({ ...current, width: Math.max(116, Math.min(360, Math.min(bounds.width - current.x, origin.width + gesture.dx))), height: Math.max(154, Math.min(480, Math.min(bounds.height - current.y, origin.height + gesture.dy))) })); },
+  })).current;
+  return <View {...drag.panHandlers} style={{ position: 'absolute', left: frame.x, top: frame.y, width: frame.width, height: frame.height, borderRadius: 18, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1.5, borderColor: focused || spotlighted ? colors.accent : 'rgba(255,255,255,0.82)', shadowColor: '#000000', shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 9 }}>
+    <VideoTrack trackRef={track} objectFit="cover" style={{ width: '100%', height: '100%' }} />
+    <TouchableOpacity onPress={onFocus} accessibilityRole="button" accessibilityLabel={'Focus LIVE video for ' + (track.participant.name || track.participant.identity)} style={{ position: 'absolute', left: 5, right: 5, bottom: 5, paddingHorizontal: 7, paddingVertical: 6, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.76)' }}><Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800' }}>{track.participant.name || track.participant.identity}</Text><Text style={{ color: '#D9D9E8', fontSize: 8, fontWeight: '800', marginTop: 1 }}>{track.participant.identity === creatorId ? 'HOST' : spotlighted ? '✦ SPOTLIGHT' : 'GUEST'} · DRAG TO MOVE</Text></TouchableOpacity>
+    <View {...resize.panHandlers} accessibilityRole="adjustable" accessibilityLabel={'Resize ' + (track.participant.name || track.participant.identity) + ' video frame'} style={{ position: 'absolute', right: 0, top: 0, width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderBottomLeftRadius: 12, backgroundColor: 'rgba(0,0,0,0.78)' }}><Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '900' }}>↘</Text></View>
+  </View>;
+}
 function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnabled, microphoneEnabled, onToggleCamera, onToggleMicrophone, moderatorMode, canManageGuests, canRequestGuest, guestApproved, guestRequestStatus, guestRequests, showGuestRequests, title, experienceMode = 'broadcast', category = 'social', comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, floatingReactions, onRemoveFloatingReaction, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, onInviteGuest, onMuteGuest, onRemoveGuest, onSpotlightGuest, onDemoteToViewer, replayEnabled, replayStatus, replayBusy, onStartReplay, onStopReplay, onViewReplay, onRequestGuest, onJoinGuest, onToggleGuestRequests, onReviewGuestRequest, busy }) {
   const { colors, typography } = useTheme();
   const room = useRoomContext();
@@ -228,17 +252,14 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
             </View>
           )}
           {floatingGuestVideos.length > 0 && (
-            <View pointerEvents="box-none" style={{ position: 'absolute', right: 12, top: '25%', bottom: 260, justifyContent: 'center', gap: 8 }}>
-              {floatingGuestVideos.slice(0, 3).map((item) => (
-                <TouchableOpacity key={item.participant.identity} onPress={() => setFocusedStageIdentity(item.participant.identity)} activeOpacity={0.88} accessibilityRole="button" accessibilityLabel={'Focus LIVE video for ' + (item.participant.name || item.participant.identity)} style={{ width: 88, height: 118, borderRadius: 17, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1.5, borderColor: focusedStageIdentity === item.participant.identity || spotlightUserId === item.participant.identity ? colors.accent : 'rgba(255,255,255,0.82)', shadowColor: '#000000', shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 9 }}>
-                  <VideoTrack trackRef={item} objectFit="cover" style={{ width: '100%', height: '100%' }} />
-                  <View style={{ position: 'absolute', left: 5, right: 5, bottom: 5, paddingHorizontal: 7, paddingVertical: 5, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.72)' }}>
-                    <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '800' }}>{item.participant.name || item.participant.identity}</Text>
-                    <Text style={{ color: '#D9D9E8', fontSize: 8, fontWeight: '800', marginTop: 1 }}>{item.participant.identity === creatorId ? 'HOST' : 'GUEST'}</Text>
-                  </View>
-                </TouchableOpacity>
+            <View pointerEvents="box-none" style={{ position: 'absolute', left: 12, right: 12, top: 120, bottom: 250 }}>
+              {floatingGuestVideos.slice(0, 5).map((item, index) => (
+                <NativeFloatingGuestTile key={item.participant.identity} track={item} colors={colors} creatorId={creatorId}
+                  index={index} focused={focusedStageIdentity === item.participant.identity}
+                  spotlighted={spotlightUserId === item.participant.identity}
+                  onFocus={() => setFocusedStageIdentity(item.participant.identity)} />
               ))}
-              {floatingGuestVideos.length > 3 && <View style={{ alignSelf: 'flex-end', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.72)' }}><Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 11 }}>+{floatingGuestVideos.length - 3}</Text></View>}
+              {floatingGuestVideos.length > 5 && <View style={{ position: 'absolute', right: 0, bottom: 0, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.72)' }}><Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 11 }}>+{floatingGuestVideos.length - 5}</Text></View>}
             </View>
           )}
           {videos.length > 0 && (audioOnlyParticipants.length > 0 || hasLocalAudioOnly) && (
