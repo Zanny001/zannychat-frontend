@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, AppState, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -85,6 +85,7 @@ function FloatingReaction({ item, index, onComplete }) {
 function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnabled, microphoneEnabled, onToggleCamera, onToggleMicrophone, moderatorMode, canManageGuests, canRequestGuest, guestApproved, guestRequestStatus, guestRequests, showGuestRequests, title, comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, floatingReactions, onRemoveFloatingReaction, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, onInviteGuest, onMuteGuest, onRemoveGuest, onSpotlightGuest, onDemoteToViewer, replayEnabled, replayStatus, replayBusy, onStartReplay, onStopReplay, onViewReplay, onRequestGuest, onJoinGuest, onToggleGuestRequests, onReviewGuestRequest, busy }) {
   const { colors, typography } = useTheme();
   const room = useRoomContext();
+  const [showOverlayMenu, setShowOverlayMenu] = useState(false);
   const connectedViewerCount = participants.filter((item) => item.joined && item.role === 'viewer').length;
   const onStageGuestCount = participants.filter((item) => item.joined && item.role === 'guest').length;
   const availableGuestSlots = Math.max(0, 5 - onStageGuestCount);
@@ -130,7 +131,11 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
   const audioTracks = useTracks([Track.Source.Microphone]);
   const videos = tracks.filter(isTrackReference);
   const spotlightVideo = videos.find((track) => track.participant.identity === spotlightUserId);
-  const stageGridVideos = spotlightVideo ? videos.filter((track) => track.participant.identity !== spotlightUserId) : videos;
+  const creatorVideo = videos.find((track) => track.participant.identity === creatorId);
+  const mainStageVideo = spotlightVideo || creatorVideo || videos[0] || null;
+  const floatingGuestVideos = mainStageVideo
+    ? videos.filter((track) => track.participant.identity !== mainStageVideo.participant.identity)
+    : [];
   const videoIdentities = new Set(videos.map((track) => track.participant.identity));
   const audioOnlyParticipants = audioTracks.filter(isTrackReference)
     .filter((track) => !track.participant.isLocal && !videoIdentities.has(track.participant.identity));
@@ -166,7 +171,10 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
               <Ionicons name="close" size={20} color={colors.textPrimary} />
             </TouchableOpacity>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 8, paddingRight: 4 }}>
+          <TouchableOpacity onPress={() => setShowOverlayMenu((value) => !value)} accessibilityRole="button" accessibilityLabel={showOverlayMenu ? 'Close LIVE controls menu' : 'Open LIVE controls menu'} style={{ width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.16), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.3) }}>
+            <Ionicons name={showOverlayMenu ? 'close' : 'ellipsis-horizontal'} size={21} color={colors.textPrimary} />
+          </TouchableOpacity>
+          {showOverlayMenu && <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 8, paddingRight: 4 }}>
             <TouchableOpacity onPress={chooseNativeAudioOutput} accessibilityRole="button" accessibilityLabel="Choose LIVE audio output" style={{ backgroundColor: hexToRgba(colors.surface, 0.88), borderWidth: 1, borderColor: colors.border, minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, borderRadius: 13 }}>
               <Ionicons name="volume-high-outline" size={19} color={colors.textPrimary} />
             </TouchableOpacity>
@@ -176,78 +184,53 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
               {replayBusy || ['starting', 'processing'].includes(replayStatus) ? <ActivityIndicator size="small" color={colors.accent} /> : <Ionicons name={replayStatus === 'ready' ? 'play-circle-outline' : replayStatus === 'recording' ? 'stop-circle-outline' : 'radio-button-on-outline'} size={19} color={replayStatus === 'recording' ? colors.danger : colors.accent} />}
             </TouchableOpacity>}
             {moderatorMode && <TouchableOpacity onPress={onToggleReports} accessibilityRole="button" accessibilityLabel="Open LIVE safety reports" style={{ backgroundColor: hexToRgba(colors.surface, 0.88), borderWidth: 1, borderColor: colors.border, minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, borderRadius: 13 }}><Ionicons name="shield-checkmark-outline" size={19} color={colors.textPrimary} /></TouchableOpacity>}
-          </ScrollView>
+          </ScrollView>}
         </View>
-        <View style={{ flex: 1, justifyContent: 'center', position: 'relative', paddingTop: 132, paddingHorizontal: 8, gap: 8 }}>
-          {spotlightVideo && (
-            <View style={{ marginHorizontal: 6, marginBottom: 8, borderRadius: 23, overflow: 'hidden', borderWidth: 2, borderColor: hexToRgba(colors.accent, 0.72), backgroundColor: colors.surface, shadowColor: colors.primary, shadowOpacity: 0.18, shadowRadius: 18, shadowOffset: { width: 0, height: 7 }, elevation: 5 }}>
-              <VideoTrack trackRef={spotlightVideo} style={{ width: "100%", aspectRatio: 16 / 9, maxWidth: 560, maxHeight: 315, borderRadius: 18 }} />
-              <View style={{ position: 'absolute', top: 10, left: 10, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, backgroundColor: colors.accent }}>
-                <Text style={{ color: colors.onAccent, fontWeight: '900', fontSize: 10, letterSpacing: 1 }}>SPOTLIGHT</Text>
-              </View>
-              <View style={{ position: 'absolute', top: 10, right: 10, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.72)' }}>
-                <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 9 }}>{spotlightVideo.participant.identity === creatorId ? 'HOST' : 'GUEST'}</Text>
-              </View>
-              <View style={{ position: 'absolute', left: 10, bottom: 10, maxWidth: '85%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.72)' }}>
-                <Text numberOfLines={1} style={[typography.caption, { color: '#FFFFFF' }]}>{spotlightVideo.participant.name || spotlightVideo.participant.identity}</Text>
+          {mainStageVideo ? (
+            <View style={{ ...StyleSheet.absoluteFillObject, overflow: 'hidden', backgroundColor: '#05050A' }}>
+              <VideoTrack trackRef={mainStageVideo} style={{ width: '100%', height: '100%' }} />
+              <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 190, backgroundColor: 'rgba(4,5,12,0.34)' }} />
+              <View pointerEvents="none" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 330, backgroundColor: 'rgba(4,5,12,0.56)' }} />
+              <View style={{ position: 'absolute', left: 16, bottom: 226, maxWidth: '72%', paddingHorizontal: 11, paddingVertical: 8, borderRadius: 13, backgroundColor: 'rgba(5,6,14,0.62)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' }}>
+                <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '900', letterSpacing: 1 }}>{spotlightVideo ? '✦ SPOTLIGHT' : mainStageVideo.participant.identity === creatorId ? 'HOST' : 'LIVE GUEST'}</Text>
+                <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '800', marginTop: 3 }}>{mainStageVideo.participant.name || mainStageVideo.participant.identity}</Text>
               </View>
             </View>
-          )}
-          {stageGridVideos.length ? (
-            <FlatList
-              key={stageGridVideos.length === 1 && !spotlightVideo ? 'live-stage-single' : 'live-stage-grid'}
-              keyboardShouldPersistTaps="handled"
-              data={stageGridVideos}
-              numColumns={stageGridVideos.length === 1 && !spotlightVideo ? 1 : 2}
-              keyExtractor={(item) => item.participant.identity}
-              renderItem={({ item }) => (
-                <View style={{ flex: 1, minWidth: 0, margin: 4, borderRadius: 20, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
-                  <VideoTrack trackRef={item} style={{ width: "100%", aspectRatio: 16 / 9, maxWidth: stageGridVideos.length === 1 && !spotlightVideo ? 560 : undefined, maxHeight: stageGridVideos.length === 1 && !spotlightVideo ? 315 : 180, borderRadius: 18 }} />
-                  <View style={{ position: 'absolute', top: 8, right: 8, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.72)' }}>
-                    <Text style={{ color: '#FFFFFF', fontSize: 9, fontWeight: '900' }}>{item.participant.identity === creatorId ? 'HOST' : 'GUEST'}</Text>
-                  </View>
-                  <View style={{ position: 'absolute', left: 10, bottom: 10, maxWidth: '85%', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.62)' }}>
-                    <Text numberOfLines={1} style={[typography.caption, { color: '#FFFFFF' }]}>{item.participant.name || item.participant.identity}</Text>
-                  </View>
-                </View>
-              )}
-            />
           ) : (
-            <View style={{ alignItems: 'center', padding: 24 }}>
-              {(audioOnlyParticipants.length > 0 || hasLocalAudioOnly)
-                ? <Ionicons name="mic" size={44} color={colors.accent} />
-                : <Ionicons name="videocam-outline" size={44} color={colors.accent} />}
-              <Text style={[typography.heading, { color: colors.textPrimary, marginTop: 14, textAlign: 'center' }]}>
-                {audioOnlyParticipants.length > 0 || hasLocalAudioOnly ? 'LIVE audio is on' : creatorMode ? 'Your LIVE is starting' : 'Waiting for the creator video'}
-              </Text>
-              <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: 8 }]}>
-                {audioOnlyParticipants.length > 0 || hasLocalAudioOnly ? 'The stage is continuing with microphones while cameras are off.' : 'Keep this screen open while you are live.'}
-              </Text>
-              {audioOnlyParticipants.map((track) => (
-                <View key={track.participant.identity} style={{ marginTop: 10, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 14, backgroundColor: hexToRgba(colors.surface, 0.88), borderWidth: 1, borderColor: colors.border }}>
-                  <Text style={[typography.small, { color: colors.textPrimary }]}>{track.participant.identity === creatorId ? 'HOST' : 'GUEST'} · {track.participant.name || track.participant.identity} · Audio only</Text>
+            <View style={{ ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 38, backgroundColor: colors.background }}>
+              <View style={{ width: 94, height: 94, borderRadius: 32, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.16), borderWidth: 1, borderColor: hexToRgba(colors.accent, 0.28) }}>
+                <Ionicons name={audioOnlyParticipants.length || hasLocalAudioOnly ? 'mic' : 'videocam-outline'} size={42} color={colors.accent} />
+              </View>
+              <Text style={[typography.heading, { color: colors.textPrimary, marginTop: 18, textAlign: 'center' }]}>{audioOnlyParticipants.length || hasLocalAudioOnly ? 'LIVE audio is on' : creatorMode ? 'Your LIVE is starting' : 'Waiting for the creator video'}</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: 8, lineHeight: 20 }]}>{audioOnlyParticipants.length || hasLocalAudioOnly ? 'The conversation continues while cameras are off.' : 'Your LIVE stage will appear here when video is available.'}</Text>
+            </View>
+          )}
+          {floatingGuestVideos.length > 0 && (
+            <View pointerEvents="box-none" style={{ position: 'absolute', right: 12, top: '27%', bottom: 242, justifyContent: 'center', gap: 10 }}>
+              {floatingGuestVideos.slice(0, 4).map((item) => (
+                <View key={item.participant.identity} style={{ width: 104, height: 138, borderRadius: 18, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1.5, borderColor: spotlightUserId === item.participant.identity ? colors.accent : 'rgba(255,255,255,0.82)', shadowColor: '#000000', shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 9 }}>
+                  <VideoTrack trackRef={item} style={{ width: '100%', height: '100%' }} />
+                  <View style={{ position: 'absolute', left: 5, right: 5, bottom: 5, paddingHorizontal: 7, paddingVertical: 5, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.72)' }}>
+                    <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '800' }}>{item.participant.name || item.participant.identity}</Text>
+                    <Text style={{ color: '#D9D9E8', fontSize: 8, fontWeight: '800', marginTop: 1 }}>{item.participant.identity === creatorId ? 'HOST' : 'GUEST'}</Text>
+                  </View>
                 </View>
               ))}
+              {floatingGuestVideos.length > 4 && <View style={{ alignSelf: 'flex-end', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.72)' }}><Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 11 }}>+{floatingGuestVideos.length - 4}</Text></View>}
             </View>
           )}
           {videos.length > 0 && (audioOnlyParticipants.length > 0 || hasLocalAudioOnly) && (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, paddingVertical: 8 }}>
-              {audioOnlyParticipants.map((track) => (
-                <View key={track.participant.identity} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: hexToRgba(colors.surface, 0.88), borderWidth: 1, borderColor: colors.border }}>
-                  <Text style={[typography.caption, { color: colors.textPrimary }]}>{track.participant.name || track.participant.identity} · Audio only</Text>
-                </View>
-              ))}
-              {hasLocalAudioOnly && <View style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: hexToRgba(colors.surface, 0.88), borderWidth: 1, borderColor: colors.border }}><Text style={[typography.caption, { color: colors.textPrimary }]}>You · {creatorMode ? 'Host' : 'Guest'} · Audio only</Text></View>}
+            <View style={{ position: 'absolute', left: 14, right: 126, bottom: 226, flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+              {audioOnlyParticipants.map((track) => <View key={track.participant.identity} style={{ paddingHorizontal: 9, paddingVertical: 6, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.62)' }}><Text style={{ color: '#FFFFFF', fontSize: 10 }}>{track.participant.name || track.participant.identity} · Audio</Text></View>)}
+              {hasLocalAudioOnly && <View style={{ paddingHorizontal: 9, paddingVertical: 6, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.62)' }}><Text style={{ color: '#FFFFFF', fontSize: 10 }}>You · Audio</Text></View>}
             </View>
           )}
-          <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-            {floatingReactions.map((item, index) => (
-              <FloatingReaction key={item.id} item={item} index={index} onComplete={onRemoveFloatingReaction} />
-            ))}
+          <View pointerEvents="none" style={{ ...StyleSheet.absoluteFillObject }}>
+            {floatingReactions.map((item, index) => <FloatingReaction key={item.id} item={item} index={index} onComplete={onRemoveFloatingReaction} />)}
           </View>
         </View>
         {publisherMode && (
-          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, marginHorizontal: 14, marginTop: 8, paddingHorizontal: 12, paddingVertical: 12, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.94), borderWidth: 1, borderColor: colors.border }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, position: 'absolute', left: 14, right: 14, bottom: 76, zIndex: 8, marginHorizontal: 0, marginTop: 0, paddingHorizontal: 10, paddingVertical: 9, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.94), borderWidth: 1, borderColor: colors.border }}>
             <TouchableOpacity onPress={handleToggleCamera} accessibilityRole="button" accessibilityLabel={cameraEnabled ? 'Turn camera off and keep audio live' : 'Turn camera on'} style={{ minHeight: 48, minWidth: 132, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 12, borderRadius: 14, backgroundColor: cameraEnabled ? hexToRgba(colors.accent, 0.2) : hexToRgba(colors.surface, 0.9), borderWidth: 1, borderColor: colors.border }}>
               <Ionicons name={cameraEnabled ? 'videocam' : 'videocam-off'} size={18} color={colors.textPrimary} />
               <Text style={[typography.small, { color: colors.textPrimary }]}>{cameraEnabled ? 'Camera on' : 'Camera off'}</Text>
@@ -258,8 +241,8 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
             </TouchableOpacity>
           </View>
         )}
-        <View style={{ maxHeight: 230, marginHorizontal: 14, marginTop: 8, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 18, backgroundColor: hexToRgba(colors.surface, 0.82), borderWidth: 1, borderColor: colors.border }}>
-          <FlatList keyboardShouldPersistTaps="handled" data={comments} keyExtractor={(item) => item.id} renderItem={({ item }) => (
+        <View style={{ position: 'absolute', left: 14, right: 126, bottom: 202, zIndex: 7, maxHeight: 112, marginHorizontal: 0, marginTop: 0, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 17, backgroundColor: 'rgba(8,9,18,0.52)', borderWidth: 1, borderColor: colors.border }}>
+          <FlatList keyboardShouldPersistTaps="handled" data={comments.slice(-3)} keyExtractor={(item) => item.id} renderItem={({ item }) => (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 }}>
               <Text numberOfLines={1} style={[typography.small, { color: colors.accent, flexShrink: 1, maxWidth: '38%' }]}>{item.user_name || 'ZannyChat user'}</Text>
               <Text style={[typography.caption, { color: colors.textPrimary, flex: 1, minWidth: 0 }]}>{item.body}</Text>
@@ -268,7 +251,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
           )} ListEmptyComponent={<Text style={{ color: colors.textSecondary, paddingVertical: 8 }}>Be the first to say hello.</Text>} />
         </View>
         {showParticipants && creatorMode && (
-          <View style={{ maxHeight: 280, marginHorizontal: 14, marginBottom: 10, padding: 15, borderRadius: 21, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.accent, 0.28) }}>
+          <View style={{ position: 'absolute', left: 14, right: 14, top: 92, zIndex: 12, maxHeight: 280, marginHorizontal: 14, marginBottom: 10, padding: 15, borderRadius: 21, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.accent, 0.28) }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <View>
                 <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 17 }]}>Creator Studio</Text>
@@ -315,7 +298,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
           </View>
         )}
         {showGuestRequests && canManageGuests && (
-          <View style={{ maxHeight: 210, marginHorizontal: 14, marginBottom: 10, padding: 14, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.24) }}>
+          <View style={{ position: 'absolute', left: 14, right: 14, top: 92, zIndex: 12, maxHeight: 210, marginHorizontal: 14, marginBottom: 10, padding: 14, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.24) }}>
             <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 6 }}>Guest requests ({guestRequests.length})</Text>
             <FlatList keyboardShouldPersistTaps="handled" data={guestRequests} keyExtractor={(item) => item.user_id} renderItem={({ item }) => (
               <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 7, borderTopWidth: 1, borderTopColor: colors.border }}>
@@ -342,14 +325,14 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
             )} ListEmptyComponent={<Text style={{ color: colors.textSecondary, fontSize: 12 }}>No reports have been submitted.</Text>} />
           </View>
         )}
-        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingTop: 9 }}>
+        <View style={{ position: 'absolute', left: 12, right: 120, bottom: 145, zIndex: 8, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', gap: 5, paddingHorizontal: 0, paddingTop: 0 }}>
           {Object.entries(LIVE_REACTION_EMOJI).map(([reaction, emoji]) => (
-            <TouchableOpacity key={reaction} disabled={busy} onPress={() => onReact(reaction)} accessibilityRole="button" accessibilityLabel={'Send ' + reaction + ' reaction'} style={{ minWidth: 46, minHeight: 46, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.surface, 0.92), borderWidth: 1, borderColor: colors.border, paddingHorizontal: 7, borderRadius: 16 }}>
+            <TouchableOpacity key={reaction} disabled={busy} onPress={() => onReact(reaction)} accessibilityRole="button" accessibilityLabel={'Send ' + reaction + ' reaction'} style={{ minWidth: 38, minHeight: 38, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.surface, 0.92), borderWidth: 1, borderColor: colors.border, paddingHorizontal: 7, borderRadius: 16 }}>
               <Text style={{ fontSize: 20 }}>{emoji}</Text>
             </TouchableOpacity>
           ))}
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 14, marginTop: 8, marginBottom: 10, padding: 10, paddingBottom: 12, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.96), borderWidth: 1, borderColor: colors.border }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, position: 'absolute', left: 12, right: 12, bottom: 12, zIndex: 9, marginHorizontal: 0, marginTop: 0, marginBottom: 0, padding: 8, paddingBottom: 8, borderRadius: 20, backgroundColor: 'rgba(8,9,18,0.88)', borderWidth: 1, borderColor: colors.border }}>
           <TextInput value={draft} onChangeText={(v) => setDraft(v.slice(0, 500))} maxLength={500} placeholder="Say something kind…" placeholderTextColor={colors.textSecondary} style={{ flex: 1, minWidth: 0, backgroundColor: colors.surfaceAlt, color: colors.textPrimary, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 11 }} />
           <TouchableOpacity disabled={busy || !draft.trim()} onPress={onComment} accessibilityRole="button" accessibilityLabel="Send LIVE comment" style={{ backgroundColor: colors.primary, padding: 12, borderRadius: 14 }}><Ionicons name="send" size={19} color={colors.onPrimary} /></TouchableOpacity>
 
