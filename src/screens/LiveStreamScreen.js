@@ -500,6 +500,16 @@ export default function LiveStreamScreen({ route, navigation }) {
   const toggleCamera = (enabled) => setCameraEnabled(enabled);
   const toggleMicrophone = (enabled) => setMicrophoneEnabled(enabled);
 
+  const exitEndedStream = useCallback(() => {
+    if (endedRef.current) return;
+    endedRef.current = true;
+    setBusy(false);
+    setConnection(null);
+    // replace, rather than goBack, also handles direct/deep-linked LIVE entry
+    // where there is no previous navigation route to return to.
+    navigation.replace('LiveHub');
+  }, [navigation]);
+
   const refreshComments = useCallback(async () => {
     if (!stream?.id || !isAppForeground() || commentsRefreshInFlight.current) return;
     commentsRefreshInFlight.current = true;
@@ -519,11 +529,15 @@ export default function LiveStreamScreen({ route, navigation }) {
         setFloatingReactions((current) => [...current, ...incomingReactions].slice(-16));
       }
     } catch (e) {
-      if (!endedRef.current) setError(e?.message || 'LIVE comments are unavailable.');
+      if (!endedRef.current && ['LIVE stream has ended', 'LIVE stream not found'].includes(e?.message)) {
+        exitEndedStream();
+      } else if (!endedRef.current) {
+        setError(e?.message || 'LIVE comments are unavailable.');
+      }
     } finally {
       commentsRefreshInFlight.current = false;
     }
-  }, [stream?.id]);
+  }, [stream?.id, exitEndedStream]);
 
   useEffect(() => {
     AudioSession.startAudioSession().catch(() => {});
@@ -648,7 +662,7 @@ export default function LiveStreamScreen({ route, navigation }) {
     try {
       await backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' });
       setBusy(false);
-      navigation.goBack();
+      navigation.replace('LiveHub');
     } catch (error) {
       endedRef.current = false;
       setBusy(false);
