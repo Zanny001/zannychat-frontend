@@ -87,6 +87,15 @@ test('LIVE stage uses an edge-to-edge creator canvas with floating, focusable gu
   assert.ok(screen.includes('objectFit="cover"'));
 });
 
+test('native LIVE supports a distinct category-themed video chat stage and chair-based audio room', () => {
+  assert.ok(screen.includes("experienceMode === 'video_chat'"));
+  assert.ok(screen.includes("experienceMode === 'audio_room'"));
+  assert.ok(screen.includes('LiveCategoryBackdrop'));
+  assert.ok(screen.includes('NativeFloatingGuestTile'));
+  assert.ok(screen.includes('💺'));
+  assert.ok(screen.includes('video={mediaVideoEnabled}'));
+});
+
 test('LIVE reactions are animated over the stage and use the shared seven-reaction vocabulary', () => {
   assert.ok(screen.includes('withTiming(1'));
   assert.ok(screen.includes('useReducedMotion()'));
