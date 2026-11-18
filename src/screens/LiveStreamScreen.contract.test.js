@@ -7,7 +7,7 @@ const screen = fs.readFileSync(new URL('./LiveStreamScreen.js', import.meta.url)
 test('LIVE creator and approved guest publishing roles receive media publishing controls', () => {
   assert.ok(screen.includes('connection?.canModerate'));
   assert.ok(screen.includes('moderatorMode &&'));
-  assert.ok(screen.includes('video={publisherMode}'));
+  assert.ok(screen.includes('video={mediaVideoEnabled}'));
   assert.ok(screen.includes('room.localParticipant.setCameraEnabled(nextEnabled)'));
   assert.ok(screen.includes('onToggleCamera={toggleCamera}'));
   assert.ok(screen.includes('audio={publisherMode}'));
@@ -38,7 +38,7 @@ test('LIVE creator can appoint and remove moderators from currently joined viewe
 
 test('LIVE approved guests receive publishing permissions and can rejoin after creator approval', () => {
   assert.ok(screen.includes("connection?.role === 'guest'"));
-  assert.ok(screen.includes('audio={publisherMode} video={publisherMode}'));
+  assert.ok(screen.includes('audio={publisherMode} video={mediaVideoEnabled}'));
   assert.ok(screen.includes('room.localParticipant.setCameraEnabled(nextEnabled)'));
   assert.ok(screen.includes('room.localParticipant.setMicrophoneEnabled(nextEnabled)'));
   assert.ok(screen.includes("`/live/${stream.id}/guest-status`"));
@@ -62,7 +62,7 @@ test('LIVE chat displays profile names rather than truncated account identifiers
 });
 
 test('LIVE publishers can independently disable camera while keeping microphone audio live', () => {
-  assert.ok(screen.includes('const [cameraEnabled, setCameraEnabled] = useState(publisherMode)'));
+  assert.ok(screen.includes('const [cameraEnabled, setCameraEnabled] = useState(mediaVideoEnabled)'));
   assert.ok(screen.includes('const [microphoneEnabled, setMicrophoneEnabled] = useState(publisherMode)'));
   assert.ok(screen.includes('Turn camera off and keep audio live'));
   assert.ok(screen.includes('onToggleCamera'));
@@ -70,12 +70,12 @@ test('LIVE publishers can independently disable camera while keeping microphone 
   assert.ok(screen.includes('useRoomContext'));
   assert.ok(screen.includes('room.localParticipant.setCameraEnabled(nextEnabled)'));
   assert.ok(screen.includes('room.localParticipant.setMicrophoneEnabled(nextEnabled)'));
-  assert.ok(screen.includes('audio={publisherMode} video={publisherMode}'));
+  assert.ok(screen.includes('audio={publisherMode} video={mediaVideoEnabled}'));
 });
 
 test('LIVE stage uses an edge-to-edge creator canvas with floating, focusable guest video tiles', () => {
   assert.ok(screen.includes('StyleSheet.absoluteFillObject'));
-  assert.ok(screen.includes('const mainStageVideo = focusedStageVideo || spotlightVideo || creatorVideo || videos[0] || null'));
+  assert.ok(screen.includes('const mainStageVideo = themedVideoChat ? null : focusedStageVideo || spotlightVideo || creatorVideo || videos[0] || null'));
   assert.ok(screen.includes('const floatingGuestVideos = themedVideoChat ? videos : mainStageVideo'));
   assert.ok(screen.includes('floatingGuestVideos.slice(0, 5)'));
   assert.ok(screen.includes('function NativeFloatingGuestTile'));
@@ -205,7 +205,7 @@ test('native and web LIVE stages are immersive with floating, focusable guest vi
   assert.ok(screen.includes('floatingGuestVideos.slice(0, 5)'));
   assert.ok(webSource.includes('mainStage'));
   assert.ok(webSource.includes('floating'));
-  assert.ok(webSource.includes('floatingRemoteTracks.slice(0, 4)'));
+  assert.ok(webSource.includes('floatingRemoteTracks.slice(0, 5)'));
   assert.ok(webSource.includes('setFocusedStageIdentity(item.participant.identity)'));
   assert.ok(webSource.includes('commentsVisible'));
   assert.ok(webSource.includes('showOverlayMenu'));
@@ -329,10 +329,10 @@ test('LIVE creator-only controls derive from the authenticated server role, neve
 
 test('native and web LIVE synchronize camera and microphone controls with each server-issued publisher token', () => {
   const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
-  assert.ok(screen.includes('setCameraEnabled(publisherMode);'));
+  assert.ok(screen.includes('setCameraEnabled(mediaVideoEnabled);'));
   assert.ok(screen.includes('setMicrophoneEnabled(publisherMode);'));
   assert.ok(screen.includes("}, [connection?.token]);"));
-  assert.ok(web.includes('setCamera(publisherMode);'));
+  assert.ok(web.includes('setCamera(mediaVideoEnabled);'));
   assert.ok(web.includes('setMic(publisherMode);'));
   assert.ok(web.includes("}, [connection?.token]);"));
 });
