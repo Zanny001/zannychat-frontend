@@ -11,6 +11,7 @@ import { confirmAction, showAppAlert } from '../utils/appDialogs';
 
 const FILTERS = [
   { value: 'all', label: 'All' },
+  { value: 'mine', label: 'My recordings' },
   { value: 'ready', label: 'Ready' },
   { value: 'processing', label: 'Processing' },
   { value: 'failed', label: 'Unavailable' },
