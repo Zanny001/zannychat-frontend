@@ -119,7 +119,7 @@ function NativeFloatingGuestTile({ track, colors, focused, spotlighted, onFocus,
     </View>
   );
 }
-function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnabled, microphoneEnabled, onToggleCamera, onToggleMicrophone, moderatorMode, canManageGuests, canRequestGuest, guestApproved, guestRequestStatus, guestRequests, showGuestRequests, title, comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, floatingReactions, onRemoveFloatingReaction, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, onInviteGuest, onMuteGuest, onRemoveGuest, onSpotlightGuest, onDemoteToViewer, replayEnabled, replayStatus, replayBusy, onStartReplay, onStopReplay, onViewReplay, onRequestGuest, onJoinGuest, onToggleGuestRequests, onReviewGuestRequest, busy }) {
+function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnabled, microphoneEnabled, onToggleCamera, onToggleMicrophone, moderatorMode, canManageGuests, canRequestGuest, guestApproved, guestRequestStatus, guestRequests, showGuestRequests, title, comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, floatingReactions, onRemoveFloatingReaction, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, onInviteGuest, onMuteGuest, onRemoveGuest, onRemoveParticipant, onSpotlightGuest, onDemoteToViewer, replayEnabled, replayStatus, replayBusy, onStartReplay, onStopReplay, onViewReplay, onRequestGuest, onJoinGuest, onToggleGuestRequests, onReviewGuestRequest, busy }) {
   const { colors, typography } = useTheme();
   const room = useRoomContext();
   const [showOverlayMenu, setShowOverlayMenu] = useState(false);
@@ -335,8 +335,11 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
                 {item.stage && <TouchableOpacity onPress={() => onSpotlightGuest(item.userId, !item.spotlighted)} disabled={busy} accessibilityRole="button" accessibilityLabel={item.spotlighted ? 'Remove guest spotlight' : 'Spotlight guest'}>
                   <Text style={{ color: colors.accent, fontWeight: '800', fontSize: 10 }}>{item.spotlighted ? 'Unspotlight' : 'Spotlight'}</Text>
                 </TouchableOpacity>}
-                {item.stage && <TouchableOpacity onPress={() => onRemoveGuest(item.userId)} disabled={busy} accessibilityRole="button" accessibilityLabel="Remove guest from LIVE stage">
-                  <Text style={{ color: colors.danger, fontWeight: '800', fontSize: 10 }}>Remove guest</Text>
+                {item.stage && <TouchableOpacity onPress={() => onRemoveGuest(item.userId)} disabled={busy} accessibilityRole="button" accessibilityLabel="Move guest back to LIVE audience">
+                  <Text style={{ color: colors.accent, fontWeight: '800', fontSize: 10 }}>Move to audience</Text>
+                </TouchableOpacity>}
+                {item.joined && <TouchableOpacity onPress={() => onRemoveParticipant(item.userId, item.name)} disabled={busy} accessibilityRole="button" accessibilityLabel={'Remove ' + item.name + ' from this LIVE stream'}>
+                  <Text style={{ color: colors.danger, fontWeight: '900', fontSize: 10 }}>Remove from LIVE</Text>
                 </TouchableOpacity>}
                 {(item.moderator || item.joined) && <TouchableOpacity onPress={() => onSetModerator(item.userId, !item.moderator)} accessibilityRole="button" accessibilityLabel={item.moderator ? `Remove ${item.name} as LIVE moderator` : `Make ${item.name} a LIVE moderator`}>
                   <Text style={{ color: item.moderator ? colors.danger : colors.accent, fontWeight: '800', fontSize: 10 }}>{item.moderator ? 'Remove moderator' : 'Make moderator'}</Text>
@@ -844,6 +847,20 @@ export default function LiveStreamScreen({ route, navigation }) {
     } catch (e) { Alert.alert('Could not update guest request', e?.message || 'Please try again.'); }
   };
 
+  const removeParticipant = (userId, name) => {
+    Alert.alert('Remove participant from LIVE?', 'This will disconnect ' + (name || 'this participant') + ' and prevent them from rejoining this stream.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: async () => {
+        try {
+          await backendFetch(`/live/${stream.id}/participants/${userId}`, { method: 'DELETE' });
+          setParticipants((current) => current.filter((item) => item.userId !== userId));
+        } catch (e) {
+          Alert.alert('Could not remove participant', e?.message || 'Please try again.');
+        }
+      } },
+    ]);
+  };
+
   const setModerator = async (userId, makeModerator) => {
     try {
       await backendFetch(`/live/${stream.id}/moderators${makeModerator ? '' : `/${userId}`}`, {
@@ -951,7 +968,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       {stageNotice ? <Text accessibilityRole="status" style={{ position: 'absolute', zIndex: 39, top: Platform.OS === 'android' ? 88 : 104, left: 14, right: 14, color: '#FFFFFF', backgroundColor: 'rgba(20,55,92,0.82)', padding: 9, borderRadius: 12 }}>{stageNotice}</Text> : null}
       {guestApproved && !publisherMode ? <Text accessibilityRole="status" style={{ position: 'absolute', zIndex: 38, top: Platform.OS === 'android' ? 88 : 104, left: 14, right: 14, color: '#FFFFFF', backgroundColor: 'rgba(20,55,92,0.86)', padding: 10, borderRadius: 12 }}>You are invited on stage. Use the join control below when you are ready.</Text> : null}
       <LiveKitRoom key={connection.token} serverUrl={connection.livekitUrl} token={connection.token} connect={true} audio={publisherMode} video={publisherMode} options={{ adaptiveStream: true, dynacast: true }} connectOptions={{ autoSubscribe: true }}>
-        <LiveMedia streamId={stream.id} creatorId={stream.creator_id} creatorMode={creatorMode} publisherMode={publisherMode} cameraEnabled={cameraEnabled} microphoneEnabled={microphoneEnabled} onToggleCamera={toggleCamera} onToggleMicrophone={toggleMicrophone} moderatorMode={moderatorMode} canManageGuests={canManageGuests} canRequestGuest={canRequestGuest} guestRequests={guestRequests} showGuestRequests={showGuestRequests} title={stream.title} comments={comments} reports={reports} showReports={showReports} participants={participants} showParticipants={showParticipants} draft={draft} setDraft={setDraft} onComment={sendComment} onReact={react} floatingReactions={floatingReactions} onRemoveFloatingReaction={removeFloatingReaction} onReport={report} onHide={hideComment} onEnd={leave} onRequestGuest={requestGuest} guestApproved={guestApproved} guestRequestStatus={guestRequestStatus} onJoinGuest={joinAsGuest} onToggleGuestRequests={() => { setShowReports(false); setShowParticipants(false); showGuestRequests ? setShowGuestRequests(false) : loadGuestRequests(); }} onReviewGuestRequest={reviewGuestRequest} onToggleReports={() => { setShowParticipants(false); setShowGuestRequests(false); showReports ? setShowReports(false) : loadReports(); }} onReviewReport={reviewReport} onToggleParticipants={() => { setShowReports(false); setShowGuestRequests(false); showParticipants ? setShowParticipants(false) : loadParticipants(); }} onSetModerator={setModerator} onInviteGuest={inviteGuest} onMuteGuest={muteGuest} onRemoveGuest={removeGuest} onSpotlightGuest={spotlightGuest} onDemoteToViewer={handleDemotedToViewer} replayEnabled={replayEnabled} replayStatus={replay?.status || 'none'} replayBusy={replayBusy} onStartReplay={confirmStartReplay} onStopReplay={stopReplay} onViewReplay={viewReplay} busy={busy} />
+        <LiveMedia streamId={stream.id} creatorId={stream.creator_id} creatorMode={creatorMode} publisherMode={publisherMode} cameraEnabled={cameraEnabled} microphoneEnabled={microphoneEnabled} onToggleCamera={toggleCamera} onToggleMicrophone={toggleMicrophone} moderatorMode={moderatorMode} canManageGuests={canManageGuests} canRequestGuest={canRequestGuest} guestRequests={guestRequests} showGuestRequests={showGuestRequests} title={stream.title} comments={comments} reports={reports} showReports={showReports} participants={participants} showParticipants={showParticipants} draft={draft} setDraft={setDraft} onComment={sendComment} onReact={react} floatingReactions={floatingReactions} onRemoveFloatingReaction={removeFloatingReaction} onReport={report} onHide={hideComment} onEnd={leave} onRequestGuest={requestGuest} guestApproved={guestApproved} guestRequestStatus={guestRequestStatus} onJoinGuest={joinAsGuest} onToggleGuestRequests={() => { setShowReports(false); setShowParticipants(false); showGuestRequests ? setShowGuestRequests(false) : loadGuestRequests(); }} onReviewGuestRequest={reviewGuestRequest} onToggleReports={() => { setShowParticipants(false); setShowGuestRequests(false); showReports ? setShowReports(false) : loadReports(); }} onReviewReport={reviewReport} onToggleParticipants={() => { setShowReports(false); setShowGuestRequests(false); showParticipants ? setShowParticipants(false) : loadParticipants(); }} onSetModerator={setModerator} onInviteGuest={inviteGuest} onMuteGuest={muteGuest} onRemoveGuest={removeGuest} onRemoveParticipant={removeParticipant} onSpotlightGuest={spotlightGuest} onDemoteToViewer={handleDemotedToViewer} replayEnabled={replayEnabled} replayStatus={replay?.status || 'none'} replayBusy={replayBusy} onStartReplay={confirmStartReplay} onStopReplay={stopReplay} onViewReplay={viewReplay} busy={busy} />
       </LiveKitRoom>
       {busy && <View style={{ position: 'absolute', top: '50%', alignSelf: 'center' }}><ActivityIndicator color={colors.accent} /></View>}
     </View>
