@@ -16,6 +16,14 @@ Latest recorded CI run:
 
 ## Findings from the CI audit
 
+### GHSA-3g3m-2fjr-6pw4 — glob (moderate) — resolved by the PR #162 lockfile update
+
+A fresh audit of the old `main` lockfile reported 29 findings (3 moderate, 26 high). One additional moderate finding was `glob` 9.0.0–14.0.1, including a nested copy under the older `@expo/fingerprint` dependency. The advisory is fixed in `glob@14.0.2`.
+
+PR #162 updates `@expo/fingerprint` from 0.20.15 to 0.20.16. On that exact PR head, the lockfile no longer contains the vulnerable nested `glob` copy; the root `glob@14.0.4` is outside the affected range and uses `minimatch@11.0.5`. The fresh audit on the PR #162 dependency tree returned 28 findings (4 moderate, 24 high), and the `glob` advisory was no longer present.
+
+This is a specific dependency-tree improvement from PR #162, not a clean audit. It must be retained when reviewing the security bundle-audit branch.
+
 ### GHSA-g3hv-75wg-m249 — minimatch (moderate)
 
 npm reports the vulnerable range as `minimatch 7.0.0–11.0.0`, with the fix in `11.0.1`.
