@@ -334,7 +334,7 @@ test('native and web LIVE synchronize camera and microphone controls with each s
   assert.ok(screen.includes("}, [connection?.token, mediaVideoEnabled, publisherMode]);"));
   assert.ok(web.includes('setCamera(mediaVideoEnabled);'));
   assert.ok(web.includes('setMic(publisherMode);'));
-  assert.ok(web.includes("}, [connection?.token]);"));
+  assert.ok(web.includes('connectionLoading, experienceMode]'));
 });
 
 
