@@ -127,7 +127,9 @@ test('web LIVE renders creator and remote guests together in one responsive stag
   assert.ok(web.includes('<RemoteVideoTile'));
   assert.ok(web.includes('floatingRemoteTracks.slice(0, 4)'));
   assert.ok(web.includes('mainStage'));
-  assert.ok(web.includes('aspectRatio: 16 / 9'));
+  assert.ok(web.includes('aspectRatio: mainStage || floating ? undefined : 16 / 9'));
+  assert.ok(web.includes('height: mainStage ? \'100%\' : floating ? 132 : undefined'));
+  assert.ok(web.includes('width: mainStage ? \'100%\' : floating ? 96 :'));
 });
 
 test('web LIVE keeps the stage accurate when remote cameras mute, unmute or unpublish', () => {
