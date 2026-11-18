@@ -7,6 +7,7 @@ import { getCurrentUser } from '../services/api';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
 import GlassCard from '../components/GlassCard';
+import { hexToRgba } from '../utils/color';
 import { confirmAction, showAppAlert } from '../utils/appDialogs';
 
 const FILTERS = [
@@ -138,17 +139,19 @@ export default function LiveReplayLibraryScreen({ navigation }) {
     const canWatch = item.status === 'ready';
     const canDelete = item.creatorId === currentUserId && !PENDING.has(item.status);
     return (
-      <GlassCard style={{ marginHorizontal: spacing.md, marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+      <GlassCard style={{ marginHorizontal: spacing.md, marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.md }}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm }}>
-          <View style={{ width: 48, height: 48, borderRadius: 15, backgroundColor: colors.primary + '18', alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="film-outline" size={23} color={colors.primary} />
+          <View style={{ width: 76, height: 76, borderRadius: 19, overflow: 'hidden', backgroundColor: hexToRgba(colors.primary, 0.14), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.28), alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ position: 'absolute', width: 54, height: 54, borderRadius: 27, backgroundColor: hexToRgba(colors.accent, 0.12), top: -20, right: -15 }} />
+            <Ionicons name="play-circle" size={34} color={colors.primary} />
+            <Text style={{ color: colors.textSecondary, fontSize: 8, fontWeight: '900', letterSpacing: 1.1, marginTop: 2 }}>REPLAY</Text>
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text numberOfLines={2} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.streamTitle || item.title || 'LIVE broadcast'}</Text>
+            <Text numberOfLines={2} style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 16, lineHeight: 22 }]}>{item.streamTitle || item.title || 'LIVE broadcast'}</Text>
             <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4 }]}>{replayDate(item.completedAt || item.completed_at || item.createdAt || item.created_at)}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
-              <Ionicons name={state.icon} size={15} color={stateColor} />
-              <Text style={[typography.caption, { color: stateColor, fontWeight: '800' }]}>{state.label}</Text>
+            <View style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 9, paddingHorizontal: 9, paddingVertical: 6, borderRadius: 10, backgroundColor: hexToRgba(stateColor, 0.12), borderWidth: 1, borderColor: hexToRgba(stateColor, 0.22) }}>
+              <Ionicons name={state.icon} size={14} color={stateColor} />
+              <Text style={[typography.caption, { color: stateColor, fontWeight: '900' }]}>{state.label}</Text>
             </View>
           </View>
           {canDelete ? (
@@ -183,20 +186,21 @@ export default function LiveReplayLibraryScreen({ navigation }) {
         onRefresh={() => refresh(true)}
         contentContainerStyle={{ paddingTop: spacing.md, paddingBottom: spacing.xxl || 32, flexGrow: 1 }}
         ListHeaderComponent={
-          <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.md, gap: spacing.md }}>
+          <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.lg || 24, gap: spacing.md }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
               <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Back to LIVE" style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="chevron-back" size={21} color={colors.textPrimary} />
               </TouchableOpacity>
               <View style={{ flex: 1 }}>
                 <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.3 }]}>ZANNYCHAT LIVE</Text>
-                <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 25 }]}>Replay library</Text>
+                <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 26 }]}>Replay library</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>Your best LIVE moments, kept close.</Text>
               </View>
               <TouchableOpacity onPress={() => refresh(true)} accessibilityRole="button" accessibilityLabel="Refresh replay library" style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="refresh" size={18} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
-            <GlassCard glow contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+            <GlassCard glow contentStyle={{ padding: spacing.lg || 20, gap: spacing.md }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                 <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: colors.primary + '20', alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="albums-outline" size={21} color={colors.primary} />
