@@ -697,7 +697,7 @@ export default function LiveStreamScreen({ route, navigation }) {
           studioParticipantsRefreshInFlight.current = false;
         });
     };
-    const interval = setInterval(refreshStudioParticipants, 15_000);
+    const interval = setInterval(refreshStudioParticipants, 5_000;
     return () => {
       active = false;
       clearInterval(interval);
@@ -919,7 +919,7 @@ export default function LiveStreamScreen({ route, navigation }) {
         </>}
         {panel === 'guestRequests' && creatorMode && <>
           {guestRequests.map((item) => <View key={item.user_id} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border }}>
-            <Text style={{ color: colors.textPrimary, flex: 1, minWidth: 100 }}>{item.name || 'Viewer'}</Text>
+            <View style={{ flex: 1, minWidth: 100 }}><Text style={{ color: colors.textPrimary, fontWeight: '800' }}>{item.name || item.user_id}</Text><Text style={{ color: colors.textSecondary, fontSize: 10, marginTop: 2 }}>Requested to join your stage</Text></View>
             <Action colors={colors} label="Approve" onPress={() => reviewGuestRequest(item.user_id, 'accepted')} />
             <Action colors={colors} label="Decline" danger onPress={() => reviewGuestRequest(item.user_id, 'declined')} />
           </View>)}
