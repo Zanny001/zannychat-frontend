@@ -25,7 +25,7 @@ const additionalPackagesToReport = new Set([
 ]);
 
 function packageNameFromSource(source) {
-  const normalized = String(source).replaceAll('\\\\', '/');
+  const normalized = String(source).replaceAll(String.fromCharCode(92), '/');
   const match = normalized.match(/(?:^|\/)node_modules\/((?:@[^/]+\/)?[^/]+)(?:\/|$)/);
   return match?.[1] ?? null;
 }
