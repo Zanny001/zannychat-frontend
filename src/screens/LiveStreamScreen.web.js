@@ -748,10 +748,10 @@ export default function LiveStreamScreen({ route, navigation }) {
   const orderedRemoteTracks = [...remoteVideoTracks].sort((a, b) =>
     Number(b.participant.attributes?.zannychat_spotlight === 'true') - Number(a.participant.attributes?.zannychat_spotlight === 'true')
   );
-  const mainRemoteTrack = orderedRemoteTracks.find((item) => item.participant.identity === focusedStageIdentity)
-    || orderedRemoteTracks.find((item) => item.participant.attributes?.zannychat_spotlight === 'true')
-    || orderedRemoteTracks.find((item) => item.participant.identity === stream.creator_id)
-    || orderedRemoteTracks[0]
+  const mainRemoteTrack = !publisherMode ? orderedRemoteTracks.find((item) => item.participant.identity === focusedStageIdentity)
+    || (!publisherMode && orderedRemoteTracks.find((item) => item.participant.attributes?.zannychat_spotlight === 'true'))
+    || (!publisherMode && orderedRemoteTracks.find((item) => item.participant.identity === stream.creator_id))
+    || (!publisherMode && orderedRemoteTracks[0])
     || null;
   const floatingRemoteTracks = orderedRemoteTracks.filter((item) => item.track.sid !== mainRemoteTrack?.track.sid);
 
