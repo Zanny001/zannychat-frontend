@@ -161,7 +161,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={{ flex: 1, backgroundColor: colors.background }}>
-        <View style={{ position: 'absolute', zIndex: 2, top: 10, left: 14, right: 14, padding: 10, borderRadius: 22, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.accent, 0.34), shadowColor: colors.primary, shadowOpacity: 0.16, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 8 }}>
+        <View style={{ position: 'absolute', zIndex: 20, top: Platform.OS === 'android' ? 38 : 52, left: 14, right: 14, padding: 10, borderRadius: 22, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.accent, 0.34), shadowColor: colors.primary, shadowOpacity: 0.16, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View style={{ backgroundColor: colors.danger, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.4) }}>
               <Text style={[typography.small, { color: colors.onDanger, fontWeight: '900', letterSpacing: 0.5 }]}>● LIVE</Text>
@@ -231,7 +231,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
           </View>
         </View>
         {publisherMode && (
-          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, position: 'absolute', left: 14, right: 14, bottom: 76, zIndex: 8, marginHorizontal: 0, marginTop: 0, paddingHorizontal: 10, paddingVertical: 9, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.94), borderWidth: 1, borderColor: colors.border }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, position: 'absolute', left: 14, right: 14, bottom: Platform.OS === 'ios' ? 88 : 76, zIndex: 18, marginHorizontal: 0, marginTop: 0, paddingHorizontal: 10, paddingVertical: 9, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.94), borderWidth: 1, borderColor: colors.border }}>
             <TouchableOpacity onPress={handleToggleCamera} accessibilityRole="button" accessibilityLabel={cameraEnabled ? 'Turn camera off and keep audio live' : 'Turn camera on'} style={{ minHeight: 48, minWidth: 132, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 12, borderRadius: 14, backgroundColor: cameraEnabled ? hexToRgba(colors.accent, 0.2) : hexToRgba(colors.surface, 0.9), borderWidth: 1, borderColor: colors.border }}>
               <Ionicons name={cameraEnabled ? 'videocam' : 'videocam-off'} size={18} color={colors.textPrimary} />
               <Text style={[typography.small, { color: colors.textPrimary }]}>{cameraEnabled ? 'Camera on' : 'Camera off'}</Text>
@@ -242,17 +242,17 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
             </TouchableOpacity>
           </View>
         )}
-        <View style={{ position: 'absolute', left: 14, right: 126, bottom: 208, zIndex: 7, maxHeight: 72, marginHorizontal: 0, marginTop: 0, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 17, backgroundColor: 'rgba(8,9,18,0.52)', borderWidth: 1, borderColor: colors.border }}>
+        <View style={{ position: 'absolute', left: 14, right: 126, bottom: Platform.OS === 'ios' ? 220 : 208, zIndex: 17, maxHeight: 72, marginHorizontal: 0, marginTop: 0, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 17, backgroundColor: 'rgba(8,9,18,0.52)', borderWidth: 1, borderColor: colors.border }}>
           <FlatList keyboardShouldPersistTaps="handled" data={comments.slice(-2)} keyExtractor={(item) => item.id} renderItem={({ item }) => (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 }}>
               <Text numberOfLines={1} style={[typography.small, { color: colors.accent, flexShrink: 1, maxWidth: '38%' }]}>{item.user_name || 'ZannyChat user'}</Text>
-              <Text style={[typography.caption, { color: colors.textPrimary, flex: 1, minWidth: 0 }]}>{item.body}</Text>
+              <Text style={[typography.caption, { color: '#FFFFFF', flex: 1, minWidth: 0 }]}>{item.body}</Text>
               {moderatorMode && <TouchableOpacity onPress={() => onHide(item.id)} accessibilityRole="button" accessibilityLabel="Hide LIVE comment"><Ionicons name="eye-off-outline" color={colors.textSecondary} size={17} /></TouchableOpacity>}
             </View>
           )} ListEmptyComponent={<Text style={{ color: colors.textSecondary, paddingVertical: 8 }}>Be the first to say hello.</Text>} />
         </View>
         {showParticipants && creatorMode && (
-          <View style={{ position: 'absolute', left: 14, right: 14, top: 92, zIndex: 12, maxHeight: 280, padding: 15, borderRadius: 21, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.accent, 0.28) }}>
+          <View style={{ position: 'absolute', left: 14, right: 14, top: Platform.OS === 'android' ? 100 : 114, zIndex: 30, maxHeight: 280, padding: 15, borderRadius: 21, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.accent, 0.28) }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <View>
                 <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 17 }]}>Creator Studio</Text>
@@ -299,7 +299,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
           </View>
         )}
         {showGuestRequests && canManageGuests && (
-          <View style={{ position: 'absolute', left: 14, right: 14, top: 92, zIndex: 12, position: 'absolute', left: 14, right: 14, top: 92, zIndex: 12, maxHeight: 210, padding: 14, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.24) }}>
+          <View style={{ position: 'absolute', left: 14, right: 14, top: Platform.OS === 'android' ? 100 : 114, zIndex: 30, maxHeight: 210, padding: 14, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.24) }}>
             <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 6 }}>Guest requests ({guestRequests.length})</Text>
             <FlatList keyboardShouldPersistTaps="handled" data={guestRequests} keyExtractor={(item) => item.user_id} renderItem={({ item }) => (
               <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 7, borderTopWidth: 1, borderTopColor: colors.border }}>
@@ -311,7 +311,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
           </View>
         )}
         {showReports && moderatorMode && (
-          <View style={{ position: 'absolute', left: 14, right: 14, top: 92, zIndex: 12, maxHeight: 210, padding: 14, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.22) }}>
+          <View style={{ position: 'absolute', left: 14, right: 14, top: Platform.OS === 'android' ? 100 : 114, zIndex: 30, maxHeight: 210, padding: 14, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.22) }}>
             <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 6 }}>LIVE safety reports ({reports.length})</Text>
             <FlatList keyboardShouldPersistTaps="handled" data={reports} keyExtractor={(item) => item.id} renderItem={({ item }) => (
               <View style={{ paddingVertical: 7, borderTopWidth: 1, borderTopColor: colors.border }}>
@@ -326,14 +326,14 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
             )} ListEmptyComponent={<Text style={{ color: colors.textSecondary, fontSize: 12 }}>No reports have been submitted.</Text>} />
           </View>
         )}
-        <View style={{ position: 'absolute', left: 12, right: 120, bottom: 145, zIndex: 8, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', gap: 5, paddingHorizontal: 0, paddingTop: 0 }}>
+        <View style={{ position: 'absolute', left: 12, right: 120, bottom: Platform.OS === 'ios' ? 157 : 145, zIndex: 18, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', gap: 5, paddingHorizontal: 0, paddingTop: 0 }}>
           {Object.entries(LIVE_REACTION_EMOJI).map(([reaction, emoji]) => (
             <TouchableOpacity key={reaction} disabled={busy} onPress={() => onReact(reaction)} accessibilityRole="button" accessibilityLabel={'Send ' + reaction + ' reaction'} style={{ minWidth: 38, minHeight: 38, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.surface, 0.92), borderWidth: 1, borderColor: colors.border, paddingHorizontal: 7, borderRadius: 16 }}>
               <Text style={{ fontSize: 20 }}>{emoji}</Text>
             </TouchableOpacity>
           ))}
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, position: 'absolute', left: 12, right: 12, bottom: 12, zIndex: 9, marginHorizontal: 0, marginTop: 0, marginBottom: 0, padding: 8, paddingBottom: 8, borderRadius: 20, backgroundColor: 'rgba(8,9,18,0.88)', borderWidth: 1, borderColor: colors.border }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, position: 'absolute', left: 12, right: 12, bottom: Platform.OS === 'ios' ? 24 : 12, zIndex: 19, marginHorizontal: 0, marginTop: 0, marginBottom: 0, padding: 8, paddingBottom: 8, borderRadius: 20, backgroundColor: 'rgba(8,9,18,0.88)', borderWidth: 1, borderColor: colors.border }}>
           <TextInput value={draft} onChangeText={(v) => setDraft(v.slice(0, 500))} maxLength={500} placeholder="Say something kind…" placeholderTextColor={colors.textSecondary} style={{ flex: 1, minWidth: 0, backgroundColor: colors.surfaceAlt, color: colors.textPrimary, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 11 }} />
           <TouchableOpacity disabled={busy || !draft.trim()} onPress={onComment} accessibilityRole="button" accessibilityLabel="Send LIVE comment" style={{ backgroundColor: colors.primary, padding: 12, borderRadius: 14 }}><Ionicons name="send" size={19} color={colors.onPrimary} /></TouchableOpacity>
 
@@ -884,15 +884,15 @@ export default function LiveStreamScreen({ route, navigation }) {
 
   if (!connection || !stream) return <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}><ActivityIndicator color={colors.primary} /><Text style={{ color: colors.textPrimary, marginTop: 12 }}>{connectionLoading ? 'Connecting to LIVE…' : error || 'This LIVE room is unavailable.'}</Text></SafeAreaView>;
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#100F18' }}>
-      <StatusBar barStyle="light-content" />
-      {error ? <Text accessibilityRole="alert" style={{ color: colors.danger, paddingHorizontal: 12, paddingTop: 4 }}>{error}</Text> : null}
-      {stageNotice ? <Text accessibilityRole="status" style={{ color: colors.accent, paddingHorizontal: 12, paddingTop: 4 }}>{stageNotice}</Text> : null}
-      {guestApproved && !publisherMode ? <Text accessibilityRole="status" style={{ color: colors.accent, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: colors.surface }}>The creator invited you to the LIVE stage. Tap “Join the stage” below to connect your camera and microphone.</Text> : null}
+    <View style={{ flex: 1, backgroundColor: '#05050A' }}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      {error ? <Text accessibilityRole="alert" style={{ position: 'absolute', zIndex: 40, top: Platform.OS === 'android' ? 88 : 104, left: 14, right: 14, color: '#FFFFFF', backgroundColor: 'rgba(110,18,34,0.82)', padding: 9, borderRadius: 12 }}>{error}</Text> : null}
+      {stageNotice ? <Text accessibilityRole="status" style={{ position: 'absolute', zIndex: 39, top: Platform.OS === 'android' ? 88 : 104, left: 14, right: 14, color: '#FFFFFF', backgroundColor: 'rgba(20,55,92,0.82)', padding: 9, borderRadius: 12 }}>{stageNotice}</Text> : null}
+      {guestApproved && !publisherMode ? <Text accessibilityRole="status" style={{ position: 'absolute', zIndex: 38, top: Platform.OS === 'android' ? 88 : 104, left: 14, right: 14, color: '#FFFFFF', backgroundColor: 'rgba(20,55,92,0.86)', padding: 10, borderRadius: 12 }}>You are invited on stage. Use the join control below when you are ready.</Text> : null}
       <LiveKitRoom key={connection.token} serverUrl={connection.livekitUrl} token={connection.token} connect={true} audio={publisherMode} video={publisherMode} options={{ adaptiveStream: true, dynacast: true }} connectOptions={{ autoSubscribe: true }}>
         <LiveMedia streamId={stream.id} creatorId={stream.creator_id} creatorMode={creatorMode} publisherMode={publisherMode} cameraEnabled={cameraEnabled} microphoneEnabled={microphoneEnabled} onToggleCamera={toggleCamera} onToggleMicrophone={toggleMicrophone} moderatorMode={moderatorMode} canManageGuests={canManageGuests} canRequestGuest={canRequestGuest} guestRequests={guestRequests} showGuestRequests={showGuestRequests} title={stream.title} comments={comments} reports={reports} showReports={showReports} participants={participants} showParticipants={showParticipants} draft={draft} setDraft={setDraft} onComment={sendComment} onReact={react} floatingReactions={floatingReactions} onRemoveFloatingReaction={removeFloatingReaction} onReport={report} onHide={hideComment} onEnd={leave} onRequestGuest={requestGuest} guestApproved={guestApproved} guestRequestStatus={guestRequestStatus} onJoinGuest={joinAsGuest} onToggleGuestRequests={() => { setShowReports(false); setShowParticipants(false); showGuestRequests ? setShowGuestRequests(false) : loadGuestRequests(); }} onReviewGuestRequest={reviewGuestRequest} onToggleReports={() => { setShowParticipants(false); setShowGuestRequests(false); showReports ? setShowReports(false) : loadReports(); }} onReviewReport={reviewReport} onToggleParticipants={() => { setShowReports(false); setShowGuestRequests(false); showParticipants ? setShowParticipants(false) : loadParticipants(); }} onSetModerator={setModerator} onInviteGuest={inviteGuest} onMuteGuest={muteGuest} onRemoveGuest={removeGuest} onSpotlightGuest={spotlightGuest} onDemoteToViewer={handleDemotedToViewer} replayEnabled={replayEnabled} replayStatus={replay?.status || 'none'} replayBusy={replayBusy} onStartReplay={confirmStartReplay} onStopReplay={stopReplay} onViewReplay={viewReplay} busy={busy} />
       </LiveKitRoom>
       {busy && <View style={{ position: 'absolute', top: '50%', alignSelf: 'center' }}><ActivityIndicator color={colors.accent} /></View>}
-    </SafeAreaView>
+    </View>
   );
 }
