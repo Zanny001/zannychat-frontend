@@ -77,8 +77,11 @@ test('LIVE stage uses an edge-to-edge creator canvas with floating, focusable gu
   assert.ok(screen.includes('StyleSheet.absoluteFillObject'));
   assert.ok(screen.includes('const mainStageVideo = focusedStageVideo || spotlightVideo || creatorVideo || videos[0] || null'));
   assert.ok(screen.includes('const floatingGuestVideos = mainStageVideo'));
-  assert.ok(screen.includes('floatingGuestVideos.slice(0, 3)'));
-  assert.ok(screen.includes('width: 88, height: 118'));
+  assert.ok(screen.includes('floatingGuestVideos.slice(0, 5)'));
+  assert.ok(screen.includes('function NativeFloatingGuestTile'));
+  assert.ok(screen.includes('PanResponder.create'));
+  assert.ok(screen.includes('width: frame.width, height: frame.height'));
+  assert.ok(screen.includes('DRAG TO MOVE'));
   assert.ok(screen.includes('setFocusedStageIdentity(item.participant.identity)'));
   assert.ok(screen.includes('item.participant.name || item.participant.identity'));
   assert.ok(screen.includes('Track.Source.Microphone'));
