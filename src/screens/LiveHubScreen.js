@@ -27,6 +27,25 @@ const STREAM_FILTERS = [
   { value: 'public', label: 'Public' },
 ];
 
+const LIVE_EXPERIENCE_MODES = [
+  { value: 'broadcast', label: 'Classic Broadcast', description: 'A creator-led livestream with guest stage access.', icon: 'radio-outline' },
+  { value: 'video_chat', label: 'Video Chat', description: 'A themed discussion stage with movable video frames.', icon: 'videocam-outline' },
+  { value: 'audio_room', label: 'Audio Room', description: 'A voice-first room with visible guest seating.', icon: 'people-outline' },
+];
+const LIVE_CATEGORIES = [
+  { value: 'entertainment', label: 'Entertainment', icon: 'film-outline' },
+  { value: 'social', label: 'Social', icon: 'chatbubbles-outline' },
+  { value: 'politics', label: 'Politics', icon: 'podium-outline' },
+  { value: 'science', label: 'Science', icon: 'flask-outline' },
+  { value: 'education', label: 'Education', icon: 'school-outline' },
+  { value: 'finance', label: 'Finance', icon: 'trending-up-outline' },
+  { value: 'technology', label: 'Technology', icon: 'hardware-chip-outline' },
+  { value: 'sports', label: 'Sports', icon: 'trophy-outline' },
+  { value: 'business', label: 'Business', icon: 'briefcase-outline' },
+  { value: 'health', label: 'Health', icon: 'heart-outline' },
+  { value: 'other', label: 'Other', icon: 'sparkles-outline' },
+];
+
 export default function LiveHubScreen({ navigation, route }) {
   const { colors, spacing, radii, typography } = useTheme();
   const [streams, setStreams] = useState([]);
@@ -43,6 +62,8 @@ export default function LiveHubScreen({ navigation, route }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [visibility, setVisibility] = useState('public');
+  const [experienceMode, setExperienceMode] = useState('broadcast');
+  const [category, setCategory] = useState('social');
   const [allowGuests, setAllowGuests] = useState(false);
   const [inviteCandidates, setInviteCandidates] = useState([]);
   const [selectedInvitees, setSelectedInvitees] = useState([]);
@@ -170,6 +191,8 @@ export default function LiveHubScreen({ navigation, route }) {
       setTitle('');
       setDescription('');
       setVisibility('public');
+      setExperienceMode('broadcast');
+      setCategory('social');
       setAllowGuests(false);
       setSearchQuery('');
       setActiveFilter('all');
@@ -268,7 +291,7 @@ export default function LiveHubScreen({ navigation, route }) {
         }
         const permissionStream = await navigator.mediaDevices.getUserMedia({
           audio: true,
-          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+          video: experienceMode === 'audio_room' ? false : { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
         });
         permissionStream.getTracks().forEach((track) => track.stop());
       }
@@ -277,6 +300,7 @@ export default function LiveHubScreen({ navigation, route }) {
         method: 'POST',
         body: JSON.stringify({
           title: title.trim(), description: description.trim(), visibility, allowGuests,
+          experienceMode, category,
           inviteeIds: visibility === 'private' ? invitees : [],
         }),
       });
@@ -288,6 +312,8 @@ export default function LiveHubScreen({ navigation, route }) {
       setTitle('');
       setDescription('');
       setSelectedInvitees([]);
+      setExperienceMode('broadcast');
+      setCategory('social');
     } catch (e) {
       const message = e?.message || 'The media service may not be configured yet.';
       setError(`Could not start LIVE: ${message}`);
@@ -451,6 +477,36 @@ export default function LiveHubScreen({ navigation, route }) {
               {showComposer && <>
               <TextInput value={title} onChangeText={(v) => setTitle(v.slice(0, 80))} maxLength={80} placeholder="What are you going live about?" placeholderTextColor={colors.textSecondary} accessibilityLabel="LIVE stream title" style={fieldStyle} />
               <TextInput value={description} onChangeText={(v) => setDescription(v.slice(0, 500))} maxLength={500} multiline placeholder="Add a description so people know what to expect…" placeholderTextColor={colors.textSecondary} accessibilityLabel="LIVE stream description" style={[fieldStyle, { minHeight: 76, textAlignVertical: 'top' }]} />
+
+              <View style={{ gap: spacing.xs }}>
+                <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800', letterSpacing: 0.8 }]}>LIVE EXPERIENCE</Text>
+                <View style={{ gap: spacing.xs }}>
+                  {LIVE_EXPERIENCE_MODES.map((mode) => {
+                    const selected = experienceMode === mode.value;
+                    return <TouchableOpacity key={mode.value} onPress={() => { setExperienceMode(mode.value); if (mode.value !== 'broadcast') setAllowGuests(true); }} accessibilityRole="radio" accessibilityLabel={mode.label} accessibilityState={{ checked: selected }} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.sm, borderRadius: radii.md, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? hexToRgba(colors.primary, 0.10) : colors.surface }}>
+                      <View style={{ width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(selected ? colors.primary : colors.textSecondary, 0.12) }}><Ionicons name={mode.icon} size={20} color={selected ? colors.primary : colors.textSecondary} /></View>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={[typography.small, { color: selected ? colors.primary : colors.textPrimary, fontWeight: '900' }]}>{mode.label}</Text>
+                        <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>{mode.description}</Text>
+                      </View>
+                      <Ionicons name={selected ? 'radio-button-on' : 'radio-button-off'} size={19} color={selected ? colors.primary : colors.textSecondary} />
+                    </TouchableOpacity>;
+                  })}
+                </View>
+              </View>
+
+              <View style={{ gap: spacing.xs }}>
+                <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800', letterSpacing: 0.8 }]}>DISCUSSION CATEGORY</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.xs }}>
+                  {LIVE_CATEGORIES.map((item) => {
+                    const selected = category === item.value;
+                    return <TouchableOpacity key={item.value} onPress={() => setCategory(item.value)} accessibilityRole="radio" accessibilityLabel={item.label} accessibilityState={{ checked: selected }} style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? hexToRgba(colors.primary, 0.12) : colors.surface }}>
+                      <Ionicons name={item.icon} size={15} color={selected ? colors.primary : colors.textSecondary} />
+                      <Text style={[typography.caption, { color: selected ? colors.primary : colors.textPrimary, fontWeight: '800' }]}>{item.label}</Text>
+                    </TouchableOpacity>;
+                  })}
+                </ScrollView>
+              </View>
 
               <View style={{ gap: spacing.xs }}>
                 <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800', letterSpacing: 0.8 }]}>WHO CAN WATCH?</Text>
