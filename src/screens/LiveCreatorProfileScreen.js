@@ -13,8 +13,8 @@ import { confirmAction, showAppAlert } from '../utils/appDialogs';
 
 function Metric({ icon, label, value, colors, typography }) {
   return (
-    <GlassCard contentStyle={{ padding: 14, gap: 8, minHeight: 106 }}>
-      <View style={{ width: 34, height: 34, borderRadius: 11, backgroundColor: colors.primary + '20', alignItems: 'center', justifyContent: 'center' }}>
+    <GlassCard contentStyle={{ padding: 16, gap: 10, minHeight: 116 }}>
+      <View style={{ width: 38, height: 38, borderRadius: 13, backgroundColor: hexToRgba(colors.primary, 0.16), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.2), alignItems: 'center', justifyContent: 'center' }}>
         <Ionicons name={icon} size={18} color={colors.primary} />
       </View>
       <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 22 }]}>{Number(value || 0).toLocaleString()}</Text>
@@ -169,9 +169,9 @@ export default function LiveCreatorProfileScreen({ navigation }) {
         </View>
 
         {loading && !summary ? <View style={{ padding: 40, alignItems: 'center' }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary, marginTop: 10 }]}>Preparing your creator studio…</Text></View> : null}
-        {!!error ? <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text style={[typography.body, { color: colors.danger }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading creator profile"><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
+        {!!error ? <GlassCard contentStyle={{ padding: spacing.lg, gap: spacing.md }}><Text style={[typography.body, { color: colors.danger }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading creator profile"><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
 
-        <GlassCard glow contentStyle={{ padding: spacing.lg, gap: spacing.md }}>
+        <GlassCard glow contentStyle={{ padding: spacing.lg, gap: spacing.lg }}>
           <View style={{ position: 'absolute', top: -42, right: -24, width: 150, height: 150, borderRadius: 80, backgroundColor: hexToRgba(colors.primary, 0.12) }} />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
             <View style={{ padding: 4, borderRadius: 28, borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.45) }}>
@@ -194,7 +194,7 @@ export default function LiveCreatorProfileScreen({ navigation }) {
         </GlassCard>
 
         <View style={{ gap: spacing.xs }}>
-          <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 17 }]}>Creator impact</Text>
+          <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 18 }]}>Creator impact</Text>
           <Text style={[typography.caption, { color: colors.textSecondary }]}>Your community's reactions and daily support score</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
             <View style={{ width: '48%', flexGrow: 1 }}><Metric icon="sparkles" label="Impact score" value={impact.impact_score} colors={colors} typography={typography} /></View>
@@ -205,7 +205,7 @@ export default function LiveCreatorProfileScreen({ navigation }) {
         </View>
 
         <View style={{ gap: spacing.sm }}>
-          <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 17 }]}>Broadcast collection</Text>
+          <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 18 }]}>Broadcast collection</Text>
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
             <View style={{ flex: 1 }}><Metric icon="radio" label="Broadcasts" value={streams.total} colors={colors} typography={typography} /></View>
             <View style={{ flex: 1 }}><Metric icon="radio-outline" label="Live now" value={streams.liveNow} colors={colors} typography={typography} /></View>
