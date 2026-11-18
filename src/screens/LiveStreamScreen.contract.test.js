@@ -209,6 +209,8 @@ test('LIVE creator receives continuously refreshed in-screen guest requests with
   assert.ok(screen.includes("setInterval(refreshGuestRequests, 5000)"));
   assert.ok(screen.includes('if (hasNewRequest) setShowGuestRequests(true)'));
   assert.ok(screen.includes('Guest requests ({guestRequests.length})'));
+  assert.ok(screen.includes('Requested to join your stage'));
+  assert.ok(screen.includes('item.name || item.user_id'));
   assert.ok(screen.includes("onReviewGuestRequest(item.user_id, 'accepted')"));
   assert.ok(screen.includes("onReviewGuestRequest(item.user_id, 'declined')"));
 });
@@ -353,11 +355,11 @@ test('LIVE creator Studio reports only measured joined viewers, guests and remai
 
 test('Creator Studio refreshes joined audience and stage counts while open, then stops polling on close', () => {
   assert.ok(screen.includes('if (!creatorMode || !showParticipants || !stream?.id) return undefined;'));
-  assert.ok(screen.includes('setInterval(refreshStudioParticipants, 15_000)'));
+  assert.ok(screen.includes('setInterval(refreshStudioParticipants, 5_000)'));
   assert.ok(screen.includes('clearInterval(interval)'));
   const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.ok(webSource.includes("if (!creatorMode || panel !== 'stage' || !stream?.id) return undefined;"));
-  assert.ok(webSource.includes('setInterval(refreshStudioParticipants, 15_000)'));
+  assert.ok(webSource.includes('setInterval(refreshStudioParticipants, 5_000)'));
   assert.ok(webSource.includes('clearInterval(interval)'));
 });
 
