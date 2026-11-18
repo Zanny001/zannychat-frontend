@@ -331,7 +331,7 @@ test('native and web LIVE synchronize camera and microphone controls with each s
   const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.ok(screen.includes('setCameraEnabled(mediaVideoEnabled);'));
   assert.ok(screen.includes('setMicrophoneEnabled(publisherMode);'));
-  assert.ok(screen.includes("}, [connection?.token]);"));
+  assert.ok(screen.includes("}, [connection?.token, mediaVideoEnabled, publisherMode]);"));
   assert.ok(web.includes('setCamera(mediaVideoEnabled);'));
   assert.ok(web.includes('setMic(publisherMode);'));
   assert.ok(web.includes("}, [connection?.token]);"));
