@@ -6,6 +6,7 @@ import { backendFetch } from '../services/backendClient';
 import { getCurrentUser } from '../services/api';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
+import { hexToRgba } from '../utils/color';
 import { confirmAction, showAppAlert } from '../utils/appDialogs';
 
 export default function LiveReplayScreen({ route, navigation }) {
@@ -102,13 +103,13 @@ export default function LiveReplayScreen({ route, navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar barStyle={resolvedMode === 'dark' ? 'light-content' : 'dark-content'} />
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 12 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
         <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Go back from LIVE replay" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
           <Ionicons name="arrow-back" size={21} color={colors.textPrimary} />
         </TouchableOpacity>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{replay?.streamTitle || 'LIVE replay'}</Text>
-          <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>Secure replay · audience access rules apply · seven-day expiry</Text>
+          <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.2 }]}>ZANNYCHAT · LIVE ARCHIVE</Text>
+          <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 16, marginTop: 2 }]}>{replay?.streamTitle || 'LIVE replay'}</Text>
         </View>
         {replay?.creatorId && replay.creatorId === currentUserId ? (
           <TouchableOpacity onPress={async () => {
@@ -129,7 +130,7 @@ export default function LiveReplayScreen({ route, navigation }) {
         </TouchableOpacity>
       </View>
 
-      <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 12 }}>
+      <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 22, gap: 18 }}>
         {playbackUrl && !error ? (
           <VideoView
             player={player}
@@ -138,8 +139,9 @@ export default function LiveReplayScreen({ route, navigation }) {
             contentFit="contain"
           />
         ) : (
-          <View style={{ alignItems: 'center', justifyContent: 'center', padding: 28, minHeight: 220, borderRadius: 22, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
-            {loading ? <ActivityIndicator size="large" color={colors.accent} /> : <Ionicons name="play-circle-outline" size={42} color={colors.accent} />}
+          <View style={{ width: '100%', maxWidth: 560, alignSelf: 'center', alignItems: 'center', justifyContent: 'center', padding: 30, minHeight: 250, borderRadius: 24, backgroundColor: colors.surface, borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.25), gap: 4 }}>
+            {loading ? <ActivityIndicator size="large" color={colors.accent} /> : <Ionicons name="play-circle-outline" size={52} color={colors.accent} />}
+            <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginTop: 8 }]}>{loading ? 'Preparing your replay' : 'Replay unavailable'}</Text>
             {!!error && <Text accessibilityRole="alert" style={[typography.body, { color: colors.textPrimary, textAlign: 'center', marginTop: 14 }]}>{error}</Text>}
             {!loading && <TouchableOpacity onPress={() => setAttempt((value) => value + 1)} accessibilityRole="button" accessibilityLabel="Retry LIVE replay playback" style={{ minHeight: 48, marginTop: 16, paddingHorizontal: 18, paddingVertical: 8, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.primary }}>
               <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Try again</Text>
