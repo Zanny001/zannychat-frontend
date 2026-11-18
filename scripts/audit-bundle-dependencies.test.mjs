@@ -47,3 +47,9 @@ test('fails closed when no source maps are present', () => {
   assert.equal(result.status, 1);
   assert.match(result.stderr, /no source maps found/);
 });
+
+test('fails closed when source maps contain no inspectable source entries', () => {
+  const result = runWithMap([]);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /no inspectable source entries/);
+});
