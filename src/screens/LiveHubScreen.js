@@ -372,7 +372,7 @@ export default function LiveHubScreen({ navigation, route }) {
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingBottom: spacing.xxl || spacing.xl }}
         ListHeaderComponent={
-          <View>
+          <View style={{ width: '100%', maxWidth: 820, alignSelf: 'center' }}>
             <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.md, gap: spacing.md }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                 <View style={{ width: 42, height: 42, borderRadius: 15, backgroundColor: hexToRgba(colors.primary, 0.16), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.34), alignItems: 'center', justifyContent: 'center' }}>
@@ -458,7 +458,7 @@ export default function LiveHubScreen({ navigation, route }) {
                   {VISIBILITIES.map((item) => {
                     const selected = visibility === item.value;
                     return (
-                      <TouchableOpacity key={item.value} onPress={() => setVisibility(item.value)} accessibilityRole="radio" accessibilityLabel={item.label} accessibilityState={{ checked: selected }} style={{ flex: 1, minHeight: 48, paddingVertical: spacing.xs, paddingHorizontal: 4, borderRadius: radii.md, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary + '18' : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                      <TouchableOpacity key={item.value} onPress={() => setVisibility(item.value)} accessibilityRole="radio" accessibilityLabel={item.label} accessibilityState={{ checked: selected }} style={{ flex: 1, minHeight: 48, paddingVertical: spacing.xs, paddingHorizontal: 4, borderRadius: radii.md, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? hexToRgba(colors.primary, 0.10) : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                         <Text style={[typography.small, { color: selected ? colors.primary : colors.textPrimary, fontWeight: '800' }]}>{item.label}</Text>
                       </TouchableOpacity>
                     );
@@ -627,7 +627,7 @@ export default function LiveHubScreen({ navigation, route }) {
                 const selected = activeFilter === filter.value;
                 return (
                   <TouchableOpacity key={filter.value} onPress={() => setActiveFilter(filter.value)} accessibilityRole="radio" accessibilityLabel={`Show ${filter.label} LIVE streams`} accessibilityState={{ checked: selected }} style={{ minHeight: 48, paddingHorizontal: spacing.md, borderRadius: 18, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={[typography.small, { color: selected ? colors.background : colors.textSecondary, fontWeight: '800' }]}>{filter.label}</Text>
+                    <Text style={[typography.small, { color: selected ? colors.onPrimary : colors.textSecondary, fontWeight: '800' }]}>{filter.label}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -638,7 +638,7 @@ export default function LiveHubScreen({ navigation, route }) {
           </View>
         }
         renderItem={({ item }) => (
-          <GlassCard glow style={{ marginHorizontal: spacing.md, marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+          <GlassCard glow style={{ width: '94%', maxWidth: 760, alignSelf: 'center', marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
             <TouchableOpacity disabled={busy} onPress={() => joinLive(item)} accessibilityRole="button" accessibilityLabel={'Join LIVE: ' + item.title} accessibilityState={{ disabled: busy, busy }} style={{ gap: spacing.sm }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, backgroundColor: hexToRgba(colors.danger, 0.12), borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.25) }}>

@@ -154,7 +154,8 @@ export default function LiveCreatorProfileScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, gap: spacing.md }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, alignItems: 'center' }}>
+        <View style={{ width: '100%', maxWidth: 760, alignSelf: 'center', gap: spacing.md }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
           <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Back to LIVE hub" style={{ width: 48, height: 48, minHeight: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
@@ -206,10 +207,10 @@ export default function LiveCreatorProfileScreen({ navigation }) {
 
         <View style={{ gap: spacing.sm }}>
           <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 18 }]}>Broadcast collection</Text>
-          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-            <View style={{ flex: 1 }}><Metric icon="radio" label="Broadcasts" value={streams.total} colors={colors} typography={typography} /></View>
-            <View style={{ flex: 1 }}><Metric icon="radio-outline" label="Live now" value={streams.liveNow} colors={colors} typography={typography} /></View>
-            <View style={{ flex: 1 }}><Metric icon="film" label="Replays ready" value={replays.ready} colors={colors} typography={typography} /></View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+            <View style={{ width: '31%', minWidth: 104, flexGrow: 1 }}><Metric icon="radio" label="Broadcasts" value={streams.total} colors={colors} typography={typography} /></View>
+            <View style={{ width: '31%', minWidth: 104, flexGrow: 1 }}><Metric icon="radio-outline" label="Live now" value={streams.liveNow} colors={colors} typography={typography} /></View>
+            <View style={{ width: '31%', minWidth: 104, flexGrow: 1 }}><Metric icon="film" label="Replays ready" value={replays.ready} colors={colors} typography={typography} /></View>
           </View>
         </View>
 
@@ -248,6 +249,7 @@ export default function LiveCreatorProfileScreen({ navigation }) {
             </View>
           )) : <Text style={[typography.caption, { color: colors.textSecondary }]}>Your saved replay collection will appear here.</Text>}
         </GlassCard>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
