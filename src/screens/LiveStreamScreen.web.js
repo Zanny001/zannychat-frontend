@@ -56,7 +56,7 @@ function RemoteVideoTile({ track, participant, colors, creatorId, spotlight = fa
   const containerRef = useRef(null);
   const viewport = Dimensions.get('window');
   const bounds = { width: Math.max(180, viewport.width - 28), height: Math.max(220, viewport.height - 238) };
-  const [frame, setFrame] = useState(() => ({ x: Math.max(0, viewport.width - 28 - 156), y: Math.max(0, floatingIndex * 142), width: 156, height: 208 }));
+  const [frame, setFrame] = useState(() => ({ x: Math.max(0, viewport.width - 28 - 156), y: Math.min(Math.max(0, bounds.height - 208), floatingIndex * 142), width: 156, height: 208 }));
   const frameRef = useRef(frame);
   frameRef.current = frame;
   const gestureOrigin = useRef(frame);
