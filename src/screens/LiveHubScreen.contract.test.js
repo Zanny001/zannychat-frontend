@@ -32,6 +32,15 @@ test('LIVE hub follows creators and loads follower-only broadcasts', () => {
 });
 
 
+test('LIVE composer keeps classic broadcasts separate from themed video chat and audio rooms', () => {
+  assert.ok(screen.includes("value: 'broadcast', label: 'Classic Broadcast'"));
+  assert.ok(screen.includes("value: 'video_chat', label: 'Video Chat'"));
+  assert.ok(screen.includes("value: 'audio_room', label: 'Audio Room'"));
+  assert.ok(screen.includes('experienceMode, category'));
+  assert.ok(screen.includes('LIVE_CATEGORIES'));
+  assert.ok(screen.includes("experienceMode === 'audio_room' ? false"));
+});
+
 test('LIVE hub uses the shared premium theme and supports focused discovery filters', () => {
   assert.ok(screen.includes("import { useTheme } from '../theme/ThemeContext'"));
   assert.ok(screen.includes("import GlassCard from '../components/GlassCard'"));
