@@ -82,7 +82,7 @@ function FloatingReaction({ item, index, onComplete }) {
   );
 }
 
-function NativeFloatingGuestTile({ track, colors, focused, spotlighted, onFocus, index = 0 }) {
+function NativeFloatingGuestTile({ track, colors, focused, spotlighted, onFocus, index = 0, creatorId }) {
   const viewport = Dimensions.get('window');
   const bounds = { width: Math.max(180, viewport.width - 24), height: Math.max(180, viewport.height - 370) };
   const [frame, setFrame] = useState(() => ({ x: Math.max(0, viewport.width - 24 - 156), y: Math.min(Math.max(0, bounds.height - 208), index * 142), width: 156, height: 208 }));
@@ -113,7 +113,7 @@ function NativeFloatingGuestTile({ track, colors, focused, spotlighted, onFocus,
       <VideoTrack trackRef={track} objectFit="cover" style={{ width: '100%', height: '100%' }} />
       <TouchableOpacity onPress={onFocus} accessibilityRole="button" accessibilityLabel={'Focus LIVE video for ' + (track.participant.name || track.participant.identity)} style={{ position: 'absolute', left: 5, right: 5, bottom: 5, paddingHorizontal: 7, paddingVertical: 6, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.76)' }}>
         <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800' }}>{track.participant.name || track.participant.identity}</Text>
-        <Text style={{ color: '#D9D9E8', fontSize: 8, fontWeight: '800', marginTop: 1 }}>{spotlighted ? '✦ SPOTLIGHT' : 'GUEST'} · DRAG TO MOVE</Text>
+        <Text style={{ color: '#D9D9E8', fontSize: 8, fontWeight: '800', marginTop: 1 }}>{track.participant.identity === creatorId ? 'HOST' : spotlighted ? '✦ SPOTLIGHT' : 'GUEST'} · DRAG TO MOVE</Text>
       </TouchableOpacity>
       <View {...resize.panHandlers} accessibilityRole="adjustable" accessibilityLabel={'Resize ' + (track.participant.name || track.participant.identity) + ' video frame'} style={{ position: 'absolute', right: 0, top: 0, width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderBottomLeftRadius: 12, backgroundColor: 'rgba(0,0,0,0.78)' }}><Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '900' }}>↘</Text></View>
     </View>
@@ -259,7 +259,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
           {floatingGuestVideos.length > 0 && (
             <View pointerEvents="box-none" style={{ position: 'absolute', left: 12, right: 12, top: 120, bottom: 250 }}>
               {floatingGuestVideos.slice(0, 5).map((item, index) => (
-                <NativeFloatingGuestTile key={item.participant.identity} track={item} colors={colors}
+                <NativeFloatingGuestTile key={item.participant.identity} track={item} colors={colors} creatorId={creatorId}
                   index={index} focused={focusedStageIdentity === item.participant.identity}
                   spotlighted={spotlightUserId === item.participant.identity}
                   onFocus={() => setFocusedStageIdentity(item.participant.identity)} />
