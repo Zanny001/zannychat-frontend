@@ -4,16 +4,15 @@
 
 **Open — upstream dependency fixes are incomplete for the current Expo SDK 57 toolchain.**
 
-The dependency-audit job is intentionally enforced and currently fails. The client-quality job runs independently and passed on 2026-11-18. Do not suppress, skip, or downgrade the audit gate to obtain a green workflow.
+The dependency-audit job is intentionally enforced and currently fails. The client-quality and production-bundle reachability jobs run independently and passed on 2026-11-18. Do not suppress, skip, or downgrade the audit gate to obtain a green workflow.
 
-Latest dependency-audit verification on the PR #162 lockfile:
-- Workflow: Advanced calling client checks
-- Run: 44253192200 (PR #165 security branch)
-- Dependency-audit: failed as expected
-- Audit result: **28 findings (4 moderate, 24 high, 0 critical)**
-- The previous PR #162 run (44251242573) completed all 21 client-quality checks successfully.
-
-The production bundle reachability job has now been added to PR #165 and is pending its final web, Android, and iOS source-map results.
+Latest verification on PR #166 head `c990485736429642da3eeaac94de340270b27b6f`:
+- Advanced calling workflow run #1282: [44253559291](https://github.com/Zanny001/zannychat-frontend/actions/runs/44253559291)
+- Advanced calling workflow run #1283: [44253585349](https://github.com/Zanny001/zannychat-frontend/actions/runs/44253585349)
+- In both runs, `client-quality`: **passed all 21 validation steps**.
+- In both runs, `bundle-exposure-audit`: **passed** for web, Android, and iOS.
+- In both runs, `dependency-audit`: failed as expected; **28 findings (4 moderate, 24 high, 0 critical)**.
+- Premium status and LIVE quality workflows: passed.
 
 ## Findings from the CI audit
 
@@ -55,11 +54,25 @@ Lockfile snapshot on this branch:
 
 No patched npm release newer than 4.0.7 was verified when this audit was recorded. Do not invent a version, force an unpublished version, or apply an unreviewed override. Recheck the advisory and registry before changing this dependency.
 
+## Production bundle reachability results
+
+The source-map scanner completed successfully in both workflow runs above. Exact results were identical:
+
+| Platform | Source maps | Source entries inspected | Vulnerable package sources | Related Expo/build-tool sources |
+|---|---:|---:|---:|---:|
+| Web | 2 | 1,550 | 0 | 0 |
+| Android | 1 | 2,314 | 0 | 0 |
+| iOS | 1 | 2,317 | 0 | 0 |
+
+No source-map module entries from affected `minimatch`, `picomatch`, or `glob` versions were found in the inspected production JavaScript bundles. Scanner tests passed, including nested package resolution, vulnerable and patched versions, missing maps, empty maps, and unknown lockfile mappings.
+
+This is evidence that these vulnerable package sources are not included in the inspected production JavaScript bundles. It is **not** proof that the packages are absent from the build dependency graph, that native binaries or server-side components are unaffected, or that every runtime risk is eliminated. Source maps were ephemeral CI files and were not uploaded or deployed.
+
 ## Expo upstream assessment
 
 Expo maintainers' discussion of the related glob/minimatch advisories says the affected packages are development/build tooling and do not ship as application code; the SDK 57-and-earlier support line has a different mitigation path from SDK 58 and newer. The same discussion says the direct minimatch 10 range is retained in fingerprint due to breaking changes.
 
-This is useful risk context, **not proof that ZannyChat's production bundle is unaffected**. PR #165 adds a reproducible source-map reachability check for web, Android, and iOS. Its result is not yet recorded here. Do not label the audit clean or claim zero runtime exposure until the final platform results are reviewed.
+This is useful risk context, not a replacement for the direct bundle assessment or npm audit. The independent source-map assessment now provides evidence of zero affected package sources in the inspected web, Android, and iOS JavaScript exports. The dependency audit nevertheless remains open.
 
 References:
 - Expo issue and maintainer resolution: https://github.com/expo/expo/issues/52735
@@ -87,10 +100,10 @@ Do not:
 1. Re-run `npm audit --json` on the current PR head and retain the complete report as the comparison baseline.
 2. Recheck the Expo SDK 57 release branch and npm registry for a published, compatible upstream patch to fingerprint, Metro, and CLI. Upgrade only within SDK 57's supported version ranges, then run Expo config, prebuild, native compile, web export, and the full client-quality suite.
 3. Recheck the picomatch advisory and npm registry. Only move to a version that is actually published and explicitly outside the advisory's affected range.
-4. Produce a production web bundle and inspect its module/source-map graph for `minimatch`, `picomatch`, `glob`, and the affected build-tool packages. Record the exact command, output, and limitations. This is a runtime-exposure assessment, not a replacement for dependency remediation.
+4. **Completed:** production web, Android, and iOS bundles were exported with source maps and inspected. All three platform checks passed with zero affected package sources. See `SECURITY_BUNDLE_REACHABILITY_AUDIT.md`.
 5. Keep `npm audit --audit-level=high` enforced until all high findings are fixed or formally reviewed and the repository's security policy explicitly accepts a documented exception. Keep moderate findings tracked as well.
-6. Re-run all release/readiness/contract/integrity checks and confirm CI results before marking this record resolved.
+6. Re-run all release/readiness/contract/integrity checks and confirm CI results before marking this record resolved. The client-quality suite passed in both PR #166 workflow runs.
 
 ## Current disposition
 
-No dependency versions were changed as part of this tracking record. The known audit failure remains visible and enforced. The authenticated-navigation and blank-screen recovery changes in PR #162 are separate from this dependency audit and remain unmerged pending review.
+The production JavaScript bundle reachability assessment passed for all three platforms, and the full client-quality suite passed in both workflow runs. The known npm audit failure remains visible and enforced: 28 findings (4 moderate, 24 high, 0 critical). No dependency versions were changed as part of this tracking record. A formal, time-bounded risk disposition is still required before treating the remaining build-tooling findings as accepted. PRs #162 and #166 remain unmerged pending review and an explicit decision on the outstanding dependency risk.
