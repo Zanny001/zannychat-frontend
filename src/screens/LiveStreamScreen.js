@@ -330,8 +330,11 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
                 {item.stage && <TouchableOpacity onPress={() => onSpotlightGuest(item.userId, !item.spotlighted)} disabled={busy} accessibilityRole="button" accessibilityLabel={item.spotlighted ? 'Remove guest spotlight' : 'Spotlight guest'}>
                   <Text style={{ color: colors.accent, fontWeight: '800', fontSize: 10 }}>{item.spotlighted ? 'Unspotlight' : 'Spotlight'}</Text>
                 </TouchableOpacity>}
-                {item.stage && <TouchableOpacity onPress={() => onRemoveGuest(item.userId)} disabled={busy} accessibilityRole="button" accessibilityLabel="Remove guest from LIVE stage">
-                  <Text style={{ color: colors.danger, fontWeight: '800', fontSize: 10 }}>Remove guest</Text>
+                {item.stage && <TouchableOpacity onPress={() => onRemoveGuest(item.userId)} disabled={busy} accessibilityRole="button" accessibilityLabel="Move guest back to LIVE audience">
+                  <Text style={{ color: colors.accent, fontWeight: '800', fontSize: 10 }}>Move to audience</Text>
+                </TouchableOpacity>}
+                {item.joined && <TouchableOpacity onPress={() => onRemoveParticipant(item.userId, item.name)} disabled={busy} accessibilityRole="button" accessibilityLabel={'Remove ' + item.name + ' from this LIVE stream'}>
+                  <Text style={{ color: colors.danger, fontWeight: '900', fontSize: 10 }}>Remove from LIVE</Text>
                 </TouchableOpacity>}
                 {(item.moderator || item.joined) && <TouchableOpacity onPress={() => onSetModerator(item.userId, !item.moderator)} accessibilityRole="button" accessibilityLabel={item.moderator ? `Remove ${item.name} as LIVE moderator` : `Make ${item.name} a LIVE moderator`}>
                   <Text style={{ color: item.moderator ? colors.danger : colors.accent, fontWeight: '800', fontSize: 10 }}>{item.moderator ? 'Remove moderator' : 'Make moderator'}</Text>
