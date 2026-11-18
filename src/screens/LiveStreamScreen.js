@@ -166,7 +166,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
             <View style={{ backgroundColor: colors.danger, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.4) }}>
               <Text style={[typography.small, { color: colors.onDanger, fontWeight: '900', letterSpacing: 0.5 }]}>● LIVE</Text>
             </View>
-            <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary, flex: 1, minWidth: 0 }]}>{title}</Text>
+            <Text numberOfLines={1} style={[typography.bodyStrong, { color: '#FFFFFF', flex: 1, minWidth: 0 }]}>{title}</Text>
             <TouchableOpacity onPress={onEnd} accessibilityRole="button" accessibilityLabel={creatorMode ? 'End LIVE stream' : 'Leave LIVE stream'} style={{ backgroundColor: hexToRgba(colors.surface, 0.92), borderWidth: 1, borderColor: colors.border, width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 14 }}>
               <Ionicons name="close" size={20} color={colors.textPrimary} />
             </TouchableOpacity>
@@ -186,12 +186,13 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
             {moderatorMode && <TouchableOpacity onPress={onToggleReports} accessibilityRole="button" accessibilityLabel="Open LIVE safety reports" style={{ backgroundColor: hexToRgba(colors.surface, 0.88), borderWidth: 1, borderColor: colors.border, minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, borderRadius: 13 }}><Ionicons name="shield-checkmark-outline" size={19} color={colors.textPrimary} /></TouchableOpacity>}
           </ScrollView>}
         </View>
+        <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: '#05050A' }}>
           {mainStageVideo ? (
             <View style={{ ...StyleSheet.absoluteFillObject, overflow: 'hidden', backgroundColor: '#05050A' }}>
               <VideoTrack trackRef={mainStageVideo} style={{ width: '100%', height: '100%' }} />
               <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 190, backgroundColor: 'rgba(4,5,12,0.34)' }} />
               <View pointerEvents="none" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 330, backgroundColor: 'rgba(4,5,12,0.56)' }} />
-              <View style={{ position: 'absolute', left: 16, bottom: 226, maxWidth: '72%', paddingHorizontal: 11, paddingVertical: 8, borderRadius: 13, backgroundColor: 'rgba(5,6,14,0.62)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' }}>
+              <View style={{ position: 'absolute', left: 16, bottom: 330, maxWidth: '72%', paddingHorizontal: 11, paddingVertical: 8, borderRadius: 13, backgroundColor: 'rgba(5,6,14,0.62)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' }}>
                 <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '900', letterSpacing: 1 }}>{spotlightVideo ? '✦ SPOTLIGHT' : mainStageVideo.participant.identity === creatorId ? 'HOST' : 'LIVE GUEST'}</Text>
                 <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '800', marginTop: 3 }}>{mainStageVideo.participant.name || mainStageVideo.participant.identity}</Text>
               </View>
@@ -220,7 +221,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
             </View>
           )}
           {videos.length > 0 && (audioOnlyParticipants.length > 0 || hasLocalAudioOnly) && (
-            <View style={{ position: 'absolute', left: 14, right: 126, bottom: 226, flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+            <View style={{ position: 'absolute', left: 14, right: 126, bottom: 330, flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
               {audioOnlyParticipants.map((track) => <View key={track.participant.identity} style={{ paddingHorizontal: 9, paddingVertical: 6, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.62)' }}><Text style={{ color: '#FFFFFF', fontSize: 10 }}>{track.participant.name || track.participant.identity} · Audio</Text></View>)}
               {hasLocalAudioOnly && <View style={{ paddingHorizontal: 9, paddingVertical: 6, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.62)' }}><Text style={{ color: '#FFFFFF', fontSize: 10 }}>You · Audio</Text></View>}
             </View>
@@ -241,8 +242,8 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
             </TouchableOpacity>
           </View>
         )}
-        <View style={{ position: 'absolute', left: 14, right: 126, bottom: 202, zIndex: 7, maxHeight: 112, marginHorizontal: 0, marginTop: 0, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 17, backgroundColor: 'rgba(8,9,18,0.52)', borderWidth: 1, borderColor: colors.border }}>
-          <FlatList keyboardShouldPersistTaps="handled" data={comments.slice(-3)} keyExtractor={(item) => item.id} renderItem={({ item }) => (
+        <View style={{ position: 'absolute', left: 14, right: 126, bottom: 208, zIndex: 7, maxHeight: 72, marginHorizontal: 0, marginTop: 0, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 17, backgroundColor: 'rgba(8,9,18,0.52)', borderWidth: 1, borderColor: colors.border }}>
+          <FlatList keyboardShouldPersistTaps="handled" data={comments.slice(-2)} keyExtractor={(item) => item.id} renderItem={({ item }) => (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 }}>
               <Text numberOfLines={1} style={[typography.small, { color: colors.accent, flexShrink: 1, maxWidth: '38%' }]}>{item.user_name || 'ZannyChat user'}</Text>
               <Text style={[typography.caption, { color: colors.textPrimary, flex: 1, minWidth: 0 }]}>{item.body}</Text>
@@ -251,7 +252,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
           )} ListEmptyComponent={<Text style={{ color: colors.textSecondary, paddingVertical: 8 }}>Be the first to say hello.</Text>} />
         </View>
         {showParticipants && creatorMode && (
-          <View style={{ position: 'absolute', left: 14, right: 14, top: 92, zIndex: 12, maxHeight: 280, marginHorizontal: 14, marginBottom: 10, padding: 15, borderRadius: 21, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.accent, 0.28) }}>
+          <View style={{ position: 'absolute', left: 14, right: 14, top: 92, zIndex: 12, maxHeight: 280, padding: 15, borderRadius: 21, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.accent, 0.28) }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <View>
                 <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 17 }]}>Creator Studio</Text>
@@ -298,7 +299,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
           </View>
         )}
         {showGuestRequests && canManageGuests && (
-          <View style={{ position: 'absolute', left: 14, right: 14, top: 92, zIndex: 12, maxHeight: 210, marginHorizontal: 14, marginBottom: 10, padding: 14, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.24) }}>
+          <View style={{ position: 'absolute', left: 14, right: 14, top: 92, zIndex: 12, position: 'absolute', left: 14, right: 14, top: 92, zIndex: 12, maxHeight: 210, padding: 14, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.24) }}>
             <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 6 }}>Guest requests ({guestRequests.length})</Text>
             <FlatList keyboardShouldPersistTaps="handled" data={guestRequests} keyExtractor={(item) => item.user_id} renderItem={({ item }) => (
               <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 7, borderTopWidth: 1, borderTopColor: colors.border }}>
@@ -310,7 +311,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, publisherMode, cameraEnab
           </View>
         )}
         {showReports && moderatorMode && (
-          <View style={{ maxHeight: 210, marginHorizontal: 14, marginBottom: 10, padding: 14, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.22) }}>
+          <View style={{ position: 'absolute', left: 14, right: 14, top: 92, zIndex: 12, maxHeight: 210, padding: 14, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.22) }}>
             <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 6 }}>LIVE safety reports ({reports.length})</Text>
             <FlatList keyboardShouldPersistTaps="handled" data={reports} keyExtractor={(item) => item.id} renderItem={({ item }) => (
               <View style={{ paddingVertical: 7, borderTopWidth: 1, borderTopColor: colors.border }}>
