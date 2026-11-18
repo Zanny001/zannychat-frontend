@@ -6,6 +6,7 @@ import { backendFetch } from '../services/backendClient';
 import { getCurrentUser } from '../services/api';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
+import { hexToRgba } from '../utils/color';
 import GlassCard from '../components/GlassCard';
 import Avatar from '../components/Avatar';
 import { confirmAction, showAppAlert } from '../utils/appDialogs';
