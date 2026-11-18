@@ -11,6 +11,47 @@ on:
     branches: [main, feat/advanced-calling-live-1.2.241, fix/livekit-remote-track-participant-stage]
 
 jobs:
+  bundle-exposure-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Create non-production Firebase config for compile-only bundle analysis
+        run: |
+          if [ ! -f google-services.json ]; then
+            cat > google-services.json <<'JSON'
+          {
+            "project_info": {
+              "project_number": "123456789012",
+              "project_id": "zannychat-ci-placeholder",
+              "storage_bucket": "zannychat-ci-placeholder.appspot.com"
+            },
+            "client": [{
+              "client_info": {
+                "mobilesdk_app_id": "1:123456789012:android:0000000000000000",
+                "android_client_info": { "package_name": "com.zannychat.app" }
+              },
+              "api_key": [{ "current_key": "CI_ONLY_NOT_A_REAL_FIREBASE_KEY" }],
+              "services": {}
+            }],
+            "configuration_version": "1"
+          }
+          JSON
+          fi
+      - name: Export production web bundle with source maps
+        run: npx expo export --platform web --source-maps --output-dir /tmp/zannychat-web-export
+      - name: Export production Android bundle with source maps
+        run: npx expo export --platform android --source-maps --no-bytecode --output-dir /tmp/zannychat-android-export
+      - name: Export production iOS bundle with source maps
+        run: npx expo export --platform ios --source-maps --no-bytecode --output-dir /tmp/zannychat-ios-export
+      - name: Check vulnerable package reachability in production bundles
+        run: node scripts/audit-bundle-dependencies.mjs /tmp/zannychat-web-export /tmp/zannychat-android-export /tmp/zannychat-ios-export
+
   client-quality:
     runs-on: ubuntu-latest
     timeout-minutes: 60
