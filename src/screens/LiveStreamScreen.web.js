@@ -802,7 +802,7 @@ export default function LiveStreamScreen({ route, navigation }) {
         ))}
       </View>
       {audioOnlyParticipants.length > 0 && <View style={{ position: 'absolute', top: 86, left: 16, maxWidth: 230, padding: 10, borderRadius: 13, backgroundColor: 'rgba(5,5,11,0.72)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
-        {audioOnlyParticipants.slice(0, 3).map((participant) => <Text key={participant.identity} style={{ color: '#FFFFFF', fontSize: 11, marginVertical: 2 }}>{participant.identity === stream.creator_id ? 'HOST' : 'GUEST'} · {participant.name || participant.identity} · Audio</Text>)}
+        {audioOnlyParticipants.slice(0, 3).map((participant) => <Text key={participant.identity} style={{ color: '#FFFFFF', fontSize: 11, marginVertical: 2 }}>{participant.identity === stream.creator_id ? 'HOST' : 'GUEST'} · {participant.name || participant.identity} · Audio only</Text>)}
       </View>}
       <View ref={remoteAudioRef} collapsable={false} style={{ width: 1, height: 1, opacity: 0 }} />
       <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
@@ -828,7 +828,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       {commentsVisible && comments.slice(-4).map((item) => <View key={item.id} style={{ alignSelf: 'flex-start', maxWidth: '100%', flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingHorizontal: 11, paddingVertical: 8, borderRadius: 14, backgroundColor: 'rgba(5,5,11,0.68)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
         <Text style={{ color: '#B9A9FF', fontSize: 11, fontWeight: '900' }}>{item.user_name || 'ZannyChat user'}</Text>
         <Text style={{ color: '#FFFFFF', fontSize: 12, flexShrink: 1 }}>{item.body}</Text>
-        {moderatorMode && <TouchableOpacity onPress={() => hideComment(item.id)} accessibilityRole="button" accessibilityLabel="Hide comment" style={{ minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}><Text style={{ color: '#FF9EAB', fontSize: 11 }}>Hide</Text></TouchableOpacity>}
+        {moderatorMode && <TouchableOpacity onPress={() => hideComment(item.id)} accessibilityRole="button" accessibilityLabel="Hide comment" style={{ minWidth: 48, minHeight: 48, justifyContent: 'center', alignItems: 'center' }}><Text style={{ color: '#FF9EAB', fontSize: 11 }}>Hide</Text></TouchableOpacity>}
       </View>)}
       {!comments.length && commentsVisible && <Text style={{ color: 'rgba(255,255,255,0.68)', fontSize: 12, padding: 8 }}>Be the first to say hello.</Text>}
     </View>
@@ -850,7 +850,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       {publisherMode && <Action colors={colors} label={mic ? 'Mute microphone' : 'Unmute microphone'} onPress={() => { toggleMic(); setShowOverlayMenu(false); }} />}
       {creatorMode && stream.allow_guests && <Action colors={colors} label="Creator Studio" onPress={() => { loadParticipants(); setShowOverlayMenu(false); }} />}
       {creatorMode && stream.allow_guests && <Action colors={colors} label={`Guest requests (${guestRequests.length})`} onPress={() => { setPanel(panel === 'guestRequests' ? '' : 'guestRequests'); setShowOverlayMenu(false); }} />}
-      {creatorMode && replayEnabled && <Action colors={colors} label={replayBusy ? 'Updating replay…' : replay?.status === 'ready' ? 'Watch saved replay' : replay?.status === 'recording' ? 'Stop replay' : replay?.status === 'processing' || replay?.status === 'starting' ? 'Preparing replay…' : 'Start replay'} disabled={replayBusy || ['starting', 'processing'].includes(replay?.status)} onPress={() => { replay?.status === 'ready' ? viewReplay() : replay?.status === 'recording' ? stopReplay() : confirmStartReplay(); setShowOverlayMenu(false); }} />}
+      {creatorMode && replayEnabled && <Action colors={colors} label={replayBusy ? 'Updating replay…' : replay?.status === 'ready' ? 'Watch saved LIVE replay' : replay?.status === 'recording' ? 'Stop replay' : replay?.status === 'processing' || replay?.status === 'starting' ? 'Preparing replay…' : 'Start replay'} disabled={replayBusy || ['starting', 'processing'].includes(replay?.status)} onPress={() => { replay?.status === 'ready' ? viewReplay() : replay?.status === 'recording' ? stopReplay() : confirmStartReplay(); setShowOverlayMenu(false); }} />}
       {moderatorMode && <Action colors={colors} label="Safety reports" onPress={() => { loadReports(); setShowOverlayMenu(false); }} />}
       {!publisherMode && stream.allow_guests && <Action colors={colors} label={guestApproved ? 'Join the stage' : guestStatus === 'requested' ? 'Request pending' : 'Request to join'} disabled={guestStatus === 'requested'} onPress={() => { guestApproved ? joinGuest() : requestGuest(); setShowOverlayMenu(false); }} />}
       {!creatorMode && <Action colors={colors} label="Report LIVE" onPress={() => { report(); setShowOverlayMenu(false); }} />}
@@ -874,7 +874,7 @@ export default function LiveStreamScreen({ route, navigation }) {
             {stream.allow_guests && item.joined && item.role === 'viewer' && <Action colors={colors} label={item.guestInvited ? 'Invited' : 'Invite'} disabled={busy || item.guestInvited} onPress={() => inviteGuest(item.userId)} />}
             {item.stage && <Action colors={colors} label={item.microphoneMuted ? 'Unmute' : 'Mute'} onPress={() => muteGuest(item.userId, !item.microphoneMuted)} />}
             {item.stage && <Action colors={colors} label={item.spotlighted ? 'Unspotlight' : 'Spotlight'} onPress={() => spotlightGuest(item.userId, !item.spotlighted)} />}
-            {item.stage && <Action colors={colors} label="Remove" danger onPress={() => removeGuest(item.userId)} />}
+            {item.stage && <Action colors={colors} label="Remove guest" danger onPress={() => removeGuest(item.userId)} />}
             {(item.moderator || item.joined) && <Action colors={colors} label={item.moderator ? 'Remove moderator' : 'Make moderator'} danger={item.moderator} onPress={() => setModerator(item.userId, !item.moderator)} />}
           </View>)}
           {!participants.length && <Text style={{ color: colors.textSecondary }}>No connected viewers or guests yet.</Text>}
