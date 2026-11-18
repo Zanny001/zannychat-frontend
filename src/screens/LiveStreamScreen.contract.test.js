@@ -223,6 +223,13 @@ test('changing a viewer token to an approved guest token does not mark the parti
 });
 
 
+test('native LIVE creator can revoke a viewer or guest from the room, not only demote a guest', () => {
+  assert.ok(screen.includes('onRemoveParticipant'));
+  assert.ok(screen.includes('Remove from LIVE'));
+  assert.ok(screen.includes('The creator removed you from this LIVE stream'));
+  assert.ok(screen.includes('participants/${userId}'));
+});
+
 test('native and web LIVE sessions renew participant presence and support stale reconnect', () => {
   assert.ok(screen.includes("`/live/${streamId}/heartbeat`"));
   assert.ok(screen.includes('setInterval(heartbeat, 30_000)'));
