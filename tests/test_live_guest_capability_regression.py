@@ -18,7 +18,8 @@ class LiveGuestCapabilityRegressionTests(unittest.TestCase):
     def test_guest_publishing_still_requires_server_issued_guest_permission(self):
         source = (ROOT / "src/screens/LiveStreamScreen.js").read_text(encoding="utf-8")
         self.assertIn("connection?.role === 'guest' && connection?.canPublish === true", source)
-        self.assertIn("audio={publisherMode} video={publisherMode}", source)
+        self.assertIn("audio={publisherMode} video={mediaVideoEnabled}", source)
+        self.assertIn("const mediaVideoEnabled = Boolean(publisherMode && stream?.experience_mode !== 'audio_room');", source)
 
 
 if __name__ == "__main__":

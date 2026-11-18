@@ -41,7 +41,7 @@ test('native LIVE uses the React Native LiveKit SDK and toggles published tracks
   assert.ok(native.includes("from '@livekit/react-native'"));
   assert.ok(native.includes('<LiveKitRoom'));
   assert.ok(native.includes('useRoomContext'));
-  assert.ok(native.includes('audio={publisherMode} video={publisherMode}'));
+  assert.ok(native.includes('audio={publisherMode} video={mediaVideoEnabled}'));
   assert.ok(native.includes('room.localParticipant.setCameraEnabled(nextEnabled)'));
   assert.ok(native.includes('room.localParticipant.setMicrophoneEnabled(nextEnabled)'));
 });
@@ -51,7 +51,7 @@ test('web LIVE renders each remote publisher in a labelled multi-participant sta
   assert.ok(web.includes('setRemoteVideoTracks((current) => current.some((item) => item.track.sid === track.sid)'));
   assert.ok(web.includes('const orderedRemoteTracks = [...remoteVideoTracks].sort('));
   assert.ok(web.includes('<RemoteVideoTile'));
-  assert.ok(web.includes('floatingRemoteTracks.slice(0, 4)'));
+  assert.ok(web.includes('floatingRemoteTracks.slice(0, 5)'));
   assert.ok(web.includes('mainStage'));
   assert.ok(web.includes('floating'));
   assert.ok(web.includes('participant.name || participant.identity'));
@@ -92,10 +92,18 @@ test('web LIVE creator sees incoming guest requests in an automatically refreshe
   assert.ok(web.includes('Guest requests ('));
   assert.ok(web.includes("reviewGuestRequest(item.user_id, 'accepted')"));
   assert.ok(web.includes("reviewGuestRequest(item.user_id, 'declined')"));
+  assert.ok(web.includes('item.name || item.user_id'));
+  assert.ok(web.includes('Requested to join your stage'));
+});
+
+test('web LIVE creator can permanently remove a joined viewer or guest from the room', () => {
+  assert.ok(web.includes('removeParticipant'));
+  assert.ok(web.includes('Remove from LIVE'));
+  assert.ok(web.includes('participants/${userId}'));
 });
 
 test('web viewer-to-guest token handoff preserves LIVE room membership until actual navigation away', () => {
-  const roomEffect = web.slice(web.indexOf('const room = new Room'), web.indexOf('  }, [stream?.id, connection?.livekitUrl, connection?.token, creatorMode, connectionLoading]'));
+  const roomEffect = web.slice(web.indexOf('const room = new Room'), web.indexOf('  }, [stream?.id, connection?.livekitUrl, connection?.token, creatorMode, connectionLoading, experienceMode]'));
   assert.equal(roomEffect.includes("backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}"), false);
   assert.ok(web.includes("navigation.addListener('beforeRemove'"));
   assert.ok(web.includes('setConnection(next)'));
@@ -120,16 +128,28 @@ test('web LIVE uses the participant supplied by LiveKit TrackSubscribed instead 
 });
 
 test('web LIVE renders creator and remote guests together in one responsive stage', () => {
-  assert.ok(web.includes('const mainRemoteTrack = publisherMode ? null :'));
-  assert.ok(web.includes('const floatingRemoteTracks = orderedRemoteTracks.filter('));
+  assert.ok(web.includes("const mainRemoteTrack = publisherMode || experienceMode === 'video_chat' ? null :"));
+  assert.ok(web.includes("const floatingRemoteTracks = experienceMode === 'video_chat' ? orderedRemoteTracks : orderedRemoteTracks.filter("));
   assert.ok(web.includes('ref={localRef}'));
   assert.ok(web.includes("creatorMode ? 'YOU · HOST' : 'YOU · GUEST'"));
   assert.ok(web.includes('<RemoteVideoTile'));
-  assert.ok(web.includes('floatingRemoteTracks.slice(0, 4)'));
+  assert.ok(web.includes('floatingRemoteTracks.slice(0, 5)'));
   assert.ok(web.includes('mainStage'));
   assert.ok(web.includes('aspectRatio: mainStage || floating ? undefined : 16 / 9'));
-  assert.ok(web.includes('height: mainStage ? \'100%\' : floating ? 132 : undefined'));
-  assert.ok(web.includes('width: mainStage ? \'100%\' : floating ? 96 :'));
+  assert.ok(web.includes('height: mainStage ? \'100%\' : floating ? frame.height : undefined'));
+  assert.ok(web.includes('width: mainStage ? \'100%\' : floating ? frame.width :'));
+  assert.ok(web.includes('PanResponder.create'));
+  assert.ok(web.includes('floatingIndex={floatingIndex}'));
+});
+
+test('web LIVE renders separate category-themed video chat and chair-based audio room experiences', () => {
+  assert.ok(web.includes("experienceMode === 'video_chat'"));
+  assert.ok(web.includes("experienceMode === 'audio_room'"));
+  assert.ok(web.includes('LiveCategoryBackdrop'));
+  assert.ok(web.includes('FloatingLocalVideoTile'));
+  assert.ok(web.includes('x: Math.min(12, Math.max(0, bounds.width - 156))'));
+  assert.ok(web.includes('💺'));
+  assert.ok(web.includes('mediaVideoEnabled'));
 });
 
 test('web LIVE keeps the stage accurate when remote cameras mute, unmute or unpublish', () => {
@@ -168,7 +188,7 @@ test('web LIVE creator-only controls derive from the authenticated server role, 
 
 
 test('web LIVE synchronizes initial camera and microphone controls with each server-issued publisher token', () => {
-  assert.ok(web.includes('setCamera(publisherMode);'));
+  assert.ok(web.includes('setCamera(mediaVideoEnabled);'));
   assert.ok(web.includes('setMic(publisherMode);'));
 });
 

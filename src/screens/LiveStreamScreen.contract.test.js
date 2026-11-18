@@ -7,7 +7,7 @@ const screen = fs.readFileSync(new URL('./LiveStreamScreen.js', import.meta.url)
 test('LIVE creator and approved guest publishing roles receive media publishing controls', () => {
   assert.ok(screen.includes('connection?.canModerate'));
   assert.ok(screen.includes('moderatorMode &&'));
-  assert.ok(screen.includes('video={publisherMode}'));
+  assert.ok(screen.includes('video={mediaVideoEnabled}'));
   assert.ok(screen.includes('room.localParticipant.setCameraEnabled(nextEnabled)'));
   assert.ok(screen.includes('onToggleCamera={toggleCamera}'));
   assert.ok(screen.includes('audio={publisherMode}'));
@@ -38,7 +38,7 @@ test('LIVE creator can appoint and remove moderators from currently joined viewe
 
 test('LIVE approved guests receive publishing permissions and can rejoin after creator approval', () => {
   assert.ok(screen.includes("connection?.role === 'guest'"));
-  assert.ok(screen.includes('audio={publisherMode} video={publisherMode}'));
+  assert.ok(screen.includes('audio={publisherMode} video={mediaVideoEnabled}'));
   assert.ok(screen.includes('room.localParticipant.setCameraEnabled(nextEnabled)'));
   assert.ok(screen.includes('room.localParticipant.setMicrophoneEnabled(nextEnabled)'));
   assert.ok(screen.includes("`/live/${stream.id}/guest-status`"));
@@ -53,6 +53,14 @@ test('LIVE viewers can request guest access and creators can approve or decline 
   assert.ok(screen.includes("`/live/${stream.id}/guest-requests/${userId}`"));
   assert.ok(screen.includes("onReviewGuestRequest(item.user_id, 'accepted')"));
   assert.ok(screen.includes("onReviewGuestRequest(item.user_id, 'declined')"));
+  assert.ok(screen.includes('item.name || item.user_id'));
+  assert.ok(screen.includes('Requested to join your stage'));
+});
+
+test('native LIVE creator can permanently remove a joined viewer or guest from the room', () => {
+  assert.ok(screen.includes('onRemoveParticipant'));
+  assert.ok(screen.includes('Remove from LIVE'));
+  assert.ok(screen.includes('participants/${userId}'));
 });
 
 
@@ -62,7 +70,7 @@ test('LIVE chat displays profile names rather than truncated account identifiers
 });
 
 test('LIVE publishers can independently disable camera while keeping microphone audio live', () => {
-  assert.ok(screen.includes('const [cameraEnabled, setCameraEnabled] = useState(publisherMode)'));
+  assert.ok(screen.includes('const [cameraEnabled, setCameraEnabled] = useState(mediaVideoEnabled)'));
   assert.ok(screen.includes('const [microphoneEnabled, setMicrophoneEnabled] = useState(publisherMode)'));
   assert.ok(screen.includes('Turn camera off and keep audio live'));
   assert.ok(screen.includes('onToggleCamera'));
@@ -70,21 +78,32 @@ test('LIVE publishers can independently disable camera while keeping microphone 
   assert.ok(screen.includes('useRoomContext'));
   assert.ok(screen.includes('room.localParticipant.setCameraEnabled(nextEnabled)'));
   assert.ok(screen.includes('room.localParticipant.setMicrophoneEnabled(nextEnabled)'));
-  assert.ok(screen.includes('audio={publisherMode} video={publisherMode}'));
+  assert.ok(screen.includes('audio={publisherMode} video={mediaVideoEnabled}'));
 });
 
 test('LIVE stage uses an edge-to-edge creator canvas with floating, focusable guest video tiles', () => {
   assert.ok(screen.includes('StyleSheet.absoluteFillObject'));
-  assert.ok(screen.includes('const mainStageVideo = focusedStageVideo || spotlightVideo || creatorVideo || videos[0] || null'));
-  assert.ok(screen.includes('const floatingGuestVideos = mainStageVideo'));
-  assert.ok(screen.includes('floatingGuestVideos.slice(0, 3)'));
-  assert.ok(screen.includes('width: 88, height: 118'));
+  assert.ok(screen.includes('const mainStageVideo = themedVideoChat ? null : focusedStageVideo || spotlightVideo || creatorVideo || videos[0] || null'));
+  assert.ok(screen.includes('const floatingGuestVideos = themedVideoChat ? videos : mainStageVideo'));
+  assert.ok(screen.includes('floatingGuestVideos.slice(0, 5)'));
+  assert.ok(screen.includes('function NativeFloatingGuestTile'));
+  assert.ok(screen.includes('PanResponder.create'));
+  assert.ok(screen.includes('width: frame.width, height: frame.height'));
   assert.ok(screen.includes('setFocusedStageIdentity(item.participant.identity)'));
-  assert.ok(screen.includes('item.participant.name || item.participant.identity'));
+  assert.ok(screen.includes('track.participant.name || track.participant.identity'));
   assert.ok(screen.includes('Track.Source.Microphone'));
   assert.ok(screen.includes('Audio only'));
   assert.ok(screen.includes('LIVE audio is on'));
   assert.ok(screen.includes('objectFit="cover"'));
+});
+
+test('native LIVE supports a distinct category-themed video chat stage and chair-based audio room', () => {
+  assert.ok(screen.includes("experienceMode === 'video_chat'"));
+  assert.ok(screen.includes("experienceMode === 'audio_room'"));
+  assert.ok(screen.includes('LiveCategoryBackdrop'));
+  assert.ok(screen.includes('NativeFloatingGuestTile'));
+  assert.ok(screen.includes('💺'));
+  assert.ok(screen.includes('video={mediaVideoEnabled}'));
 });
 
 test('LIVE reactions are animated over the stage and use the shared seven-reaction vocabulary', () => {
@@ -132,7 +151,7 @@ test('web LIVE creator stage manager has parity with native guest controls', () 
   assert.ok(webSource.includes('/mute'));
   assert.ok(webSource.includes('label="Creator Studio"'));
   assert.ok(webSource.includes('label="Close"'));
-  assert.ok(webSource.includes('Remove guest'));
+  assert.ok(webSource.includes('Remove from LIVE'));
   assert.ok(webSource.includes("role === 'guest').length}/5</Text>"));
   assert.ok(webSource.includes('Creator Studio'));
   assert.ok(webSource.includes('Viewers listed'));
@@ -186,17 +205,19 @@ test('native and web LIVE guests only activate publisher media when the server g
 test('native and web LIVE stages are immersive with floating, focusable guest video tiles', () => {
   const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.ok(screen.includes('VideoTrack trackRef={mainStageVideo} objectFit="cover"'));
-  assert.ok(screen.includes('VideoTrack trackRef={item} objectFit="cover"'));
+  assert.ok(screen.includes('VideoTrack trackRef={track} objectFit="cover"'));
   assert.ok(screen.includes('StyleSheet.absoluteFillObject'));
-  assert.ok(screen.includes('width: 88, height: 118'));
-  assert.ok(screen.includes('floatingGuestVideos.slice(0, 3)'));
+  assert.ok(screen.includes('function NativeFloatingGuestTile'));
+  assert.ok(screen.includes('PanResponder.create'));
+  assert.ok(screen.includes('width: frame.width, height: frame.height'));
+  assert.ok(screen.includes('floatingGuestVideos.slice(0, 5)'));
   assert.ok(webSource.includes('mainStage'));
   assert.ok(webSource.includes('floating'));
-  assert.ok(webSource.includes('floatingRemoteTracks.slice(0, 4)'));
+  assert.ok(webSource.includes('floatingRemoteTracks.slice(0, 5)'));
   assert.ok(webSource.includes('setFocusedStageIdentity(item.participant.identity)'));
   assert.ok(webSource.includes('commentsVisible'));
   assert.ok(webSource.includes('showOverlayMenu'));
-  assert.ok(webSource.includes('position: mainStage ? \'absolute\''));
+  assert.ok(webSource.includes('position: mainStage || floating ? \'absolute\''));
   assert.ok(webSource.includes('objectFit = \'cover\''));
   assert.ok(!webSource.includes('minHeight: 220, marginHorizontal: 12'));
 });
@@ -316,19 +337,19 @@ test('LIVE creator-only controls derive from the authenticated server role, neve
 
 test('native and web LIVE synchronize camera and microphone controls with each server-issued publisher token', () => {
   const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
-  assert.ok(screen.includes('setCameraEnabled(publisherMode);'));
+  assert.ok(screen.includes('setCameraEnabled(mediaVideoEnabled);'));
   assert.ok(screen.includes('setMicrophoneEnabled(publisherMode);'));
-  assert.ok(screen.includes("}, [connection?.token]);"));
-  assert.ok(web.includes('setCamera(publisherMode);'));
+  assert.ok(screen.includes("}, [connection?.token, mediaVideoEnabled, publisherMode]);"));
+  assert.ok(web.includes('setCamera(mediaVideoEnabled);'));
   assert.ok(web.includes('setMic(publisherMode);'));
-  assert.ok(web.includes("}, [connection?.token]);"));
+  assert.ok(web.includes('connectionLoading, experienceMode]'));
 });
 
 
 test('LIVE creator stage labels host and guests distinctly on native and web tiles', () => {
   assert.ok(screen.includes('creatorId={stream.creator_id}'));
   assert.ok(screen.includes("mainStageVideo.participant.identity === creatorId ? 'HOST' : 'LIVE GUEST'"));
-  assert.ok(screen.includes("item.participant.identity === creatorId ? 'HOST' : 'GUEST'"));
+  assert.ok(screen.includes("track.participant.identity === creatorId ? 'HOST' : spotlighted ? '✦ SPOTLIGHT' : 'GUEST'"));
   const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.ok(webSource.includes('creatorId={stream.creator_id}'));
   assert.ok(webSource.includes("participant.identity === creatorId ? 'HOST' : 'GUEST'"));
@@ -350,11 +371,11 @@ test('LIVE creator Studio reports only measured joined viewers, guests and remai
 
 test('Creator Studio refreshes joined audience and stage counts while open, then stops polling on close', () => {
   assert.ok(screen.includes('if (!creatorMode || !showParticipants || !stream?.id) return undefined;'));
-  assert.ok(screen.includes('setInterval(refreshStudioParticipants, 15_000)'));
+  assert.ok(screen.includes('setInterval(refreshStudioParticipants, 5_000)'));
   assert.ok(screen.includes('clearInterval(interval)'));
   const webSource = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.ok(webSource.includes("if (!creatorMode || panel !== 'stage' || !stream?.id) return undefined;"));
-  assert.ok(webSource.includes('setInterval(refreshStudioParticipants, 15_000)'));
+  assert.ok(webSource.includes('setInterval(refreshStudioParticipants, 5_000)'));
   assert.ok(webSource.includes('clearInterval(interval)'));
 });
 

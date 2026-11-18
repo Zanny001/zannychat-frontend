@@ -18,9 +18,9 @@ test('Native LIVE stage uses immersive full-screen video with floating guests an
   const source = read('LiveStreamScreen.js');
   assert.match(source, /StyleSheet\.absoluteFillObject/);
   assert.match(source, /VideoTrack trackRef=\{mainStageVideo\} objectFit="cover"/);
-  assert.match(source, /VideoTrack trackRef=\{item\} objectFit="cover"/);
-  assert.match(source, /floatingGuestVideos\.slice\(0, 3\)/);
-  assert.match(source, /width: 88, height: 118/);
+  assert.match(source, /VideoTrack trackRef=\{track\} objectFit="cover"/);
+  assert.match(source, /floatingGuestVideos\.slice\(0, 5\)/);
+  assert.match(source, /function NativeFloatingGuestTile/);
   assert.match(source, /minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center'/);
   assert.match(source, /minHeight: 48, minWidth: 132/);
 });
@@ -30,8 +30,8 @@ test('Web LIVE actions and moderation controls keep 48-point targets', () => {
   assert.match(source, /minHeight: 48, paddingHorizontal: 13/);
   assert.match(source, /minWidth: 48, minHeight: 48, justifyContent: 'center'/);
   assert.match(source, /aspectRatio: mainStage \|\| floating \? undefined : 16 \/ 9/);
-  assert.match(source, /height: mainStage \? '100%' : floating \? 132 : undefined/);
-  assert.match(source, /width: mainStage \? '100%' : floating \? 96 :/);
+  assert.match(source, /height: mainStage \? '100%' : floating \? frame.height : undefined/);
+  assert.match(source, /width: mainStage \? '100%' : floating \? frame.width :/);
 });
 
 test('Native and web call invite actions are not undersized', () => {
