@@ -6,13 +6,14 @@
 
 The dependency-audit job is intentionally enforced and currently fails. The client-quality job runs independently and passed on 2026-11-18. Do not suppress, skip, or downgrade the audit gate to obtain a green workflow.
 
-Latest recorded CI run:
+Latest dependency-audit verification on the PR #162 lockfile:
 - Workflow: Advanced calling client checks
-- Run: 44250072293
-- Client-quality: passed
-- Dependency-audit: failed
-- `npm ci`: 770 packages installed; 771 audited
+- Run: 44253192200 (PR #165 security branch)
+- Dependency-audit: failed as expected
 - Audit result: **28 findings (4 moderate, 24 high, 0 critical)**
+- The previous PR #162 run (44251242573) completed all 21 client-quality checks successfully.
+
+The production bundle reachability job has now been added to PR #165 and is pending its final web, Android, and iOS source-map results.
 
 ## Findings from the CI audit
 
@@ -58,7 +59,7 @@ No patched npm release newer than 4.0.7 was verified when this audit was recorde
 
 Expo maintainers' discussion of the related glob/minimatch advisories says the affected packages are development/build tooling and do not ship as application code; the SDK 57-and-earlier support line has a different mitigation path from SDK 58 and newer. The same discussion says the direct minimatch 10 range is retained in fingerprint due to breaking changes.
 
-This is useful risk context, **not proof that ZannyChat's production bundle is unaffected**. This repository has not yet recorded a reproducible production-bundle reachability check for every flagged package. Do not label the audit clean or claim zero runtime exposure until that check is performed.
+This is useful risk context, **not proof that ZannyChat's production bundle is unaffected**. PR #165 adds a reproducible source-map reachability check for web, Android, and iOS. Its result is not yet recorded here. Do not label the audit clean or claim zero runtime exposure until the final platform results are reviewed.
 
 References:
 - Expo issue and maintainer resolution: https://github.com/expo/expo/issues/52735
