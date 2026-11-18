@@ -697,7 +697,7 @@ export default function LiveStreamScreen({ route, navigation }) {
           studioParticipantsRefreshInFlight.current = false;
         });
     };
-    const interval = setInterval(refreshStudioParticipants, 5_000;
+    const interval = setInterval(refreshStudioParticipants, 5_000);
     return () => {
       active = false;
       clearInterval(interval);
