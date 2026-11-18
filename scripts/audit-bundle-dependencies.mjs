@@ -94,6 +94,11 @@ for (const target of targets) {
     inspectMap(parsed, path.relative(target, mapPath));
   }
 
+  if (sourceCount === 0) {
+    console.error(`FAIL: source maps under ${target} contained no inspectable source entries`);
+    failed = true;
+  }
+
   console.log(`\nPlatform export: ${target}`);
   console.log(`Source maps: ${maps.length}; source entries inspected: ${sourceCount}`);
   console.log(`Vulnerable package sources: ${vulnerableHits.size}`);
