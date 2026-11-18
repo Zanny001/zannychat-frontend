@@ -813,7 +813,7 @@ export default function LiveStreamScreen({ route, navigation }) {
         </View>
       )}
       <View pointerEvents="box-none" style={{ position: 'absolute', top: 88, left: 14, right: 14, bottom: 150 }}>
-        {floatingRemoteTracks.slice(0, 4).map((item, floatingIndex) => (
+        {floatingRemoteTracks.slice(0, 5).map((item, floatingIndex) => (
           <RemoteVideoTile
             key={item.track.sid}
             track={item.track}
