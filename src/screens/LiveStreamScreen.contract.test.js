@@ -195,11 +195,11 @@ test('native and web LIVE stages are immersive with floating, focusable guest vi
   assert.ok(screen.includes('floatingGuestVideos.slice(0, 5)'));
   assert.ok(webSource.includes('mainStage'));
   assert.ok(webSource.includes('floating'));
-  assert.ok(webSource.includes('floatingRemoteTracks.slice(0, 4)'));
+  assert.ok(webSource.includes('floatingRemoteTracks.slice(0, 5)'));
   assert.ok(webSource.includes('setFocusedStageIdentity(item.participant.identity)'));
   assert.ok(webSource.includes('commentsVisible'));
   assert.ok(webSource.includes('showOverlayMenu'));
-  assert.ok(webSource.includes('position: mainStage ? \'absolute\''));
+  assert.ok(webSource.includes('position: mainStage || floating ? \'absolute\''));
   assert.ok(webSource.includes('objectFit = \'cover\''));
   assert.ok(!webSource.includes('minHeight: 220, marginHorizontal: 12'));
 });
