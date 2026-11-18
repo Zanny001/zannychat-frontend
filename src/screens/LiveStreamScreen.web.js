@@ -15,6 +15,7 @@ import { Room, RoomEvent, Track } from 'livekit-client';
 import { backendFetch } from '../services/backendClient';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
+import LiveCategoryBackdrop from '../components/LiveCategoryBackdrop';
 
 const LIVE_REACTION_EMOJI = Object.freeze({ heart: '❤️', clap: '👏', laugh: '😂', wow: '😮', fire: '🔥', idea: '💡', support: '🙌' });
 const isDocumentVisible = () => typeof document === 'undefined' || document.visibilityState !== 'hidden';
@@ -52,6 +53,32 @@ function FloatingReaction({ item, index, onComplete }) {
   );
 }
 
+function FloatingLocalVideoTile({ containerRef, colors, role }) {
+  const viewport = Dimensions.get('window');
+  const bounds = { width: Math.max(180, viewport.width - 28), height: Math.max(220, viewport.height - 238) };
+  const [frame, setFrame] = useState(() => ({ x: Math.max(0, bounds.width - 156), y: 0, width: 156, height: 208 }));
+  const frameRef = useRef(frame);
+  frameRef.current = frame;
+  const dragOrigin = useRef(frame);
+  const resizeOrigin = useRef(frame);
+  const drag = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onMoveShouldSetPanResponder: (_event, gesture) => Math.abs(gesture.dx) > 4 || Math.abs(gesture.dy) > 4,
+    onPanResponderGrant: () => { dragOrigin.current = frameRef.current; },
+    onPanResponderMove: (_event, gesture) => { const origin = dragOrigin.current; setFrame((current) => ({ ...current, x: Math.max(0, Math.min(bounds.width - current.width, origin.x + gesture.dx)), y: Math.max(0, Math.min(bounds.height - current.height, origin.y + gesture.dy)) })); },
+  })).current;
+  const resize = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderGrant: () => { resizeOrigin.current = frameRef.current; },
+    onPanResponderMove: (_event, gesture) => { const origin = resizeOrigin.current; setFrame((current) => ({ ...current, width: Math.max(116, Math.min(360, Math.min(bounds.width - current.x, origin.width + gesture.dx))), height: Math.max(154, Math.min(480, Math.min(bounds.height - current.y, origin.height + gesture.dy))) })); },
+  })).current;
+  return <View {...drag.panHandlers} style={{ position: 'absolute', left: frame.x, top: frame.y, width: frame.width, height: frame.height, borderRadius: 17, overflow: 'hidden', backgroundColor: '#090914', borderWidth: 1.5, borderColor: colors.accent, zIndex: 5, boxShadow: '0 12px 30px rgba(0,0,0,0.42)' }}>
+    <View ref={containerRef} collapsable={false} style={{ width: '100%', height: '100%' }} />
+    <View pointerEvents="none" style={{ position: 'absolute', left: 7, right: 7, bottom: 7, paddingHorizontal: 8, paddingVertical: 6, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.76)' }}><Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '900' }}>YOU · {role} · DRAG TO MOVE</Text></View>
+    <View {...resize.panHandlers} accessibilityRole="adjustable" accessibilityLabel="Resize your LIVE video frame" style={{ position: 'absolute', right: 0, top: 0, width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderBottomLeftRadius: 12, backgroundColor: 'rgba(0,0,0,0.78)' }}><Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '900' }}>↘</Text></View>
+  </View>;
+}
 function RemoteVideoTile({ track, participant, colors, creatorId, spotlight = false, single = false, mainStage = false, floating = false, focused = false, onFocus }) {
   const containerRef = useRef(null);
   useEffect(() => {
@@ -121,10 +148,13 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [connection, setConnection] = useState(initialConnection);
   const [connectionLoading, setConnectionLoading] = useState(Boolean(streamId && !initialConnection));
   const stream = connection?.stream;
+  const experienceMode = stream?.experience_mode || 'broadcast';
+  const category = stream?.category || 'social';
   const creatorMode = connection?.role === 'creator';
   const [demotedToViewer, setDemotedToViewer] = useState(false);
   const [stageNotice, setStageNotice] = useState('');
   const publisherMode = Boolean(creatorMode || (connection?.role === 'guest' && connection?.canPublish && !demotedToViewer));
+  const mediaVideoEnabled = Boolean(publisherMode && experienceMode !== 'audio_room');
   const moderatorMode = Boolean(creatorMode || connection?.canModerate);
   const roomRef = useRef(null);
   const publisherModeRef = useRef(publisherMode);
@@ -142,15 +172,15 @@ export default function LiveStreamScreen({ route, navigation }) {
   useEffect(() => {
     setDemotedToViewer(false);
     setStageNotice('');
-    setCamera(publisherMode);
+    setCamera(mediaVideoEnabled);
     setMic(publisherMode);
-  }, [connection?.token]);
+  }, [connection?.token, mediaVideoEnabled, publisherMode]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [replayEnabled, setReplayEnabled] = useState(false);
   const [replay, setReplay] = useState(null);
   const [replayBusy, setReplayBusy] = useState(false);
-  const [camera, setCamera] = useState(publisherMode);
+  const [camera, setCamera] = useState(mediaVideoEnabled);
   const [mic, setMic] = useState(publisherMode);
   const localAudioOnly = publisherMode && mic && !camera;
   const [audioBlocked, setAudioBlocked] = useState(false);
@@ -402,13 +432,19 @@ export default function LiveStreamScreen({ route, navigation }) {
         await room.connect(connection.livekitUrl, connection.token, { autoSubscribe: true });
         if (!active) return;
         if (publisherModeRef.current) {
-          setStatus('Starting camera and microphone…');
-          await room.localParticipant.enableCameraAndMicrophone();
-          if (!active) return;
-          setCamera(true); setMic(true);
-          const video = room.localParticipant.getTrackPublication(Track.Source.Camera)?.videoTrack;
-          if (video && localRef.current) attach(video, localRef.current);
-          setStatus('You are LIVE');
+          setStatus(experienceMode === 'audio_room' ? 'Joining audio room…' : 'Starting camera and microphone…');
+          if (experienceMode === 'audio_room') {
+            await room.localParticipant.setMicrophoneEnabled(true);
+            if (!active) return;
+            setCamera(false); setMic(true);
+          } else {
+            await room.localParticipant.enableCameraAndMicrophone();
+            if (!active) return;
+            setCamera(true); setMic(true);
+            const video = room.localParticipant.getTrackPublication(Track.Source.Camera)?.videoTrack;
+            if (video && localRef.current) attach(video, localRef.current);
+          }
+          setStatus(experienceMode === 'audio_room' ? 'You are in the audio room' : 'You are LIVE');
         } else {
           setStatus('Connected · waiting for the creator');
         }
@@ -427,7 +463,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       setRemoteAudioParticipants([]);
       roomRef.current = null;
     };
-  }, [stream?.id, connection?.livekitUrl, connection?.token, creatorMode, connectionLoading]);
+  }, [stream?.id, connection?.livekitUrl, connection?.token, creatorMode, connectionLoading, experienceMode]);
 
   useEffect(() => {
     if (!stream?.id) return undefined;
@@ -763,24 +799,22 @@ export default function LiveStreamScreen({ route, navigation }) {
   const orderedRemoteTracks = [...remoteVideoTracks].sort((a, b) =>
     Number(b.participant.attributes?.zannychat_spotlight === 'true') - Number(a.participant.attributes?.zannychat_spotlight === 'true')
   );
-  const mainRemoteTrack = publisherMode ? null : (
+  const mainRemoteTrack = publisherMode || experienceMode === 'video_chat' ? null : (
     orderedRemoteTracks.find((item) => item.participant.identity === focusedStageIdentity)
     || orderedRemoteTracks.find((item) => item.participant.attributes?.zannychat_spotlight === 'true')
     || orderedRemoteTracks.find((item) => item.participant.identity === stream.creator_id)
     || orderedRemoteTracks[0]
     || null
   );
-  const floatingRemoteTracks = orderedRemoteTracks.filter((item) => item.track.sid !== mainRemoteTrack?.track.sid);
+  const floatingRemoteTracks = experienceMode === 'video_chat' ? orderedRemoteTracks : orderedRemoteTracks.filter((item) => item.track.sid !== mainRemoteTrack?.track.sid);
 
   return <SafeAreaView style={{ flex: 1, minHeight: '100%', backgroundColor: '#05050B', position: 'relative', overflow: 'hidden' }}>
     <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#05050B' }}>
-      {publisherMode ? (
-        <>
+      {publisherMode && experienceMode !== 'audio_room' ? (
+        experienceMode === 'video_chat' ? <FloatingLocalVideoTile containerRef={localRef} colors={colors} role={creatorMode ? 'HOST' : 'GUEST'} /> : <>
           <View ref={localRef} collapsable={false} style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#090914' }} />
           {!camera && <View pointerEvents="none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: '#111019' }}><Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 18 }}>Camera off</Text><Text style={{ color: 'rgba(255,255,255,0.68)', marginTop: 6 }}>Your voice is still live</Text></View>}
-          <View style={{ position: 'absolute', left: 22, bottom: 112, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: 'rgba(5,5,11,0.66)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
-            <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '800' }}>{creatorMode ? 'YOU · HOST' : 'YOU · GUEST'}</Text>
-          </View>
+          <View style={{ position: 'absolute', left: 22, bottom: 112, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: 'rgba(5,5,11,0.66)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}><Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '800' }}>{creatorMode ? 'YOU · HOST' : 'YOU · GUEST'}</Text></View>
         </>
       ) : mainRemoteTrack ? (
         <RemoteVideoTile
@@ -796,13 +830,18 @@ export default function LiveStreamScreen({ route, navigation }) {
         />
       ) : (
         <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', padding: 28, backgroundColor: '#0B0A16' }}>
-          <View style={{ width: 84, height: 84, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(126,93,255,0.18)', borderWidth: 1, borderColor: 'rgba(126,93,255,0.38)' }}><Text style={{ color: '#FFFFFF', fontSize: 30 }}>✦</Text></View>
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '900', marginTop: 16 }}>{audioOnlyParticipants.length || localAudioOnly ? 'LIVE audio is on' : 'The stage is warming up'}</Text>
-          <Text style={{ color: 'rgba(255,255,255,0.66)', textAlign: 'center', marginTop: 7, maxWidth: 340, lineHeight: 21 }}>{audioOnlyParticipants.length || localAudioOnly ? 'The conversation continues while cameras are off.' : "Waiting for the creator's video. It will appear here when their camera is on."}</Text>
+          {experienceMode !== 'broadcast' && <LiveCategoryBackdrop category={category} title={stream.title} mode={experienceMode} />}
+          <View style={{ width: 84, height: 84, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(126,93,255,0.18)', borderWidth: 1, borderColor: 'rgba(126,93,255,0.38)' }}><Text style={{ color: '#FFFFFF', fontSize: 30 }}>{experienceMode === 'audio_room' ? '💺' : '✦'}</Text></View>
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '900', marginTop: 16 }}>{experienceMode === 'audio_room' ? 'The audio conversation is open' : experienceMode === 'video_chat' ? 'The themed video stage is open' : audioOnlyParticipants.length || localAudioOnly ? 'LIVE audio is on' : 'The stage is warming up'}</Text>
+          <Text style={{ color: 'rgba(255,255,255,0.66)', textAlign: 'center', marginTop: 7, maxWidth: 340, lineHeight: 21 }}>{experienceMode === 'audio_room' ? 'Take a seat and join the conversation.' : experienceMode === 'video_chat' ? 'Creator and guest video frames float above the category theme.' : audioOnlyParticipants.length || localAudioOnly ? 'The conversation continues while cameras are off.' : "Waiting for the creator's video. It will appear here when their camera is on."}</Text>
+          {experienceMode === 'audio_room' && <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 9, marginTop: 16, maxWidth: 350 }}>
+            {localAudioOnly && <View style={{ minWidth: 112, alignItems: 'center', padding: 12, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.28)' }}><Text style={{ fontSize: 34 }}>💺</Text><Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '900', marginTop: 5 }}>YOU · {creatorMode ? 'HOST' : 'GUEST'}</Text></View>}
+            {audioOnlyParticipants.map((person) => <View key={person.identity} style={{ minWidth: 112, alignItems: 'center', padding: 12, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' }}><Text style={{ fontSize: 34 }}>💺</Text><Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '900', marginTop: 5, maxWidth: 120 }}>{person.name || person.identity}</Text><Text style={{ color: '#B9C5FF', fontSize: 9, marginTop: 3 }}>{person.identity === stream.creator_id ? 'HOST' : 'GUEST'}</Text></View>)}
+          </View>
         </View>
       )}
-      <View pointerEvents="box-none" style={{ position: 'absolute', top: 88, right: 14, bottom: 150, justifyContent: 'center', alignItems: 'flex-end', gap: 10 }}>
-        {floatingRemoteTracks.slice(0, 4).map((item) => (
+      <View pointerEvents="box-none" style={{ position: 'absolute', top: 88, left: 14, right: 14, bottom: 150 }}>
+        {floatingRemoteTracks.slice(0, 5).map((item, floatingIndex) => (
           <RemoteVideoTile
             key={item.track.sid}
             track={item.track}
@@ -810,6 +849,7 @@ export default function LiveStreamScreen({ route, navigation }) {
             colors={colors}
             creatorId={stream.creator_id}
             floating
+            floatingIndex={floatingIndex}
             focused={focusedStageIdentity === item.participant.identity}
             spotlight={item.participant.attributes?.zannychat_spotlight === 'true'}
             onFocus={() => setFocusedStageIdentity(item.participant.identity)}
@@ -861,7 +901,7 @@ export default function LiveStreamScreen({ route, navigation }) {
 
     {showOverlayMenu && <View style={{ position: 'absolute', top: 76, right: 14, width: 230, padding: 10, borderRadius: 18, backgroundColor: 'rgba(12,11,24,0.96)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)', gap: 7, zIndex: 20 }}>
       <Action colors={colors} label={commentsVisible ? 'Hide comments' : 'Show comments'} onPress={() => { setCommentsVisible((value) => !value); setShowOverlayMenu(false); }} />
-      {publisherMode && <Action colors={colors} label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={() => { toggleCamera(); setShowOverlayMenu(false); }} />}
+      {publisherMode && experienceMode !== 'audio_room' && <Action colors={colors} label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={() => { toggleCamera(); setShowOverlayMenu(false); }} />}
       {publisherMode && <Action colors={colors} label={mic ? 'Mute microphone' : 'Unmute microphone'} onPress={() => { toggleMic(); setShowOverlayMenu(false); }} />}
       {creatorMode && stream.allow_guests && <Action colors={colors} label="Creator Studio" onPress={() => { loadParticipants(); setShowOverlayMenu(false); }} />}
       {creatorMode && stream.allow_guests && <Action colors={colors} label={`Guest requests (${guestRequests.length})`} onPress={() => { setPanel(panel === 'guestRequests' ? '' : 'guestRequests'); setShowOverlayMenu(false); }} />}
