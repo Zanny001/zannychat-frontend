@@ -465,7 +465,7 @@ export default function LiveHubScreen({ navigation, route }) {
                   <Ionicons name="videocam" size={22} color={colors.danger} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary }]}>Start a broadcast</Text>
+                  <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary }]} >Start a LIVE experience</Text>
                   <Text style={[typography.caption, { color: colors.textSecondary }]}>Set the mood before you go live</Text>
                 </View>
                 <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, backgroundColor: hexToRgba(colors.danger, 0.1) }}>
@@ -545,11 +545,11 @@ export default function LiveHubScreen({ navigation, route }) {
                 </View>
               )}
 
-              <TouchableOpacity onPress={() => setAllowGuests((value) => !value)} accessibilityRole="checkbox" accessibilityLabel="Allow approved viewers to join the LIVE stage" accessibilityState={{ checked: allowGuests }} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs }}>
+              <TouchableOpacity onPress={() => setAllowGuests((value) => !value)} accessibilityRole="checkbox" accessibilityLabel={experienceMode === 'audio_room' ? 'Allow approved listeners to take an audio room seat' : 'Allow approved viewers to join the LIVE stage'} accessibilityState={{ checked: allowGuests }} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs }}>
                 <Ionicons name={allowGuests ? 'checkbox' : 'square-outline'} size={21} color={colors.primary} />
                 <View style={{ flex: 1 }}>
-                  <Text style={[typography.small, { color: colors.textPrimary, fontWeight: '700' }]}>Allow approved viewers on stage</Text>
-                  <Text style={[typography.caption, { color: colors.textSecondary }]}>You decide who gets publishing access.</Text>
+                  <Text style={[typography.small, { color: colors.textPrimary, fontWeight: '700' }]} >{experienceMode === 'audio_room' ? 'Allow approved listeners on stage' : 'Allow approved viewers on stage'}</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary }]} >{experienceMode === 'audio_room' ? 'You decide who gets a microphone seat.' : 'You decide who gets publishing access.'}</Text>
                 </View>
               </TouchableOpacity>
 
