@@ -35,6 +35,7 @@ function replayStatus(status) {
 export default function LiveReplayLibraryScreen({ navigation }) {
   const { colors, spacing, radii, typography } = useTheme();
   const [replays, setReplays] = useState([]);
+  const [currentUserId, setCurrentUserId] = useState(null);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -53,16 +54,18 @@ export default function LiveReplayLibraryScreen({ navigation }) {
       const expectedUserId = owner?.id || null;
       if (activeUserIdRef.current !== expectedUserId) {
         activeUserIdRef.current = expectedUserId;
+        setCurrentUserId(expectedUserId);
         setReplays([]);
       }
       if (!expectedUserId) {
         setReplays([]);
-        setError('Sign in to view your private LIVE replay library.');
+        setError('Sign in to view your replay library.');
         return;
       }
       const result = await backendFetch('/live/replays');
       const latest = await getCurrentUser().catch(() => null);
       if (requestId !== requestRef.current || latest?.id !== expectedUserId) return;
+      setCurrentUserId(expectedUserId);
       setReplays(Array.isArray(result?.replays) ? result.replays : []);
     } catch (e) {
       if (requestId === requestRef.current) {
@@ -83,8 +86,9 @@ export default function LiveReplayLibraryScreen({ navigation }) {
       if (activeUserIdRef.current === nextUserId) return;
       activeUserIdRef.current = nextUserId;
       requestRef.current += 1;
+      setCurrentUserId(nextUserId);
       setReplays([]);
-      setError(nextUserId ? '' : 'Sign in to view your private LIVE replay library.');
+      setError(nextUserId ? '' : 'Sign in to view your replay library.');
       setLoading(Boolean(nextUserId));
       setRefreshing(false);
       if (nextUserId) Promise.resolve().then(() => refresh());
@@ -99,16 +103,17 @@ export default function LiveReplayLibraryScreen({ navigation }) {
 
   const visibleReplays = useMemo(() => {
     if (filter === 'all') return replays;
+    if (filter === 'mine') return replays.filter((item) => item.creatorId === currentUserId);
     if (filter === 'processing') return replays.filter((item) => PENDING.has(item.status));
     if (filter === 'failed') return replays.filter((item) => !PENDING.has(item.status) && item.status !== 'ready');
     return replays.filter((item) => item.status === filter);
-  }, [filter, replays]);
+  }, [currentUserId, filter, replays]);
 
   const readyCount = replays.filter((item) => item.status === 'ready').length;
   const processingCount = replays.filter((item) => PENDING.has(item.status)).length;
 
   const deleteReplay = async (item) => {
-    if (!item?.id || PENDING.has(item.status)) return;
+    if (!item?.id || item.creatorId !== activeUserIdRef.current || PENDING.has(item.status)) return;
     const confirmed = await confirmAction({
       title: 'Delete LIVE replay?',
       message: 'This permanently deletes the saved recording. This cannot be undone.',
@@ -130,7 +135,7 @@ export default function LiveReplayLibraryScreen({ navigation }) {
     const state = replayStatus(item.status);
     const stateColor = colors[state.color] || colors.primary;
     const canWatch = item.status === 'ready';
-    const canDelete = !PENDING.has(item.status);
+    const canDelete = item.creatorId === currentUserId && !PENDING.has(item.status);
     return (
       <GlassCard style={{ marginHorizontal: spacing.md, marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm }}>
@@ -196,8 +201,8 @@ export default function LiveReplayLibraryScreen({ navigation }) {
                   <Ionicons name="albums-outline" size={21} color={colors.primary} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Your broadcasts, saved securely</Text>
-                  <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>Private creator recordings, with playback access controlled by your account.</Text>
+                  <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Recent LIVE recordings</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>Recent recordings you are allowed to watch. Ready replays expire after seven days.</Text>
                 </View>
               </View>
               <View style={{ flexDirection: 'row', gap: spacing.sm }}>
