@@ -20,6 +20,7 @@ test('automatic retries use bounded oldest-first exponential-backoff batches', (
 
 test('manual retry bypasses backoff and does not route through composer edit state', () => {
   assert.match(hook, /retryQueuedTextMessages\(\{ force: true \}\)/);
+  assert.match(hook, /setSendError\(''\)/);
   assert.match(screen, /onPress=\{retryPendingMessages\}/);
   assert.doesNotMatch(screen, /for \(const item of \[\.\.\.pendingOutbox\]\) \{ const ok = await handleSend/);
 });
