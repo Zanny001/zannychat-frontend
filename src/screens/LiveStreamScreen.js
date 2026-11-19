@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AudioSession, LiveKitRoom, VideoTrack, isTrackReference, useRoomContext, useTracks } from '@livekit/react-native';
 import { RoomEvent, Track } from 'livekit-client';
 import { backendFetch } from '../services/backendClient';
+import { getCurrentUser } from '../services/api';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
@@ -703,11 +704,58 @@ export default function LiveStreamScreen({ route, navigation }) {
     if (!stream?.id || endedRef.current || busy) return;
     endedRef.current = true;
     setBusy(true);
+    let endConfirmed = false;
     try {
-      await backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' });
+      await backendFetch('/live/' + stream.id + '/' + (creatorMode ? 'end' : 'leave'), { method: 'POST' });
+      endConfirmed = true;
+      if (!creatorMode) {
+        setBusy(false);
+        returnFromLive();
+        return;
+      }
+
+      const ownerId = stream.creator_id || null;
+      const currentUser = await getCurrentUser().catch(() => null);
+      if (!ownerId || currentUser?.id !== ownerId) {
+        setBusy(false);
+        returnFromLive();
+        return;
+      }
+
+      const [profileResult, replayResult] = await Promise.allSettled([
+        backendFetch('/live/creators/me/profile'),
+        backendFetch('/live/' + stream.id + '/replays'),
+      ]);
+      const confirmedUser = await getCurrentUser().catch(() => null);
+      if (confirmedUser?.id !== ownerId) {
+        setBusy(false);
+        returnFromLive();
+        return;
+      }
+
+      const profileSummary = profileResult.status === 'fulfilled' ? profileResult.value : null;
+      const endedStream = Array.isArray(profileSummary?.streams?.recent)
+        ? profileSummary.streams.recent.find((item) => item.id === stream.id)
+        : null;
+      const replaySummary = replayResult.status === 'fulfilled' ? replayResult.value : null;
+      const finalReplay = Array.isArray(replaySummary?.replays) ? replaySummary.replays[0] : null;
       setBusy(false);
-      returnFromLive();
+      navigation.replace('LivePostStreamSummary', {
+        streamId: stream.id,
+        creatorId: ownerId,
+        title: endedStream?.title || stream.title || 'Your LIVE broadcast',
+        startedAt: endedStream?.started_at || stream.started_at || null,
+        endedAt: endedStream?.ended_at || new Date().toISOString(),
+        replayStatus: finalReplay?.status || replay?.status || null,
+        replayId: finalReplay?.id || replay?.id || null,
+        replayEnabled: Boolean(replayEnabled || finalReplay || replay),
+      });
     } catch (error) {
+      if (endConfirmed) {
+        setBusy(false);
+        returnFromLive();
+        return;
+      }
       endedRef.current = false;
       setBusy(false);
       Alert.alert(
