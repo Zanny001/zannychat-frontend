@@ -29,6 +29,8 @@ test('LIVE settings load and save are guarded against account switching', () => 
   assert.ok(screen.includes('latestUser?.id !== user.id'));
   assert.ok(screen.includes('confirmedUser?.id !== userId'));
   assert.ok(screen.includes('supabase.auth.onAuthStateChange'));
+  assert.ok(screen.includes('loadRequestRef.current += 1'));
+  assert.ok(screen.includes('requestId !== loadRequestRef.current'));
   assert.ok(screen.includes('setPreferences({ ...DEFAULT_LIVE_PREFERENCES })'));
   assert.ok(screen.includes('data?.subscription?.unsubscribe?.()'));
   assert.ok(screen.includes('saveLivePreferences(userId, preferences)'));
