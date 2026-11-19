@@ -120,7 +120,7 @@ export default function PeerProfileScreen({ route, navigation }) {
     return () => { active = false; };
   }, [participant.id, participant.user_id]);
   const conversation = route.params?.conversation;
-  const name = sharedDetails.name || participant.name || 'ZannyChat user';
+  const name = sharedDetails.name || sharedDetails.display_name || sharedDetails.full_name || participant.name || 'ZannyChat user';
   const resolvedPresence = getProfilePresence({ ...participant, ...sharedDetails });
   const online = resolvedPresence.online;
   const about = sharedDetails.about || participant.status || participant.about || participant.bio || 'Hey there, I’m using ZannyChat';
