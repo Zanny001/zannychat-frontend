@@ -33,6 +33,7 @@ function toIso(dateText,timeText) {
     || date.getHours()!==Number(clock[1]) || date.getMinutes()!==Number(clock[2])) return null;
   return date.toISOString();
 }
+function canStartEvent(event) { const start=Date.parse(event.startsAt); return event.status==='scheduled' && Date.now()>=start-60*60*1000 && Date.now()<=start+event.durationMinutes*60*1000; }
 function formatDate(value) {
   try { return new Date(value).toLocaleString([], { weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit' }); }
   catch { return 'Scheduled time unavailable'; }
@@ -305,9 +306,18 @@ export default function LiveEventsScreen({ navigation }) {
             </View>
             <Text style={[typography.caption,{color:colors.textSecondary}]}>Hosted by {event.creator?.name||'LIVE Creator'}</Text>
             {event.creatorId===currentUserId
-              ? <TouchableOpacity disabled={busy} onPress={()=>cancelEvent(event)} accessibilityRole="button" style={{minHeight:42,borderWidth:1,borderColor:colors.danger,borderRadius:13,alignItems:'center',justifyContent:'center'}}>
-                  <Text style={[typography.caption,{color:colors.danger,fontWeight:'900'}]}>Cancel Event</Text>
-                </TouchableOpacity>
+              ? <View style={{gap:spacing.xs}}>
+                  {canStartEvent(event)&&<TouchableOpacity disabled={busy} onPress={()=>navigation.navigate('LivePreflight',{
+                    title:event.title,description:event.description,visibility:event.visibility,category:event.category,
+                    experienceMode:'broadcast',allowGuests:false,eventId:event.id,
+                  })} accessibilityRole="button" accessibilityLabel={'Start LIVE for '+event.title} style={{minHeight:46,borderRadius:14,backgroundColor:colors.primary,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:8}}>
+                    <Ionicons name="radio" size={17} color={colors.onPrimary}/>
+                    <Text style={[typography.caption,{color:colors.onPrimary,fontWeight:'900'}]}>Start LIVE from Event</Text>
+                  </TouchableOpacity>}
+                  <TouchableOpacity disabled={busy} onPress={()=>cancelEvent(event)} accessibilityRole="button" style={{minHeight:42,borderWidth:1,borderColor:colors.danger,borderRadius:13,alignItems:'center',justifyContent:'center'}}>
+                    <Text style={[typography.caption,{color:colors.danger,fontWeight:'900'}]}>Cancel Event</Text>
+                  </TouchableOpacity>
+                </View>
               : <TouchableOpacity disabled={busy||event.rsvpStatus==='going'||event.attendeeCount>=event.maxAttendees} onPress={()=>toggleRsvp(event)} accessibilityRole="button" accessibilityState={{disabled:busy||event.rsvpStatus==='going'||event.attendeeCount>=event.maxAttendees}} style={{minHeight:44,borderRadius:13,backgroundColor:event.rsvpStatus==='going'?colors.surface:colors.primary,borderWidth:event.rsvpStatus==='going'?1:0,borderColor:colors.border,alignItems:'center',justifyContent:'center'}}>
                   <Text style={[typography.caption,{color:event.rsvpStatus==='going'?colors.textSecondary:colors.onPrimary,fontWeight:'900'}]}>{event.rsvpStatus==='going'?'You are going':event.attendeeCount>=event.maxAttendees?'Event full':'Reserve my place'}</Text>
                 </TouchableOpacity>}
