@@ -22,6 +22,7 @@ test('LIVE defaults are loaded and saved through the authenticated backend servi
 
 test('LIVE settings clearly distinguish account-synced defaults from active stream controls', () => {
   assert.ok(screen.includes('saved securely to your ZannyChat account'));
+  assert.ok(screen.includes("saved ? 'Saved to your ZannyChat account' : 'Save LIVE defaults'"));
   assert.ok(screen.includes('They never change a LIVE that is already running.'));
   assert.ok(screen.includes('five-guest limit and server permissions still apply.'));
   assert.ok(screen.includes('You will still need to select at least one chat contact'));
