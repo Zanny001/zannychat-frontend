@@ -102,6 +102,7 @@ export default function LiveReportsScreen({ route, navigation }) {
       if (actionId !== actionGeneration.current) return;
       setReports((current) => current.map((item) => item.id === reportId ? { ...item, ...(result?.report || {}), status } : item));
     } catch (e) {
+      if (actionId !== actionGeneration.current) return;
       showAppAlert('Could not update report', e?.message || 'Refresh the report queue and try again.');
       await refresh(true);
     } finally {
