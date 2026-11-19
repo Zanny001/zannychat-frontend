@@ -119,7 +119,7 @@ export default function DraftsScreen({ navigation }) {
             </View>
           }
           renderItem={({ item: draft }) => {
-            const conversation = conversations.find((item) => item.id === draft.conversationId);
+            const conversation = conversationsById.get(draft.conversationId);
             const title = conversation?.participant?.name || conversation?.name || 'Conversation';
             return (
               <GlassCard style={{ marginBottom: spacing.sm }}>
