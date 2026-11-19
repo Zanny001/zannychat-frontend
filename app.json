@@ -11,7 +11,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.zannychat.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "ZannyChat uses the camera when you choose to take photos, make video calls or host and join video LIVE sessions.",
+        "NSCameraUsageDescription": "ZannyChat uses the camera when you take photos, scan QR codes, make video calls or host and join video LIVE sessions.",
         "NSMicrophoneUsageDescription": "ZannyChat uses the microphone when you record voice messages, make calls or host and join LIVE sessions.",
         "NSPhotoLibraryUsageDescription": "ZannyChat accesses your photo library so you can send photos and set a profile picture.",
         "NSPhotoLibraryAddUsageDescription": "ZannyChat can save photos from your chats to your photo library.",
@@ -105,7 +105,7 @@
         "expo-camera",
         {
           "cameraPermission": "ZannyChat uses the camera when you scan QR codes, make video calls or host and join video LIVE sessions.",
-          "microphonePermission": "ZannyChat uses the microphone when you make calls or host and join LIVE sessions.",
+          "microphonePermission": "ZannyChat uses the microphone when you record voice messages, make calls or host and join LIVE sessions.",
           "recordAudioAndroid": true
         }
       ],
@@ -113,13 +113,13 @@
         "expo-image-picker",
         {
           "photosPermission": "ZannyChat accesses your photo library so you can send photos and set a profile picture.",
-          "cameraPermission": "ZannyChat uses the camera so you can take and send photos in your chats."
+          "cameraPermission": "ZannyChat uses the camera when you take photos, set a profile picture, make video calls or host and join video LIVE sessions."
         }
       ],
       [
         "expo-audio",
         {
-          "microphonePermission": "ZannyChat uses the microphone so you can record and send voice messages."
+          "microphonePermission": "ZannyChat uses the microphone when you record voice messages, make calls or host and join LIVE sessions."
         }
       ],
       "expo-status-bar",
@@ -140,8 +140,8 @@
       [
         "@config-plugins/react-native-webrtc",
         {
-          "cameraPermission": "ZannyChat uses the camera only when you choose to take photos, start or answer a video call, or host and join video LIVE sessions.",
-          "microphonePermission": "ZannyChat uses the microphone only when you record voice messages, start or answer a call, or host and join LIVE sessions."
+          "cameraPermission": "ZannyChat uses the camera when you choose to start or answer a video call or host and join video LIVE sessions.",
+          "microphonePermission": "ZannyChat uses the microphone when you record voice messages, make calls or host and join LIVE sessions."
         }
       ],
       "expo-web-browser",
