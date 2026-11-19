@@ -72,3 +72,11 @@ test('native permission prompts explicitly cover LIVE camera and microphone use'
   assert.ok(rtc?.microphonePermission.includes('LIVE'));
   assert.equal(camera?.recordAudioAndroid, true);
 });
+
+test('pre-flight normalizes creator setup input before sending the create request', () => {
+  assert.ok(preflight.includes("String(params.title || '').trim().slice(0, 80)"));
+  assert.ok(preflight.includes("String(params.description || '').trim().slice(0, 500)"));
+  assert.ok(preflight.includes("params.category)"));
+  assert.ok(preflight.includes(": 'social'"));
+  assert.ok(preflight.includes("['public', 'followers', 'private'].includes(params.visibility)"));
+});
