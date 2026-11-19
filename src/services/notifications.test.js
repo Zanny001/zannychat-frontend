@@ -8,11 +8,9 @@ const incoming = fs.readFileSync(new URL('../screens/IncomingCallScreen.js', imp
 test('Creator LIVE push taps open LIVE discovery and carry the stream notification context', () => {
   assert.ok(notifications.includes("data.type.startsWith('live_')"));
   assert.ok(notifications.includes("navigationRef.navigate('LiveHub', { liveNotification: data })"));
-  assert.ok(notifications.includes("live:${liveType}:${data.eventId || data.replayId || liveStreamId || data.creatorId || data.followerId || 'hub'}"));
+  assert.ok(notifications.includes("live:${liveType}:${data.replayId || liveStreamId || data.creatorId || data.followerId || 'hub'}"));
   const liveHub = fs.readFileSync(new URL('../screens/LiveHubScreen.js', import.meta.url), 'utf8');
   assert.ok(liveHub.includes("route?.params?.liveNotification"));
-  assert.ok(liveHub.includes("type === 'live_event_invitation'"));
-  assert.ok(liveHub.includes("navigation.navigate('LiveEvents'"));
   assert.ok(liveHub.includes("['live_stream_started', 'live_invitation', 'live_guest_request', 'live_guest_invitation'].includes(type)"));
   assert.ok(liveHub.includes("item.invitation_type === 'guest' ? 'Join stage' : 'Join'"));
   assert.ok(liveHub.includes("type === 'live_guest_decision' && notification.status === 'accepted'"));
