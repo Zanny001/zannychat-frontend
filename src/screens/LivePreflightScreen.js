@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   AppState,
   Linking,
   Platform,
@@ -199,8 +200,17 @@ export default function LivePreflightScreen({ route, navigation }) {
             body: JSON.stringify({ streamId: connection.stream.id }),
           });
         } catch (attachError) {
-          await backendFetch('/live/' + encodeURIComponent(connection.stream.id) + '/end', { method: 'POST' }).catch(() => null);
-          throw new Error(attachError?.message || 'Could not connect this broadcast to its scheduled Event. The new stream was safely ended.');
+          const streamEnded = await backendFetch('/live/' + encodeURIComponent(connection.stream.id) + '/end', { method: 'POST' })
+            .then(() => true).catch(() => false);
+          if (!streamEnded) {
+            navigation.replace('LiveStream', { streamId: connection.stream.id, creatorMode: true });
+            Alert.alert(
+              'Event link needs attention',
+              'The broadcast is still active, but could not be linked to its scheduled Event. You have been moved into LIVE so you can manage or end the broadcast safely.'
+            );
+            return;
+          }
+          throw new Error(attachError?.message || 'Could not connect this broadcast to its scheduled Event. The new stream was ended safely.');
         }
       }
       navigation.replace('LiveStream', {
