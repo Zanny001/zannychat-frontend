@@ -704,8 +704,10 @@ export default function LiveStreamScreen({ route, navigation }) {
     if (!stream?.id || endedRef.current || busy) return;
     endedRef.current = true;
     setBusy(true);
+    let endConfirmed = false;
     try {
       await backendFetch('/live/' + stream.id + '/' + (creatorMode ? 'end' : 'leave'), { method: 'POST' });
+      endConfirmed = true;
       if (!creatorMode) {
         setBusy(false);
         returnFromLive();
@@ -749,6 +751,11 @@ export default function LiveStreamScreen({ route, navigation }) {
         replayEnabled: Boolean(replayEnabled || finalReplay || replay),
       });
     } catch (error) {
+      if (endConfirmed) {
+        setBusy(false);
+        returnFromLive();
+        return;
+      }
       endedRef.current = false;
       setBusy(false);
       Alert.alert(
