@@ -51,4 +51,5 @@ test('LIVE Hub applies saved creator defaults to the next broadcast setup only',
   assert.ok(hub.includes('setVisibility(preferences.visibility)'));
   assert.ok(hub.includes('setCategory(preferences.category)'));
   assert.ok(hub.includes('setAllowGuests(preferences.allowGuests)'));
+  assert.equal(hub.includes("if (mode.value !== 'broadcast') setAllowGuests(true)"), false);
 });
