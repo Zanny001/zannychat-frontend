@@ -1,9 +1,10 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, ScrollView, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import GlassCard from '../components/GlassCard';
 import { getCurrentUser } from '../services/api';
+import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { loadLivePreferences, saveLivePreferences, DEFAULT_LIVE_PREFERENCES } from '../services/livePreferences';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
@@ -61,6 +62,21 @@ export default function LiveSettingsScreen({ navigation }) {
   useFocusEffect(useCallback(() => {
     load();
   }, [load]));
+
+  useEffect(() => {
+    if (!SUPABASE_ENABLED || !supabase?.auth?.onAuthStateChange) return undefined;
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUserId = session?.user?.id || null;
+      if (nextUserId === userId) return;
+      setUserId(nextUserId);
+      setPreferences({ ...DEFAULT_LIVE_PREFERENCES });
+      setSaved(false);
+      setError(nextUserId ? '' : 'Sign in to manage your LIVE defaults.');
+      setLoading(Boolean(nextUserId));
+      if (nextUserId) Promise.resolve().then(() => load());
+    });
+    return () => data?.subscription?.unsubscribe?.();
+  }, [load, userId]);
 
   const update = (key, value) => {
     setSaved(false);
