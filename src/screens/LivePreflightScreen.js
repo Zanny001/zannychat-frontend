@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useIsFocused } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
@@ -57,16 +57,29 @@ export default function LivePreflightScreen({ route, navigation }) {
   const allowGuests = Boolean(params.allowGuests);
   const inviteeIds = Array.isArray(params.inviteeIds) ? [...new Set(params.inviteeIds.filter((id) => typeof id === 'string' && id))] : [];
   const needsCamera = experienceMode !== 'audio_room';
-  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
-  const [microphonePermission, requestMicrophonePermission] = useMicrophonePermissions();
+  const [cameraPermission, requestCameraPermission, getCameraPermission] = useCameraPermissions();
+  const [microphonePermission, requestMicrophonePermission, getMicrophonePermission] = useMicrophonePermissions();
+  const [permissionSnapshot, setPermissionSnapshot] = useState(null);
+  const activeCameraPermission = permissionSnapshot?.camera || cameraPermission;
+  const activeMicrophonePermission = permissionSnapshot?.microphone || microphonePermission;
+
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    Promise.all([getCameraPermission(), getMicrophonePermission()])
+      .then(([camera, microphone]) => {
+        if (active) setPermissionSnapshot({ camera, microphone });
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [getCameraPermission, getMicrophonePermission]));
   const [cameraFacing, setCameraFacing] = useState('front');
   const [cameraReady, setCameraReady] = useState(false);
   const [permissionBusy, setPermissionBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const microphoneGranted = Boolean(microphonePermission?.granted);
-  const cameraGranted = !needsCamera || Boolean(cameraPermission?.granted);
+  const microphoneGranted = Boolean(activeMicrophonePermission?.granted);
+  const cameraGranted = !needsCamera || Boolean(activeCameraPermission?.granted);
   const mediaPermissionsGranted = microphoneGranted && cameraGranted;
   const cameraPreviewReady = !needsCamera || cameraReady;
   const privateInviteesValid = visibility !== 'private' || inviteeIds.length > 0;
@@ -77,9 +90,10 @@ export default function LivePreflightScreen({ route, navigation }) {
     setError('');
     setPermissionBusy(true);
     try {
-      const microphone = microphonePermission?.granted
-        ? microphonePermission
+      const microphone = activeMicrophonePermission?.granted
+        ? activeMicrophonePermission
         : await requestMicrophonePermission();
+      setPermissionSnapshot((current) => ({ ...(current || {}), microphone }));
       if (!microphone?.granted) {
         setError(microphone?.canAskAgain === false
           ? 'Microphone access is blocked. Enable it in your device or browser settings, then return here.'
@@ -87,9 +101,10 @@ export default function LivePreflightScreen({ route, navigation }) {
         return;
       }
       if (needsCamera) {
-        const camera = cameraPermission?.granted
-          ? cameraPermission
+        const camera = activeCameraPermission?.granted
+          ? activeCameraPermission
           : await requestCameraPermission();
+        setPermissionSnapshot((current) => ({ ...(current || {}), camera }));
         if (!camera?.granted) {
           setError(camera?.canAskAgain === false
             ? 'Camera access is blocked. Enable it in your device or browser settings, then return here.'
@@ -103,8 +118,8 @@ export default function LivePreflightScreen({ route, navigation }) {
       setPermissionBusy(false);
     }
   }, [
-    cameraPermission,
-    microphonePermission,
+    activeCameraPermission,
+    activeMicrophonePermission,
     needsCamera,
     requestCameraPermission,
     requestMicrophonePermission,
@@ -170,9 +185,9 @@ export default function LivePreflightScreen({ route, navigation }) {
   ]);
 
   const cameraState = needsCamera
-    ? cameraPermission?.granted ? 'granted' : 'required'
+    ? activeCameraPermission?.granted ? 'granted' : 'required'
     : 'unavailable';
-  const microphoneState = microphonePermission?.granted ? 'granted' : 'required';
+  const microphoneState = activeMicrophonePermission?.granted ? 'granted' : 'required';
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -225,7 +240,7 @@ export default function LivePreflightScreen({ route, navigation }) {
                   <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Stage preview</Text>
                   <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>{experienceMode === 'audio_room' ? 'Audio-first room · camera not required' : 'Check your framing before you go live'}</Text>
                 </View>
-                {needsCamera && cameraPermission?.granted && (
+                {needsCamera && activeCameraPermission?.granted && (
                   <TouchableOpacity
                     onPress={() => { setCameraReady(false); setCameraFacing((current) => current === 'front' ? 'back' : 'front'); }}
                     accessibilityRole="button"
@@ -279,7 +294,7 @@ export default function LivePreflightScreen({ route, navigation }) {
               {permissionBusy ? <ActivityIndicator size="small" color={colors.primary} /> : <Ionicons name={mediaPermissionsGranted ? 'checkmark-circle' : 'shield-checkmark-outline'} size={18} color={mediaPermissionsGranted ? colors.success : colors.primary} />}
               <Text style={[typography.bodyStrong, { color: mediaPermissionsGranted ? colors.success : colors.primary }]}>{permissionBusy ? 'Checking permissions…' : mediaPermissionsGranted ? 'Permissions granted' : 'Allow device access'}</Text>
             </TouchableOpacity>
-            {((cameraPermission && !cameraPermission.granted && cameraPermission.canAskAgain === false) || (microphonePermission && !microphonePermission.granted && microphonePermission.canAskAgain === false)) && (
+            {((activeCameraPermission && !activeCameraPermission.granted && activeCameraPermission.canAskAgain === false) || (activeMicrophonePermission && !activeMicrophonePermission.granted && activeMicrophonePermission.canAskAgain === false)) && (
               <TouchableOpacity onPress={openPermissionSettings} accessibilityRole="button" accessibilityLabel="Open device settings for LIVE permissions" style={{ minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 5 }}>
                 <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>{Platform.OS === 'web' ? 'How to allow browser access' : 'Open device settings'}</Text>
               </TouchableOpacity>
