@@ -18,6 +18,8 @@ test('LIVE Creator Profile exposes authenticated follow and watch actions only i
   assert.ok(source.includes('`/live/creators/${targetCreatorId}/follow`'));
   assert.ok(source.includes("method: nextFollowing ? 'POST' : 'DELETE'"));
   assert.ok(source.includes("navigation.navigate('LiveStream', { streamId: currentLiveStreamId, creatorMode: false, returnToCreatorProfile: true })"));
+  assert.ok(source.includes('const alreadyViewingLive = route.params?.alreadyViewingLive === true'));
+  assert.ok(source.includes("label={alreadyViewingLive ? 'Return to LIVE' : 'Watch LIVE'}"));
   assert.ok(source.includes('{fromLive ? ('));
   assert.ok(source.includes('Follow creator'));
   assert.ok(source.includes('Watch LIVE'));
