@@ -47,7 +47,7 @@ test('pre-flight camera preview is scoped to the focused screen and has accessib
   assert.ok(preflight.includes('needsCamera && activeCameraPermission?.granted && isFocused'));
   assert.ok(preflight.includes('<CameraView'));
   assert.ok(preflight.includes('accessibilityLabel="Switch camera"'));
-  assert.ok(preflight.includes('accessibilityLabel={mediaPermissionsGranted ? 'Media permissions granted' : 'Allow device access'}'));
+  assert.ok(preflight.includes("accessibilityLabel={mediaPermissionsGranted ? 'Media permissions granted' : 'Allow camera and microphone permissions'}"));
   assert.ok(preflight.includes("'Start audio LIVE room' : experienceMode === 'video_chat' ? 'Start video LIVE chat'"));
 });
 
