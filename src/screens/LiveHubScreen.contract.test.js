@@ -177,3 +177,14 @@ test('LIVE Hub does not let an identity lookup overwrite a newer auth event', ()
   assert.ok(screen.includes('if (requestId !== refreshRequestRef.current) return;'));
   assert.ok(screen.includes('An auth event may have invalidated this refresh'));
 });
+
+test('LIVE hub separates the owner Creator Studio from public creator profiles', () => {
+  assert.ok(screen.includes("navigation.navigate('LiveCreatorStudio')"));
+  assert.ok(screen.includes('accessibilityLabel="Open LIVE Creator Studio"'));
+  assert.ok(screen.includes("navigation.navigate('LiveCreatorProfile'"));
+  assert.ok(screen.includes('openCreatorProfile(creator)'));
+  assert.ok(screen.includes('openCreatorProfile(item, item.id, item.is_creator)'));
+  assert.ok(screen.includes('currentLiveStreamId,'));
+  assert.ok(screen.includes('isFollowing: followingIds.includes(creatorId)'));
+  assert.ok(screen.includes('View profile'));
+});
