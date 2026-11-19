@@ -92,3 +92,9 @@ test('pre-flight prevents duplicate permission prompts and duplicate room creati
   assert.ok(preflight.includes('permissionRequestRef.current = false'));
   assert.ok(preflight.includes('startRequestRef.current = false'));
 });
+
+test('pre-flight rechecks permissions when the app returns from device settings', () => {
+  assert.ok(preflight.includes("AppState.addEventListener('change'"));
+  assert.ok(preflight.includes("if (state === 'active') refreshMediaPermissions()"));
+  assert.ok(preflight.includes('getCameraPermission(), getMicrophonePermission()'));
+});
