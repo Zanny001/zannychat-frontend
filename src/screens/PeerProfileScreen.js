@@ -231,7 +231,7 @@ export default function PeerProfileScreen({ route, navigation }) {
           {fromLive ? (
             <>
               {!isCurrentUser ? <QuickAction icon={isFollowingCreator ? 'checkmark-circle' : 'person-add'} label={followBusy ? 'Updating follow…' : followCheckLoading ? 'Checking follow…' : isFollowingCreator ? 'Following' : 'Follow creator'} primary={!isFollowingCreator} disabled={followBusy || followCheckLoading} onPress={toggleLiveFollow} /> : null}
-              {currentLiveStreamId ? <QuickAction icon="radio" label="Watch LIVE" primary onPress={() => navigation.navigate('LiveStream', { streamId: currentLiveStreamId, creatorMode: false, returnToCreatorProfile: true })} /> : null}
+              {currentLiveStreamId ? <QuickAction icon="radio" label={alreadyViewingLive ? 'Return to LIVE' : 'Watch LIVE'} primary onPress={() => alreadyViewingLive ? navigation.goBack() : navigation.navigate('LiveStream', { streamId: currentLiveStreamId, creatorMode: false, returnToCreatorProfile: true })} /> : null}
             </>
           ) : (
             <>
