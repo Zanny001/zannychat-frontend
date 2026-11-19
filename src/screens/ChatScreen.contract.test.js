@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const screen = fs.readFileSync(new URL('./ChatScreen.js', import.meta.url), 'utf8');
 const timeline = fs.readFileSync(new URL('../hooks/useChatTimeline.js', import.meta.url), 'utf8');
+const outbox = fs.readFileSync(new URL('../hooks/useMessageOutbox.js', import.meta.url), 'utf8');
 
 test('chat picker enforces the same exact 25 MiB limit as Storage', () => {
   assert.match(screen, /const MAX_FILE_SIZE = 25 \* 1024 \* 1024/);
@@ -76,18 +77,17 @@ test('older history pagination failures retain a visible accessible retry action
 test('permanent send failures never enter the retry outbox', () => {
   assert.match(screen, /const permanentFailure = isPermanentMessageSendError\(err\)/);
   assert.match(screen, /let queued = false/);
-  assert.match(screen, /queued = await savePendingMessage\(myUserId, conversation\.id, pending\)/);
+  assert.match(screen, /queued = await queuePendingMessage\(pending\)/);
+  assert.doesNotMatch(screen, /savePendingMessage\(/);
   assert.match(screen, /err\?\.code === '42501'/);
 });
 
 test('permanent failures discovered by automatic recovery are removed instead of retried forever', () => {
-  const start = screen.indexOf('const retryQueuedTextMessages');
-  const end = screen.indexOf('}, [myUserId, conversation?.id]);', start);
-  const body = screen.slice(start, end);
-  assert.match(body, /if \(isPermanentMessageSendError\(error\)\)/);
-  assert.match(body, /removePendingMessage\(myUserId, conversation\.id, item\.requestId\)/);
-  assert.match(body, /setPendingOutbox\(\(items\) => items\.filter/);
-  assert.match(body, /setSendError\(removed/);
+  assert.match(outbox, /if \(isPermanentMessageSendError\(error\)\)/);
+  assert.match(outbox, /removePendingMessage\(expectedUserId, conversationId, item\.requestId\)/);
+  assert.match(outbox, /setPendingOutbox\(\(items\) => items\.filter/);
+  assert.match(outbox, /setSendError\(removed/);
+  assert.match(outbox, /recordMessageRetryFailure\(expectedUserId, conversationId, item\.requestId, error\)/);
 });
 
 
@@ -110,9 +110,11 @@ test('chat screen clears account-owned messages, drafts, receipts and outbox on 
   assert.ok(screen.includes('const pinnedLoadRequestRef = useRef(0)'));
   assert.ok(timeline.includes('setMessages([])'));
   assert.ok(screen.includes("resetTimeline('Your account changed. Reopen this conversation from Chats.')"));
-  assert.ok(screen.includes('setPendingOutbox([])'));
+  assert.ok(outbox.includes('setPendingOutbox([])'));
+  assert.ok(screen.includes('resetOutbox()'));
   assert.ok(screen.includes('setPendingAttachments([])'));
-  assert.ok(screen.includes('if (!myUserId) {\n      setPendingOutbox([]);\n      setPendingAttachments([]);'));
+  assert.ok(outbox.includes('if (!myUserId) {'));
+  assert.ok(screen.includes('if (!myUserId) {\n      setPendingAttachments([]);'));
   assert.ok(timeline.includes('setMessageDeliveryState({})'));
   assert.ok(timeline.includes('setParticipantReadState({})'));
   assert.ok(screen.includes('setMediaDraft(null)'));
@@ -128,9 +130,9 @@ test('chat history and outbox work cannot publish or retry after the authenticat
   assert.ok(timeline.includes('activeUserIdRef.current !== myUserId'));
   assert.ok(timeline.includes('requestId !== olderLoadRequestRef.current'));
   assert.ok(timeline.includes('activeUserIdRef.current !== expectedUserId'));
-  assert.ok(screen.includes('activeUserIdRef.current !== myUserId)) return'));
-  assert.ok(screen.includes('sendMessage(conversation.id, item.text, item.replyToId, item.requestId, expectedUserId)'));
-  assert.ok(screen.includes("error?.code === 'AUTH_USER_CHANGED'"));
+  assert.ok(outbox.includes('activeUserIdRef.current === expectedUserId'));
+  assert.ok(outbox.includes('sendMessage(conversationId, item.text, item.replyToId, item.requestId, expectedUserId)'));
+  assert.ok(outbox.includes("error?.code === 'AUTH_USER_CHANGED'"));
   assert.ok(timeline.includes('messageLoadRequestRef.current += 1'));
   assert.ok(timeline.includes('olderLoadRequestRef.current += 1'));
 });
