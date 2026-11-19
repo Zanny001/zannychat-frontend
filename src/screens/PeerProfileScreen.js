@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, StyleSheet, Modal, Image, Pressable, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
@@ -11,6 +11,7 @@ import { getProfilePresence } from '../utils/profilePresence';
 import { getProfileDetails } from '../utils/profileDetails';
 import { getPublicProfileDetails, getPrivateProfileCoverUrl, resolveProfileAvatarUrls } from '../services/api';
 import { backendFetch } from '../services/backendClient';
+import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import LiveImpactCard from '../components/LiveImpactCard';
 
 function DetailRow({ icon, label, value, last = false }) {
@@ -33,9 +34,9 @@ function SectionHeading({ title, detail }) {
   </View>;
 }
 
-function QuickAction({ icon, label, onPress, primary = false }) {
+function QuickAction({ icon, label, onPress, primary = false, disabled = false }) {
   const { colors, spacing, radii, typography, mood } = useTheme();
-  return <TouchableOpacity onPress={onPress} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel={label} style={[styles.quickAction, { borderRadius: radii.lg, backgroundColor: primary ? colors.primary : hexToRgba(mood.signal, 0.11), borderColor: primary ? colors.primary : hexToRgba(mood.signal, 0.23), marginHorizontal: spacing.xs }]}>
+  return <TouchableOpacity onPress={onPress} disabled={disabled} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled }} style={[styles.quickAction, { opacity: disabled ? 0.62 : 1 }, { borderRadius: radii.lg, backgroundColor: primary ? colors.primary : hexToRgba(mood.signal, 0.11), borderColor: primary ? colors.primary : hexToRgba(mood.signal, 0.23), marginHorizontal: spacing.xs }]}>
     <Ionicons name={icon} size={21} color={primary ? colors.onPrimary : colors.textPrimary} />
     <Text style={[typography.caption, { color: primary ? colors.onPrimary : colors.textPrimary, fontWeight: '700', marginTop: 7 }]}>{label}</Text>
   </TouchableOpacity>;
@@ -44,6 +45,18 @@ function QuickAction({ icon, label, onPress, primary = false }) {
 export default function PeerProfileScreen({ route, navigation }) {
   const { colors, spacing, radii, typography, mood } = useTheme();
   const participant = route.params?.participant || {};
+  const fromLive = route.params?.fromLive === true;
+  const creatorId = participant.id || participant.user_id;
+  const isCurrentUser = route.params?.isCurrentUser === true;
+  const currentLiveStreamId = route.params?.currentLiveStreamId || null;
+  const alreadyViewingLive = route.params?.alreadyViewingLive === true;
+  const [isFollowingCreator, setIsFollowingCreator] = useState(Boolean(route.params?.isFollowing));
+  const [followBusy, setFollowBusy] = useState(false);
+  const [followCheckLoading, setFollowCheckLoading] = useState(Boolean(fromLive && !isCurrentUser));
+  const [followError, setFollowError] = useState('');
+  const [authRevision, setAuthRevision] = useState(0);
+  const followRequestRef = useRef(false);
+  const followGenerationRef = useRef(0);
   const [photoViewerVisible, setPhotoViewerVisible] = useState(false);
   const [sharedDetails, setSharedDetails] = useState({});
   const [coverUrl, setCoverUrl] = useState(null);
@@ -108,7 +121,7 @@ export default function PeerProfileScreen({ route, navigation }) {
     return () => { active = false; };
   }, [participant.id, participant.user_id]);
   const conversation = route.params?.conversation;
-  const name = participant.name || 'ZannyChat user';
+  const name = sharedDetails.name || sharedDetails.display_name || sharedDetails.full_name || participant.name || 'ZannyChat user';
   const resolvedPresence = getProfilePresence({ ...participant, ...sharedDetails });
   const online = resolvedPresence.online;
   const about = sharedDetails.about || participant.status || participant.about || participant.bio || 'Hey there, I’m using ZannyChat';
@@ -116,12 +129,78 @@ export default function PeerProfileScreen({ route, navigation }) {
   const joinedDate = joined ? new Date(joined) : null;
   const joinedLabel = joinedDate && !Number.isNaN(joinedDate.getTime()) ? joinedDate.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : null;
   const presence = resolvedPresence.presence;
-  const username = participant.username ? `@${String(participant.username).replace(/^@/, '')}` : null;
+  const profileUsername = sharedDetails.username || participant.username;
+  const username = profileUsername ? `@${String(profileUsername).replace(/^@/, '')}` : null;
   const avatarUrl = avatarResolutionComplete ? getSafeProfilePhotoUrl(resolvedAvatarUrl) : null;
   const extraDetails = getProfileDetails({ ...participant, ...sharedDetails });
 
+  useEffect(() => {
+    followGenerationRef.current += 1;
+    followRequestRef.current = false;
+    setFollowBusy(false);
+    setFollowCheckLoading(Boolean(fromLive && !isCurrentUser));
+    setIsFollowingCreator(Boolean(route.params?.isFollowing));
+    setFollowError('');
+  }, [creatorId, route.params?.isFollowing, fromLive]);
+
+  useEffect(() => {
+    if (!fromLive || !SUPABASE_ENABLED) return undefined;
+    const { data } = supabase.auth.onAuthStateChange(() => {
+      followGenerationRef.current += 1;
+      followRequestRef.current = false;
+      setFollowBusy(false);
+      setIsFollowingCreator(false);
+      setFollowCheckLoading(true);
+      setAuthRevision((current) => current + 1);
+    });
+    return () => data?.subscription?.unsubscribe?.();
+  }, [fromLive]);
+
+  useEffect(() => {
+    if (!fromLive || !creatorId || isCurrentUser) {
+      setFollowCheckLoading(false);
+      return undefined;
+    }
+    let active = true;
+    setFollowCheckLoading(true);
+    backendFetch('/live/following')
+      .then((result) => {
+        if (active) setIsFollowingCreator((result?.following || []).some((item) => item.creator_id === creatorId));
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setFollowCheckLoading(false);
+      });
+    return () => { active = false; };
+  }, [authRevision, creatorId, fromLive, isCurrentUser]);
+
+  const toggleLiveFollow = async () => {
+    if (!fromLive || !creatorId || isCurrentUser || followCheckLoading || followRequestRef.current) return;
+    const requestGeneration = followGenerationRef.current;
+    const targetCreatorId = creatorId;
+    followRequestRef.current = true;
+    setFollowBusy(true);
+    setFollowError('');
+    const nextFollowing = !isFollowingCreator;
+    try {
+      const result = await backendFetch(`/live/creators/${targetCreatorId}/follow`, {
+        method: nextFollowing ? 'POST' : 'DELETE',
+      });
+      if (requestGeneration === followGenerationRef.current) {
+        setIsFollowingCreator(result?.following === undefined ? nextFollowing : result.following === true);
+      }
+    } catch (error) {
+      if (requestGeneration === followGenerationRef.current) setFollowError(error?.message || 'Could not update this creator follow. Please try again.');
+    } finally {
+      if (requestGeneration === followGenerationRef.current) {
+        followRequestRef.current = false;
+        setFollowBusy(false);
+      }
+    }
+  };
+
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-    <Header title="Profile" onBack={() => navigation.goBack()} right={<View style={{ flexDirection: 'row', alignItems: 'center', paddingRight: spacing.xs }}><View style={[styles.livePill, { backgroundColor: hexToRgba(online ? colors.online : colors.textSecondary, 0.12), borderColor: hexToRgba(online ? colors.online : colors.textSecondary, 0.26) }]}><View style={[styles.liveDot, { backgroundColor: online ? colors.online : colors.textSecondary }]} /><Text style={[typography.caption, { color: online ? colors.online : colors.textSecondary, fontWeight: '700' }]}>{online ? 'ONLINE' : 'CONTACT'}</Text></View></View>} />
+    <Header title={fromLive ? "LIVE Creator" : "Profile"} onBack={() => navigation.goBack()} right={<View style={{ flexDirection: 'row', alignItems: 'center', paddingRight: spacing.xs }}><View style={[styles.livePill, { backgroundColor: hexToRgba(online ? colors.online : colors.textSecondary, 0.12), borderColor: hexToRgba(online ? colors.online : colors.textSecondary, 0.26) }]}><View style={[styles.liveDot, { backgroundColor: online ? colors.online : colors.textSecondary }]} /><Text style={[typography.caption, { color: online ? colors.online : colors.textSecondary, fontWeight: '700' }]}>{online ? 'ONLINE' : 'CONTACT'}</Text></View></View>} />
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.xl }}>
       <GlassCard style={{ borderRadius: 30, overflow: 'hidden' }} contentStyle={{ padding: 0 }} intensity={48} tintAlpha={0.56}>
         <View style={[styles.heroBackdrop, { backgroundColor: hexToRgba(mood.signal, 0.13) }]}>
@@ -137,7 +216,7 @@ export default function PeerProfileScreen({ route, navigation }) {
             accessibilityHint={avatarUrl ? 'Opens the profile photo viewer' : undefined}
             style={[styles.avatarHalo, { borderColor: hexToRgba(mood.signal, 0.54), backgroundColor: hexToRgba(colors.surface, 0.7) }]}
           >
-            <Avatar name={name} color={participant.avatarColor} imageUrl={avatarUrl} size={104} />
+            <Avatar name={name} color={participant.avatarColor || sharedDetails.avatarColor || sharedDetails.avatar_color} imageUrl={avatarUrl} size={104} />
             <View style={[styles.presenceDot, { backgroundColor: online ? colors.online : colors.textSecondary, borderColor: colors.surface }]} />
           </TouchableOpacity>
           <Text numberOfLines={2} style={[typography.title, { color: colors.textPrimary, marginTop: spacing.md, textAlign: 'center', fontSize: 25, paddingHorizontal: spacing.md }]}>{name}</Text>
@@ -149,9 +228,19 @@ export default function PeerProfileScreen({ route, navigation }) {
           <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md, lineHeight: 23, paddingHorizontal: spacing.sm }]}>{about}</Text>
         </View>
         <View style={[styles.actionRow, { paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.lg }]}>
-          <QuickAction icon="chatbubble-ellipses" label="Message" primary onPress={() => navigation.goBack()} />
-          {conversation ? <QuickAction icon="images-outline" label="Shared media" onPress={() => navigation.navigate('SharedMedia', { conversation })} /> : null}
+          {fromLive ? (
+            <>
+              {!isCurrentUser ? <QuickAction icon={isFollowingCreator ? 'checkmark-circle' : 'person-add'} label={followBusy ? 'Updating follow…' : followCheckLoading ? 'Checking follow…' : isFollowingCreator ? 'Following' : 'Follow creator'} primary={!isFollowingCreator} disabled={followBusy || followCheckLoading} onPress={toggleLiveFollow} /> : null}
+              {currentLiveStreamId ? <QuickAction icon="radio" label={alreadyViewingLive ? 'Return to LIVE' : 'Watch LIVE'} primary onPress={() => alreadyViewingLive ? navigation.goBack() : navigation.navigate('LiveStream', { streamId: currentLiveStreamId, creatorMode: false, returnToCreatorProfile: true })} /> : null}
+            </>
+          ) : (
+            <>
+              <QuickAction icon="chatbubble-ellipses" label="Message" primary onPress={() => navigation.goBack()} />
+              {conversation ? <QuickAction icon="images-outline" label="Shared media" onPress={() => navigation.navigate('SharedMedia', { conversation })} /> : null}
+            </>
+          )}
         </View>
+        {fromLive && followError ? <Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger, marginHorizontal: spacing.md, marginBottom: spacing.md }]}>{followError}</Text> : null}
       </GlassCard>
 
       <LiveImpactCard impact={liveImpact} />

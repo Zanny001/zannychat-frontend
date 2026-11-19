@@ -39,7 +39,7 @@ test('replay library supports accessible filters, refresh, errors and empty stat
 });
 
 const liveHub = fs.readFileSync(new URL('./LiveHubScreen.js', import.meta.url), 'utf8');
-const creatorProfile = fs.readFileSync(new URL('./LiveCreatorProfileScreen.js', import.meta.url), 'utf8');
+const creatorStudio = fs.readFileSync(new URL('./LiveCreatorStudioScreen.js', import.meta.url), 'utf8');
 
 test('LIVE Hub replay deletion verifies ownership, active identity and pending status', () => {
   assert.ok(liveHub.includes('item.creatorId !== expectedUserId'));
@@ -49,10 +49,10 @@ test('LIVE Hub replay deletion verifies ownership, active identity and pending s
   assert.ok(liveHub.includes("['starting', 'recording', 'processing'].includes(item.status)"));
 });
 
-test('creator profile replay deletion is owner-only in both UI and handler', () => {
-  assert.ok(creatorProfile.includes('getReplayCreatorId(item) !== expectedUserId'));
-  assert.ok(creatorProfile.includes('getReplayCreatorId(item) === activeUserIdRef.current'));
-  assert.ok(creatorProfile.includes('item?.creator_id || profile.id'));
-  assert.ok(creatorProfile.includes('beforeConfirmUser?.id !== expectedUserId'));
-  assert.ok(creatorProfile.includes('userAfterDelete?.id !== expectedUserId'));
+test('creator studio replay deletion is owner-only in both UI and handler', () => {
+  assert.ok(creatorStudio.includes('getReplayCreatorId(item) !== expectedUserId'));
+  assert.ok(creatorStudio.includes('getReplayCreatorId(item) === activeUserIdRef.current'));
+  assert.ok(creatorStudio.includes('item?.creator_id || profile.id'));
+  assert.ok(creatorStudio.includes('beforeConfirmUser?.id !== expectedUserId'));
+  assert.ok(creatorStudio.includes('userAfterDelete?.id !== expectedUserId'));
 });

@@ -294,10 +294,14 @@ export default function LiveHubScreen({ navigation, route }) {
 
   const joinLive = async (stream) => {
     if (!stream?.id) return;
-    // Pass only the stable stream ID. LiveStreamScreen obtains a fresh,
-    // viewer-authorized LiveKit token after navigation; tokens and objects
-    // must never be serialized into browser URLs.
-    navigation.navigate('LiveStream', { streamId: stream.id, creatorMode: false });
+    // Pass a stable stream ID plus non-sensitive creator display hints only.
+    // LiveStreamScreen obtains a fresh viewer-authorized token after navigation.
+    navigation.navigate('LiveStream', {
+      streamId: stream.id,
+      creatorMode: false,
+      creatorName: stream.creator_name || stream.name || null,
+      creatorAvatarColor: stream.avatarColor || stream.avatar_color || null,
+    });
   };
 
   const toggleFollow = async (creatorId) => {
@@ -317,6 +321,22 @@ export default function LiveHubScreen({ navigation, route }) {
     } finally {
       setBusy(false);
     }
+  };
+
+  const openCreatorProfile = (creator, currentLiveStreamId = null, isCurrentUser = false) => {
+    const creatorId = creator?.creator_id || creator?.id;
+    if (!creatorId) return;
+    navigation.navigate('LiveCreatorProfile', {
+      participant: {
+        id: creatorId,
+        name: creator?.name || creator?.creator_name || 'ZannyChat creator',
+        avatarColor: creator?.avatarColor || creator?.avatar_color,
+      },
+      fromLive: true,
+      currentLiveStreamId,
+      isFollowing: followingIds.includes(creatorId),
+      isCurrentUser: Boolean(isCurrentUser || creatorId === currentUserId),
+    });
   };
 
   const acceptInvitation = (item) => joinLive(item.stream);
@@ -376,7 +396,7 @@ export default function LiveHubScreen({ navigation, route }) {
                   <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.8 }]}>ZANNYCHAT</Text>
                   <Text style={[typography.small, { color: colors.textSecondary, fontWeight: '700', letterSpacing: 1.1 }]}>LIVE STAGE</Text>
                 </View>
-                <TouchableOpacity onPress={() => navigation.navigate('LiveCreatorProfile')} accessibilityRole="button" accessibilityLabel="Open LIVE creator profile" style={{ minHeight: 48, paddingHorizontal: 10, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <TouchableOpacity onPress={() => navigation.navigate('LiveCreatorStudio')} accessibilityRole="button" accessibilityLabel="Open LIVE Creator Studio" style={{ minHeight: 48, paddingHorizontal: 10, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <Ionicons name="person-circle-outline" size={19} color={colors.primary} />
                   <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: '800' }]}>Studio</Text>
                 </TouchableOpacity>
@@ -626,9 +646,14 @@ export default function LiveHubScreen({ navigation, route }) {
                   {followingCreators.map((creator) => (
                     <View key={creator.creator_id} style={{ minWidth: 150, padding: spacing.sm, borderRadius: radii.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
                       <Text numberOfLines={1} style={[typography.small, { color: colors.textPrimary, fontWeight: '800' }]}>{creator.name}</Text>
-                      <TouchableOpacity disabled={busy} onPress={() => toggleFollow(creator.creator_id)} accessibilityRole="button" accessibilityLabel={`Unfollow ${creator.name}`} accessibilityState={{ disabled: busy, busy }} style={{ marginTop: spacing.xs }}>
-                        <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>Unfollow</Text>
-                      </TouchableOpacity>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.xs }}>
+                        <TouchableOpacity onPress={() => openCreatorProfile(creator)} accessibilityRole="button" accessibilityLabel={`Open LIVE profile for ${creator.name}`} style={{ minHeight: 38, justifyContent: 'center' }}>
+                          <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>View profile</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity disabled={busy} onPress={() => toggleFollow(creator.creator_id)} accessibilityRole="button" accessibilityLabel={`Unfollow ${creator.name}`} accessibilityState={{ disabled: busy, busy }} style={{ minHeight: 38, justifyContent: 'center' }}>
+                          <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800' }]}>Unfollow</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   ))}
                 </ScrollView>
@@ -688,8 +713,11 @@ export default function LiveHubScreen({ navigation, route }) {
               {!!item.description && <Text numberOfLines={2} style={[typography.caption, { color: colors.textSecondary, lineHeight: 19 }]}>{item.description}</Text>}
             </TouchableOpacity>
             {item.creator_id && !item.is_creator ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm }}>
-                <Text style={[typography.caption, { color: colors.textSecondary }]}>Be part of the conversation</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm }}>
+                <TouchableOpacity onPress={() => openCreatorProfile(item, item.id, item.is_creator)} accessibilityRole="button" accessibilityLabel={`View ${item.creator_name || 'LIVE creator'} profile`} style={{ minHeight: 40, paddingHorizontal: spacing.sm, borderRadius: 13, borderWidth: 1, borderColor: colors.border, justifyContent: 'center' }}>
+                  <Text style={[typography.caption, { color: colors.primary, fontWeight: '900' }]}>Profile</Text>
+                </TouchableOpacity>
+                <View style={{ flex: 1 }} />
                 <TouchableOpacity disabled={busy} onPress={() => toggleFollow(item.creator_id)} accessibilityRole="button" accessibilityLabel={followingIds.includes(item.creator_id) ? `Unfollow ${item.creator_name || item.title || 'LIVE creator'}` : `Follow ${item.creator_name || item.title || 'LIVE creator'}`} accessibilityState={{ disabled: busy, busy }} style={{ minHeight: 40, paddingHorizontal: spacing.md, borderRadius: 13, backgroundColor: followingIds.includes(item.creator_id) ? colors.surface : hexToRgba(colors.primary, 0.13), borderWidth: 1, borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <Ionicons name={followingIds.includes(item.creator_id) ? 'checkmark' : 'add'} size={15} color={colors.primary} />
                   <Text style={[typography.caption, { color: colors.primary, fontWeight: '900' }]}>{followingIds.includes(item.creator_id) ? 'Following' : 'Follow creator'}</Text>

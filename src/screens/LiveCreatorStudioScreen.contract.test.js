@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const source = fs.readFileSync(new URL('./LiveCreatorProfileScreen.js', import.meta.url), 'utf8');
+const source = fs.readFileSync(new URL('./LiveCreatorStudioScreen.js', import.meta.url), 'utf8');
 
 test('creator replay collection only opens replays that are ready', () => {
   assert.match(source, /disabled=\{item\.status !== 'ready'\}/);
@@ -12,7 +12,7 @@ test('creator replay collection only opens replays that are ready', () => {
 });
 
 
-test('creator profile clears account-owned studio data and invalidates requests on auth change', () => {
+test('creator studio clears account-owned studio data and invalidates requests on auth change', () => {
   assert.ok(source.includes("import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient'"));
   assert.ok(source.includes('const activeUserIdRef = useRef(null)'));
   assert.ok(source.includes('const refreshRequestRef = useRef(0)'));
@@ -32,4 +32,10 @@ test('creator profile clears account-owned studio data and invalidates requests 
 test('creator broadcast and replay deletions cannot mutate another account\'s refreshed studio state', () => {
   assert.equal((source.match(/const expectedUserId = activeUserIdRef.current/g) || []).length, 2);
   assert.equal((source.match(/latestUser\?\.id !== expectedUserId/g) || []).length, 3);
+});
+
+test('owner dashboard is consistently presented as Creator Studio', () => {
+  assert.ok(source.includes('CREATOR STUDIO'));
+  assert.ok(source.includes('Your LIVE Creator Studio is temporarily unavailable.'));
+  assert.ok(source.includes('Refresh Creator Studio'));
 });

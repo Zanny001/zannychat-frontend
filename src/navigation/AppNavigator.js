@@ -55,7 +55,7 @@ import LiveHubScreen from '../screens/LiveHubScreen';
 import LivePreflightScreen from '../screens/LivePreflightScreen';
 import LiveStreamScreen from '../screens/LiveStreamScreen';
 import LiveReplayScreen from '../screens/LiveReplayScreen';
-import LiveCreatorProfileScreen from '../screens/LiveCreatorProfileScreen';
+import LiveCreatorStudioScreen from '../screens/LiveCreatorStudioScreen';
 import LiveReplayLibraryScreen from '../screens/LiveReplayLibraryScreen';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { getCallParticipantName, getCallSessionById, subscribeToIncomingCalls, updateCallStatus } from '../services/calls';
@@ -463,7 +463,8 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
           <RootStack.Screen name="LivePreflight" component={LivePreflightScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           <RootStack.Screen name="LiveStream" component={LiveStreamScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
           <RootStack.Screen name="LiveReplay" component={LiveReplayScreen} options={{ animation: 'fade' }} />
-          <RootStack.Screen name="LiveCreatorProfile" component={LiveCreatorProfileScreen} options={{ animation: 'fade' }} />
+          <RootStack.Screen name="LiveCreatorStudio" component={LiveCreatorStudioScreen} options={{ animation: 'fade' }} />
+          <RootStack.Screen name="LiveCreatorProfile" component={PeerProfileScreen} options={{ animation: 'fade' }} />
           <RootStack.Screen name="LiveReplayLibrary" component={LiveReplayLibraryScreen} options={{ animation: 'fade' }} />
           <RootStack.Screen name="PeerProfile" component={PeerProfileScreen} />
           <RootStack.Screen name="NewChat" component={NewChatScreen} options={{ presentation: 'modal' }} />

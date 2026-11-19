@@ -6,7 +6,8 @@ const native = fs.readFileSync(new URL('./CallScreen.js', import.meta.url), 'utf
 const web = fs.readFileSync(new URL('./CallScreen.web.js', import.meta.url), 'utf8');
 const nativeGroup = fs.readFileSync(new URL('./GroupCallScreen.js', import.meta.url), 'utf8');
 const webGroup = fs.readFileSync(new URL('./GroupCallScreen.web.js', import.meta.url), 'utf8');
-const creatorProfile = fs.readFileSync(new URL('./LiveCreatorProfileScreen.js', import.meta.url), 'utf8');
+const creatorStudio = fs.readFileSync(new URL('./LiveCreatorStudioScreen.js', import.meta.url), 'utf8');
+const creatorProfile = fs.readFileSync(new URL('./PeerProfileScreen.js', import.meta.url), 'utf8');
 const navigator = fs.readFileSync(new URL('../navigation/AppNavigator.js', import.meta.url), 'utf8');
 const hub = fs.readFileSync(new URL('./LiveHubScreen.js', import.meta.url), 'utf8');
 
@@ -55,12 +56,13 @@ test('native and web group calls expose camera controls during audio calls', () 
   assert.match(webGroup, /setCameraEnabled\(!next\)/);
 });
 
-test('LIVE creator profile is a separate authenticated dashboard, not the main profile screen', () => {
-  assert.match(creatorProfile, /\/live\/creators\/me\/profile/);
-  assert.match(creatorProfile, /Creator profile/);
-  assert.match(creatorProfile, /Creator impact/);
-  assert.match(creatorProfile, /Replay collection/);
-  assert.match(navigator, /name="LiveCreatorProfile" component=\{LiveCreatorProfileScreen\}/);
-  assert.match(hub, /navigation\.navigate\('LiveCreatorProfile'\)/);
-  assert.doesNotMatch(creatorProfile, /import\s+ProfileScreen/);
+test('LIVE Creator Studio is separate from the public Creator Profile route', () => {
+  assert.match(creatorStudio, /\/live\/creators\/me\/profile/);
+  assert.match(creatorStudio, /Creator Studio/);
+  assert.match(creatorStudio, /Creator impact/);
+  assert.match(creatorStudio, /Replay collection/);
+  assert.match(navigator, /name="LiveCreatorStudio" component=\{LiveCreatorStudioScreen\}/);
+  assert.match(navigator, /name="LiveCreatorProfile" component=\{PeerProfileScreen\}/);
+  assert.match(hub, /navigation\.navigate\('LiveCreatorStudio'\)/);
+  assert.doesNotMatch(creatorProfile, /\/live\/creators\/me\/profile/);
 });
