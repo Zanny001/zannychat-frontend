@@ -469,15 +469,23 @@ export default function LiveStreamScreen({ route, navigation }) {
     };
   }, [stream?.id, status, connection?.token]);
 
+  const returnFromLive = useCallback(() => {
+    if (route.params?.returnToCreatorProfile && navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    // replace also handles direct/deep-linked LIVE entry with no prior route.
+    navigation.replace('LiveHub');
+  }, [navigation, route.params?.returnToCreatorProfile]);
+
   const exitEndedStream = useCallback(() => {
     if (endedRef.current) return;
     endedRef.current = true;
     roomRef.current?.disconnect();
     setBusy(false);
     setStatus('LIVE ended');
-    // replace, rather than goBack, also handles direct/deep-linked LIVE entry.
-    navigation.replace('LiveHub');
-  }, [navigation]);
+    returnFromLive();
+  }, [returnFromLive]);
 
   const refreshComments = useCallback(async () => {
     if (!stream?.id || !isDocumentVisible() || commentsRefreshInFlight.current) return;
@@ -580,7 +588,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       await backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' });
       roomRef.current?.disconnect();
       setBusy(false);
-      navigation.replace('LiveHub');
+      returnFromLive();
     } catch (err) {
       endedRef.current = false;
       setBusy(false);
@@ -898,6 +906,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       <Action colors={colors} label={commentsVisible ? 'Hide comments' : 'Show comments'} onPress={() => { setCommentsVisible((value) => !value); setShowOverlayMenu(false); }} />
       {publisherMode && experienceMode !== 'audio_room' && <Action colors={colors} label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={() => { toggleCamera(); setShowOverlayMenu(false); }} />}
       {publisherMode && <Action colors={colors} label={mic ? 'Mute microphone' : 'Unmute microphone'} onPress={() => { toggleMic(); setShowOverlayMenu(false); }} />}
+      {!creatorMode && <Action colors={colors} label="Creator profile" accessibilityLabel="Open LIVE creator profile" onPress={() => { navigation.navigate('LiveCreatorProfile', { participant: { id: stream.creator_id, name: route.params?.creatorName || stream.creator_name || 'LIVE Creator', avatarColor: route.params?.creatorAvatarColor || stream.creator_avatar_color }, fromLive: true, currentLiveStreamId: null, isCurrentUser: false }); setShowOverlayMenu(false); }} />}
       {creatorMode && stream.allow_guests && <Action colors={colors} label="Creator Studio" onPress={() => { loadParticipants(); setShowOverlayMenu(false); }} />}
       {creatorMode && stream.allow_guests && <Action colors={colors} label={`Guest requests (${guestRequests.length})`} onPress={() => { setPanel(panel === 'guestRequests' ? '' : 'guestRequests'); setShowOverlayMenu(false); }} />}
       {creatorMode && replayEnabled && <Action colors={colors} label={replayBusy ? 'Updating replay…' : replay?.status === 'ready' ? 'Watch saved LIVE replay' : replay?.status === 'recording' ? 'Stop replay' : replay?.status === 'processing' || replay?.status === 'starting' ? 'Preparing replay…' : 'Start replay'} disabled={replayBusy || ['starting', 'processing'].includes(replay?.status)} onPress={() => { replay?.status === 'ready' ? viewReplay() : replay?.status === 'recording' ? stopReplay() : confirmStartReplay(); setShowOverlayMenu(false); }} />}
