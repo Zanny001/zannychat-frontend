@@ -40,7 +40,7 @@ export default function useMessageOutbox({
 
   useEffect(() => {
     let active = true;
-    const generation = retryGenerationRef.current;
+    const generation = ++retryGenerationRef.current;
     if (!myUserId) {
       setPendingOutbox([]);
       return () => { active = false; };
@@ -56,7 +56,10 @@ export default function useMessageOutbox({
           setPendingOutbox([]);
         }
       });
-    return () => { active = false; };
+    return () => {
+      active = false;
+      if (generation === retryGenerationRef.current) retryGenerationRef.current += 1;
+    };
   }, [myUserId, conversationId, isOwnerCurrent]);
 
   const queuePendingMessage = useCallback(async (message) => {
