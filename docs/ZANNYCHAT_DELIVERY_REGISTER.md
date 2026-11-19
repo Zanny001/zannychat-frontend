@@ -497,12 +497,30 @@ This confirms the catalog-level grant/search-path posture recorded in the earlie
 **Next Chat work:** isolate text outbox and attachment outbox separately, then complete Chat visual/keyboard/accessibility acceptance before moving to the next screen family.
 
 
-## 19. Message outbox hook PR — 2026-11-19
+## 19. Message outbox hook merged — 2026-11-19
 
-- PR #186 is open: `refactor(chat): extract account-scoped message outbox`.
-- It moves pending text-message state, persistence, backoff, foreground retry scheduling and manual retry into `src/hooks/useMessageOutbox.js`.
+- PR #186 merged as `a2f298b92b38c4c27a1ff058b5f6a4fa8cf4d23b`.
+- Pending text-message state, persistence, backoff, foreground retry scheduling and manual retry now live in `src/hooks/useMessageOutbox.js`.
 - It preserves the 50-message queue cap, request-ID idempotency, bounded oldest-first automatic batches, permanent/transient error distinction and authenticated-owner checks. Generation guards invalidate stale work on account/conversation changes.
 - Manual retry now calls the outbox retry path directly instead of reusing `handleSend`, avoiding accidental interaction with composer edit state.
-- Text and attachment retry locks are separated so a slow media retry does not block text recovery. Attachment outbox remains in ChatScreen for a later independent extraction.
-- PR #186 frontend-quality and Advanced Calling CI are pending at this checkpoint. Vercel preview is rate-limited; Netlify preview is pending. Do not merge until required workflows pass.
-- Current production main is `1060ca0e8eae49dab427420c7200d526a1fde710`; PR #186 is not deployed.
+- Text and attachment retry locks are separate so a slow media retry does not block text recovery. Attachment outbox remains in ChatScreen for a later independent extraction.
+- Frontend quality passed with **954/954 unit tests**, 0 failures; call-recovery, native call-receiver, release, contract and integrity audits passed. Advanced Calling web/Android/iOS bundle exposure, Android Kotlin compilation, iOS prebuild and client-quality checks all passed. Netlify preview succeeded.
+- Vercel preview/production is blocked by the current team build-rate limit. Latest production alias still serves commit `1060ca0e8eae49dab427420c7200d526a1fde710`; the outbox merge `a2f298b` is **not yet deployed**. Do not claim it is live.
+- Source complexity after the two Chat hooks: `ChatScreen.js` reduced from **100,812 bytes / 80 hook calls** to **85,287 bytes / 48 hook calls**; `useChatTimeline.js` is 10,491 bytes and `useMessageOutbox.js` is 7,501 bytes.
+
+**Next Chat work:** extract the attachment outbox/recovery lifecycle without weakening its preserved-file, retry and duplicate-prevention guarantees; then complete Chat visual, keyboard, accessibility and two-account acceptance before moving to the next screen family.
+
+
+## 20. Current session resume checkpoint
+
+**Next immediate action:** inspect Vercel build-rate-limit recovery for main `a2f298b`; once production build capacity is available, verify `https://zannychat.vercel.app` is serving that exact SHA. Then continue the attachment-outbox extraction from current main.
+
+**Pending acceptance that must not be forgotten:**
+- Chat: attachment retry/outbox extraction; composer/media extraction; visual checks at 320/360/390/430px; keyboard/safe-area; accessibility/focus; two-account send/read/edit/delete/reaction/media tests.
+- LIVE: authenticated replay playback, signed-link expiry and unauthorized-viewer denial (one READY production replay record and matching private MP4 object already exist).
+- Status: backend cursor pagination and privacy-picker/private-reply virtualization.
+- Whole app: finish all 48 navigation experiences and the separate 18-screen LIVE design checklist; physical-device/native acceptance remains distinct from source/CI success.
+- Security: CSP origin inventory and least-privilege policy; preserve current RLS, private media and SECURITY DEFINER posture.
+- Database: no migration is currently requested by this Chat interface pass. Do not rerun the two LIVE migrations already applied on 2026-11-19.
+
+This is the handoff point for the next session. Read this register and the Master Blueprint before making further changes.
