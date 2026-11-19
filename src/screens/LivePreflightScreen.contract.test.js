@@ -44,7 +44,7 @@ test('audio-only LIVE requires microphone access but does not require camera acc
 
 test('pre-flight camera preview is scoped to the focused screen and has accessible controls', () => {
   assert.ok(preflight.includes('const isFocused = useIsFocused()'));
-  assert.ok(preflight.includes('needsCamera && cameraPermission?.granted && isFocused'));
+  assert.ok(preflight.includes('needsCamera && activeCameraPermission?.granted && isFocused'));
   assert.ok(preflight.includes('<CameraView'));
   assert.ok(preflight.includes('accessibilityLabel="Switch camera"'));
   assert.ok(preflight.includes('accessibilityLabel="Allow camera and microphone permissions"'));
