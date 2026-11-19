@@ -5,6 +5,7 @@ import fs from 'node:fs';
 const hub = fs.readFileSync(new URL('./LiveHubScreen.js', import.meta.url), 'utf8');
 const preflight = fs.readFileSync(new URL('./LivePreflightScreen.js', import.meta.url), 'utf8');
 const navigator = fs.readFileSync(new URL('../navigation/AppNavigator.js', import.meta.url), 'utf8');
+const appConfig = JSON.parse(fs.readFileSync(new URL('../../app.json', import.meta.url), 'utf8'));
 
 test('LIVE Hub sends creator setup to the dedicated pre-flight route', () => {
   const start = hub.indexOf('const startLive = () => {');
@@ -50,4 +51,22 @@ test('pre-flight is registered as a modal route without changing primary navigat
   assert.ok(navigator.includes("import LivePreflightScreen from '../screens/LivePreflightScreen'"));
   assert.ok(navigator.includes('name="LivePreflight" component={LivePreflightScreen}'));
   assert.ok(navigator.includes('name="LIVE" component={LiveHubScreen}'));
+});
+
+test('native permission prompts explicitly cover LIVE camera and microphone use', () => {
+  const expo = appConfig.expo;
+  assert.ok(expo.ios.infoPlist.NSCameraUsageDescription.includes('LIVE'));
+  assert.ok(expo.ios.infoPlist.NSMicrophoneUsageDescription.includes('LIVE'));
+  const plugins = expo.plugins.filter(Array.isArray);
+  const camera = plugins.find(([name]) => name === 'expo-camera')?.[1];
+  const picker = plugins.find(([name]) => name === 'expo-image-picker')?.[1];
+  const audio = plugins.find(([name]) => name === 'expo-audio')?.[1];
+  const rtc = plugins.find(([name]) => name === '@config-plugins/react-native-webrtc')?.[1];
+  assert.ok(camera?.cameraPermission.includes('LIVE'));
+  assert.ok(camera?.microphonePermission.includes('LIVE'));
+  assert.ok(picker?.cameraPermission.includes('LIVE'));
+  assert.ok(audio?.microphonePermission.includes('LIVE'));
+  assert.ok(rtc?.cameraPermission.includes('LIVE'));
+  assert.ok(rtc?.microphonePermission.includes('LIVE'));
+  assert.equal(camera?.recordAudioAndroid, true);
 });
