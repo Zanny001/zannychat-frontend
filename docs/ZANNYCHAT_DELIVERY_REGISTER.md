@@ -368,3 +368,36 @@ This matrix follows the current navigator's 48 unique experiences (the `Main` ro
 | 48 | Status Updates dedicated route | Dedicated StatusUpdates route shares the Updates implementation; #181 is current virtualization PR | Complete #181 CI, backend pagination, privacy picker/private reply list, keyboard and device tests |
 
 **Important separation:** The 18-screen LIVE Design Audit is an additional nested experience/capability checklist and must be completed in addition to this 48-route matrix. See the LIVE-01 requirement and the Master Blueprint's LIVE section.
+
+
+## 13. Merged implementation checkpoint — 2026-11-19 12:02 UTC
+
+### Canonical documentation
+- PR #177 merged as `ee4140badbe2b12a8b8f73e65ed586af063de847`.
+- The two canonical documents now exist on frontend main:
+  - `docs/ZANNYCHAT_MASTER_BLUEPRINT.md`
+  - `docs/ZANNYCHAT_DELIVERY_REGISTER.md`
+- PR #149 was closed without merge because its historical audit evidence was reconciled into the canonical documents; the old historical audit files were not merged as competing master registers.
+
+### Interface/performance work merged
+| PR | Merge commit | Result |
+|---|---|---|
+| #178 | `4ffe7df7aefac900d9517c46db7f0602a8c562d8` | Bounded inbox render window |
+| #179 | `73d46f840ac2559c232b07332d8b08b907eae7f0` | Bounded New Chat contact directory |
+| #180 | `b6a51f36ab8981071efddb9cd0405c4c0299a118` | Bounded Saved/Drafts/Pinned/Forward/Folders; Drafts lookup cap and ID map |
+| #181 | `e1214f85b3bce25068d4c2ac187fd58483a4e8e8` | Virtualized Stories feed and Friends rail; explicit FlatList import |
+
+The old PRs #151, #159, #160 and #161 were closed only after the above replacements were created from current main and merged. No user-facing features were removed.
+
+### Production rollout status
+- Vercel production deployment for latest frontend main commit `e1214f85b3bce25068d4c2ac187fd58483a4e8e8` is **QUEUED** at this checkpoint (deployment `dpl_59wCUkd3jSsUWbkxydsEAQYRXrvZ`). Do not claim it is live until the deployment reaches READY and the production alias is confirmed.
+- The latest earlier frontend production deployment at `b6a51f36ab8981071efddb9cd0405c4c0299a118` is READY.
+- Backend Render remains live at `14860064a87c7637fc4f15dc6d75f4084b6f696a`; no backend source or database change was made in this interface pass.
+- Supabase schema remains untouched; the 106-migration / 64-table snapshot remains the latest read-only audit.
+
+### Next execution focus
+1. Confirm Vercel production deploy for `e1214f85` reaches READY and serves the latest main commit.
+2. Pull the merged frontend main locally and run the established local release/unit/web/Android checks; do not deploy manually before exact SHA verification.
+3. Continue the sequential visual/interaction review at **Chat** (the message conversation screen): message hierarchy, replies, edits/deletes, reactions, media/voice, composer/attachment sheet, keyboard, long-history scrolling, loading/empty/error/offline states and accessibility.
+4. Finish Stories server pagination and virtualize the status privacy picker/private-reply collection without weakening audience enforcement.
+5. Continue the remaining screen sequence from the Master Blueprint; no screen is skipped and no source review is called visual acceptance.
