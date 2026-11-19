@@ -88,6 +88,9 @@ export default function ChatFoldersScreen({ navigation }) {
         keyExtractor={(folder) => String(folder.id)}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={7}
         contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, flexGrow: 1 }}
         ListHeaderComponent={
           <View>

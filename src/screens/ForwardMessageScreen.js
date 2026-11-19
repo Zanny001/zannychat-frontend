@@ -62,6 +62,11 @@ export default function ForwardMessageScreen({ navigation, route }) {
         <FlatList
           data={conversations}
           keyExtractor={(item) => item.id}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={7}
           contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.lg, flexGrow: 1 }}
           ListEmptyComponent={<Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl }]}>No other chats available to forward to.</Text>}
           renderItem={({ item }) => (
