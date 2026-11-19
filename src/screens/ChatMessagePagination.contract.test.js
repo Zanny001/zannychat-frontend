@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 
 const api = readFileSync(new URL('../services/api.js', import.meta.url), 'utf8');
 const screen = readFileSync(new URL('./ChatScreen.js', import.meta.url), 'utf8');
+const timeline = readFileSync(new URL('../hooks/useChatTimeline.js', import.meta.url), 'utf8');
 
 test('message history uses stable created_at and ID ordering for cursor pagination', () => {
   const start = api.indexOf('export async function fetchMessages(');
@@ -18,8 +19,8 @@ test('message history uses stable created_at and ID ordering for cursor paginati
 });
 
 test('chat history passes the oldest message ID and exact timestamp to the next page', () => {
-  assert.ok(screen.includes('const oldest = messages[0]'));
-  assert.ok(screen.includes('before: { id: oldest?.id, created_at: oldest?.createdAtRaw }'));
+  assert.ok(timeline.includes('const oldest = messages[0]'));
+  assert.ok(timeline.includes('before: { id: oldest?.id, created_at: oldest?.createdAtRaw }'));
 });
 
 test('chat FlatList has a bounded render window and preserves the visible row when older messages prepend', () => {
