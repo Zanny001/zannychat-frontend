@@ -29,6 +29,8 @@ test('outbox rejects stale account work and clears on account change', () => {
   assert.match(hook, /isOwnerCurrent\(expectedUserId\)/);
   assert.match(hook, /error\?\.code === 'AUTH_USER_CHANGED'/);
   assert.match(hook, /const resetOutbox = useCallback/);
+  assert.match(hook, /const generation = \+\+retryGenerationRef\.current/);
+  assert.match(hook, /if \(generation === retryGenerationRef\.current\) retryGenerationRef\.current \+= 1/);
   assert.match(screen, /resetOutbox\(\)/);
 });
 
