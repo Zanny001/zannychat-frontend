@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const screen = fs.readFileSync(new URL('./LiveStreamScreen.js', import.meta.url), 'utf8');
+const webScreen = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
 
 test('LIVE creator and approved guest publishing roles receive media publishing controls', () => {
   assert.ok(screen.includes('connection?.canModerate'));
@@ -286,7 +287,7 @@ test('LIVE end and leave failures do not silently navigate away from an active r
   assert.ok(leave.includes('catch (error)'));
   assert.ok(leave.includes('endedRef.current = false;'));
   assert.ok(leave.includes("creatorMode ? 'Could not end LIVE' : 'Could not leave LIVE'"));
-  assert.ok(leave.includes("navigation.replace('LiveHub')"));
+  assert.ok(leave.includes('returnFromLive();'));
   const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   const webLeaveStart = web.indexOf('  const leave = async () => {');
   const webLeaveEnd = web.indexOf('\n  const toggleCamera', webLeaveStart);
@@ -294,7 +295,7 @@ test('LIVE end and leave failures do not silently navigate away from an active r
   assert.ok(webLeave.includes('endedRef.current = false;'));
   assert.ok(webLeave.includes('catch (err)'));
   assert.ok(webLeave.includes("roomRef.current?.disconnect()")); 
-  assert.ok(webLeave.includes("navigation.replace('LiveHub')"));
+  assert.ok(webLeave.includes('returnFromLive();'));
 });
 
 
@@ -474,9 +475,12 @@ test('native and web LIVE rooms disconnect and clear account-owned state on auth
 });
 
 
-test('native LIVE automatically exits when the server confirms the stream has ended', () => {
+test('native LIVE automatically exits to the correct source when the server confirms the stream has ended', () => {
   assert.ok(screen.includes("['LIVE stream has ended', 'LIVE stream not found'].includes(e?.message)"));
   assert.ok(screen.includes("navigation.replace('LiveHub')"));
+  assert.ok(screen.includes('route.params?.returnToCreatorProfile && navigation.canGoBack()'));
+  assert.ok(screen.includes('navigation.goBack()'));
+  assert.ok(screen.includes('returnFromLive();'));
   assert.ok(screen.includes('setConnection(null)'));
 });
 
@@ -488,4 +492,12 @@ test('LIVE viewers can open the public creator profile from the stage controls',
   assert.ok(screen.includes('route.params?.creatorName || stream.creator_name || \'LIVE Creator\''));
   assert.ok(screen.includes('avatarColor: route.params?.creatorAvatarColor || stream.creator_avatar_color'));
   assert.ok(screen.includes('onOpenCreatorProfile={openCreatorProfile}'));
+});
+
+test('web LIVE stage exposes creator profile and returns to the profile after Watch LIVE', () => {
+  assert.ok(webScreen.includes('accessibilityLabel="Open LIVE creator profile"'));
+  assert.ok(webScreen.includes("navigation.navigate('LiveCreatorProfile'"));
+  assert.ok(webScreen.includes('route.params?.creatorName || stream.creator_name'));
+  assert.ok(webScreen.includes('route.params?.returnToCreatorProfile && navigation.canGoBack()'));
+  assert.ok(webScreen.includes('returnFromLive();'));
 });
