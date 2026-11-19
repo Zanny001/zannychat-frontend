@@ -197,7 +197,7 @@ Capabilities include discovery/categories, public/follower/private visibility, s
 
 Preserve the established LiveKit integration, five-guest limit, guest permissions, moderator controls, comment/reaction behaviour, invitations, APIs, account isolation and replay access restrictions. The LIVE concept prototype is not production-connected proof. Replay source code, production replay rows, storage objects and successful playback are separate acceptance facts.
 
-**Safety gates:** random video matching cannot ship without age assurance, explicit consent, blur-by-default, immediate report/block and evidence handling. Minors' safety is a release blocker. Wallet/gifting/payout flows require clear unit conversion, fees, payout rules, fraud controls and legal/payment review.
+**Safety gates:** random video matching cannot ship without age assurance, explicit consent, blur-by-default, immediate report/block and evidence handling. Minors' safety is a release blocker. Wallet/gifting/payout flows require clear unit conversion, fees, payout rules, fraud controls and legal/payment review. Do not reintroduce the removed general in-chat wallet/ledger preview; any approved LIVE gifting wallet is a separate, explicitly scoped LIVE commerce domain with its own controls.
 
 ### 5.8 Advanced messaging/platform features
 - Polls/quizzes, events, live location, view-once/self-destruct media, transcripts, silent/scheduled messages and rich formatting.
