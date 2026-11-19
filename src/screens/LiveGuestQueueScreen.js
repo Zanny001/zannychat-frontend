@@ -26,6 +26,7 @@ export default function LiveGuestQueueScreen({ route, navigation }) {
   const [error, setError] = useState('');
   const requestGeneration = useRef(0);
   const actionLock = useRef(false);
+  const actionGeneration = useRef(0);
 
   const refresh = useCallback(async (pull = false) => {
     const generation = ++requestGeneration.current;
@@ -73,6 +74,7 @@ export default function LiveGuestQueueScreen({ route, navigation }) {
       setRequests([]);
       setParticipants([]);
       setBusyUserId(null);
+      actionGeneration.current += 1;
       actionLock.current = false;
       Promise.resolve().then(() => refresh());
     });
@@ -84,6 +86,7 @@ export default function LiveGuestQueueScreen({ route, navigation }) {
 
   const decide = async (userId, status) => {
     if (!streamId || !userId || actionLock.current || (status === 'accepted' && guestSlots <= 0)) return;
+    const actionId = ++actionGeneration.current;
     actionLock.current = true;
     setBusyUserId(userId);
     try {
@@ -91,14 +94,17 @@ export default function LiveGuestQueueScreen({ route, navigation }) {
         method: 'PATCH',
         body: JSON.stringify({ status }),
       });
+      if (actionId !== actionGeneration.current) return;
       setRequests((current) => current.filter((item) => item.user_id !== userId));
       await refresh(true);
     } catch (e) {
       showAppAlert(status === 'accepted' ? 'Could not approve guest' : 'Could not decline request', e?.message || 'Refresh the queue and try again.');
       await refresh(true);
     } finally {
-      actionLock.current = false;
-      setBusyUserId(null);
+      if (actionId === actionGeneration.current) {
+        actionLock.current = false;
+        setBusyUserId(null);
+      }
     }
   };
 
