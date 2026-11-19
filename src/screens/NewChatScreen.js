@@ -444,6 +444,10 @@ export default function NewChatScreen({ navigation, route }) {
         </View>
       ) : (
         <FlatList keyboardShouldPersistTaps="handled"
+          initialNumToRender={12}
+          maxToRenderPerBatch={12}
+          updateCellsBatchingPeriod={50}
+          windowSize={7}
           data={visibleContacts}
           keyExtractor={(item, index) =>
             item?.id ? String(item.id) : `contact-${index}`

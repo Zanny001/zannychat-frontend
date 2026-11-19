@@ -57,3 +57,12 @@ test('New Chat favorite writes stay bound to the account whose directory is visi
   assert.ok(screen.includes('const expectedStorageKey = favoriteStorageKey'));
   assert.ok(screen.includes('activeUserIdRef.current !== expectedUserId'));
 });
+
+
+test('New Chat contact directory uses a bounded virtualized render window', () => {
+  assert.match(screen, /<FlatList[^>]*keyboardShouldPersistTaps="handled"/);
+  assert.match(screen, /initialNumToRender=\{12\}/);
+  assert.match(screen, /maxToRenderPerBatch=\{12\}/);
+  assert.match(screen, /updateCellsBatchingPeriod=\{50\}/);
+  assert.match(screen, /windowSize=\{7\}/);
+});
