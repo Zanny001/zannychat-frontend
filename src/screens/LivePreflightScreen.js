@@ -47,12 +47,13 @@ export default function LivePreflightScreen({ route, navigation }) {
   const { colors, spacing, typography, resolvedMode } = useTheme();
   const isFocused = useIsFocused();
   const params = route?.params || {};
-  const title = String(params.title || '').trim();
-  const description = String(params.description || '').trim();
+  const title = String(params.title || '').trim().slice(0, 80);
+  const description = String(params.description || '').trim().slice(0, 500);
   const visibility = ['public', 'followers', 'private'].includes(params.visibility) ? params.visibility : 'public';
   const experienceMode = Object.prototype.hasOwnProperty.call(MODE_LABELS, params.experienceMode)
     ? params.experienceMode : 'broadcast';
-  const category = String(params.category || 'social');
+  const category = ['entertainment', 'social', 'politics', 'science', 'education', 'finance', 'technology', 'sports', 'business', 'health', 'other'].includes(params.category)
+    ? params.category : 'social';
   const allowGuests = Boolean(params.allowGuests);
   const inviteeIds = Array.isArray(params.inviteeIds) ? [...new Set(params.inviteeIds.filter((id) => typeof id === 'string' && id))] : [];
   const needsCamera = experienceMode !== 'audio_room';
