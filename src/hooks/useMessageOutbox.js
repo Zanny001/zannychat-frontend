@@ -137,6 +137,7 @@ export default function useMessageOutbox({
   const retryPendingMessages = useCallback(async () => {
     if (retryInFlightRef.current) return;
     const generation = retryGenerationRef.current;
+    setSendError('');
     setRetryingOutbox(true);
     try {
       await retryQueuedTextMessages({ force: true });
