@@ -37,6 +37,7 @@ export default function LiveReportsScreen({ route, navigation }) {
   const [error, setError] = useState('');
   const requestGeneration = useRef(0);
   const actionLock = useRef(false);
+  const actionGeneration = useRef(0);
 
   const refresh = useCallback(async (pull = false) => {
     const generation = ++requestGeneration.current;
@@ -77,6 +78,7 @@ export default function LiveReportsScreen({ route, navigation }) {
       requestGeneration.current += 1;
       setReports([]);
       setBusyReportId(null);
+      actionGeneration.current += 1;
       actionLock.current = false;
       Promise.resolve().then(() => refresh());
     });
@@ -89,6 +91,7 @@ export default function LiveReportsScreen({ route, navigation }) {
 
   const review = async (reportId, status) => {
     if (!streamId || !reportId || actionLock.current) return;
+    const actionId = ++actionGeneration.current;
     actionLock.current = true;
     setBusyReportId(reportId);
     try {
@@ -96,13 +99,16 @@ export default function LiveReportsScreen({ route, navigation }) {
         method: 'PATCH',
         body: JSON.stringify({ status }),
       });
+      if (actionId !== actionGeneration.current) return;
       setReports((current) => current.map((item) => item.id === reportId ? { ...item, ...(result?.report || {}), status } : item));
     } catch (e) {
       showAppAlert('Could not update report', e?.message || 'Refresh the report queue and try again.');
       await refresh(true);
     } finally {
-      actionLock.current = false;
-      setBusyReportId(null);
+      if (actionId === actionGeneration.current) {
+        actionLock.current = false;
+        setBusyReportId(null);
+      }
     }
   };
 
