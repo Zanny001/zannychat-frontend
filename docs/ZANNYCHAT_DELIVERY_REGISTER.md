@@ -401,3 +401,35 @@ The old PRs #151, #159, #160 and #161 were closed only after the above replaceme
 3. Continue the sequential visual/interaction review at **Chat** (the message conversation screen): message hierarchy, replies, edits/deletes, reactions, media/voice, composer/attachment sheet, keyboard, long-history scrolling, loading/empty/error/offline states and accessibility.
 4. Finish Stories server pagination and virtualize the status privacy picker/private-reply collection without weakening audience enforcement.
 5. Continue the remaining screen sequence from the Master Blueprint; no screen is skipped and no source review is called visual acceptance.
+
+
+## 14. Screen-module complexity baseline — 2026-11-19
+
+Measured from current frontend main after the #181 merge. Byte size and hook/function counts are source complexity indicators, not proof of defects; use them to prioritize safe modularization.
+
+| Screen module | Source bytes | Hook calls | Named local functions | Service imports | Architecture action |
+|---|---:|---:|---:|---:|---|
+| ChatScreen | 100,812 | 80 | 42 | 11 | Highest-priority decomposition; separate message lifecycle, outboxes/media, header, message list and composer/overlays |
+| ChannelsScreen | 77,812 | 60 | 1 | 2 | Separate directory, feed, composer, comments/moderation and pagination state |
+| StatusUpdatesScreen | 75,427 | 63 | 3 | 3 | Separate feed, composer, audience/privacy sheet, expiry and playback |
+| LiveStreamScreen | 70,108 | 66 | 4 | 2 | Separate room/session state, media stage, participants/guest queue, chat/reactions, moderation and controls |
+| LiveHubScreen | 53,719 | 36 | 0 | 3 | Separate discovery data, creator dashboard and navigation/presentation |
+| CallScreen | 38,193 | 42 | 0 | 4 | Separate call lifecycle, media/device routing and presentation controls |
+| GroupCallScreen | 26,030 | 24 | 1 | 4 | Separate room/participant lifecycle from tile/control presentation |
+| PrivacySecurityScreen | 30,362 | 20 | 4 | 4 | Separate privacy checkup, account deletion/reauth and session controls |
+| ProfileScreen | 10,458 | 7 | 1 | 2 | Lower complexity; focus on visual/accessibility consistency and real data states |
+
+### Refactor rules
+- Do not rewrite a whole large screen in one pass. Extract one coherent responsibility at a time, preserving props, route contracts, data ownership and visible behaviour.
+- Start with pure helpers and typed contracts; then hooks that own one lifecycle; then presentational components with explicit props.
+- Keep screens as composition/orchestration layers. Avoid new global state or duplicate API clients.
+- Each extraction needs regression contracts for account switching, stale async requests, cleanup/unsubscribe, retries and error states where applicable.
+- Re-run the full `test:unit`, release/contract/readiness/integrity audits and relevant platform workflows.
+- The Chat screen is next in the sequential visual/interaction audit, but its architecture refactor must not obscure the UI/UX acceptance pass.
+
+### Chat screen inspection checkpoint
+- Current `ChatScreen.js` already uses a bounded FlatList (12 initial rows, 10 per batch, 50ms batching, window 9) and `maintainVisibleContentPosition`.
+- Message bubbles are capped at 76% width; media previews use a window-size-aware sizing helper.
+- Header controls have compact and ultra-compact breakpoints (<480px and <380px), preserving call/video access on narrow phones while hiding lower-priority controls.
+- Composer is a shared `InputBar` with reply/edit, draft persistence, attachment and voice-recording states. Do not replace these with static designs.
+- Next review should focus on screenshot/runtime behaviour at 320/360/390/430px, keyboard-open and safe-area layouts, long-history anchoring, accessibility/focus order, media retry and two-account message states before making visual changes.
