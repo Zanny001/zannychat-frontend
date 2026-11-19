@@ -73,7 +73,7 @@ test('creator pre-flight requests media permissions before creating a LIVE strea
 test('creator pre-flight exposes startup failures in an accessible page alert', () => {
   assert.ok(preflight.includes("setError(startError?.message || 'Could not start LIVE."));
   assert.ok(preflight.includes('accessibilityRole="alert"'));
-  assert.equal(preflight.includes('Alert.alert'), false);
+  assert.ok(preflight.includes('Alert.alert('), 'critical stream-link recovery must alert when the creator is redirected into an active broadcast');
 });
 
 test('creator pre-flight validates the server connection before opening the broadcast studio', () => {
