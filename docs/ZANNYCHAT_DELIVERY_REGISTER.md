@@ -240,3 +240,22 @@ Read-only inspection of project `vithpppgyjmazxvogvno` at approximately 11:47 UT
 - The backend contains dedicated LIVE stream/history routes, LiveKit Egress webhook verification, replay worker and replay finalizer source. This verifies source presence only, not that production recording produced an object or playable replay.
 
 **Next security work:** enumerate all 28 SECURITY DEFINER functions, inspect each body and grants, verify caller identity/ownership checks and delegated helpers, then write tests for allowed and denied callers. Do not revoke grants or alter function security wholesale. For the 37 backend-only tables, retain the privilege model and add a documented role/access inventory so future migrations do not accidentally expose them.
+
+
+## 9. Production deployment and PR health reconciliation — 2026-11-19
+
+### Production deployments verified
+- **Frontend Vercel:** latest production deployment returned `READY` for frontend main commit `55fb010fc11b58590c26d111772d3db2cc0e08f3`. This confirms the deployment artifact is ready; it does not prove every user flow has passed acceptance.
+- **Backend Render:** service `zannychat-backend-1` is configured for `main`, free plan, Frankfurt, health path `/health/live`; latest live deployment is commit `14860064a87c7637fc4f15dc6d75f4084b6f696a`. This matches the latest backend commit observed. Backend main is not currently 55 commits ahead of the live deployment.
+- No deployment was triggered by this audit.
+
+### Open PRs: exact reconciliation
+- PR #149's audit branch compares as **15 commits ahead / 40 behind** current main. Its two changed files are historical audit/tracker documents and contain unique 17 Nov production evidence. Do not merge as-is; preserve the evidence and rebase/reconcile it deliberately.
+- PR #151: both frontend workflows passed on head `58d5f208...`; Netlify preview ready. Branch is 8 ahead / 40 behind main. Its remaining gaps include unpaginated active-status service response and ScrollView-based privacy picker/private-reply list. Rebase/reapply before merge.
+- PR #159: both frontend workflows passed on head `c426f453...`; Netlify preview ready. Branch is 8 ahead / 39 behind main. Rebase/reapply before merge.
+- PR #160: both frontend workflows passed on head `3c75085d...`; Netlify preview ready. Branch is 2 ahead / 32 behind main. Rebase/reapply before merge.
+- PR #161: both frontend workflows passed on head `9be0d300...`; Netlify preview ready. Branch is 2 ahead / 32 behind main. Rebase/reapply before merge.
+- The Vercel preview checks on #149, #159, #160 and #161 failed due the team's Vercel free daily deployment cap, not a reported application test failure. Their Netlify deploy previews were READY. Do not upgrade a paid plan under the ₦0 constraint solely to clear these preview checks.
+- PR #177 (this canonical two-document programme) latest head at this checkpoint: Premium status/LIVE quality workflow passed; Advanced Calling dependency audit passed while bundle exposure and client-quality jobs were still running; Netlify deploy preview succeeded; Vercel preview remained pending. Keep PR in draft until remaining required checks finish.
+
+**Merge rule:** The four performance PRs have green historical CI but are too far behind current main to merge safely. Do not merge a stale head. Reapply only the reviewed, still-needed deltas to fresh branches from current main, close superseded PRs after replacements are validated, and preserve any unique tests/behaviour.
