@@ -3,7 +3,6 @@ import { countReadersForMessage, resolveMessageDeliveryStatus, countDeliveredRec
 import { buildGroupReceiptDetails } from '../utils/groupReceiptDetails';
 import {
   View,
-  AppState,
   FlatList,
   KeyboardAvoidingView,
   Platform,
