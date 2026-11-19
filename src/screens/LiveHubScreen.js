@@ -217,7 +217,7 @@ export default function LiveHubScreen({ navigation, route }) {
       setCategory(preferences.category);
       setAllowGuests(preferences.allowGuests);
     } catch {
-      // Defaults remain usable if device storage is temporarily unavailable.
+      // Defaults remain usable if the account preferences service is temporarily unavailable.
     }
   }, []);
 
