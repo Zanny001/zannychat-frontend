@@ -26,6 +26,8 @@ test('LIVE pre-flight checks microphone and camera permissions before room creat
   assert.ok(preflight.includes('const mediaPermissionsGranted = microphoneGranted && cameraGranted'));
   assert.ok(preflight.includes('const cameraPreviewReady = !needsCamera || cameraReady'));
   assert.ok(preflight.includes('mediaPermissionsGranted && cameraPreviewReady && setupValid'));
+  assert.ok(preflight.includes('if (!cameraPreviewReady)'));
+  assert.ok(preflight.includes('Wait for the camera preview to become ready'));
   assert.ok(preflight.includes("await backendFetch('/live'"));
   assert.ok(preflight.includes('if (!mediaPermissionsGranted)'));
   assert.ok(preflight.includes('connection?.stream?.id'));
@@ -59,6 +61,7 @@ test('native permission prompts explicitly cover LIVE camera and microphone use'
   const expo = appConfig.expo;
   assert.ok(expo.ios.infoPlist.NSCameraUsageDescription.includes('LIVE'));
   assert.ok(expo.ios.infoPlist.NSMicrophoneUsageDescription.includes('LIVE'));
+  assert.ok(expo.android.permissions.includes('android.permission.RECORD_AUDIO'));
   const plugins = expo.plugins.filter(Array.isArray);
   const camera = plugins.find(([name]) => name === 'expo-camera')?.[1];
   const picker = plugins.find(([name]) => name === 'expo-image-picker')?.[1];
