@@ -974,7 +974,7 @@ export default function LiveStreamScreen({ route, navigation }) {
 
   const openReportsWorkspace = useCallback(() => {
     if (moderatorMode && stream?.id) navigation.navigate('LiveReports', { streamId: stream.id, title: stream.title || 'LIVE stage', canManageParticipants: creatorMode });
-  }, [moderatorMode, navigation, stream?.id, stream?.title]);
+  }, [creatorMode, moderatorMode, navigation, stream?.id, stream?.title]);
 
   const openCreatorProfile = useCallback(() => {
     if (!stream?.creator_id) return;
