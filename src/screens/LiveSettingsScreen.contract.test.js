@@ -46,7 +46,7 @@ test('LIVE Hub and navigation expose the dedicated settings experience', () => {
 });
 
 test('LIVE Hub applies saved creator defaults to the next broadcast setup only', () => {
-  assert.ok(hub.includes('loadLivePreferences(currentUserId)'));
+  assert.ok(hub.includes('loadLivePreferences(expectedUserId)') && hub.includes('applyLivePreferences(currentUserId)'));
   assert.ok(hub.includes('setExperienceMode(preferences.experienceMode)'));
   assert.ok(hub.includes('setVisibility(preferences.visibility)'));
   assert.ok(hub.includes('setCategory(preferences.category)'));
