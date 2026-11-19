@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, ScrollView, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -62,11 +62,10 @@ export default function LiveSettingsScreen({ navigation }) {
     load();
   }, [load]));
 
-  useEffect(() => {
+  const update = (key, value) => {
     setSaved(false);
-  }, [preferences]);
-
-  const update = (key, value) => setPreferences((current) => ({ ...current, [key]: value }));
+    setPreferences((current) => ({ ...current, [key]: value }));
+  };
 
   const save = async () => {
     if (!userId || saving) return;
