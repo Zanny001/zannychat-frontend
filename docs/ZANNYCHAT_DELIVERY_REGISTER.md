@@ -36,17 +36,18 @@ Never infer Accepted from route presence, a green build, a prototype, a merged P
 
 ## 2. Open PR reconciliation — do not duplicate
 
-The following open frontend PRs were returned by GitHub on 2026-11-19. Their status and branch head must be rechecked before merge. Review diffs and CI; update this table after each decision.
+The following PRs are the active reconciliation set. All head branches and CI must be rechecked before merge.
 
 | PR | Scope | Current handling |
 |---|---|---|
-| [#149](https://github.com/Zanny001/zannychat-frontend/pull/149) | Docs: reconcile 17 Nov release and production evidence; 46 modules / 48 experiences; account-isolation and replay evidence | Reconcile with this register; avoid duplicate documentation and preserve unique evidence |
-| [#151](https://github.com/Zanny001/zannychat-frontend/pull/151) | Stories/status feed virtualization | Inspect diff/CI and merge only if current, non-conflicting and green |
-| [#159](https://github.com/Zanny001/zannychat-frontend/pull/159) | Bounded local collection/forwarding screens | Inspect diff/CI and merge only if current, non-conflicting and green |
-| [#160](https://github.com/Zanny001/zannychat-frontend/pull/160) | Bounded New Chat contact directory rendering | Inspect diff/CI and merge only if current, non-conflicting and green |
-| [#161](https://github.com/Zanny001/zannychat-frontend/pull/161) | Bounded inbox conversation rendering | Inspect diff/CI and merge only if current, non-conflicting and green |
+| [#149](https://github.com/Zanny001/zannychat-frontend/pull/149) | Historical 17 Nov full-app audit and production evidence | Open but 15 ahead / 40 behind main; preserve unique evidence, do not merge stale branch |
+| [#177](https://github.com/Zanny001/zannychat-frontend/pull/177) | Canonical Master Blueprint and Delivery Register | Draft documentation PR; frontend-quality passed, Advanced Calling checks were running at last checkpoint |
+| [#178](https://github.com/Zanny001/zannychat-frontend/pull/178) | Main / Chats bounded render window | Fresh-main replacement for #161; CI running |
+| [#179](https://github.com/Zanny001/zannychat-frontend/pull/179) | New Chat bounded contact directory | Fresh-main replacement for #160; CI running |
+| [#180](https://github.com/Zanny001/zannychat-frontend/pull/180) | Saved/Drafts/Pinned/Forward/Folders rendering and lookup bounds | Fresh-main replacement for #159; CI running |
+| [#181](https://github.com/Zanny001/zannychat-frontend/pull/181) | Stories feed and Friends rail virtualization | Fresh-main replacement for #151; CI running |
 
-**Closed historical branch:** PR #85 (Crown Aurora premium system) was reported closed and unmerged. Do not reopen or cherry-pick wholesale. Inspect current main and recover only specific missing, tested changes with a clear reason.
+**Closed and superseded:** #151 → #181, #159 → #180, #160 → #179, #161 → #178. Their required deltas were reapplied on branches created from current main; the old PRs were closed without merge. **Closed historical branch:** PR #85 (Crown Aurora premium system) remains closed and unmerged; do not revive wholesale.
 
 ## 3. Product domains and acceptance backlog
 
@@ -231,7 +232,7 @@ Read-only inspection of project `vithpppgyjmazxvogvno` at approximately 11:47 UT
 - Project status: `ACTIVE_HEALTHY`; PostgreSQL 17.6.1.155.
 - Public schema: **64 tables; all 64 have RLS enabled**.
 - **37 tables have no RLS policies**, but a direct privilege check found zero SELECT/INSERT/UPDATE/DELETE privileges for both `anon` and `authenticated` on those tables. This is consistent with backend/service-role-only tables. Do not add broad policies simply to silence the advisor.
-- Public functions: 67 SECURITY DEFINER functions; all 67 have a pinned `search_path`; 28 are executable by `authenticated`; zero are executable by `anon`. The 28 authenticated-executable functions need function-by-function authorization review; the advisor warning is not proof of a vulnerability by itself.
+- Public functions: 67 SECURITY DEFINER functions; all 67 have a pinned `search_path`; 28 are executable by `authenticated`; zero are executable by `anon`. The 17 Nov audit records that all 28 authenticated-executable SECURITY DEFINER functions were individually reviewed and bound to authenticated ownership, conversation participation, profile/status visibility or block rules. Revalidate those definitions and grants against the 19 Nov live catalog before marking the security workstream accepted; the advisor warning is not proof of a vulnerability by itself.
 - Applied migration history: **106 migrations**, latest `20261118223000`. The latest two LIVE migrations are present in backend source and applied history: `20261118221000_live_experience_modes` and `20261118223000_block_removed_live_participants`. Never rerun them.
 - Security advisor: 37 informational RLS/no-policy findings, 28 authenticated-executable SECURITY DEFINER warnings, and one leaked-password-protection warning. Leaked-password protection is not enabled on the current Free plan; keep this as a disclosed residual risk within the ₦0 constraint.
 - Performance advisor: 61 unused-index INFO findings. Do not mass-drop indexes from this snapshot; low traffic and short observation windows can make useful indexes appear unused. Review query plans and usage over a meaningful period before any removal.
@@ -239,7 +240,7 @@ Read-only inspection of project `vithpppgyjmazxvogvno` at approximately 11:47 UT
 - Supabase Edge Functions: none listed.
 - The backend contains dedicated LIVE stream/history routes, LiveKit Egress webhook verification, replay worker and replay finalizer source. This verifies source presence only, not that production recording produced an object or playable replay.
 
-**Next security work:** enumerate all 28 SECURITY DEFINER functions, inspect each body and grants, verify caller identity/ownership checks and delegated helpers, then write tests for allowed and denied callers. Do not revoke grants or alter function security wholesale. For the 37 backend-only tables, retain the privilege model and add a documented role/access inventory so future migrations do not accidentally expose them.
+**Next security work:** re-open the prior 17 Nov function-by-function review and compare all 67 current public SECURITY DEFINER definitions/grants with that evidence; focus on changed/new definitions, delegated helpers and allowed/denied caller tests. Do not revoke grants or alter function security wholesale. For the 37 backend-only tables, retain the privilege model and add a documented role/access inventory so future migrations do not accidentally expose them.
 
 
 ## 9. Production deployment and PR health reconciliation — 2026-11-19
@@ -251,11 +252,20 @@ Read-only inspection of project `vithpppgyjmazxvogvno` at approximately 11:47 UT
 
 ### Open PRs: exact reconciliation
 - PR #149's audit branch compares as **15 commits ahead / 40 behind** current main. Its two changed files are historical audit/tracker documents and contain unique 17 Nov production evidence. Do not merge as-is; preserve the evidence and rebase/reconcile it deliberately.
-- PR #151: both frontend workflows passed on head `58d5f208...`; Netlify preview ready. Branch is 8 ahead / 40 behind main. Its remaining gaps include unpaginated active-status service response and ScrollView-based privacy picker/private-reply list. Rebase/reapply before merge.
-- PR #159: both frontend workflows passed on head `c426f453...`; Netlify preview ready. Branch is 8 ahead / 39 behind main. Rebase/reapply before merge.
-- PR #160: both frontend workflows passed on head `3c75085d...`; Netlify preview ready. Branch is 2 ahead / 32 behind main. Rebase/reapply before merge.
-- PR #161: both frontend workflows passed on head `9be0d300...`; Netlify preview ready. Branch is 2 ahead / 32 behind main. Rebase/reapply before merge.
-- The Vercel preview checks on #149, #159, #160 and #161 failed due the team's Vercel free daily deployment cap, not a reported application test failure. Their Netlify deploy previews were READY. Do not upgrade a paid plan under the ₦0 constraint solely to clear these preview checks.
-- PR #177 (this canonical two-document programme) latest head at this checkpoint: Premium status/LIVE quality workflow passed; Advanced Calling dependency audit passed while bundle exposure and client-quality jobs were still running; Netlify deploy preview succeeded; Vercel preview remained pending. Keep PR in draft until remaining required checks finish.
+- PRs #151, #159, #160 and #161 had both frontend workflows pass on their old heads and Netlify previews ready, but their branches were 32–40 commits behind main. They were closed only after their changes were ported to fresh-main replacements #178–#181.
+- The Vercel preview checks on #149 and the old #159/#160/#161 heads failed due the team's Vercel free daily deployment cap, not a reported application test failure. Netlify previews were READY. Do not upgrade a paid plan under the ₦0 constraint solely to clear preview checks.
+- PR #177's last fully completed run had Premium status/LIVE quality pass and Advanced Calling cancelled after a newer commit superseded it; the latest head therefore needs its own Advanced Calling run to finish. Netlify preview was READY; Vercel preview remained pending.
 
 **Merge rule:** The four performance PRs have green historical CI but are too far behind current main to merge safely. Do not merge a stale head. Reapply only the reviewed, still-needed deltas to fresh branches from current main, close superseded PRs after replacements are validated, and preserve any unique tests/behaviour.
+
+
+## 10. Superseded PR replacement map — 2026-11-19
+
+| Superseded PR | Replacement | Reapplied scope |
+|---|---|---|
+| #151 | [#181](https://github.com/Zanny001/zannychat-frontend/pull/181) | Stories feed and Friends rail virtualization; FlatList import corrected |
+| #159 | [#180](https://github.com/Zanny001/zannychat-frontend/pull/180) | Saved/Pinned/Drafts/Forward/Folders render windows; bounded Drafts lookup and ID map |
+| #160 | [#179](https://github.com/Zanny001/zannychat-frontend/pull/179) | New Chat bounded contact directory |
+| #161 | [#178](https://github.com/Zanny001/zannychat-frontend/pull/178) | Chats inbox bounded render window |
+
+PR #149 remains open but stale; unique 17 Nov production and screen-audit evidence is being reconciled into this canonical register. PR #177 remains the draft documentation programme.
