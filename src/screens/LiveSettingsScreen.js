@@ -130,7 +130,7 @@ export default function LiveSettingsScreen({ navigation }) {
 
           <GlassCard glow contentStyle={{ padding: spacing.lg, gap: spacing.xs }}>
             <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 17 }]}>Your broadcast, your defaults</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 20 }]}>Choose what is preselected when you set up your next LIVE. These preferences are saved on this device for your signed-in account. They never change a LIVE that is already running.</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 20 }]}>Choose what is preselected when you set up your next LIVE. These preferences are saved securely to your ZannyChat account and follow you across your signed-in devices. They never change a LIVE that is already running.</Text>
           </GlassCard>
 
           {loading ? <View style={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary }]}>Loading your LIVE settings…</Text></View> : null}
