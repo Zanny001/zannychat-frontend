@@ -374,7 +374,7 @@ export default function LiveHubScreen({ navigation, route }) {
     handledLiveNotificationRef.current = key;
     navigation.setParams?.({ liveNotification: undefined });
 
-    if (type === 'live_event_invitation' && typeof notification.eventId === 'string') {
+    if (['live_event_invitation', 'live_event_reminder'].includes(type) && typeof notification.eventId === 'string') {
       refresh();
       navigation.navigate('LiveEvents', { eventId: notification.eventId });
       return;
