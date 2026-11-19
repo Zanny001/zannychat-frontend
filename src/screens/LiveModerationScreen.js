@@ -221,7 +221,7 @@ export default function LiveModerationScreen({ route, navigation }) {
                   <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: '800' }]}>{item.spotlighted ? 'Remove spotlight' : 'Spotlight'}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity disabled={busy} onPress={() => remove(item)} accessibilityRole="button" accessibilityLabel="Move guest to audience" style={{ flex: 1, minWidth: 108, minHeight: 46, borderRadius: 13, borderWidth: 1, borderColor: colors.warning, alignItems: 'center', justifyContent: 'center', opacity: busy ? 0.5 : 1 }}>
-                  <Text style={[typography.caption, { color: colors.warning, fontWeight: '800' }}>Move to audience</Text>
+                  <Text style={[typography.caption, { color: colors.warning, fontWeight: '800' }]}>Move to audience</Text>
                 </TouchableOpacity>
               </View> : null}
 
@@ -230,7 +230,7 @@ export default function LiveModerationScreen({ route, navigation }) {
                   <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: '800' }]}>{item.moderator ? 'Remove moderator' : 'Make moderator'}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity disabled={busy} onPress={() => remove(item)} accessibilityRole="button" accessibilityLabel="Remove viewer from LIVE" style={{ flex: 1, minWidth: 120, minHeight: 46, borderRadius: 13, borderWidth: 1, borderColor: colors.danger, alignItems: 'center', justifyContent: 'center', opacity: busy ? 0.5 : 1 }}>
-                  <Text style={[typography.caption, { color: colors.danger, fontWeight: '800' }}>Remove from LIVE</Text>
+                  <Text style={[typography.caption, { color: colors.danger, fontWeight: '800' }]}>Remove from LIVE</Text>
                 </TouchableOpacity>
               </View> : null}
 
