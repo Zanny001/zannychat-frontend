@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const screen = fs.readFileSync(new URL('./ChatScreen.js', import.meta.url), 'utf8');
+const timeline = fs.readFileSync(new URL('../hooks/useChatTimeline.js', import.meta.url), 'utf8');
 
 test('chat picker enforces the same exact 25 MiB limit as Storage', () => {
   assert.match(screen, /const MAX_FILE_SIZE = 25 \* 1024 \* 1024/);
@@ -56,17 +57,17 @@ test('message composer keeps a distinct moderate input surface and balanced cont
 
 
 test('initial message history failures render an accessible retry instead of a blank chat', () => {
-  assert.match(screen, /const \[loadingMessages, setLoadingMessages\] = useState\(true\)/);
-  assert.match(screen, /const \[messageLoadError, setMessageLoadError\] = useState\(''\)/);
-  assert.match(screen, /setMessageLoadError\(error\?\.message \|\| 'Could not load messages/);
+  assert.match(timeline, /const \[loadingMessages, setLoadingMessages\] = useState\(true\)/);
+  assert.match(timeline, /const \[messageLoadError, setMessageLoadError\] = useState\(''\)/);
+  assert.match(timeline, /setMessageLoadError\(error\?\.message \|\| 'Could not load messages/);
   assert.match(screen, /ListEmptyComponent=\{/);
   assert.match(screen, /accessibilityLabel="Retry loading messages"/);
   assert.match(screen, /No messages yet\. Say hello to start the conversation\./);
 });
 
 test('older history pagination failures retain a visible accessible retry action', () => {
-  assert.match(screen, /const \[olderLoadError, setOlderLoadError\] = useState\(''\)/);
-  assert.match(screen, /setOlderLoadError\(err\?\.message \|\| 'Could not load earlier messages/);
+  assert.match(timeline, /const \[olderLoadError, setOlderLoadError\] = useState\(''\)/);
+  assert.match(timeline, /setOlderLoadError\(error\?\.message \|\| 'Could not load earlier messages/);
   assert.match(screen, /accessibilityLabel="Retry loading earlier messages"/);
   assert.match(screen, /hasMore && !olderLoadError/);
 });
@@ -91,9 +92,10 @@ test('permanent failures discovered by automatic recovery are removed instead of
 
 
 test('read receipts use scoped Realtime updates rather than a five-second RPC poll', () => {
-  assert.match(screen, /subscribeToParticipantUpdates\(conversation\.id/);
-  assert.doesNotMatch(screen, /fetchParticipantReadState\(conversation\.id\)/);
-  assert.match(screen, /advance the read cursor immediately/);
+  assert.match(timeline, /subscribeToParticipantUpdates\(conversationId/);
+  assert.doesNotMatch(timeline, /fetchParticipantReadState\(conversationId/);
+  assert.match(timeline, /setParticipantReadState/);
+  assert.doesNotMatch(timeline, /setInterval\(/);
 });
 
 
@@ -102,11 +104,12 @@ test('chat screen clears account-owned messages, drafts, receipts and outbox on 
   assert.ok(screen.includes('supabase.auth.onAuthStateChange'));
   assert.ok(screen.includes('if (active) applyUserId(\'me\')'));
   assert.ok(screen.includes('const activeUserIdRef = useRef(undefined)'));
-  assert.ok(screen.includes('const messageLoadRequestRef = useRef(0)'));
-  assert.ok(screen.includes('const olderLoadRequestRef = useRef(0)'));
+  assert.ok(timeline.includes('const messageLoadRequestRef = useRef(0)'));
+  assert.ok(timeline.includes('const olderLoadRequestRef = useRef(0)'));
   assert.ok(screen.includes('const resolvedConversationRequestRef = useRef(0)'));
   assert.ok(screen.includes('const pinnedLoadRequestRef = useRef(0)'));
-  assert.ok(screen.includes('setMessages([])'));
+  assert.ok(timeline.includes('setMessages([])'));
+  assert.ok(screen.includes("resetTimeline('Your account changed. Reopen this conversation from Chats.')"));
   assert.ok(screen.includes('setPendingOutbox([])'));
   assert.ok(screen.includes('setPendingAttachments([])'));
   assert.ok(screen.includes('if (!myUserId) {\n      setPendingOutbox([]);\n      setPendingAttachments([]);'));
@@ -121,23 +124,21 @@ test('chat screen clears account-owned messages, drafts, receipts and outbox on 
 });
 
 test('chat history and outbox work cannot publish or retry after the authenticated owner changes', () => {
-  assert.ok(screen.includes('requestId !== messageLoadRequestRef.current'));
-  assert.ok(screen.includes('activeUserIdRef.current !== myUserId'));
-  assert.ok(screen.includes('requestId !== olderLoadRequestRef.current'));
-  assert.ok(screen.includes('activeUserIdRef.current !== expectedUserId'));
+  assert.ok(timeline.includes('requestId !== messageLoadRequestRef.current'));
+  assert.ok(timeline.includes('activeUserIdRef.current !== myUserId'));
+  assert.ok(timeline.includes('requestId !== olderLoadRequestRef.current'));
+  assert.ok(timeline.includes('activeUserIdRef.current !== expectedUserId'));
   assert.ok(screen.includes('activeUserIdRef.current !== myUserId)) return'));
   assert.ok(screen.includes('sendMessage(conversation.id, item.text, item.replyToId, item.requestId, expectedUserId)'));
   assert.ok(screen.includes("error?.code === 'AUTH_USER_CHANGED'"));
-  assert.ok(screen.includes('messageLoadRequestRef.current += 1'));
-  assert.ok(screen.includes('olderLoadRequestRef.current += 1'));
+  assert.ok(timeline.includes('messageLoadRequestRef.current += 1'));
+  assert.ok(timeline.includes('olderLoadRequestRef.current += 1'));
 });
 
 test('chat Realtime subscriptions are rebound and filtered for the active user', () => {
-  assert.match(screen, /subscribeToMessageDeliveryReceipts\(conversation\.id/);
-  assert.match(screen, /subscribeToMessages\(conversation\.id/);
-  assert.match(screen, /subscribeToReactions\(/);
-  assert.match(screen, /subscribeToTyping\(conversation\.id/);
-  assert.match(screen, /subscribeToParticipantUpdates\(conversation\.id/);
-  assert.match(screen, /activeUserIdRef\.current !== myUserId/);
-  assert.match(screen, /\}, \[conversation\.id, myUserId\]\)/);
+  for (const service of ['subscribeToMessageDeliveryReceipts(conversationId', 'subscribeToMessages(conversationId', 'subscribeToReactions(', 'subscribeToTyping(conversationId', 'subscribeToParticipantUpdates(conversationId', 'subscribePresence(']) {
+    assert.ok(timeline.includes(service), service + ' must remain in the timeline lifecycle');
+  }
+  assert.match(timeline, /activeUserIdRef\.current !== myUserId/);
+  assert.match(timeline, /\}, \[conversationId, myUserId, activeUserIdRef/);
 });
