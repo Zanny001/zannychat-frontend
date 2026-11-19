@@ -49,5 +49,5 @@ test('pre-flight camera preview is scoped to the focused screen and has accessib
 test('pre-flight is registered as a modal route without changing primary navigation', () => {
   assert.ok(navigator.includes("import LivePreflightScreen from '../screens/LivePreflightScreen'"));
   assert.ok(navigator.includes('name="LivePreflight" component={LivePreflightScreen}'));
-  assert.ok(navigator.includes("name: 'LIVE'"));
+  assert.ok(navigator.includes('name="LIVE" component={LiveHubScreen}'));
 });
