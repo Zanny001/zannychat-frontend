@@ -98,6 +98,7 @@ export default function LiveGuestQueueScreen({ route, navigation }) {
       setRequests((current) => current.filter((item) => item.user_id !== userId));
       await refresh(true);
     } catch (e) {
+      if (actionId !== actionGeneration.current) return;
       showAppAlert(status === 'accepted' ? 'Could not approve guest' : 'Could not decline request', e?.message || 'Refresh the queue and try again.');
       await refresh(true);
     } finally {
