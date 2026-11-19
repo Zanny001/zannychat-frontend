@@ -120,7 +120,7 @@ The following PRs are the active reconciliation set. All head branches and CI mu
 | LIVE-04 | Movable/resizable guest tiles | Bounded drag/resize on supported devices and reduced-motion fallback | Implemented; device QA needed |
 | LIVE-05 | Chat/comments/reactions/moderation/reports | Two-account delivery, rate limits, hide/block/report and moderator permissions | Needs revalidation |
 | LIVE-06 | Battles/events/gifts/wallet/leaderboard/analytics | Real transactional models, abuse controls, clear Naira/unit conversion and audit trail | Not started / verify existing partial code |
-| LIVE-07 | Replay recording/library/player | Egress completion, DB row, private object, signed playback, unauthorized denial | Source exists; production evidence needed |
+| LIVE-07 | Replay recording/library/player | Egress completion, DB row, private object, signed playback, unauthorized denial | One production READY row + matching private MP4 object verified; signed playback code reviewed; actual viewer playback/denial runtime test remains |
 | LIVE-08 | LIVE discovery/creator profile/notifications/settings | Real data, privacy and navigation | Needs revalidation |
 | LIVE-09 | LIVE safety | Age/consent/blur/report/evidence and minor-safety controls | Blocked before random matching ships |
 
@@ -445,3 +445,30 @@ Measured from current frontend main after the #181 merge. Byte size and hook/fun
 - PR #184 is open: extracts the conversation timeline day separator and ChatBubble composition into a presentation-only `ChatMessageRow` component, preserving all message state, status, search, reaction and action callbacks in ChatScreen.
 - PR #184 frontend quality and advanced-calling workflows are still running; do not merge until both pass and the diff is reviewed.
 - The larger ChatScreen decomposition (data lifecycle, outboxes/media, composer, header and overlays) remains a staged follow-up, not claimed complete.
+
+
+## 15. LIVE replay production verification — 2026-11-19
+
+Read-only production catalog/storage inspection confirms the first complete recording artifact is now present:
+
+- One `live_stream_replays` row with `status=ready`.
+- Associated LIVE stream is `ended`, visibility `public`, and the replay creator matches the stream creator.
+- Recording duration: **43 seconds**.
+- Database file size: **3,292,044 bytes**.
+- A matching object exists in the private `live-replays` bucket at the recorded file path; object metadata size matches the database file size exactly and MIME type is `video/mp4`.
+- Replay expiry is **2026-11-26 10:58:14 UTC** (seven-day retention).
+- The five storage buckets are: public `avatars`; private `chat-media`, `live-replays`, `private-avatars` and `status-media`. The current storage policy inventory has 13 authenticated policies for avatars/chat/private-avatar/status media and no direct client policy for `live-replays`.
+- Backend `GET /live/replays/:replayId/playback` requires authentication, rejects non-ready/expired/missing records, checks the stream's visibility and block/participant/follower/invite/moderator rules, then issues a 360-second signed storage URL. Creator-only deletion and seven-day retention cleanup are implemented.
+
+**Acceptance distinction:** production Egress completion, database finalisation and private-object integrity are now verified. The actual authenticated playback request, signed URL response, browser/native video playback, expired-link behaviour and unauthorized-user denial have not been exercised in this read-only audit. Keep LIVE-07 at partial acceptance until those runtime checks pass. No replay row, object, policy, quota or migration was modified by this audit.
+
+## 16. SECURITY DEFINER catalog reconciliation — 2026-11-19
+
+A fresh read-only PostgreSQL catalog query agrees with the 17 Nov audit:
+- 67 public SECURITY DEFINER functions.
+- Zero without a function-level `search_path` setting.
+- Zero EXECUTE grants to PUBLIC and zero to `anon`.
+- Exactly 28 executable by `authenticated`.
+- Neither `anon` nor `authenticated` has CREATE on schema `public`.
+
+This confirms the catalog-level grant/search-path posture recorded in the earlier function-by-function review. It does not replace body-level review after future function/grant changes or adversarial tests of each RPC's ownership/authorization checks.
