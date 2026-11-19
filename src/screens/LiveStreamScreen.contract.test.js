@@ -502,6 +502,8 @@ test('LIVE viewers can open the public creator profile from the stage controls',
 test('web LIVE stage exposes creator profile and returns to the profile after Watch LIVE', () => {
   assert.ok(webScreen.includes('accessibilityLabel="Open LIVE creator profile"'));
   assert.ok(webScreen.includes("navigation.navigate('LiveCreatorProfile'"));
+  assert.ok(webScreen.includes('currentLiveStreamId: stream.id'));
+  assert.ok(webScreen.includes('alreadyViewingLive: true'));
   assert.ok(webScreen.includes('route.params?.creatorName || stream.creator_name'));
   assert.ok(webScreen.includes('route.params?.returnToCreatorProfile && navigation.canGoBack()'));
   assert.ok(webScreen.includes('returnFromLive();'));
