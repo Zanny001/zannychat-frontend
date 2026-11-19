@@ -27,6 +27,8 @@ test('LIVE Events screen uses authenticated service-backed scheduling and RSVP a
   assert.ok(screen.includes('Save Event changes'));
   assert.ok(screen.includes('Cancel my RSVP'));
   assert.ok(screen.includes("disabled={busy||(event.rsvpStatus!=='going'&&event.attendeeCount>=event.maxAttendees)}"));
+  assert.ok(preflight.includes('const streamEnded = await backendFetch'));
+  assert.ok(preflight.includes("navigation.replace('LiveStream', { streamId: connection.stream.id, creatorMode: true })"));
   assert.ok(screen.includes("method:'PATCH'"));
   assert.ok(screen.includes("method:'POST'"));
 });
