@@ -19,7 +19,7 @@ test('LIVE replay library uses a centered, readable content width on tablets and
 });
 
 test('LIVE creator studio constrains its reading width and lets metrics wrap on compact screens', () => {
-  const source = read('LiveCreatorProfileScreen.js');
+  const source = read('LiveCreatorStudioScreen.js');
   assert.ok(source.includes("width: '100%', maxWidth: 760, alignSelf: 'center'"));
   assert.ok(source.includes("flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm"));
   assert.ok(source.includes("minWidth: 104, flexGrow: 1"));
