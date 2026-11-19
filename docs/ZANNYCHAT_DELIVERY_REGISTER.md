@@ -647,7 +647,7 @@ This is the current handoff point. Read this register and the Master Blueprint b
 - Analytics currently exposes aggregate creator totals only; date-range time series, watch-time attribution and export need backend data contracts.
 - Guest Queue currently lists pending requests; historical approved/declined/expired states need a backend history response.
 - Reports still need evidence attachment, assignment, appeal and durable audit history. Safety Centre, age/region eligibility, creator policy acceptance and minor-safety gates remain incomplete.
-- LIVE Settings now has a dedicated screen and account-keyed device-local creator defaults on PR #196; broader viewer/privacy/notification/data-saver controls and cross-device sync remain open.
+- LIVE Settings now has a dedicated screen and account-keyed device-local creator defaults on PR #196; broader LIVE-specific viewer/privacy/notification/data-saver controls and cross-device sync remain open; global Privacy & Safety, Notifications and Sessions routes are linked.
 - Audio Room and Video Chat Room remain modes within Broadcast, not separate navigation routes; their device/audio-route acceptance remains pending.
 
 ### Next execution order
