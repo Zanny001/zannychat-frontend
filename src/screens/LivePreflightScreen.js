@@ -44,7 +44,7 @@ function PermissionRow({ icon, label, detail, state, colors, typography }) {
 }
 
 export default function LivePreflightScreen({ route, navigation }) {
-  const { colors, spacing, radii, typography, resolvedMode } = useTheme();
+  const { colors, spacing, typography, resolvedMode } = useTheme();
   const isFocused = useIsFocused();
   const params = route?.params || {};
   const title = String(params.title || '').trim();
