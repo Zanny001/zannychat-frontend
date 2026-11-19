@@ -1,9 +1,10 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
 import { getCurrentUser } from '../services/api';
+import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 import { showAppAlert } from '../utils/appDialogs';
@@ -77,6 +78,23 @@ export default function LiveEventsScreen({ navigation }) {
 
   useFocusEffect(useCallback(()=>{ refresh(); },[refresh]));
 
+  useEffect(()=>{
+    if (!SUPABASE_ENABLED || !supabase?.auth?.onAuthStateChange) return undefined;
+    const { data } = supabase.auth.onAuthStateChange((_event,session)=>{
+      const nextId=session?.user?.id||null;
+      setCurrentUserId(nextId);setEvents([]);setInvitations([]);setCandidates([]);setSelectedInvitees([]);
+      setTitle('');setDescription('');setVisibility('public');setCategory('social');setShowComposer(false);
+      if (nextId) Promise.resolve().then(()=>refresh());
+    });
+    return ()=>data?.subscription?.unsubscribe?.();
+  },[refresh]);
+
+  const ensureAccount=async()=>{
+    const user=await getCurrentUser().catch(()=>null);
+    if (!currentUserId || user?.id!==currentUserId) throw new Error('Your account changed. Refresh LIVE Events and try again.');
+    return currentUserId;
+  };
+
   const loadCandidates=async()=>{
     setLoadingContacts(true);
     try {
@@ -104,9 +122,12 @@ export default function LiveEventsScreen({ navigation }) {
     if (visibility==='private' && selectedInvitees.length===0) return showAppAlert('Choose invitees','Private Events need at least one person from your existing chats.');
     setBusy(true);
     try {
+      const expectedUserId=await ensureAccount();
       const created=await backendFetch('/live/events',{method:'POST',body:JSON.stringify({
         title:title.trim(),description:description.trim(),category,visibility,startsAt,durationMinutes,maxAttendees,
       })});
+      const afterCreate=await getCurrentUser().catch(()=>null);
+      if (afterCreate?.id!==expectedUserId) throw new Error('Your account changed. The Event was saved to the previous account; sign in there to manage it.');
       if (visibility==='private') {
         try {
           await backendFetch('/live/events/'+encodeURIComponent(created.event.id)+'/invites',{
@@ -117,6 +138,7 @@ export default function LiveEventsScreen({ navigation }) {
           throw new Error('The Event was not published because invitations could not be delivered. Please try again.');
         }
       }
+      await ensureAccount();
       setTitle('');setDescription('');setSelectedInvitees([]);setShowComposer(false);setSchedule(initialSchedule());
       showAppAlert('LIVE Event scheduled','Your Event is saved. Invitees have been notified where applicable.');
       await refresh();
@@ -126,7 +148,7 @@ export default function LiveEventsScreen({ navigation }) {
 
   const respondInvitation=async(eventId,status)=>{
     setBusy(true);
-    try { await backendFetch('/live/events/'+encodeURIComponent(eventId)+'/invitation',{method:'PATCH',body:JSON.stringify({status})}); await refresh(); }
+    try { await ensureAccount(); await backendFetch('/live/events/'+encodeURIComponent(eventId)+'/invitation',{method:'PATCH',body:JSON.stringify({status})}); await refresh(); }
     catch(e) { showAppAlert('Invitation not updated',e?.message||'Please try again.'); }
     finally { setBusy(false); }
   };
@@ -134,6 +156,7 @@ export default function LiveEventsScreen({ navigation }) {
   const toggleRsvp=async(event)=>{
     setBusy(true);
     try {
+      await ensureAccount();
       const alreadyGoing=event.rsvpStatus==='going';
       await backendFetch('/live/events/'+encodeURIComponent(event.id)+'/rsvp',{
         method:alreadyGoing?'DELETE':'POST',
@@ -148,7 +171,7 @@ export default function LiveEventsScreen({ navigation }) {
       {text:'Keep Event',style:'cancel'},
       {text:'Cancel Event',style:'destructive',onPress:async()=>{
         setBusy(true);
-        try { await backendFetch('/live/events/'+encodeURIComponent(event.id)+'/cancel',{method:'POST'}); await refresh(); }
+        try { await ensureAccount(); await backendFetch('/live/events/'+encodeURIComponent(event.id)+'/cancel',{method:'POST'}); await refresh(); }
         catch(e) { showAppAlert('Event not cancelled',e?.message||'Please try again.'); }
         finally { setBusy(false); }
       }},
