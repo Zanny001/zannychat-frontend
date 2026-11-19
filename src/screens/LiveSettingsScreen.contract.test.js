@@ -11,6 +11,10 @@ test('LIVE defaults are loaded and saved through the authenticated backend servi
   assert.ok(service.includes("from './backendClient'"));
   assert.ok(service.includes("backendFetch('/live/creators/me/preferences')"));
   assert.ok(service.includes("method: 'PUT'"));
+  assert.ok(service.includes('const payload = {'));
+  assert.ok(service.includes('allowGuests: normalized.allowGuests'));
+  assert.ok(service.includes('body: JSON.stringify(payload)'));
+  assert.ok(service.includes('updatedAt is server-owned metadata'));
   assert.ok(service.includes('assertAccount(userId)'));
   assert.ok(service.includes('LIVE settings require a connection to the ZannyChat service.'));
   assert.ok(service.includes('normalizeLivePreferences'));
