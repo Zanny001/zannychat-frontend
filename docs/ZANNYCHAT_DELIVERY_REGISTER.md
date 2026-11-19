@@ -24,15 +24,15 @@ Never infer Accepted from route presence, a green build, a prototype, a merged P
 | Area | Last known evidence | Current register status | Required reconciliation |
 |---|---|---|---|
 | Crown Aurora direction | Frontend audit records palette, contrast principles and initial shared component work | Needs revalidation | Inspect current main and all open UI PRs; do not revive closed PR #85 blindly |
-| LIVE core UX | PR #170/#172/#176 and #189 merged; current main has six dedicated LIVE routes (Hub, Broadcast, Creator Preflight, Replay Library, Replay Player, Creator Studio). The Studio screen is still named/routed as LiveCreatorProfile; public creator identity/impact is currently the general PeerProfileScreen with LiveImpactCard. Audio Room and Video Chat remain modes within Broadcast. | Core merged; pre-flight implemented; 18-screen audit not yet accepted | Preserve LiveKit/media behaviour; separate Studio/Profile route semantics, finish missing screens, flows, safety, states and device acceptance |
-| LIVE backend | Current src/routes/liveStreams.js exposes discovery, broadcast lifecycle, join/leave, comments, reactions, guest requests/invites, participants, moderators, reports, follows, creator profile and replay endpoints | Core endpoints exist; domain coverage incomplete | Map every endpoint to UI, authorization, RLS, rate limits and integration tests; no assumed gift/battle/wallet/leaderboard API |
+| LIVE core UX | PR #191 and #193 merged; main now has dedicated Hub, Broadcast, Creator Preflight, Creator Studio, Replay Library, Replay Player, Guest Queue, Moderation and Reports routes, plus a public Creator Profile route reusing PeerProfileScreen. Audio Room and Video Chat remain modes within Broadcast. PR #194 adds dedicated Creator Analytics. | Core/operations implemented; analytics in review; 18-screen audit not accepted | Preserve LiveKit/media behaviour; complete remaining screens, backend capabilities, safety, states and device acceptance |
+| LIVE backend | Current src/routes/liveStreams.js exposes discovery, broadcast lifecycle, join/leave, comments, reactions, guest requests/invites, participants, moderators, reports, follows, creator profile and replay endpoints | Core endpoints exist; domain coverage incomplete | Map every endpoint to UI, authorization, RLS, rate limits and integration tests; scheduling/events, battles, leaderboard, gifts/wallet and time-series analytics still need real backend contracts |
 | LIVE migrations | Two named migrations applied through successful guarded workflow run 44501209658 | Applied; do not rerun | Verify migration history only if needed; any correction is a new forward migration |
-| Replay | One production READY row and matching private MP4 object were verified; signed playback route reviewed | Artifact verified; player/access acceptance partial | Exercise authenticated playback, expired link, unauthorized viewer denial and native/web playback |
-| Full app inventory | 48 unique screen modules / 49 RootStack entries / 45 unique route names after PR #189; 48 experiences remains the product audit inventory | Current source count | Reparse current route registry after every screen addition; do not conflate route declarations with experiences |
+| Replay | One production READY row and matching private MP4 object verified; production playback endpoint returned HTTP 200 on 2026-11-19 | Backend playback access verified; video-player/access acceptance partial | Verify native/web decoding, expired link, account switch, unauthorized viewer denial and deletion |
+| Full app inventory | ThemeContrast contract now audits 55 screen modules; the 18 LIVE experiences remain a nested product inventory, not a route count | Screen-module count updated; route registry needs fresh reconciliation after PR #194 | Reparse current RootStack registry after every screen addition; do not conflate route declarations with experiences |
 | Parity scope | Retrieved parity gap analysis based on supplied original audit | Scope recorded; original source not re-opened in this pass | Retrieve original source before claiming any missing detail |
 | Account isolation | PRs #146/#147 merged in a previous audit; two-account acceptance was outstanding then | Needs revalidation | Run two-account tests across chat/media/realtime/calls/LIVE |
-| Backend deployment | Historical audit reported main/deploy SHA divergence; PR #151 later deployed | Needs revalidation | Compare current main SHA to Render deploy SHA |
-| Production frontend | Latest confirmed production alias serves commit `1060ca0e8eae49dab427420c7200d526a1fde710`; PR #189 merged as `99811698c3f33516f61b667c5bce25a95108efe1`, but its Vercel check failed on the team build-rate limit | Merged, not deployed; production SHA remains last-known and needs revalidation | Restore preview/deploy capacity, verify exact SHA and run production LIVE smoke tests |
+| Backend deployment | Render production is deployed on 14860064a87c7637fc4f15dc6d75f4084b6f696a | Current deployed SHA verified | Recheck only after a backend change; no backend source change in PRs #191/#193/#194 |
+| Production frontend | Latest Vercel production deployment is still 1060ca0e8eae49dab427420c7200d526a1fde710 (PR #185); frontend main has advanced through PR #191/#193 to bc8fa4879663cc9773df1fa3f97f859bac76f7bd | LIVE merges not yet confirmed in production | Pull main locally, then verify/trigger Vercel production deployment and confirm exact SHA before claiming LIVE changes are live |
 
 ## 2. PR reconciliation — LIVE-first checkpoint (2026-11-19)
 
@@ -50,7 +50,7 @@ Recent GitHub state was rechecked before this priority change:
 | [#186](https://github.com/Zanny001/zannychat-frontend/pull/186) | Chat message outbox hook | Merged before LIVE priority reset; no further Chat work authorised in this phase |
 | [#187](https://github.com/Zanny001/zannychat-frontend/pull/187) | LIVE-first delivery register and source reconciliation | Merged; canonical register updated |
 | [#188](https://github.com/Zanny001/zannychat-frontend/pull/188) | First creator pre-flight branch | Closed as superseded by #189; no implementation was dropped |
-| [#189](https://github.com/Zanny001/zannychat-frontend/pull/189) | Creator pre-flight, media permissions, native permission explanations and contracts | Merged as `99811698c3f33516f61b667c5bce25a95108efe1`; GitHub quality and Advanced Calling workflows passed; Vercel deployment blocked by build-rate limit |
+| [#189](https://github.com/Zanny001/zannychat-frontend/pull/189) | Creator pre-flight, media permissions, native permission explanations and contracts | Merged as 99811698c3f33516f61b667c5bce25a95108efe1; quality workflows passed; production deployment still not confirmed |
 
 PR #189 is merged; no open LIVE implementation PR remains in this focused set. Do not revive closed branches wholesale or duplicate merged work. The user has paused further Chat implementation; keep all new execution focused on LIVE until explicitly redirected.
 
@@ -119,25 +119,25 @@ PR #189 is merged; no open LIVE implementation PR remains in this focused set. D
 | CALL-02 | Mid-call audio/video switching | Switch without dropping session; device/permission tests | Needs revalidation |
 | CALL-03 | Group calls and participant management | Add/remove, mute, role and leave/end semantics | Needs revalidation |
 | CALL-04 | Call history, privacy and recovery | Server history, missed/failed states, session cleanup | Needs revalidation |
-| LIVE-01 | 18-screen Crown Aurora LIVE experience | All 18 experiences responsive, accessible, state-complete and connected to actual services | Core and pre-flight merged; detailed audit incomplete |
+| LIVE-01 | 18-screen Crown Aurora LIVE experience | All 18 experiences responsive, accessible, state-complete and connected to actual services | Core, creator pre-flight and operations screens merged; analytics in review; detailed audit incomplete |
 | LIVE-02 | Broadcast/Audio/Video room modes | Mode-specific permissions and correct media publishing | Creator pre-flight permission gating merged; physical-device permission/media acceptance pending |
-| LIVE-03 | Five-guest queue/invites/approval/removal | Enforced five-guest limit and authorization tests | Implemented; production revalidation |
+| LIVE-03 | Five-guest queue/invites/approval/removal | Enforced five-guest limit and authorization tests | Guest Queue UI merged in PR #193; backend enforcement exists; approved/declined/expired history and device acceptance remain |
 | LIVE-04 | Movable/resizable guest tiles | Bounded drag/resize on supported devices and reduced-motion fallback | Implemented; device QA needed |
-| LIVE-05 | Chat/comments/reactions/moderation/reports | Two-account delivery, rate limits, hide/block/report and moderator permissions | Needs revalidation |
-| LIVE-06 | Battles/events/gifts/wallet/leaderboard/analytics | Real transactional models, abuse controls, clear Naira/unit conversion and audit trail | Not started / verify existing partial code |
-| LIVE-07 | Replay recording/library/player | Egress completion, DB row, private object, signed playback, unauthorized denial | One production READY row + matching private MP4 object verified; signed playback code reviewed; actual viewer playback/denial runtime test remains |
-| LIVE-08 | LIVE discovery/creator profile/notifications/settings | Real data, privacy and navigation | Creator Studio exists as owner dashboard under the LiveCreatorProfile route; public Creator Profile is currently the general PeerProfileScreen with LiveImpactCard; LIVE entry-point split needed |
+| LIVE-05 | Chat/comments/reactions/moderation/reports | Two-account delivery, rate limits, hide/block/report and moderator permissions | Moderation/Reports workspaces merged in PR #193; production logs show no reaction-failure messages 15–19 Nov after 14 Nov RPC fixes; two-account acceptance pending |
+| LIVE-06 | Battles/events/gifts/wallet/leaderboard/analytics | Real transactional models, abuse controls, clear Naira/unit conversion and audit trail | Aggregate Creator Analytics screen in PR #194; battles, LIVE events/scheduling, leaderboard and gift/wallet ledger APIs not present; transactional UI blocked pending backend/provider/legal design |
+| LIVE-07 | Replay recording/library/player | Egress completion, DB row, private object, signed playback, unauthorized denial | Production READY artifact and playback endpoint HTTP 200 verified; native/web player decoding, expiry and unauthorized denial still require runtime acceptance |
+| LIVE-08 | LIVE discovery/creator profile/notifications/settings | Real data, privacy and navigation | Creator Studio/Profile split merged in PR #191; Hub/stage profile entry points use privacy-aware PeerProfile; settings remain partial and need a dedicated preference contract |
 | LIVE-09 | LIVE safety | Age/consent/blur/report/evidence and minor-safety controls | Blocked before random matching ships |
 
 
 ### LIVE screen inventory — 18 audited experiences
 
-The 18 screens in the supplied Crown Aurora audit are nested within the wider 48-experience application inventory. A dedicated route is not required for every transient panel, but each experience below must have a complete, discoverable flow, accessible states and a clear owner. Current source inspection found six dedicated LIVE routes. The owner Creator Studio is currently routed as LiveCreatorProfile; the public Creator Profile experience is the general PeerProfileScreen with LiveImpactCard and still needs a clear LIVE entry point.
+The 18 screens in the supplied Crown Aurora audit are nested within the wider application inventory. A dedicated route is not required for every transient panel, but each experience must have a complete, discoverable flow, accessible states and a clear owner. Current main has dedicated LIVE routes for Hub, Broadcast, Preflight, Creator Studio, Replay Library, Replay Player, Guest Queue, Moderation and Reports; Creator Profile reuses PeerProfileScreen, and Creator Analytics is in PR #194. Audio Room and Video Chat remain Broadcast modes.
 
 | # | Experience | Current source evidence | Required delivery |
 |---:|---|---|---|
 | 1 | LIVE Hub / Discover | Dedicated LiveHubScreen; discovery, follow, invite and start setup exist | Finish discover hierarchy, categories/region/search, pagination and all loading/empty/error/offline states |
-| 2 | Creator Studio | Dedicated owner workspace exists in LiveCreatorProfileScreen and is titled "Creator studio"; the route name is misleading | Rename the route to LiveCreatorStudio; complete scheduling/policy gates, live controls, guest/moderation workspaces and post-live review. Creator pre-flight is merged. |
+| 2 | Creator Studio | Dedicated LiveCreatorStudioScreen and LiveCreatorStudio route; owner identity and impact summary are service-backed | Scheduling/policy gates, richer live controls, end-live confirmation and post-live review remain |
 | 3 | Broadcast Room | Dedicated LiveStreamScreen with LiveKit stage, chat, reactions and controls | Complete connection/buffering/reconnect/permission/end states, safe areas, accessible overlays and low-power mode |
 | 4 | Audio Room | audio_room experience mode in Broadcast Room | Complete audio-first stage, speaker seats, host controls, speaking indicators and audio-route behaviour |
 | 5 | Video Chat Room | video_chat experience mode in Broadcast Room | Complete themed multi-guest layout, tile drag/resize/focus and participant lifecycle |
@@ -145,14 +145,14 @@ The 18 screens in the supplied Crown Aurora audit are nested within the wider 48
 | 7 | Events and reminders | Global Events screen exists; LIVE-specific event journey is not evidenced | LIVE event discovery/detail, schedule, RSVP/reminder, creator management and time-zone handling |
 | 8 | Replay Library | Dedicated LiveReplayLibraryScreen | Finish pagination/filters, thumbnails where available, processing/failure/expiry and owner actions |
 | 9 | Replay Player | Dedicated LiveReplayScreen using authenticated playback endpoint | Verify real playback on web/native, expiry, account switch, access denial, retry and deletion |
-| 10 | Creator Profile | PeerProfileScreen already includes privacy-aware LiveImpactCard; currently a general profile route, not a LIVE-linked creator entry point | Link from LIVE discovery and the stream stage; add creator follow/current-live CTA and preserve public privacy rules without duplicating generic profile data |
+| 10 | Creator Profile | LiveCreatorProfile route reuses privacy-aware PeerProfileScreen/LiveImpactCard; LIVE discovery and in-room entry points and follow/current-live action merged in PR #191 | Verify public/private profile visibility, follow/unfollow and return-to-active-stage on two accounts |
 | 11 | Leaderboard / Crown Race | No dedicated route or leaderboard endpoint identified in current LIVE router | Define ranking windows, eligibility, anti-manipulation, privacy and auditable score source |
 | 12 | Gifts / Gift Tray | In-room presentation surface exists; no gift transaction endpoint identified in current LIVE router | Real catalogue, balance check, spend confirmation, idempotent transaction, animation, receipt and inventory |
 | 13 | Wallet and Payouts | No dedicated LIVE wallet route or payout endpoint identified in current LIVE router | Balance ledger, top-up/provider billing, receipts, restore, KYC, bank selection, withdrawal and disputes |
-| 14 | Creator Analytics | Creator impact summary exists in profile; no complete analytics experience verified | Dedicated date-range dashboard with real metrics, definitions, empty states and export/access controls |
-| 15 | Moderation | Moderator controls are embedded in Broadcast Room | Dedicated moderation workspace, queue, roles, actions, evidence and audit trail |
-| 16 | Guest Queue | Guest request list is embedded in Broadcast Room | Full queue with pending/approved/declined/expired states, invite delivery and strict five-guest capacity |
-| 17 | Reports | Report review panel is embedded in Broadcast Room | Report inbox/detail, evidence, severity, assignment, action, appeal and audit history |
+| 14 | Creator Analytics | Dedicated LiveAnalyticsScreen in PR #194 uses authenticated creator profile summary: impact, reactions, supporters, followers, broadcasts and replay status | Current API provides aggregate totals/latest 100 replay records only; date-range trends, watch-time attribution and export remain blocked pending backend analytics support |
+| 15 | Moderation | Dedicated LiveModerationScreen merged in PR #193; supports guest mic/spotlight, guest demotion, stream-scoped viewer removal and moderator appointments | Runtime permission/two-account tests and evidence/audit history still required |
+| 16 | Guest Queue | Dedicated LiveGuestQueueScreen merged in PR #193; pending requests, approve/decline, 5-seat capacity guard and empty/error/refresh states | Historical approved/declined/expired request states require a backend history response; verify two-account and device flows |
+| 17 | Reports | Dedicated LiveReportsScreen merged in PR #193; open/reviewing/resolved/dismissed states and moderator authorization | Evidence attachment, assignment, appeal and durable audit-history flows remain |
 | 18 | LIVE Settings | No dedicated LIVE settings route identified | Creator/viewer preferences, privacy, notifications, data saver, blocked/muted users, language/region and account controls |
 
 ### Additional required LIVE screens and journeys from the audit
@@ -606,3 +606,47 @@ This is the current handoff point. Read this register and the Master Blueprint b
 - Vercel check failed solely on the team build-rate limit. Do not claim PR #189 is deployed to production; last confirmed production SHA remains `1060ca0e8eae49dab427420c7200d526a1fde710` pending fresh deployment verification.
 - No backend, database, migration, RLS, storage or provider change was made.
 
+
+
+## 22. LIVE creator operations and analytics checkpoint — 2026-11-19
+
+**This section supersedes the older “next immediate slice” notes in sections 20–21.** The active programme remains LIVE-only. Do not resume Chat implementation without an explicit user redirect.
+
+### Merged LIVE delivery
+- PR #191 merged Creator Studio/Profile separation. The owner dashboard is now LiveCreatorStudioScreen / LiveCreatorStudio; the public LiveCreatorProfile route reuses the privacy-aware PeerProfileScreen and LiveImpactCard.
+- PR #193 merged dedicated LiveGuestQueueScreen, LiveModerationScreen and LiveReportsScreen. Routes are discoverable from Creator Studio and native/web LIVE stage controls.
+- The operations screens use existing authenticated stream-scoped backend routes; no new backend endpoint, migration, RLS, storage policy or provider was added.
+- Guest approvals are disabled when five guest seats are occupied. Moving a guest off stage revokes publishing and returns them to the audience; removing a viewer blocks only that LIVE stream, not their ZannyChat account.
+- Reports support open/reviewing/resolved/dismissed states. Moderators can review reports; creator-only participant management is not exposed to appointed moderators.
+- PR #193 validation passed: 976 unit tests, frontend quality, Expo web/Android development exports, Android Kotlin compile, iOS prebuild/CallKit verification, release/contract/integrity audits, bundle-exposure audit and dependency audit.
+- ThemeContrast now audits 55 screen modules. Every new operations control has an explicit accessibility role and label.
+
+### Creator Analytics — PR #194 in progress
+- Dedicated LiveAnalyticsScreen reads only the authenticated /live/creators/me/profile summary.
+- It presents impact score, reactions, unique supporters, current followers, total broadcasts, live-now count, total replays and latest-100 replay readiness/processing counts.
+- It deliberately does not invent daily trends, watch time or exportable metrics because the current API does not provide those datasets.
+- Merge is gated on the same frontend/client/platform and bundle-exposure checks.
+
+### Production and backend evidence
+- Frontend main after PR #193: bc8fa4879663cc9773df1fa3f97f859bac76f7bd.
+- Latest confirmed Vercel production deployment still serves 1060ca0e8eae49dab427420c7200d526a1fde710 (PR #185); the PR #191/#193 LIVE merges are **not yet confirmed deployed**. Do not claim production completion.
+- The #191 branch had a READY preview on an earlier revision. The #193 branch's first preview failed on an intermediate JSX syntax error, which was corrected; no latest-head preview or production deploy is confirmed. Do not attribute that failure to a build quota.
+- Backend Render remains deployed on 14860064a87c7637fc4f15dc6d75f4084b6f696a; production migrations remain applied through 20261118223000. No new LIVE migration is required for PRs #191/#193/#194.
+- Production logs show the historical reaction RPC failures on 14 Nov (impact upsert alias and creator self-reaction); no matching reaction-failure logs were found from 15–19 Nov after the fixes. Two-account reaction acceptance is still required.
+- Authenticated replay playback endpoint returned HTTP 200 on 19 Nov. This proves backend signed-playback access only; native/web video decoding, expired-link handling and unauthorized denial remain acceptance gates.
+
+### Remaining 18-screen gaps and backend dependencies
+- Battles, LIVE Events/scheduling/reminders and Leaderboard have no verified LIVE backend routes yet.
+- Gifts/Wallet/Payouts must not show transactional success until a real idempotent ledger, balance enforcement, payment provider, receipts/refunds, fraud controls, KYC and legal/provider approval exist.
+- Analytics currently exposes aggregate creator totals only; date-range time series, watch-time attribution and export need backend data contracts.
+- Guest Queue currently lists pending requests; historical approved/declined/expired states need a backend history response.
+- Reports still need evidence attachment, assignment, appeal and durable audit history. Safety Centre, age/region eligibility, creator policy acceptance and minor-safety gates remain incomplete.
+- LIVE Settings remain partial in preflight/composer controls; define a persisted creator/viewer preference contract before shipping a settings screen.
+- Audio Room and Video Chat Room remain modes within Broadcast, not separate navigation routes; their device/audio-route acceptance remains pending.
+
+### Next execution order
+1. Finish and merge PR #194 Creator Analytics after all checks pass.
+2. Ask the user to pull frontend main locally; then perform Android 10/11 and modern-device LIVE acceptance with two accounts, including guest approval/removal, reports/moderator permissions, reaction delivery, replay playback and account switching.
+3. Verify Vercel production deployment against the exact merged main SHA before claiming deployment.
+4. Design the missing backend contracts in dependency order: LIVE settings and analytics time series; scheduled events/reminders; leaderboard; battle lifecycle; then wallet/gift ledger and payment-provider gates.
+5. Keep Chat follow-ups pending and untouched throughout the LIVE programme.
