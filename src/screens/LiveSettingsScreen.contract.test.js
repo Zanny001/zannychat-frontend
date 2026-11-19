@@ -37,6 +37,10 @@ test('LIVE settings has accessible format, audience, category and guest-default 
   assert.ok(screen.includes('accessibilityLabel="Allow approved guests by default"'));
   assert.ok(screen.includes('accessibilityLabel="Save LIVE settings"'));
   assert.ok(screen.includes('minHeight: 52'));
+  assert.ok(screen.includes("navigation.navigate(item.route)"));
+  assert.ok(screen.includes("route: 'PrivacySecurity'"));
+  assert.ok(screen.includes("route: 'Notifications'"));
+  assert.ok(screen.includes("route: 'Sessions'"));
 });
 
 test('LIVE Hub and navigation expose the dedicated settings experience', () => {
