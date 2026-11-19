@@ -4,9 +4,11 @@ import { readFileSync } from 'node:fs';
 
 const screen = readFileSync(new URL('../screens/StatusUpdatesScreen.js', import.meta.url), 'utf8');
 
-test('Status feed renders grouped story entries with owner and update count', () => {
+test('Status feed renders grouped story entries with owner and update count through a virtualized list', () => {
   assert.match(screen, /groupStatusUpdates\(statuses\)/);
-  assert.match(screen, /groupedStatuses\.map\(\(group\)/);
+  assert.match(screen, /data=\{groupedStatuses\}/);
+  assert.match(screen, /renderItem=\{\(\{ item: group \}\)/);
+  assert.match(screen, /data=\{friendStatusGroups\}/);
   assert.match(screen, /group\.statuses\.length/);
   assert.match(screen, /group\.latest/);
 });
