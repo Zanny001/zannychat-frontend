@@ -966,7 +966,8 @@ export default function LiveStreamScreen({ route, navigation }) {
     navigation.navigate('LiveCreatorProfile', {
       participant: { id: stream.creator_id, name: route.params?.creatorName || stream.creator_name || 'LIVE Creator', avatarColor: route.params?.creatorAvatarColor || stream.creator_avatar_color },
       fromLive: true,
-      currentLiveStreamId: null,
+      currentLiveStreamId: stream.id,
+      alreadyViewingLive: true,
       isCurrentUser: creatorMode,
     });
   }, [creatorMode, navigation, route.params?.creatorName, route.params?.creatorAvatarColor, stream?.creator_id, stream?.creator_name]);
