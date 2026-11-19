@@ -188,3 +188,10 @@ test('LIVE hub separates the owner Creator Studio from public creator profiles',
   assert.ok(screen.includes('isFollowing: followingIds.includes(creatorId)'));
   assert.ok(screen.includes('View profile'));
 });
+
+test('LIVE room navigation passes only stable IDs and safe creator display hints', () => {
+  assert.ok(screen.includes("navigation.navigate('LiveStream', {"));
+  assert.ok(screen.includes('streamId: stream.id'));
+  assert.ok(screen.includes('creatorName: stream.creator_name || stream.name || null'));
+  assert.ok(screen.includes('creatorAvatarColor: stream.avatarColor || stream.avatar_color || null'));
+});
