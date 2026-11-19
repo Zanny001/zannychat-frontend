@@ -1,6 +1,6 @@
 # ZannyChat Master Delivery Register
 
-**Status:** Baseline reconciliation in progress  
+**Status:** LIVE-first implementation active; all non-LIVE work paused  
 **Last reconciled:** 2026-11-19  
 **Companion charter:** [Master Product, Architecture & Design Blueprint](./ZANNYCHAT_MASTER_BLUEPRINT.md)
 
@@ -24,30 +24,32 @@ Never infer Accepted from route presence, a green build, a prototype, a merged P
 | Area | Last known evidence | Current register status | Required reconciliation |
 |---|---|---|---|
 | Crown Aurora direction | Frontend audit records palette, contrast principles and initial shared component work | Needs revalidation | Inspect current main and all open UI PRs; do not revive closed PR #85 blindly |
-| LIVE core UX | PR #170 and PR #176 reported merged; themed modes, guest layout and controls | Merged; production acceptance reported by user | Preserve functionality; only reopen defects supported by new evidence |
-| LIVE backend RPC safety | Backend PR #151 reported merged and Render deploy live | Needs revalidation | Verify current backend main and Render deployed SHA |
+| LIVE core UX | PR #170/#172/#176 merged; current main has five dedicated LIVE routes (Hub, Broadcast, Replay Library, Replay Player, Creator Profile); Audio Room and Video Chat are modes within Broadcast | Core merged; 18-screen audit not yet accepted | Preserve current LiveKit/media behaviour; finish missing screens, flows, safety, states and device acceptance |
+| LIVE backend | Current src/routes/liveStreams.js exposes discovery, broadcast lifecycle, join/leave, comments, reactions, guest requests/invites, participants, moderators, reports, follows, creator profile and replay endpoints | Core endpoints exist; domain coverage incomplete | Map every endpoint to UI, authorization, RLS, rate limits and integration tests; no assumed gift/battle/wallet/leaderboard API |
 | LIVE migrations | Two named migrations applied through successful guarded workflow run 44501209658 | Applied; do not rerun | Verify migration history only if needed; any correction is a new forward migration |
-| Replay | Pipeline source exists; prior production evidence had zero replay rows/objects | Needs production revalidation | Check current recording, row/object creation and authorized playback independently |
+| Replay | One production READY row and matching private MP4 object were verified; signed playback route reviewed | Artifact verified; player/access acceptance partial | Exercise authenticated playback, expired link, unauthorized viewer denial and native/web playback |
 | Full app inventory | 46 registered modules / 48 experiences recorded in later audit | Inventory baseline | Reparse current route registry and reconcile additions/removals |
 | Parity scope | Retrieved parity gap analysis based on supplied original audit | Scope recorded; original source not re-opened in this pass | Retrieve original source before claiming any missing detail |
 | Account isolation | PRs #146/#147 merged in a previous audit; two-account acceptance was outstanding then | Needs revalidation | Run two-account tests across chat/media/realtime/calls/LIVE |
 | Backend deployment | Historical audit reported main/deploy SHA divergence; PR #151 later deployed | Needs revalidation | Compare current main SHA to Render deploy SHA |
 | Production frontend | Previous conversation reported Vercel READY at commit 55fb010 | Needs revalidation | Verify current production deployment and exact SHA |
 
-## 2. Open PR reconciliation — do not duplicate
+## 2. PR reconciliation — LIVE-first checkpoint (2026-11-19)
 
-The following PRs are the active reconciliation set. All head branches and CI must be rechecked before merge.
+Recent GitHub state was rechecked before this priority change:
 
-| PR | Scope | Current handling |
+| PR | Scope | Observed state / handling |
 |---|---|---|
-| [#149](https://github.com/Zanny001/zannychat-frontend/pull/149) | Historical 17 Nov full-app audit and production evidence | Open but 15 ahead / 40 behind main; preserve unique evidence, do not merge stale branch |
-| [#177](https://github.com/Zanny001/zannychat-frontend/pull/177) | Canonical Master Blueprint and Delivery Register | Draft documentation PR; frontend-quality passed, Advanced Calling checks were running at last checkpoint |
-| [#178](https://github.com/Zanny001/zannychat-frontend/pull/178) | Main / Chats bounded render window | Fresh-main replacement for #161; CI running |
-| [#179](https://github.com/Zanny001/zannychat-frontend/pull/179) | New Chat bounded contact directory | Fresh-main replacement for #160; CI running |
-| [#180](https://github.com/Zanny001/zannychat-frontend/pull/180) | Saved/Drafts/Pinned/Forward/Folders rendering and lookup bounds | Fresh-main replacement for #159; CI running |
-| [#181](https://github.com/Zanny001/zannychat-frontend/pull/181) | Stories feed and Friends rail virtualization | Fresh-main replacement for #151; CI running |
+| [#170](https://github.com/Zanny001/zannychat-frontend/pull/170) | Crown Aurora LIVE redesign | Merged; preserve and extend current implementation |
+| [#172](https://github.com/Zanny001/zannychat-frontend/pull/172) | Responsive Crown Aurora refinements | Merged |
+| [#176](https://github.com/Zanny001/zannychat-frontend/pull/176) | Video LIVE Chat and Audio LIVE Room modes | Merged |
+| [#175](https://github.com/Zanny001/zannychat-frontend/pull/175) | Earlier guest-control branch | Closed unmerged; inspect its unique delta before reusing anything |
+| [#177](https://github.com/Zanny001/zannychat-frontend/pull/177) | Canonical Master Blueprint and Delivery Register | Merged; these are the governing documents |
+| [#184](https://github.com/Zanny001/zannychat-frontend/pull/184) | Chat timeline row extraction | Merged before LIVE priority reset; no further Chat work authorised in this phase |
+| [#185](https://github.com/Zanny001/zannychat-frontend/pull/185) | Chat timeline lifecycle hook | Merged before LIVE priority reset; no further Chat work authorised in this phase |
+| [#186](https://github.com/Zanny001/zannychat-frontend/pull/186) | Chat message outbox hook | Merged before LIVE priority reset; no further Chat work authorised in this phase |
 
-**Closed and superseded:** #151 → #181, #159 → #180, #160 → #179, #161 → #178. Their required deltas were reapplied on branches created from current main; the old PRs were closed without merge. **Closed historical branch:** PR #85 (Crown Aurora premium system) remains closed and unmerged; do not revive wholesale.
+No recent open LIVE PR appeared in the inspected PR set. Do not revive closed branches wholesale or duplicate merged work. The user has paused further Chat implementation; keep all new execution focused on LIVE until explicitly redirected.
 
 ## 3. Product domains and acceptance backlog
 
@@ -114,7 +116,7 @@ The following PRs are the active reconciliation set. All head branches and CI mu
 | CALL-02 | Mid-call audio/video switching | Switch without dropping session; device/permission tests | Needs revalidation |
 | CALL-03 | Group calls and participant management | Add/remove, mute, role and leave/end semantics | Needs revalidation |
 | CALL-04 | Call history, privacy and recovery | Server history, missed/failed states, session cleanup | Needs revalidation |
-| LIVE-01 | 18-screen Crown Aurora LIVE experience | All screens responsive, accessible and connected to actual services | Merged core; audit incomplete |
+| LIVE-01 | 18-screen Crown Aurora LIVE experience | All 18 experiences responsive, accessible, state-complete and connected to actual services | Core merged; detailed audit incomplete |
 | LIVE-02 | Broadcast/Audio/Video room modes | Mode-specific permissions and correct media publishing | Implemented; production revalidation |
 | LIVE-03 | Five-guest queue/invites/approval/removal | Enforced five-guest limit and authorization tests | Implemented; production revalidation |
 | LIVE-04 | Movable/resizable guest tiles | Bounded drag/resize on supported devices and reduced-motion fallback | Implemented; device QA needed |
@@ -123,6 +125,58 @@ The following PRs are the active reconciliation set. All head branches and CI mu
 | LIVE-07 | Replay recording/library/player | Egress completion, DB row, private object, signed playback, unauthorized denial | One production READY row + matching private MP4 object verified; signed playback code reviewed; actual viewer playback/denial runtime test remains |
 | LIVE-08 | LIVE discovery/creator profile/notifications/settings | Real data, privacy and navigation | Needs revalidation |
 | LIVE-09 | LIVE safety | Age/consent/blur/report/evidence and minor-safety controls | Blocked before random matching ships |
+
+
+### LIVE screen inventory — 18 audited experiences
+
+The 18 screens in the supplied Crown Aurora audit are nested within the wider 48-experience application inventory. A dedicated route is not required for every transient panel, but each experience below must have a complete, discoverable flow, accessible states and a clear owner. Current source inspection found five dedicated LIVE routes; the remainder are either modes/panels or require new screens.
+
+| # | Experience | Current source evidence | Required delivery |
+|---:|---|---|---|
+| 1 | LIVE Hub / Discover | Dedicated LiveHubScreen; discovery, follow, invite and start setup exist | Finish discover hierarchy, categories/region/search, pagination and all loading/empty/error/offline states |
+| 2 | Creator Studio | Creator controls embedded in LiveStreamScreen; creator profile/impact route exists | Dedicated creator workspace for preflight, schedule, live controls, guests, moderation and post-live review |
+| 3 | Broadcast Room | Dedicated LiveStreamScreen with LiveKit stage, chat, reactions and controls | Complete connection/buffering/reconnect/permission/end states, safe areas, accessible overlays and low-power mode |
+| 4 | Audio Room | audio_room experience mode in Broadcast Room | Complete audio-first stage, speaker seats, host controls, speaking indicators and audio-route behaviour |
+| 5 | Video Chat Room | video_chat experience mode in Broadcast Room | Complete themed multi-guest layout, tile drag/resize/focus and participant lifecycle |
+| 6 | Battles | No dedicated route or battle endpoint identified in current LIVE router | Design invite/accept/rules/round/result/rematch, safety and transactional scoring before UI claims functionality |
+| 7 | Events and reminders | Global Events screen exists; LIVE-specific event journey is not evidenced | LIVE event discovery/detail, schedule, RSVP/reminder, creator management and time-zone handling |
+| 8 | Replay Library | Dedicated LiveReplayLibraryScreen | Finish pagination/filters, thumbnails where available, processing/failure/expiry and owner actions |
+| 9 | Replay Player | Dedicated LiveReplayScreen using authenticated playback endpoint | Verify real playback on web/native, expiry, account switch, access denial, retry and deletion |
+| 10 | Creator Profile | Dedicated LiveCreatorProfileScreen | Separate creator identity from Studio; privacy-aware public profile, follow and verified impact |
+| 11 | Leaderboard / Crown Race | No dedicated route or leaderboard endpoint identified in current LIVE router | Define ranking windows, eligibility, anti-manipulation, privacy and auditable score source |
+| 12 | Gifts / Gift Tray | In-room presentation surface exists; no gift transaction endpoint identified in current LIVE router | Real catalogue, balance check, spend confirmation, idempotent transaction, animation, receipt and inventory |
+| 13 | Wallet and Payouts | No dedicated LIVE wallet route or payout endpoint identified in current LIVE router | Balance ledger, top-up/provider billing, receipts, restore, KYC, bank selection, withdrawal and disputes |
+| 14 | Creator Analytics | Creator impact summary exists in profile; no complete analytics experience verified | Dedicated date-range dashboard with real metrics, definitions, empty states and export/access controls |
+| 15 | Moderation | Moderator controls are embedded in Broadcast Room | Dedicated moderation workspace, queue, roles, actions, evidence and audit trail |
+| 16 | Guest Queue | Guest request list is embedded in Broadcast Room | Full queue with pending/approved/declined/expired states, invite delivery and strict five-guest capacity |
+| 17 | Reports | Report review panel is embedded in Broadcast Room | Report inbox/detail, evidence, severity, assignment, action, appeal and audit history |
+| 18 | LIVE Settings | No dedicated LIVE settings route identified | Creator/viewer preferences, privacy, notifications, data saver, blocked/muted users, language/region and account controls |
+
+### Additional required LIVE screens and journeys from the audit
+
+- Viewer first-run / age gate / region eligibility / camera-microphone-notification permission primers.
+- Creator onboarding, identity verification/KYC where required, creator policy acceptance and payout setup.
+- Creator pre-flight checklist, scheduled LIVE setup, end-live confirmation and post-live summary.
+- Safety Centre, blocked/muted users, report evidence review, strikes and appeals.
+- Gift inventory, purchase pending/failed/success, receipts and restore purchases.
+- Support and disputes, notification preferences, data-saver mode, language/region settings and viewing history.
+- Conference waiting room, join-link handling, participant consent and recording consent.
+
+### Required state matrix for every LIVE screen
+
+Loading/skeleton; populated; empty; recoverable error/retry; offline; connecting; buffering; reconnecting; camera/microphone permission denied; device unavailable; age/region restricted; private/invite-only denial; rate-limited comments/reactions/gifts; payment pending/failed/cancelled; moderation-hidden content; expired replay; success confirmation; destructive-action confirmation. Include screen-reader announcements and reduced-motion equivalents.
+
+### LIVE quality and safety gates
+
+- Safe areas: top max(54pt, inset), bottom max(34pt, inset), 16pt side margin; never hard-code status-bar offsets as a substitute for safe-area insets.
+- Contrast: repair LIVE pill and primary button combinations from the audit; never put text directly on aurora artwork without a legible scrim/surface.
+- Targets: minimum 44×44pt hit area; labels for icon-only actions; visible keyboard/focus state on web.
+- Design system: bind colours to theme semantics; consolidate to eight type steps, a 4pt spacing grid and five radii; glass max four layers per screen with solid fallback.
+- Motion: shared timing/easing, reduced-motion and low-power paths; animate transform/opacity; cap particles and avoid blur-driven animation.
+- Safety: no anonymous random video matching; Live Match stays disabled/gated until age assurance, consent, blur-by-default, report/evidence, moderation staffing, block and regional kill-switch controls are approved.
+- Payments: no gift, coin, wallet or payout success UI until provider, billing, ledger, refund, fraud, KYC and legal requirements are implemented and tested.
+- Acceptance: viewer and creator usability tests, TalkBack/VoiceOver, text scaling, low-end Android, weak network and two-account authorization tests.
+
 
 ### F. Privacy, security and platform integrity
 
@@ -162,18 +216,20 @@ A release cannot pass until applicable gates have recorded evidence:
 8. **Deployment gate:** exact commit deployed; production smoke tests and rollback readiness recorded.
 9. **Acceptance gate:** user-visible flow works with real accounts and real data; evidence is linked here.
 
-## 5. Immediate execution order
+## 5. Immediate execution order — LIVE ONLY
 
-1. Reconcile current GitHub main, all open PRs, CI, backend main and Render/Vercel deployed SHAs. Decide each PR: merge, revise, close or defer—no blind merges.
-2. Reconcile PR #149's audit evidence with this canonical register; retain unique facts, eliminate duplicate competing ledgers.
-3. Complete the architecture baseline: frontend route/domain map, backend route/service map, Supabase data/RLS/storage map, provider/worker map.
-4. Continue sequential interface work from Main/Chats through Chat, New Chat, message utilities, Shared Media and Chat Appearance; then proceed through remaining registered screens without skipping.
-5. In parallel only where no overlapping files/domains, close the bounded rendering PRs and Stories work.
-6. Complete messaging reliability and two-account acceptance before adding advanced message types.
-7. Complete Stories, Groups/Communities, Channels and Events vertical slices.
-8. Complete calls reliability and LIVE production acceptance, including replay pipeline proof and safety gates.
-9. Complete privacy/security, E2EE and encrypted backup as separate reviewed programmes.
-10. Only then expand bots, Mini Apps, business and monetization after product/legal/provider decisions.
+1. Freeze new Chat and unrelated product work. Do not extend the Chat PR sequence while LIVE is the active priority.
+2. Reconcile all current LIVE frontend routes, components, backend endpoints, workers, LiveKit permissions, Supabase tables/RLS/storage and historical LIVE PRs. Reuse verified work; do not revive stale branches blindly.
+3. Build the LIVE foundation: semantic Crown Aurora tokens, safe areas, accessible controls, consistent navigation, responsive layouts, motion/performance budgets and a complete state matrix.
+4. Complete the creator lifecycle: LIVE onboarding, policy/age/permission gates, creator setup, pre-flight checks, schedule/reminders, go-live, host control room, end confirmation and post-live summary.
+5. Complete the viewer lifecycle: discovery, preview, join/leave, reconnect/buffering, comments, reactions, follow/remind, gifts only when backed by real transactional services, post-live and viewing history.
+6. Complete guest/conference lifecycle: guest queue, invitations/approval, five-guest cap, movable/resizable tiles, participant roles, waiting room, recording consent, captions/accessibility and reliable room teardown.
+7. Complete safety lifecycle: report user/content/comment, evidence capture/retention, block/mute, moderation queue, strikes/appeals, age/region restrictions, minor-safe defaults and emergency stream/region kill switches. Live Match remains gated and is not to ship anonymously.
+8. Complete replay acceptance: production Egress → webhook → finalizer → private object → authenticated signed playback → expiry/deletion and unauthorized denial on web and native.
+9. Design and implement gifts, wallet, inventory/receipts, leaderboards, battles, events, Circles, creator analytics and payouts as separate vertical slices with real APIs, transactional records, anti-fraud, billing/KYC/legal review and clear NGN/coin conversion. Do not show fake balances or success states.
+10. Add the remaining LIVE settings, notification preferences, support/disputes, data-saver, language/region, blocked/muted lists and viewing history screens/flows.
+11. Validate every LIVE screen on narrow/standard/large phones, tablet, desktop/web, Android 10/11 and current supported Android/iOS devices. Run screen-reader, 130% text, keyboard, reduced-motion, low-power and weak-network checks.
+12. Update this register with evidence after each vertical slice. Do not mark Accepted from route presence, static code, mock data, green CI or deployment alone.
 
 ## 6. Session handover checklist
 
@@ -511,9 +567,17 @@ This confirms the catalog-level grant/search-path posture recorded in the earlie
 **Next Chat work:** extract the attachment outbox/recovery lifecycle without weakening its preserved-file, retry and duplicate-prevention guarantees; then complete Chat visual, keyboard, accessibility and two-account acceptance before moving to the next screen family.
 
 
-## 20. Current session resume checkpoint
+## 20. LIVE-first session resume checkpoint — 2026-11-19
 
-**Next immediate action:** inspect Vercel build-rate-limit recovery for main `a2f298b`; once production build capacity is available, verify `https://zannychat.vercel.app` is serving that exact SHA. Then continue the attachment-outbox extraction from current main.
+**Active priority:** implement and accept the complete Crown Aurora LIVE programme. Chat work is paused; PRs #184–#186 were already merged before this priority reset, so no further Chat implementation is to be started in this phase.
+
+**Current source baseline:** frontend main includes the five dedicated LIVE routes confirmed in AppNavigator.js: LiveHub, LiveStream, LiveReplayLibrary, LiveReplay and LiveCreatorProfile. Broadcast, Audio Room and Video Chat Room share the LiveStream route. LiveStreamScreen.js contains the stage, participant, guest queue, moderation/report and overlay controls. Backend src/routes/liveStreams.js contains the LIVE APIs listed in the architecture audit; no complete battle, gift transaction, wallet/payout or leaderboard API was found in that router during this pass.
+
+**Next immediate action:** build the LIVE route/component/API/state map and the first foundation slice: safe-area and theme-token corrections plus creator pre-flight and end-of-live flow design. Before adding routes, inspect the full navigation tree, existing LIVE panels, backend contracts, migrations and all prior LIVE PRs to avoid duplicates. No production migration or paid provider adoption without a reviewed design and explicit cost disclosure.
+
+**LIVE acceptance still outstanding:** all 18 audited experiences; added onboarding/preflight/end-summary/safety/support/settings journeys; screen-state matrix; authenticated replay playback/expiry/unauthorized denial; two-account guest/comment/reaction/moderation tests; physical-device and desktop/web layouts; accessibility/reduced-motion/low-power/weak-network validation; payment/KYC/legal gates before monetization; safety approval before Live Match.
+
+This is the handoff point for the LIVE-only phase. Read this register and ZANNYCHAT_MASTER_BLUEPRINT.md before making further changes.
 
 **Pending acceptance that must not be forgotten:**
 - Chat: attachment retry/outbox extraction; composer/media extraction; visual checks at 320/360/390/430px; keyboard/safe-area; accessibility/focus; two-account send/read/edit/delete/reaction/media tests.
