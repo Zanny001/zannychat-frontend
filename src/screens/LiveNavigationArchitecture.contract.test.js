@@ -43,3 +43,38 @@ test('LIVE navigation groups preserve the six primary destinations', () => {
     assert.ok(navigator.includes(`<MainTabs.Screen name="${tab}"`), `Missing primary tab: ${tab}`);
   }
 });
+
+test('LIVE destinations are reachable through their owning user journeys', () => {
+  const read = (name) => fs.readFileSync(new URL(`./${name}`, import.meta.url), 'utf8');
+  const routes = {
+    hub: read('LiveHubScreen.js'),
+    preflight: read('LivePreflightScreen.js'),
+    stream: read('LiveStreamScreen.js'),
+    studio: read('LiveCreatorStudioScreen.js'),
+    events: read('LiveEventsScreen.js'),
+    replayLibrary: read('LiveReplayLibraryScreen.js'),
+    leaderboard: read('LiveLeaderboardScreen.js'),
+    summary: read('LivePostStreamSummaryScreen.js'),
+    guestQueue: read('LiveGuestQueueScreen.js'),
+    moderation: read('LiveModerationScreen.js'),
+    reports: read('LiveReportsScreen.js'),
+  };
+  const edges = [
+    ['hub', 'LivePreflight'], ['hub', 'LiveCreatorStudio'], ['hub', 'LiveLeaderboard'],
+    ['hub', 'LiveEvents'], ['hub', 'LiveSettings'], ['hub', 'LiveReplayLibrary'],
+    ['hub', 'LiveCreatorProfile'], ['hub', 'LiveStream'],
+    ['preflight', 'LiveStream'],
+    ['stream', 'LiveGuestQueue'], ['stream', 'LiveModeration'], ['stream', 'LiveReports'],
+    ['stream', 'LiveCreatorProfile'], ['stream', 'LiveReplay'], ['stream', 'LivePostStreamSummary'],
+    ['studio', 'LiveAnalytics'], ['studio', 'LiveModeration'], ['studio', 'LiveReplayLibrary'], ['studio', 'LiveReplay'],
+    ['events', 'LivePreflight'], ['replayLibrary', 'LiveReplay'],
+    ['leaderboard', 'LiveCreatorProfile'],
+    ['summary', 'LiveReplayLibrary'], ['summary', 'LiveCreatorStudio'],
+    ['guestQueue', 'LiveModeration'], ['moderation', 'LiveGuestQueue'], ['moderation', 'LiveReports'],
+    ['reports', 'LiveModeration'],
+  ];
+  for (const [owner, destination] of edges) {
+    assert.ok(routes[owner].includes(`navigate('${destination}'`) || routes[owner].includes(`replace('${destination}'`),
+      `Expected ${owner} to provide a route to ${destination}`);
+  }
+});
