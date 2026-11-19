@@ -205,30 +205,31 @@ export default function LiveHubScreen({ navigation, route }) {
     return () => data?.subscription?.unsubscribe?.();
   }, [refresh]);
 
-  useEffect(() => {
+  const applyLivePreferences = useCallback(async (expectedUserId) => {
     const requestId = ++livePreferencesRequestRef.current;
-    if (!currentUserId) return undefined;
-    let active = true;
-    (async () => {
-      try {
-        const preferences = await loadLivePreferences(currentUserId);
-        const latestUser = await getCurrentUser().catch(() => null);
-        if (!active || requestId !== livePreferencesRequestRef.current || latestUser?.id !== currentUserId) return;
-        setExperienceMode(preferences.experienceMode);
-        setVisibility(preferences.visibility);
-        setCategory(preferences.category);
-        setAllowGuests(preferences.allowGuests);
-      } catch {
-        // Defaults remain usable if device storage is temporarily unavailable.
-      }
-    })();
-    return () => { active = false; };
-  }, [currentUserId]);
+    if (!expectedUserId) return;
+    try {
+      const preferences = await loadLivePreferences(expectedUserId);
+      const latestUser = await getCurrentUser().catch(() => null);
+      if (requestId !== livePreferencesRequestRef.current || latestUser?.id !== expectedUserId) return;
+      setExperienceMode(preferences.experienceMode);
+      setVisibility(preferences.visibility);
+      setCategory(preferences.category);
+      setAllowGuests(preferences.allowGuests);
+    } catch {
+      // Defaults remain usable if device storage is temporarily unavailable.
+    }
+  }, []);
+
+  useEffect(() => {
+    applyLivePreferences(currentUserId);
+  }, [currentUserId, applyLivePreferences]);
 
   useFocusEffect(useCallback(() => {
     pendingReplayPollStartedAt.current = Date.now();
     refresh();
-  }, [refresh]));
+    applyLivePreferences(currentUserId);
+  }, [refresh, applyLivePreferences, currentUserId]));
 
   const hasPendingReplays = replays.some((item) => ['starting', 'recording', 'processing'].includes(item.status));
   useFocusEffect(useCallback(() => {
