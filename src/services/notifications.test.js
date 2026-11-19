@@ -11,7 +11,7 @@ test('Creator LIVE push taps open LIVE discovery and carry the stream notificati
   assert.ok(notifications.includes("live:${liveType}:${data.eventId || data.replayId || liveStreamId || data.creatorId || data.followerId || 'hub'}"));
   const liveHub = fs.readFileSync(new URL('../screens/LiveHubScreen.js', import.meta.url), 'utf8');
   assert.ok(liveHub.includes("route?.params?.liveNotification"));
-  assert.ok(liveHub.includes("type === 'live_event_invitation'"));
+  assert.ok(liveHub.includes("['live_event_invitation', 'live_event_reminder'].includes(type)"));
   assert.ok(liveHub.includes("navigation.navigate('LiveEvents'"));
   assert.ok(liveHub.includes("['live_stream_started', 'live_invitation', 'live_guest_request', 'live_guest_invitation'].includes(type)"));
   assert.ok(liveHub.includes("item.invitation_type === 'guest' ? 'Join stage' : 'Join'"));
