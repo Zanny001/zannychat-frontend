@@ -164,6 +164,22 @@ export default function LiveSettingsScreen({ navigation }) {
               </View>
             </GlassCard>
 
+            <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
+              <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: spacing.xs }]}>More account controls</Text>
+              {[
+                { route: 'PrivacySecurity', label: 'Privacy & safety', detail: 'Blocked accounts and account protection', icon: 'shield-checkmark-outline' },
+                { route: 'Notifications', label: 'Notification preferences', detail: 'Manage app notification delivery', icon: 'notifications-outline' },
+                { route: 'Sessions', label: 'Devices & sessions', detail: 'Review active sign-ins', icon: 'phone-portrait-outline' },
+              ].map((item) => <TouchableOpacity key={item.route} onPress={() => navigation.navigate(item.route)} accessibilityRole="button" accessibilityLabel={'Open ' + item.label} style={{ minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border }}>
+                <Ionicons name={item.icon} size={20} color={colors.primary} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.label}</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>{item.detail}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={17} color={colors.textSecondary} />
+              </TouchableOpacity>)}
+            </GlassCard>
+
             <TouchableOpacity onPress={save} disabled={saving || saved} accessibilityRole="button" accessibilityLabel="Save LIVE settings" accessibilityState={{ disabled: saving || saved, busy: saving }} style={{ minHeight: 52, borderRadius: radii.md, backgroundColor: saving || saved ? colors.border : colors.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.sm }}>
               {saving ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name={saved ? 'checkmark-circle' : 'save-outline'} size={19} color={saved ? colors.textSecondary : colors.onPrimary} />}
               <Text style={[typography.bodyStrong, { color: saved ? colors.textSecondary : colors.onPrimary }]}>{saving ? 'Saving…' : saved ? 'Saved on this device' : 'Save LIVE defaults'}</Text>
