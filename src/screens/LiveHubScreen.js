@@ -374,6 +374,12 @@ export default function LiveHubScreen({ navigation, route }) {
     handledLiveNotificationRef.current = key;
     navigation.setParams?.({ liveNotification: undefined });
 
+    if (type === 'live_event_invitation' && typeof notification.eventId === 'string') {
+      refresh();
+      navigation.navigate('LiveEvents', { eventId: notification.eventId });
+      return;
+    }
+
     if (type === 'live_replay_ready' && typeof notification.replayId === 'string') {
       refresh();
       navigation.navigate('LiveReplay', { replay: { id: notification.replayId, streamTitle: 'LIVE replay' } });
