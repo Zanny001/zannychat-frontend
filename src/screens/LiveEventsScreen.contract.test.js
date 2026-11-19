@@ -13,7 +13,7 @@ test('LIVE Events screen is registered without changing the six primary tabs',()
   assert.ok(navigation.includes("import LiveEventsScreen from '../screens/LiveEventsScreen'"));
   assert.ok(navigation.includes('name="LiveEvents" component={LiveEventsScreen}'));
   assert.ok(hub.includes("navigation.navigate('LiveEvents')"));
-  assert.ok(hub.includes("type === 'live_event_invitation'"));
+  assert.ok(hub.includes("['live_event_invitation', 'live_event_reminder'].includes(type)"));
   assert.ok(hub.includes("'live_event_reminder'"));
   assert.ok(notifications.includes('data.eventId || data.replayId'));
   for (const tab of ['Chats','Calls','LIVE','Updates','Channels','Profile']) assert.ok(navigation.includes(`name="${tab}"`));
