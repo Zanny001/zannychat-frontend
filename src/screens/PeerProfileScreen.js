@@ -49,6 +49,7 @@ export default function PeerProfileScreen({ route, navigation }) {
   const creatorId = participant.id || participant.user_id;
   const isCurrentUser = route.params?.isCurrentUser === true;
   const currentLiveStreamId = route.params?.currentLiveStreamId || null;
+  const alreadyViewingLive = route.params?.alreadyViewingLive === true;
   const [isFollowingCreator, setIsFollowingCreator] = useState(Boolean(route.params?.isFollowing));
   const [followBusy, setFollowBusy] = useState(false);
   const [followCheckLoading, setFollowCheckLoading] = useState(Boolean(fromLive && !isCurrentUser));
