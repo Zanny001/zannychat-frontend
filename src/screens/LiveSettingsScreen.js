@@ -202,7 +202,7 @@ export default function LiveSettingsScreen({ navigation }) {
 
             <TouchableOpacity onPress={save} disabled={saving || saved} accessibilityRole="button" accessibilityLabel="Save LIVE settings" accessibilityState={{ disabled: saving || saved, busy: saving }} style={{ minHeight: 52, borderRadius: radii.md, backgroundColor: saving || saved ? colors.border : colors.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.sm }}>
               {saving ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name={saved ? 'checkmark-circle' : 'save-outline'} size={19} color={saved ? colors.textSecondary : colors.onPrimary} />}
-              <Text style={[typography.bodyStrong, { color: saved ? colors.textSecondary : colors.onPrimary }]}>{saving ? 'Saving…' : saved ? 'Saved on this device' : 'Save LIVE defaults'}</Text>
+              <Text style={[typography.bodyStrong, { color: saved ? colors.textSecondary : colors.onPrimary }]}>{saving ? 'Saving…' : saved ? 'Saved to your ZannyChat account' : 'Save LIVE defaults'}</Text>
             </TouchableOpacity>
           </> : null}
         </View>
