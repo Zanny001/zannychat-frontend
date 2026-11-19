@@ -374,6 +374,12 @@ export default function LiveHubScreen({ navigation, route }) {
     handledLiveNotificationRef.current = key;
     navigation.setParams?.({ liveNotification: undefined });
 
+    if (['live_event_invitation', 'live_event_reminder'].includes(type) && typeof notification.eventId === 'string') {
+      refresh();
+      navigation.navigate('LiveEvents', { eventId: notification.eventId });
+      return;
+    }
+
     if (type === 'live_replay_ready' && typeof notification.replayId === 'string') {
       refresh();
       navigation.navigate('LiveReplay', { replay: { id: notification.replayId, streamTitle: 'LIVE replay' } });
@@ -381,7 +387,7 @@ export default function LiveHubScreen({ navigation, route }) {
     }
 
     const shouldJoin = streamId && (
-      ['live_stream_started', 'live_invitation', 'live_guest_request', 'live_guest_invitation'].includes(type)
+      ['live_stream_started', 'live_invitation', 'live_guest_request', 'live_guest_invitation', 'live_event_started'].includes(type)
       || (type === 'live_guest_decision' && notification.status === 'accepted')
     );
     if (shouldJoin) {
@@ -425,6 +431,9 @@ export default function LiveHubScreen({ navigation, route }) {
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => navigation.navigate('LiveLeaderboard')} accessibilityRole="button" accessibilityLabel="Open LIVE creator leaderboard" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="trophy-outline" size={19} color={colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.navigate('LiveEvents')} accessibilityRole="button" accessibilityLabel="Open scheduled LIVE Events" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="calendar-outline" size={19} color={colors.primary} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => navigation.navigate('LiveSettings')} accessibilityRole="button" accessibilityLabel="Open LIVE settings" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="options-outline" size={19} color={colors.textSecondary} />
