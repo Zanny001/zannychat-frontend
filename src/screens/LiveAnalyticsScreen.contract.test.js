@@ -20,6 +20,8 @@ test('Creator Analytics presents service-backed impact, audience, broadcast and 
     assert.ok(analytics.includes(label), 'Missing analytics metric: ' + label);
   }
   assert.ok(analytics.includes('Latest 100 records'));
+  assert.ok(analytics.includes('Your analytics will appear here'));
+  assert.ok(analytics.includes('fontSize: 12'));
   assert.ok(analytics.includes('recentStreams.slice(0, 20)'));
   assert.ok(analytics.includes('recentReplays.slice(0, 20)'));
 });
