@@ -8,6 +8,7 @@ import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 import { showAppAlert } from '../utils/appDialogs';
+import { loadLivePreferences, DEFAULT_LIVE_PREFERENCES } from '../services/livePreferences';
 import GlassCard from '../components/GlassCard';
 
 const CATEGORIES = [
@@ -192,6 +193,23 @@ export default function LiveEventsScreen({ navigation }) {
     finally { setBusy(false); }
   };
 
+  const startEvent=async(event)=>{
+    setBusy(true);
+    try {
+      const userId=await ensureAccount();
+      const preferences=await loadLivePreferences(userId).catch(()=>DEFAULT_LIVE_PREFERENCES);
+      await ensureAccount();
+      navigation.navigate('LivePreflight',{
+        title:event.title,description:event.description,visibility:event.visibility,category:event.category,
+        experienceMode:preferences.experienceMode,allowGuests:preferences.allowGuests,eventId:event.id,
+      });
+    } catch(e) {
+      showAppAlert('Could not prepare LIVE Event',e?.message||'Please refresh and try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const cancelEvent=(event)=>{
     Alert.alert('Cancel this LIVE Event?', 'Attendees will no longer be able to RSVP. This cannot be undone.',[
       {text:'Keep Event',style:'cancel'},
@@ -337,10 +355,7 @@ export default function LiveEventsScreen({ navigation }) {
                   <TouchableOpacity disabled={busy} onPress={()=>beginEdit(event)} accessibilityRole="button" accessibilityLabel={'Edit LIVE Event '+event.title} style={{minHeight:42,borderWidth:1,borderColor:colors.border,borderRadius:13,alignItems:'center',justifyContent:'center'}}>
                     <Text style={[typography.caption,{color:colors.primary,fontWeight:'900'}]}>Edit Event</Text>
                   </TouchableOpacity>
-                  {canStartEvent(event)&&<TouchableOpacity disabled={busy} onPress={()=>navigation.navigate('LivePreflight',{
-                    title:event.title,description:event.description,visibility:event.visibility,category:event.category,
-                    experienceMode:'broadcast',allowGuests:false,eventId:event.id,
-                  })} accessibilityRole="button" accessibilityLabel={'Start LIVE for '+event.title} style={{minHeight:46,borderRadius:14,backgroundColor:colors.primary,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:8}}>
+                  {canStartEvent(event)&&<TouchableOpacity disabled={busy} onPress={()=>startEvent(event)} accessibilityRole="button" accessibilityLabel={'Start LIVE for '+event.title} style={{minHeight:46,borderRadius:14,backgroundColor:colors.primary,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:8}}>
                     <Ionicons name="radio" size={17} color={colors.onPrimary}/>
                     <Text style={[typography.caption,{color:colors.onPrimary,fontWeight:'900'}]}>Start LIVE from Event</Text>
                   </TouchableOpacity>}
