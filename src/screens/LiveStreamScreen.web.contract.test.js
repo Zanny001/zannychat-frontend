@@ -203,6 +203,6 @@ test('web LIVE guest request polling pauses while the tab is hidden and avoids d
 test('web LIVE disconnects and returns to LIVE Hub when the server confirms the stream has ended', () => {
   assert.ok(web.includes("['LIVE stream has ended', 'LIVE stream not found'].includes(err?.message)"));
   assert.ok(web.includes('roomRef.current?.disconnect();'));
-  assert.ok(web.includes("navigation.replace('LiveHub')"));
+  assert.ok(web.includes("navigation.replace('Main', { screen: 'LIVE' })"));
   assert.ok(web.includes("setStatus('LIVE ended')"));
 });
