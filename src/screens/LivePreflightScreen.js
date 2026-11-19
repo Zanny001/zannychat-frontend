@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -77,6 +77,8 @@ export default function LivePreflightScreen({ route, navigation }) {
   const [permissionBusy, setPermissionBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const permissionRequestRef = useRef(false);
+  const startRequestRef = useRef(false);
 
   const microphoneGranted = Boolean(activeMicrophonePermission?.granted);
   const cameraGranted = !needsCamera || Boolean(activeCameraPermission?.granted);
@@ -87,6 +89,8 @@ export default function LivePreflightScreen({ route, navigation }) {
   const canStart = mediaPermissionsGranted && cameraPreviewReady && setupValid && !busy && !permissionBusy;
 
   const requestMediaAccess = useCallback(async () => {
+    if (permissionRequestRef.current) return;
+    permissionRequestRef.current = true;
     setError('');
     setPermissionBusy(true);
     try {
@@ -115,6 +119,7 @@ export default function LivePreflightScreen({ route, navigation }) {
     } catch (permissionError) {
       setError(permissionError?.message || 'The required media permissions could not be checked.');
     } finally {
+      permissionRequestRef.current = false;
       setPermissionBusy(false);
     }
   }, [
@@ -136,6 +141,7 @@ export default function LivePreflightScreen({ route, navigation }) {
   }, []);
 
   const startLive = useCallback(async () => {
+    if (startRequestRef.current) return;
     if (!setupValid) {
       setError(!title ? 'Return to setup and add a title for your LIVE.' : 'Choose at least one invitee for a private LIVE.');
       return;
@@ -148,6 +154,7 @@ export default function LivePreflightScreen({ route, navigation }) {
       setError('Wait for the camera preview to become ready before starting your video LIVE.');
       return;
     }
+    startRequestRef.current = true;
     setBusy(true);
     setError('');
     try {
@@ -173,6 +180,7 @@ export default function LivePreflightScreen({ route, navigation }) {
     } catch (startError) {
       setError(startError?.message || 'Could not start LIVE. Check your connection and try again.');
     } finally {
+      startRequestRef.current = false;
       setBusy(false);
     }
   }, [
