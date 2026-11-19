@@ -24,6 +24,10 @@ test('LIVE Events screen uses authenticated service-backed scheduling and RSVP a
   assert.ok(screen.includes("method:'POST'"));
   assert.ok(screen.includes("method:alreadyGoing?'DELETE':'POST'"));
   assert.ok(screen.includes("method:'PATCH'"));
+  assert.ok(screen.includes('Save Event changes'));
+  assert.ok(screen.includes('Cancel my RSVP'));
+  assert.ok(screen.includes("disabled={busy||(event.rsvpStatus!=='going'&&event.attendeeCount>=event.maxAttendees)}"));
+  assert.ok(screen.includes("method:'PATCH'"));
   assert.ok(screen.includes("method:'POST'"));
 });
 
