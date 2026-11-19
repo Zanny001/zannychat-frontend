@@ -49,6 +49,13 @@ test('LIVE Events screen clears account-owned state and guards actions on accoun
   assert.ok(screen.includes('setEvents([]);setInvitations([]);setCandidates([]);setSelectedInvitees([])'));
 });
 
+test('Starting a scheduled Event uses the creator’s saved LIVE experience preferences',()=>{
+  assert.ok(screen.includes("import { loadLivePreferences, DEFAULT_LIVE_PREFERENCES } from '../services/livePreferences'"));
+  assert.ok(screen.includes('loadLivePreferences(userId).catch(()=>DEFAULT_LIVE_PREFERENCES)'));
+  assert.ok(screen.includes('experienceMode:preferences.experienceMode,allowGuests:preferences.allowGuests'));
+  assert.ok(screen.includes('visibility:event.visibility,category:event.category'));
+});
+
 test('LIVE Events screen has accessible controls and loading, error and empty states',()=>{
   assert.ok(screen.includes('accessibilityRole="button"'));
   assert.ok(screen.includes('accessibilityLabel="LIVE Event title"'));
