@@ -50,6 +50,7 @@ export default function PeerProfileScreen({ route, navigation }) {
   const currentLiveStreamId = route.params?.currentLiveStreamId || null;
   const [isFollowingCreator, setIsFollowingCreator] = useState(Boolean(route.params?.isFollowing));
   const [followBusy, setFollowBusy] = useState(false);
+  const [followCheckLoading, setFollowCheckLoading] = useState(Boolean(fromLive && !isCurrentUser));
   const [followError, setFollowError] = useState('');
   const followRequestRef = useRef(0);
   const followGenerationRef = useRef(0);
@@ -134,12 +135,31 @@ export default function PeerProfileScreen({ route, navigation }) {
     followGenerationRef.current += 1;
     followRequestRef.current = 0;
     setFollowBusy(false);
+    setFollowCheckLoading(Boolean(fromLive && !isCurrentUser));
     setIsFollowingCreator(Boolean(route.params?.isFollowing));
     setFollowError('');
   }, [creatorId, route.params?.isFollowing, fromLive]);
 
+  useEffect(() => {
+    if (!fromLive || !creatorId || isCurrentUser) {
+      setFollowCheckLoading(false);
+      return undefined;
+    }
+    let active = true;
+    setFollowCheckLoading(true);
+    backendFetch('/live/following')
+      .then((result) => {
+        if (active) setIsFollowingCreator((result?.following || []).some((item) => item.creator_id === creatorId));
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setFollowCheckLoading(false);
+      });
+    return () => { active = false; };
+  }, [creatorId, fromLive, isCurrentUser]);
+
   const toggleLiveFollow = async () => {
-    if (!fromLive || !creatorId || isCurrentUser || followRequestRef.current) return;
+    if (!fromLive || !creatorId || isCurrentUser || followCheckLoading || followRequestRef.current) return;
     const requestGeneration = followGenerationRef.current;
     const targetCreatorId = creatorId;
     followRequestRef.current = requestGeneration || 1;
@@ -194,7 +214,7 @@ export default function PeerProfileScreen({ route, navigation }) {
         <View style={[styles.actionRow, { paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.lg }]}>
           {fromLive ? (
             <>
-              {!isCurrentUser ? <QuickAction icon={isFollowingCreator ? 'checkmark-circle' : 'person-add'} label={followBusy ? 'Updating follow…' : isFollowingCreator ? 'Following' : 'Follow creator'} primary={!isFollowingCreator} disabled={followBusy} onPress={toggleLiveFollow} /> : null}
+              {!isCurrentUser ? <QuickAction icon={isFollowingCreator ? 'checkmark-circle' : 'person-add'} label={followBusy ? 'Updating follow…' : followCheckLoading ? 'Checking follow…' : isFollowingCreator ? 'Following' : 'Follow creator'} primary={!isFollowingCreator} disabled={followBusy || followCheckLoading} onPress={toggleLiveFollow} /> : null}
               {currentLiveStreamId ? <QuickAction icon="radio" label="Watch LIVE" primary onPress={() => navigation.navigate('LiveStream', { streamId: currentLiveStreamId, creatorMode: false })} /> : null}
             </>
           ) : (
