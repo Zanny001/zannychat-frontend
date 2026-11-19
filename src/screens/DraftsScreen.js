@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { SafeAreaView, FlatList, View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,13 +30,19 @@ export default function DraftsScreen({ navigation }) {
       const user = await getCurrentUser();
       const items = await loadDraftsForUser(user?.id || 'me');
       setDrafts(items);
-      try {
-        const result = await fetchConversations({ limit: 1000, offset: 0 });
-        setConversations(result.conversations || []);
-      } catch (_) {
+      if (items.length) {
+        try {
+          // The picker only needs a recent conversation directory, not an unbounded
+          // history query. Keep the payload bounded and avoid fetching it for an
+          // empty drafts collection.
+          const result = await fetchConversations({ limit: 100, offset: 0 });
+          setConversations(result.conversations || []);
+        } catch (_) {
+          setConversations([]);
+          setError('Drafts are saved, but conversation details could not be loaded. Retry when you are back online.');
+        }
+      } else {
         setConversations([]);
-        if (items.length) setError('Drafts are saved, but conversation details could not be loaded. Retry when you are back online.');
-        else throw new Error('Conversation details unavailable');
       }
     } catch (_) {
       setError('Your drafts could not be loaded. Please try again.');
@@ -45,10 +51,12 @@ export default function DraftsScreen({ navigation }) {
     }
   }, []);
 
+  const conversationsById = useMemo(() => new Map(conversations.map((item) => [item.id, item])), [conversations]);
+
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   function openDraft(draft) {
-    const conversation = conversations.find((item) => item.id === draft.conversationId);
+    const conversation = conversationsById.get(draft.conversationId);
     if (!conversation) {
       Alert.alert('Conversation unavailable', 'This draft is still stored on this device, but its conversation details are unavailable right now. Reconnect and retry, or delete the draft from here.');
       return;
@@ -83,6 +91,9 @@ export default function DraftsScreen({ navigation }) {
           keyExtractor={(draft) => String(draft.id)}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={7}
           contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, flexGrow: 1 }}
           ListHeaderComponent={
             <View>
