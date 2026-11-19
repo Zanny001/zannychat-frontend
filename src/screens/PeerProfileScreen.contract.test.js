@@ -25,6 +25,8 @@ test('LIVE Creator Profile exposes authenticated follow and watch actions only i
   assert.ok(source.includes("backendFetch('/live/following')"));
   assert.ok(source.includes('followCheckLoading'));
   assert.ok(source.includes('followGenerationRef.current'));
+  assert.ok(source.includes("supabase.auth.onAuthStateChange"));
+  assert.ok(source.includes('authRevision'));
 });
 
 test('LIVE Hub links followed creators and live stream cards to the public profile', () => {
