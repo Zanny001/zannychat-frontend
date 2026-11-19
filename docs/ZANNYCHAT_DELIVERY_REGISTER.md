@@ -713,3 +713,22 @@ This is the current handoff point. Read this register and the Master Blueprint b
 5. Keep gifts/wallet/payouts blocked until a real idempotent ledger, payment provider, fraud/refund/KYC/legal requirements are available; do not simulate a money balance.
 6. Ask the user to pull exact frontend main locally and run two-account Android 10/11 and modern-device acceptance; verify replay playback and moderation permissions.
 7. Continue leaving Chat follow-ups untouched.
+
+
+## 25. LIVE account-synced creator defaults — 2026-11-19
+
+### Implementation checkpoint
+- Frontend PR #196: https://github.com/Zanny001/zannychat-frontend/pull/196. Backend PR #153: https://github.com/Zanny001/zannychat-backend/pull/153.
+- Backend adds authenticated GET/PUT /live/creators/me/preferences, strict server-side allowlists, account identity from verified req.user.id, and an RLS-enabled table with direct client grants revoked.
+- Creator defaults are applied only to the next LIVE setup; active streams are not mutated. Private LIVE still requires explicit invitee selection at setup.
+- The settings screen clearly reports that a successful save is stored in the ZannyChat account, not merely on the device. Hub fallback wording now accurately identifies the preferences service.
+- The standalone production migration workflow is manual, requires an explicit boolean confirmation, and refuses to apply unless exactly migration 20261119180000 is pending. It has not been dispatched; the migration has not been applied to production.
+- Backend quality and advanced-calling checks passed on current backend PR head 077edcd927e48abe9799e4eb21b073350a783ee7.
+- Frontend quality passed on earlier PR #196 head d0f86e9d; a copy-accuracy fix and regression assertion are now on the branch and current-head CI is running. Do not claim final frontend checks until those runs pass.
+- No PR has been merged as part of this checkpoint. Authenticated two-account/device acceptance and production migration remain pending.
+
+### Verified LIVE API inventory and next build targets
+- Existing backend routes cover discovery, follows, stream lifecycle, admission, invites, guest requests, comments, reactions, stage moderation, reports, creator impact, leaderboard and replay playback/deletion.
+- No dedicated LIVE scheduling/events or battle lifecycle routes/tables were found in the current backend inventory. No LiveEventsScreen or LiveBattleScreen exists in the current frontend inventory.
+- Gifts/wallet remain blocked until ledger, server-authoritative balance, idempotency, receipts/refunds, fraud controls and any required payment/KYC/legal/provider approvals are implemented. No simulated balances or purchases.
+- Keep Chat work paused and do not modify PR #185 or any Chat surfaces.
