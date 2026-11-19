@@ -24,6 +24,8 @@ test('LIVE pre-flight checks microphone and camera permissions before room creat
   assert.ok(preflight.includes('requestMicrophonePermission()'));
   assert.ok(preflight.includes('requestCameraPermission()'));
   assert.ok(preflight.includes('const mediaPermissionsGranted = microphoneGranted && cameraGranted'));
+  assert.ok(preflight.includes('const cameraPreviewReady = !needsCamera || cameraReady'));
+  assert.ok(preflight.includes('mediaPermissionsGranted && cameraPreviewReady && setupValid'));
   assert.ok(preflight.includes("await backendFetch('/live'"));
   assert.ok(preflight.includes('if (!mediaPermissionsGranted)'));
   assert.ok(preflight.includes('connection?.stream?.id'));
