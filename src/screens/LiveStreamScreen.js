@@ -544,7 +544,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       return;
     }
     // replace also handles direct/deep-linked LIVE entry with no prior route.
-    navigation.replace('LiveHub');
+    navigation.replace('Main', { screen: 'LIVE' });
   }, [navigation, route.params?.returnToCreatorProfile]);
 
   const exitEndedStream = useCallback(() => {

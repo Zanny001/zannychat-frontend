@@ -10,7 +10,7 @@ const navigator = fs.readFileSync(new URL('../navigation/AppNavigator.js', impor
 test('Creator post-LIVE summary is account-bound and redirects after account changes', () => {
   assert.ok(summary.includes('getCurrentUser()'));
   assert.ok(summary.includes('supabase.auth.onAuthStateChange'));
-  assert.ok(summary.includes("navigation.replace('LiveHub')"));
+  assert.ok(summary.includes("navigation.replace('Main', { screen: 'LIVE' })"));
   assert.ok(summary.includes('session?.user?.id !== creatorId'));
 });
 

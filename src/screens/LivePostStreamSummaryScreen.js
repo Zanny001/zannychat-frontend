@@ -45,15 +45,15 @@ export default function LivePostStreamSummaryScreen({ route, navigation }) {
   useEffect(() => {
     let active = true;
     getCurrentUser().then((user) => {
-      if (active && (!creatorId || user?.id !== creatorId)) navigation.replace('LiveHub');
+      if (active && (!creatorId || user?.id !== creatorId)) navigation.replace('Main', { screen: 'LIVE' });
     }).catch(() => {
-      if (active) navigation.replace('LiveHub');
+      if (active) navigation.replace('Main', { screen: 'LIVE' });
     });
     if (!SUPABASE_ENABLED || !supabase?.auth?.onAuthStateChange) {
       return () => { active = false; };
     }
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user?.id !== creatorId) navigation.replace('LiveHub');
+      if (session?.user?.id !== creatorId) navigation.replace('Main', { screen: 'LIVE' });
     });
     return () => {
       active = false;
@@ -124,7 +124,7 @@ export default function LivePostStreamSummaryScreen({ route, navigation }) {
             <Ionicons name="settings-outline" size={18} color={colors.primary} />
             <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Return to Creator Studio</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.replace('LiveHub')} accessibilityRole="button" accessibilityLabel="Return to LIVE Hub" style={{ minHeight: 48, alignItems: 'center', justifyContent: 'center' }}>
+          <TouchableOpacity onPress={() => navigation.replace('Main', { screen: 'LIVE' })} accessibilityRole="button" accessibilityLabel="Return to LIVE Hub" style={{ minHeight: 48, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={[typography.bodyStrong, { color: colors.primary }]}>Back to LIVE Hub</Text>
           </TouchableOpacity>
         </View>
