@@ -51,7 +51,59 @@ Preserve all six existing primary destinations:
 
 Do not remove or rename destinations simply to imitate a mockup. Secondary destinations remain discoverable through contextual navigation, profile/settings and feature-specific entry points. Keep navigation labels, selected state, back behaviour, deep links and Android hardware-back behaviour consistent.
 
-The canonical screen review sequence begins with Main/Chats, then Chat, New Chat, Forward Message, Saved Messages, Drafts, Pinned Messages, Chat Folders, Shared Media and Chat Appearance; continue through every registered screen family in the register. The existing inventory has been recorded as 46 registered modules / 48 experiences in a later audit; verify the live route registry before finalising counts.
+The canonical screen review sequence begins with Main/Chats, then Chat, New Chat, Forward Message, Saved Messages, Drafts, Pinned Messages, Chat Folders, Shared Media and Chat Appearance; continue through every registered screen family in the register. The agreed full audit scope is **48 navigation experiences**. A current source parse on 2026-11-19 finds **47 unique screen modules imported** by `AppNavigator.js`, 48 RootStack.Screen declarations (44 unique stack names because four names are conditionally declared more than once), and six primary tabs. The earlier 46-module count is historical and stale; the additional imported module is `LiveReplayLibraryScreen`. The 48 experience scope is the audit inventory below; module count, route declarations and experience count are distinct metrics.
+
+### Canonical 48-experience inventory
+1. Onboarding
+2. Login
+3. Signup
+4. Verify Email
+5. Password Recovery
+6. Password Reset
+7. Main navigation shell
+8. Chats
+9. Chat
+10. New Chat
+11. Forward Message
+12. Saved Messages
+13. Drafts
+14. Pinned Messages
+15. Chat Folders
+16. Shared Media
+17. Chat Appearance
+18. Peer Profile
+19. QR Contact
+20. Contact Discovery
+21. Create Group
+22. Group Management
+23. Join Group
+24. Channels / Explore
+25. Polls
+26. Events
+27. Calls
+28. Incoming Call
+29. Outgoing Call
+30. One-to-one Call
+31. Group Call
+32. LIVE Hub
+33. LIVE Broadcast
+34. Updates / Status
+35. Profile
+36. Edit Profile
+37. Settings
+38. Privacy & Security
+39. Notifications
+40. Data Storage
+41. Data Export
+42. Sessions
+43. Help
+44. LIVE Replay
+45. LIVE Creator Profile
+46. Scheduled Messages
+47. LIVE primary tab experience
+48. Status Updates dedicated experience
+
+This inventory is the agreed review coverage, not a claim that each item maps one-to-one to a unique module or route name. The six primary tabs remain Chats, Calls, LIVE, Updates, Channels/Explore and Profile.
 
 ## 4. Crown Aurora design system
 
