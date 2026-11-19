@@ -294,10 +294,14 @@ export default function LiveHubScreen({ navigation, route }) {
 
   const joinLive = async (stream) => {
     if (!stream?.id) return;
-    // Pass only the stable stream ID. LiveStreamScreen obtains a fresh,
-    // viewer-authorized LiveKit token after navigation; tokens and objects
-    // must never be serialized into browser URLs.
-    navigation.navigate('LiveStream', { streamId: stream.id, creatorMode: false });
+    // Pass a stable stream ID plus non-sensitive creator display hints only.
+    // LiveStreamScreen obtains a fresh viewer-authorized token after navigation.
+    navigation.navigate('LiveStream', {
+      streamId: stream.id,
+      creatorMode: false,
+      creatorName: stream.creator_name || stream.name || null,
+      creatorAvatarColor: stream.avatarColor || stream.avatar_color || null,
+    });
   };
 
   const toggleFollow = async (creatorId) => {
