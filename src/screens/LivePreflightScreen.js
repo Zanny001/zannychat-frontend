@@ -48,6 +48,7 @@ export default function LivePreflightScreen({ route, navigation }) {
   const { colors, spacing, typography, resolvedMode } = useTheme();
   const isFocused = useIsFocused();
   const params = route?.params || {};
+  const eventId = typeof params.eventId === 'string' ? params.eventId : null;
   const title = String(params.title || '').trim().slice(0, 80);
   const description = String(params.description || '').trim().slice(0, 500);
   const visibility = ['public', 'followers', 'private'].includes(params.visibility) ? params.visibility : 'public';
@@ -94,7 +95,7 @@ export default function LivePreflightScreen({ route, navigation }) {
   const cameraGranted = !needsCamera || Boolean(activeCameraPermission?.granted);
   const mediaPermissionsGranted = microphoneGranted && cameraGranted;
   const cameraPreviewReady = !needsCamera || cameraReady;
-  const privateInviteesValid = visibility !== 'private' || inviteeIds.length > 0;
+  const privateInviteesValid = visibility !== 'private' || inviteeIds.length > 0 || Boolean(eventId);
   const setupValid = Boolean(title) && privateInviteesValid;
   const canStart = mediaPermissionsGranted && cameraPreviewReady && setupValid && !busy && !permissionBusy;
 
@@ -168,6 +169,14 @@ export default function LivePreflightScreen({ route, navigation }) {
     setBusy(true);
     setError('');
     try {
+      let effectiveInviteeIds = inviteeIds;
+      if (eventId) {
+        const eventInvitees = await backendFetch('/live/events/' + encodeURIComponent(eventId) + '/invitees');
+        effectiveInviteeIds = Array.isArray(eventInvitees?.inviteeIds) ? eventInvitees.inviteeIds : [];
+        if (visibility === 'private' && effectiveInviteeIds.length === 0) {
+          throw new Error('At least one person must accept the private Event invitation before the LIVE can start.');
+        }
+      }
       const connection = await backendFetch('/live', {
         method: 'POST',
         body: JSON.stringify({
@@ -177,15 +186,27 @@ export default function LivePreflightScreen({ route, navigation }) {
           allowGuests,
           experienceMode,
           category,
-          inviteeIds: visibility === 'private' ? inviteeIds : [],
+          inviteeIds: visibility === 'private' ? effectiveInviteeIds : [],
         }),
       });
       if (!connection?.stream?.id || !connection?.livekitUrl || !connection?.token) {
         throw new Error(connection?.message || 'The server did not return a complete LIVE room connection.');
       }
+      if (eventId) {
+        try {
+          await backendFetch('/live/events/' + encodeURIComponent(eventId) + '/attach-stream', {
+            method: 'POST',
+            body: JSON.stringify({ streamId: connection.stream.id }),
+          });
+        } catch (attachError) {
+          await backendFetch('/live/' + encodeURIComponent(connection.stream.id) + '/end', { method: 'POST' }).catch(() => null);
+          throw new Error(attachError?.message || 'Could not connect this broadcast to its scheduled Event. The new stream was safely ended.');
+        }
+      }
       navigation.replace('LiveStream', {
         streamId: connection.stream.id,
         creatorMode: true,
+        eventId,
       });
     } catch (startError) {
       setError(startError?.message || 'Could not start LIVE. Check your connection and try again.');
