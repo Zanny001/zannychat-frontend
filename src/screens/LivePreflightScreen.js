@@ -1,6 +1,7 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  AppState,
   Linking,
   Platform,
   ScrollView,
@@ -63,15 +64,24 @@ export default function LivePreflightScreen({ route, navigation }) {
   const activeCameraPermission = permissionSnapshot?.camera || cameraPermission;
   const activeMicrophonePermission = permissionSnapshot?.microphone || microphonePermission;
 
+  const refreshMediaPermissions = useCallback(async () => {
+    try {
+      const [camera, microphone] = await Promise.all([getCameraPermission(), getMicrophonePermission()]);
+      setPermissionSnapshot({ camera, microphone });
+      if (needsCamera && !camera?.granted) setCameraReady(false);
+    } catch {}
+  }, [getCameraPermission, getMicrophonePermission, needsCamera]);
+
   useFocusEffect(useCallback(() => {
-    let active = true;
-    Promise.all([getCameraPermission(), getMicrophonePermission()])
-      .then(([camera, microphone]) => {
-        if (active) setPermissionSnapshot({ camera, microphone });
-      })
-      .catch(() => {});
-    return () => { active = false; };
-  }, [getCameraPermission, getMicrophonePermission]));
+    refreshMediaPermissions();
+  }, [refreshMediaPermissions]));
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refreshMediaPermissions();
+    });
+    return () => subscription.remove();
+  }, [refreshMediaPermissions]);
   const [cameraFacing, setCameraFacing] = useState('front');
   const [cameraReady, setCameraReady] = useState(false);
   const [permissionBusy, setPermissionBusy] = useState(false);
