@@ -467,21 +467,23 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
           <RootStack.Screen name="OutgoingCall" component={OutgoingCallScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
           <RootStack.Screen name="Call" component={CallScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
           <RootStack.Screen name="GroupCall" component={GroupCallScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
-          <RootStack.Screen name="LiveHub" component={LiveHubScreen} options={{ animation: 'fade' }} />
-          <RootStack.Screen name="LivePreflight" component={LivePreflightScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-          <RootStack.Screen name="LiveStream" component={LiveStreamScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
-          <RootStack.Screen name="LiveReplay" component={LiveReplayScreen} options={{ animation: 'fade' }} />
-          <RootStack.Screen name="LiveCreatorStudio" component={LiveCreatorStudioScreen} options={{ animation: 'fade' }} />
-          <RootStack.Screen name="LiveCreatorProfile" component={PeerProfileScreen} options={{ animation: 'fade' }} />
-          <RootStack.Screen name="LiveReplayLibrary" component={LiveReplayLibraryScreen} options={{ animation: 'fade' }} />
-          <RootStack.Screen name="LiveGuestQueue" component={LiveGuestQueueScreen} options={{ animation: 'slide_from_right' }} />
-          <RootStack.Screen name="LiveModeration" component={LiveModerationScreen} options={{ animation: 'slide_from_right' }} />
-          <RootStack.Screen name="LiveReports" component={LiveReportsScreen} options={{ animation: 'slide_from_right' }} />
-          <RootStack.Screen name="LiveAnalytics" component={LiveAnalyticsScreen} options={{ animation: 'slide_from_right' }} />
-          <RootStack.Screen name="LivePostStreamSummary" component={LivePostStreamSummaryScreen} options={{ animation: 'fade' }} />
-          <RootStack.Screen name="LiveLeaderboard" component={LiveLeaderboardScreen} options={{ animation: 'slide_from_right' }} />
-          <RootStack.Screen name="LiveSettings" component={LiveSettingsScreen} options={{ animation: 'slide_from_right' }} />
-          <RootStack.Screen name="LiveEvents" component={LiveEventsScreen} options={{ animation: 'slide_from_right' }} />
+          {/* LIVE EXPERIENCE: one canonical Hub entry in MainTabs; all supporting routes live in this group. */}
+          <RootStack.Group>
+            <RootStack.Screen name="LivePreflight" component={LivePreflightScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+            <RootStack.Screen name="LiveStream" component={LiveStreamScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
+            <RootStack.Screen name="LiveReplay" component={LiveReplayScreen} options={{ animation: 'fade' }} />
+            <RootStack.Screen name="LiveCreatorStudio" component={LiveCreatorStudioScreen} options={{ animation: 'fade' }} />
+            <RootStack.Screen name="LiveCreatorProfile" component={PeerProfileScreen} options={{ animation: 'fade' }} />
+            <RootStack.Screen name="LiveReplayLibrary" component={LiveReplayLibraryScreen} options={{ animation: 'fade' }} />
+            <RootStack.Screen name="LiveGuestQueue" component={LiveGuestQueueScreen} options={{ animation: 'slide_from_right' }} />
+            <RootStack.Screen name="LiveModeration" component={LiveModerationScreen} options={{ animation: 'slide_from_right' }} />
+            <RootStack.Screen name="LiveReports" component={LiveReportsScreen} options={{ animation: 'slide_from_right' }} />
+            <RootStack.Screen name="LiveAnalytics" component={LiveAnalyticsScreen} options={{ animation: 'slide_from_right' }} />
+            <RootStack.Screen name="LivePostStreamSummary" component={LivePostStreamSummaryScreen} options={{ animation: 'fade' }} />
+            <RootStack.Screen name="LiveLeaderboard" component={LiveLeaderboardScreen} options={{ animation: 'slide_from_right' }} />
+            <RootStack.Screen name="LiveSettings" component={LiveSettingsScreen} options={{ animation: 'slide_from_right' }} />
+            <RootStack.Screen name="LiveEvents" component={LiveEventsScreen} options={{ animation: 'slide_from_right' }} />
+          </RootStack.Group>
           <RootStack.Screen name="PeerProfile" component={PeerProfileScreen} />
           <RootStack.Screen name="NewChat" component={NewChatScreen} options={{ presentation: 'modal' }} />
           <RootStack.Screen name="QRContact" component={QRContactScreen} options={{ presentation: 'modal' }} />
