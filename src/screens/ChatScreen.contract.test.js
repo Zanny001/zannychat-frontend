@@ -113,8 +113,8 @@ test('chat screen clears account-owned messages, drafts, receipts and outbox on 
   assert.ok(screen.includes('setPendingOutbox([])'));
   assert.ok(screen.includes('setPendingAttachments([])'));
   assert.ok(screen.includes('if (!myUserId) {\n      setPendingOutbox([]);\n      setPendingAttachments([]);'));
-  assert.ok(screen.includes('setMessageDeliveryState({})'));
-  assert.ok(screen.includes('setParticipantReadState({})'));
+  assert.ok(timeline.includes('setMessageDeliveryState({})'));
+  assert.ok(timeline.includes('setParticipantReadState({})'));
   assert.ok(screen.includes('setMediaDraft(null)'));
   assert.ok(screen.includes('setResolved(null)'));
   assert.ok(screen.includes('requestId !== resolvedConversationRequestRef.current'));
