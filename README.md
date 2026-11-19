@@ -4,9 +4,18 @@ The mobile frontend for **ZannyChat**, built with React Native + Expo.
 It runs on mock data out of the box (`src/services/mockData.js`), so you
 can click through the entire app — sign up, chat list, conversations,
 swipe-to-reply, reactions, mood switching — with no backend at all.
-Every screen calls through `src/services/api.js`, so connecting the
-real backend (`zannychat-backend`) later is a config change, not a
-rewrite.
+
+## Canonical product and engineering documents
+
+Before changing scope, architecture, security or screen acceptance, read:
+- [ZannyChat Master Product, Architecture & Design Blueprint](docs/ZANNYCHAT_MASTER_BLUEPRINT.md)
+- [ZannyChat Master Delivery Register](docs/ZANNYCHAT_DELIVERY_REGISTER.md)
+
+These two version-controlled documents are the authoritative scope and execution record; this README is an entry point, not a competing roadmap.
+Screens use the shared service layer (`src/services/api.js` plus domain
+services for auth, presence, calls, media, LIVE and local persistence), so
+mock/production behaviour stays behind explicit adapters rather than being
+reimplemented in each screen.
 
 > **No wallet.** ZannyChat briefly shipped an in-chat wallet/ledger
 > preview; it's been removed so this project can stay focused on being
@@ -29,11 +38,13 @@ using one accent for everything:
   in Settings. It's deliberately rare, so it still reads as a flag
   worth noticing rather than a third default color.
 
-Four moods (Ember, Tide, Aurora, Dawn — Settings → Appearance) each
-define their own signal/thread/gold trio, so switching moods actually
-changes the palette relationships, not just one accent color. The mood
-picker itself shows this: each swatch is two overlapping circles, not
-one flat color (`src/components/MoodSwatch.js`).
+Nine built-in moods (Ember, Tide, Aurora, Dawn, Royal Neon, Ocean,
+Emerald, Rose Gold and Sunset — Settings → Appearance) each define their
+own signal/thread/gold trio, with user-created custom palettes also
+supported. Royal Neon is the default Crown Aurora palette. Switching
+moods changes the palette relationships, not just one accent color. The
+mood picker shows this: each swatch is two overlapping circles, not one
+flat color (`src/components/MoodSwatch.js`).
 
 Two typefaces carry the rest of the personality: **Space Grotesk** for
 anything display-sized or numeric (the wordmark, screen titles, unread
