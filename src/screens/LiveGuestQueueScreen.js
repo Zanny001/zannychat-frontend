@@ -89,7 +89,7 @@ export default function LiveGuestQueueScreen({ route, navigation }) {
     try {
       await backendFetch(`/live/${streamId}/guest-requests/${userId}`, {
         method: 'PATCH',
-        body: { status },
+        body: JSON.stringify({ status }),
       });
       setRequests((current) => current.filter((item) => item.user_id !== userId));
       await refresh(true);
