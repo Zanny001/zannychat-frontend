@@ -485,13 +485,24 @@ This confirms the catalog-level grant/search-path posture recorded in the earlie
 **Next Chat architecture slice:** extract message timeline data lifecycle (initial load, cursor pagination, realtime subscription, read-state and stale-request guards) into a focused hook only after its current cleanup, request ownership and two-account contracts are mapped. Keep outbox/media/composer extraction separate so failure recovery is not entangled with pagination.
 
 
-## 18. Chat timeline lifecycle hook PR — 2026-11-19
+## 18. Chat timeline lifecycle hook merged and deployed — 2026-11-19
 
-- PR #185 is open: `refactor(chat): extract timeline lifecycle into a domain hook`.
-- It moves initial history, cursor pagination, realtime message/reaction/typing/presence/read-state subscriptions, request-generation guards and focus cleanup into `src/hooks/useChatTimeline.js`.
-- ChatScreen retains optimistic message mutations, composer/outbox/media and presentation. Account-switch reset now delegates timeline state cleanup to the hook.
-- The unit script now includes `src/hooks/*.contract.test.js`; without this explicit glob, hook contract tests would not execute.
-- PR #185 frontend-quality and Advanced Calling workflows are running; Vercel and Netlify preview statuses are pending. Do not merge until both workflows pass and the hook's stale-account/unsubscribe/dedup contracts are reviewed.
-- Current main remains `90deac5913dbdf7fa610fcf4d98e94c67a6ce3a5`; PR #185 is not deployed.
+- PR #185 merged as `1060ca0e8eae49dab427420c7200d526a1fde710`.
+- Initial history, cursor pagination, realtime message/reaction/typing/presence/read-state subscriptions, request-generation guards and focus cleanup now live in `src/hooks/useChatTimeline.js`.
+- ChatScreen retains optimistic message mutations, composer/outbox/media and presentation. Account-switch reset delegates timeline state cleanup to the hook.
+- The unit script includes `src/hooks/*.contract.test.js`; the merged hook contract tests run as part of the suite.
+- Frontend quality passed with **949 tests, 0 failures**. Advanced Calling bundle, Android/iOS export and client-quality workflows passed.
+- Vercel production deployment `dpl_ErZDvBGhx1UuS27KieHBkmHvuhpm` reached **READY**, and `https://zannychat.vercel.app` was verified on it. The timeline hook is live.
 
-**Next Chat work after #185:** separate composer/outbox/media lifecycles only after the timeline hook is merged and regression-tested; then complete Chat visual/keyboard/accessibility acceptance before moving to the next screen family.
+**Next Chat work:** isolate text outbox and attachment outbox separately, then complete Chat visual/keyboard/accessibility acceptance before moving to the next screen family.
+
+
+## 19. Message outbox hook PR — 2026-11-19
+
+- PR #186 is open: `refactor(chat): extract account-scoped message outbox`.
+- It moves pending text-message state, persistence, backoff, foreground retry scheduling and manual retry into `src/hooks/useMessageOutbox.js`.
+- It preserves the 50-message queue cap, request-ID idempotency, bounded oldest-first automatic batches, permanent/transient error distinction and authenticated-owner checks. Generation guards invalidate stale work on account/conversation changes.
+- Manual retry now calls the outbox retry path directly instead of reusing `handleSend`, avoiding accidental interaction with composer edit state.
+- Text and attachment retry locks are separated so a slow media retry does not block text recovery. Attachment outbox remains in ChatScreen for a later independent extraction.
+- PR #186 frontend-quality and Advanced Calling CI are pending at this checkpoint. Vercel preview is rate-limited; Netlify preview is pending. Do not merge until required workflows pass.
+- Current production main is `1060ca0e8eae49dab427420c7200d526a1fde710`; PR #186 is not deployed.
