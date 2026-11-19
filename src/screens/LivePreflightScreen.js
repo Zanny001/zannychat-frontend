@@ -202,6 +202,7 @@ export default function LivePreflightScreen({ route, navigation }) {
             <View style={{ padding: spacing.md, gap: 6 }}>
               <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.1 }]}>YOUR LIVE EXPERIENCE</Text>
               <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 21 }]} numberOfLines={2}>{title || 'Untitled LIVE'}</Text>
+              {!!description && <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 21 }]}>{description}</Text>}
               <Text style={[typography.body, { color: colors.textSecondary }]}>{MODE_LABELS[experienceMode]} · {category.charAt(0).toUpperCase() + category.slice(1)}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 5 }}>
                 <View style={{ paddingHorizontal: 10, paddingVertical: 7, borderRadius: 11, backgroundColor: hexToRgba(colors.primary, 0.10) }}>
@@ -291,6 +292,8 @@ export default function LivePreflightScreen({ route, navigation }) {
             </View>
           </View>
 
+          {!title && <Text style={[typography.caption, { color: colors.danger }]}>Return to LIVE setup and add a title before starting.</Text>}
+          {visibility === 'private' && !privateInviteesValid && <Text style={[typography.caption, { color: colors.danger }]}>Return to LIVE setup and choose at least one private invitee.</Text>}
           {!!error && (
             <View accessibilityRole="alert" style={{ padding: spacing.md, borderRadius: 15, backgroundColor: hexToRgba(colors.danger, 0.10), borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.28) }}>
               <Text style={[typography.caption, { color: colors.danger, lineHeight: 19 }]}>{error}</Text>
@@ -301,7 +304,7 @@ export default function LivePreflightScreen({ route, navigation }) {
             onPress={startLive}
             disabled={!canStart}
             accessibilityRole="button"
-            accessibilityLabel="Start LIVE broadcast"
+            accessibilityLabel={experienceMode === 'audio_room' ? 'Start audio LIVE room' : experienceMode === 'video_chat' ? 'Start video LIVE chat' : 'Start LIVE broadcast'}
             accessibilityState={{ disabled: !canStart, busy }}
             style={{ minHeight: 54, borderRadius: 17, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 9, opacity: canStart ? 1 : 0.45, shadowColor: colors.primary, shadowOpacity: canStart ? 0.24 : 0, shadowRadius: 16, shadowOffset: { width: 0, height: 7 }, elevation: canStart ? 5 : 0 }}
           >
