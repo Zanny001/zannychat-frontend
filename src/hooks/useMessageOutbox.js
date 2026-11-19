@@ -58,7 +58,10 @@ export default function useMessageOutbox({
       });
     return () => {
       active = false;
-      if (generation === retryGenerationRef.current) retryGenerationRef.current += 1;
+      if (generation === retryGenerationRef.current) {
+        retryGenerationRef.current += 1;
+        retryInFlightRef.current = false;
+      }
     };
   }, [myUserId, conversationId, isOwnerCurrent]);
 
