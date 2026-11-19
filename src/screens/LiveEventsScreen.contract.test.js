@@ -7,6 +7,7 @@ const screen=fs.readFileSync(path.join(process.cwd(),'src/screens/LiveEventsScre
 const navigation=fs.readFileSync(path.join(process.cwd(),'src/navigation/AppNavigator.js'),'utf8');
 const hub=fs.readFileSync(path.join(process.cwd(),'src/screens/LiveHubScreen.js'),'utf8');
 const notifications=fs.readFileSync(path.join(process.cwd(),'src/services/notifications.js'),'utf8');
+const preflight=fs.readFileSync(path.join(process.cwd(),'src/screens/LivePreflightScreen.js'),'utf8');
 
 test('LIVE Events screen is registered without changing the six primary tabs',()=>{
   assert.ok(navigation.includes("import LiveEventsScreen from '../screens/LiveEventsScreen'"));
