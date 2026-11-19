@@ -433,3 +433,10 @@ Measured from current frontend main after the #181 merge. Byte size and hook/fun
 - Header controls have compact and ultra-compact breakpoints (<480px and <380px), preserving call/video access on narrow phones while hiding lower-priority controls.
 - Composer is a shared `InputBar` with reply/edit, draft persistence, attachment and voice-recording states. Do not replace these with static designs.
 - Next review should focus on screenshot/runtime behaviour at 320/360/390/430px, keyboard-open and safe-area layouts, long-history anchoring, accessibility/focus order, media retry and two-account message states before making visual changes.
+
+
+### Backend CORS verification — 2026-11-19
+- Backend `src/config/corsOptions.js` explicitly allows `https://zannychat.vercel.app`, `https://zannychat.netlify.app`, and the legacy Netlify origin, plus configured `CORS_ORIGINS` / `CORS_EXTRA_ORIGINS`.
+- Development localhost origins are added only outside production.
+- Requests without an Origin (native/server-to-server) are allowed; browser origins not in the explicit set are rejected with 403. No wildcard production origin is configured.
+- This source review matches the intended production CORS design. Still verify the Render environment's actual CORS variables and run a production browser preflight when investigating a new origin rejection.
