@@ -37,7 +37,7 @@ test('LIVE pre-flight checks microphone and camera permissions before room creat
 
 test('audio-only LIVE requires microphone access but does not require camera access', () => {
   assert.ok(preflight.includes("const needsCamera = experienceMode !== 'audio_room'"));
-  assert.ok(preflight.includes('const cameraGranted = !needsCamera || Boolean(cameraPermission?.granted)'));
+  assert.ok(preflight.includes('const cameraGranted = !needsCamera || Boolean(activeCameraPermission?.granted)'));
   assert.ok(preflight.includes("experienceMode === 'audio_room' ? 'Audio-first room"));
   assert.ok(preflight.includes("experienceMode === 'audio_room' ? 'Your voice stage"));
 });
