@@ -7,9 +7,12 @@ const service = fs.readFileSync(new URL('../services/livePreferences.js', import
 const hub = fs.readFileSync(new URL('./LiveHubScreen.js', import.meta.url), 'utf8');
 const navigator = fs.readFileSync(new URL('../navigation/AppNavigator.js', import.meta.url), 'utf8');
 
-test('LIVE defaults are stored per signed-in account and validated before persistence', () => {
-  assert.ok(service.includes('@react-native-async-storage/async-storage'));
-  assert.ok(service.includes('STORAGE_PREFIX + id'));
+test('LIVE defaults are loaded and saved through the authenticated backend service', () => {
+  assert.ok(service.includes("from './backendClient'"));
+  assert.ok(service.includes("backendFetch('/live/creators/me/preferences')"));
+  assert.ok(service.includes("method: 'PUT'"));
+  assert.ok(service.includes('assertAccount(userId)'));
+  assert.ok(service.includes('LIVE settings require a connection to the ZannyChat service.'));
   assert.ok(service.includes('normalizeLivePreferences'));
   assert.ok(service.includes("['broadcast', 'video_chat', 'audio_room']"));
   assert.ok(service.includes("['public', 'followers', 'private']"));
@@ -17,8 +20,8 @@ test('LIVE defaults are stored per signed-in account and validated before persis
   assert.ok(service.includes('typeof source.allowGuests === \'boolean\''));
 });
 
-test('LIVE settings clearly distinguish local defaults from active stream controls', () => {
-  assert.ok(screen.includes('saved on this device for your signed-in account'));
+test('LIVE settings clearly distinguish account-synced defaults from active stream controls', () => {
+  assert.ok(screen.includes('saved securely to your ZannyChat account'));
   assert.ok(screen.includes('They never change a LIVE that is already running.'));
   assert.ok(screen.includes('five-guest limit and server permissions still apply.'));
   assert.ok(screen.includes('You will still need to select at least one chat contact'));
