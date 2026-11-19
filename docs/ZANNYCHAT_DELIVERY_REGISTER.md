@@ -51,8 +51,13 @@ Recent GitHub state was rechecked before this priority change:
 | [#187](https://github.com/Zanny001/zannychat-frontend/pull/187) | LIVE-first delivery register and source reconciliation | Merged; canonical register updated |
 | [#188](https://github.com/Zanny001/zannychat-frontend/pull/188) | First creator pre-flight branch | Closed as superseded by #189; no implementation was dropped |
 | [#189](https://github.com/Zanny001/zannychat-frontend/pull/189) | Creator pre-flight, media permissions, native permission explanations and contracts | Merged as 99811698c3f33516f61b667c5bce25a95108efe1; quality workflows passed; production deployment still not confirmed |
+| [#191](https://github.com/Zanny001/zannychat-frontend/pull/191) | Separate Creator Studio from public Creator Profile; preserve active-room return path | Merged as abb5bb4f7d169d45dd9b3adcdb15963b707ad33b; frontend quality/client/dependency/bundle checks passed |
+| [#193](https://github.com/Zanny001/zannychat-frontend/pull/193) | LIVE guest queue, moderation and safety workspaces | Merged; runtime/two-account acceptance remains pending |
+| [#194](https://github.com/Zanny001/zannychat-frontend/pull/194) | Authenticated Creator Analytics | Merged; aggregate-only metrics, trend data remains unavailable |
+| [#195](https://github.com/Zanny001/zannychat-frontend/pull/195) | Creator post-broadcast summary | Merged; production/device acceptance remains pending |
+| [#196](https://github.com/Zanny001/zannychat-frontend/pull/196) | LIVE Crown Leaderboard and account-scoped creator defaults | Open draft; frontend quality workflows running on latest head; Vercel preview rate-limited; do not merge until required checks/preview are resolved |
 
-PR #189 is merged; no open LIVE implementation PR remains in this focused set. Do not revive closed branches wholesale or duplicate merged work. The user has paused further Chat implementation; keep all new execution focused on LIVE until explicitly redirected.
+PRs #189, #191, #193, #194 and #195 are merged. PR #196 remains open/draft for the leaderboard and creator-defaults slice. Do not revive closed branches wholesale or duplicate merged work. The user has paused further Chat implementation; keep all new execution focused on LIVE until explicitly redirected.
 
 ## 3. Product domains and acceptance backlog
 
@@ -153,7 +158,7 @@ The 18 screens in the supplied Crown Aurora audit are nested within the wider ap
 | 15 | Moderation | Dedicated LiveModerationScreen merged in PR #193; supports guest mic/spotlight, guest demotion, stream-scoped viewer removal and moderator appointments | Runtime permission/two-account tests and evidence/audit history still required |
 | 16 | Guest Queue | Dedicated LiveGuestQueueScreen merged in PR #193; pending requests, approve/decline, 5-seat capacity guard and empty/error/refresh states | Historical approved/declined/expired request states require a backend history response; verify two-account and device flows |
 | 17 | Reports | Dedicated LiveReportsScreen merged in PR #193; open/reviewing/resolved/dismissed states and moderator authorization | Evidence attachment, assignment, appeal and durable audit-history flows remain |
-| 18 | LIVE Settings | No dedicated LIVE settings route identified | Creator/viewer preferences, privacy, notifications, data saver, blocked/muted users, language/region and account controls |
+| 18 | LIVE Settings | Dedicated LiveSettingsScreen on PR #196 branch; account-keyed device-local defaults for mode, audience, category and guest access | Complete creator/viewer preferences, privacy, notifications, data saver, blocked/muted users, language/region and account controls; cross-device sync needs a backend contract |
 
 ### Additional required LIVE screens and journeys from the audit
 
@@ -642,7 +647,7 @@ This is the current handoff point. Read this register and the Master Blueprint b
 - Analytics currently exposes aggregate creator totals only; date-range time series, watch-time attribution and export need backend data contracts.
 - Guest Queue currently lists pending requests; historical approved/declined/expired states need a backend history response.
 - Reports still need evidence attachment, assignment, appeal and durable audit history. Safety Centre, age/region eligibility, creator policy acceptance and minor-safety gates remain incomplete.
-- LIVE Settings remain partial in preflight/composer controls; define a persisted creator/viewer preference contract before shipping a settings screen.
+- LIVE Settings now has a dedicated screen and account-keyed device-local creator defaults on PR #196; broader viewer/privacy/notification/data-saver controls and cross-device sync remain open.
 - Audio Room and Video Chat Room remain modes within Broadcast, not separate navigation routes; their device/audio-route acceptance remains pending.
 
 ### Next execution order
