@@ -269,7 +269,7 @@ export default function LivePreflightScreen({ route, navigation }) {
                       <View style={{ paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10, backgroundColor: 'rgba(4,6,18,0.78)' }}>
                         <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800' }}>{cameraReady ? 'CAMERA PREVIEW READY' : 'STARTING CAMERA…'}</Text>
                       </View>
-                      <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: colors.danger }} />
+                      <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: cameraReady ? colors.success : colors.primary }} />
                     </View>
                   </>
                 ) : (
@@ -293,7 +293,7 @@ export default function LivePreflightScreen({ route, navigation }) {
               onPress={requestMediaAccess}
               disabled={permissionBusy || mediaPermissionsGranted}
               accessibilityRole="button"
-              accessibilityLabel={mediaPermissionsGranted ? 'Media permissions granted' : 'Allow camera and microphone permissions'}
+              accessibilityLabel={mediaPermissionsGranted ? 'Media permissions granted' : needsCamera ? 'Allow camera and microphone permissions' : 'Allow microphone permission'}
               style={{ minHeight: 48, marginTop: spacing.md, borderRadius: 15, borderWidth: 1, borderColor: mediaPermissionsGranted ? colors.success : colors.primary, backgroundColor: hexToRgba(mediaPermissionsGranted ? colors.success : colors.primary, 0.12), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: permissionBusy || mediaPermissionsGranted ? 0.72 : 1 }}
             >
               {permissionBusy ? <ActivityIndicator size="small" color={colors.primary} /> : <Ionicons name={mediaPermissionsGranted ? 'checkmark-circle' : 'shield-checkmark-outline'} size={18} color={mediaPermissionsGranted ? colors.success : colors.primary} />}
