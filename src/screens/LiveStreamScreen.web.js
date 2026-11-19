@@ -17,6 +17,7 @@ import { getCurrentUser } from '../services/api';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
 import LiveCategoryBackdrop from '../components/LiveCategoryBackdrop';
+import { formatLiveBroadcastTimeRemaining, getLiveBroadcastTimeRemaining, LIVE_BROADCAST_WARNING_MS } from '../utils/liveBroadcastTimeout';
 
 const LIVE_REACTION_EMOJI = Object.freeze({ heart: '❤️', clap: '👏', laugh: '😂', wow: '😮', fire: '🔥', idea: '💡', support: '🙌' });
 const isDocumentVisible = () => typeof document === 'undefined' || document.visibilityState !== 'hidden';
@@ -132,9 +133,18 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [connection, setConnection] = useState(initialConnection);
   const [connectionLoading, setConnectionLoading] = useState(Boolean(streamId && !initialConnection));
   const stream = connection?.stream;
+  const creatorMode = connection?.role === 'creator';
+  const [timeoutClock, setTimeoutClock] = useState(Date.now());
+  useEffect(() => {
+    if (!creatorMode || !stream?.started_at) return undefined;
+    const interval = setInterval(() => setTimeoutClock(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, [creatorMode, stream?.id, stream?.started_at]);
+  const timeoutRemainingMs = creatorMode ? getLiveBroadcastTimeRemaining(stream?.started_at, timeoutClock) : null;
+  const timeoutLabel = timeoutRemainingMs === null ? '' : timeoutRemainingMs === 0 ? '00:00:00' : formatLiveBroadcastTimeRemaining(timeoutRemainingMs);
+  const timeoutWarning = timeoutRemainingMs !== null && timeoutRemainingMs <= LIVE_BROADCAST_WARNING_MS;
   const experienceMode = stream?.experience_mode || 'broadcast';
   const category = stream?.category || 'social';
-  const creatorMode = connection?.role === 'creator';
   const [demotedToViewer, setDemotedToViewer] = useState(false);
   const [stageNotice, setStageNotice] = useState('');
   const publisherMode = Boolean(creatorMode || (connection?.role === 'guest' && connection?.canPublish && !demotedToViewer));
@@ -922,6 +932,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '900' }}>{stream.title}</Text>
         <Text numberOfLines={1} style={{ color: 'rgba(255,255,255,0.68)', fontSize: 11, marginTop: 2 }}>{status}</Text>
+        {creatorMode && timeoutLabel ? <Text accessibilityRole="timer" accessibilityLabel={timeoutRemainingMs === 0 ? 'LIVE time limit reached; ending automatically' : timeoutWarning ? 'LIVE ends in less than ten minutes' : 'LIVE time remaining ' + timeoutLabel} style={{ color: timeoutWarning ? '#FF9EAB' : '#C9B8FF', fontSize: 10, fontWeight: '900', marginTop: 3, letterSpacing: 0.4 }}>{timeoutRemainingMs === 0 ? 'TIME LIMIT REACHED · ENDING' : timeoutWarning ? 'ENDS IN ' + timeoutLabel : 'TIME LEFT ' + timeoutLabel}</Text> : null}
       </View>
       <Action colors={colors} label="☰" accessibilityLabel="Open LIVE controls menu" onPress={() => setShowOverlayMenu((value) => !value)} />
       <Action colors={colors} label={creatorMode ? 'End' : 'Leave'} danger disabled={busy} onPress={leave} />
