@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const summary = fs.readFileSync(new URL('./LivePostStreamSummaryScreen.js', import.meta.url), 'utf8');
 const stage = fs.readFileSync(new URL('./LiveStreamScreen.js', import.meta.url), 'utf8');
+const webStage = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
 const navigator = fs.readFileSync(new URL('../navigation/AppNavigator.js', import.meta.url), 'utf8');
 
 test('Creator post-LIVE summary is account-bound and redirects after account changes', () => {
@@ -20,6 +21,10 @@ test('Creator end flow fetches confirmed session timing and replay state before 
   assert.ok(stage.includes('endedStream?.ended_at'));
   assert.ok(stage.includes('finalReplay?.status'));
   assert.ok(stage.includes('confirmedUser?.id !== ownerId'));
+  assert.ok(webStage.includes("navigation.replace('LivePostStreamSummary'"));
+  assert.ok(webStage.includes("backendFetch('/live/creators/me/profile')"));
+  assert.ok(webStage.includes("backendFetch('/live/' + stream.id + '/replays')"));
+  assert.ok(webStage.includes('confirmedUser?.id !== ownerId'));
 });
 
 test('Post-LIVE summary reports duration and recording status without inventing reach or earnings', () => {
