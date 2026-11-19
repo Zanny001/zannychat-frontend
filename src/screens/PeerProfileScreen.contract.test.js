@@ -15,7 +15,7 @@ test('LIVE Creator Profile reuses the privacy-aware peer profile and LIVE impact
 });
 
 test('LIVE Creator Profile exposes authenticated follow and watch actions only in LIVE context', () => {
-  assert.ok(source.includes('`/live/creators/${creatorId}/follow`'));
+  assert.ok(source.includes('`/live/creators/${targetCreatorId}/follow`'));
   assert.ok(source.includes("method: nextFollowing ? 'POST' : 'DELETE'"));
   assert.ok(source.includes("navigation.navigate('LiveStream', { streamId: currentLiveStreamId, creatorMode: false, returnToCreatorProfile: true })"));
   assert.ok(source.includes('{fromLive ? ('));
