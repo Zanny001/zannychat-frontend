@@ -31,7 +31,7 @@ Never infer Accepted from route presence, a green build, a prototype, a merged P
 | Full app inventory | ThemeContrast contract now audits 57 screen modules; current AppNavigator has 56 RootStack.Screen declarations, 52 unique route names and 15 LIVE route entries | Screen-module and route counts reconciled on the PR #196 branch | Reparse current RootStack registry after every screen addition; do not conflate route declarations with experiences |
 | Parity scope | Retrieved parity gap analysis based on supplied original audit | Scope recorded; original source not re-opened in this pass | Retrieve original source before claiming any missing detail |
 | Account isolation | PRs #146/#147 merged in a previous audit; two-account acceptance was outstanding then | Needs revalidation | Run two-account tests across chat/media/realtime/calls/LIVE |
-| Backend deployment | Render production remains deployed on 14860064a87c7637fc4f15dc6d75f4084b6f696a; backend main now includes leaderboard PR #152 at 1bfe0c29c18ae9832aaa020a208b59e69cef68de | Leaderboard code merged, backend deployment pending | Deploy and verify exact backend SHA before frontend production leaderboard acceptance |
+| Backend deployment | Render production is LIVE on 1bfe0c29c18ae9832aaa020a208b59e69cef68de after leaderboard PR #152 | Leaderboard API deployed; authenticated smoke test pending | Verify route auth/privacy behaviour and record exact SHA; no migration was required |
 | Production frontend | Vercel production is READY on 1b0bb2ab6495c781cde59408aaf08f9f3efaa92f at https://zannychat.vercel.app; includes PR #191/#193/#194/#195 | Deployed; real-device acceptance pending | Pull main locally, verify exact SHA and run production LIVE smoke tests; record five moderate npm advisories and Expo Google Services config warning |
 
 ## 2. PR reconciliation — LIVE-first checkpoint (2026-11-19)
@@ -687,7 +687,7 @@ This is the current handoff point. Read this register and the Master Blueprint b
 - No manual deploy was run; Vercel auto-deployed after merge. Device acceptance is still pending.
 
 ### LIVE leaderboard — backend PR #152 merged; frontend PR #196 in progress
-- Backend main includes commit 1bfe0c29c18ae9832aaa020a208b59e69cef68de; Render production still serves 14860064a87c7637fc4f15dc6d75f4084b6f696a until a new backend deployment completes.
+- Backend main and Render production are LIVE on commit 1bfe0c29c18ae9832aaa020a208b59e69cef68de after PR #152; authenticated smoke testing is still required.
 - GET /live/leaderboard supports all-time ranking only, backed by live_creator_impact aggregates.
 - It returns only public profile name/avatar colour and aggregate impact/reaction/supporter metrics; private/contact-only profiles and either-direction blocked creators are excluded.
 - Ranking is deterministic and capped at 50 returned entries. Weekly/monthly windows are rejected until time-series source data exists.
