@@ -52,6 +52,7 @@ import OutgoingCallScreen from '../screens/OutgoingCallScreen';
 import CallHistoryScreen from '../screens/CallHistoryScreen';
 import GroupCallScreen from '../screens/GroupCallScreen';
 import LiveHubScreen from '../screens/LiveHubScreen';
+import LivePreflightScreen from '../screens/LivePreflightScreen';
 import LiveStreamScreen from '../screens/LiveStreamScreen';
 import LiveReplayScreen from '../screens/LiveReplayScreen';
 import LiveCreatorProfileScreen from '../screens/LiveCreatorProfileScreen';
@@ -459,6 +460,7 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
           <RootStack.Screen name="Call" component={CallScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
           <RootStack.Screen name="GroupCall" component={GroupCallScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
           <RootStack.Screen name="LiveHub" component={LiveHubScreen} options={{ animation: 'fade' }} />
+          <RootStack.Screen name="LivePreflight" component={LivePreflightScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           <RootStack.Screen name="LiveStream" component={LiveStreamScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
           <RootStack.Screen name="LiveReplay" component={LiveReplayScreen} options={{ animation: 'fade' }} />
           <RootStack.Screen name="LiveCreatorProfile" component={LiveCreatorProfileScreen} options={{ animation: 'fade' }} />
