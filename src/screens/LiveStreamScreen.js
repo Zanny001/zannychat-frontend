@@ -964,6 +964,18 @@ export default function LiveStreamScreen({ route, navigation }) {
     }
   };
 
+  const openGuestQueue = useCallback(() => {
+    if (creatorMode && stream?.id) navigation.navigate('LiveGuestQueue', { streamId: stream.id, title: stream.title || 'LIVE stage' });
+  }, [creatorMode, navigation, stream?.id, stream?.title]);
+
+  const openModeration = useCallback(() => {
+    if (creatorMode && stream?.id) navigation.navigate('LiveModeration', { streamId: stream.id, title: stream.title || 'LIVE stage' });
+  }, [creatorMode, navigation, stream?.id, stream?.title]);
+
+  const openReportsWorkspace = useCallback(() => {
+    if (moderatorMode && stream?.id) navigation.navigate('LiveReports', { streamId: stream.id, title: stream.title || 'LIVE stage' });
+  }, [moderatorMode, navigation, stream?.id, stream?.title]);
+
   const openCreatorProfile = useCallback(() => {
     if (!stream?.creator_id) return;
     navigation.navigate('LiveCreatorProfile', {
