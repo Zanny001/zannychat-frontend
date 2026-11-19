@@ -11,6 +11,7 @@ import { getProfilePresence } from '../utils/profilePresence';
 import { getProfileDetails } from '../utils/profileDetails';
 import { getPublicProfileDetails, getPrivateProfileCoverUrl, resolveProfileAvatarUrls } from '../services/api';
 import { backendFetch } from '../services/backendClient';
+import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import LiveImpactCard from '../components/LiveImpactCard';
 
 function DetailRow({ icon, label, value, last = false }) {
@@ -52,7 +53,8 @@ export default function PeerProfileScreen({ route, navigation }) {
   const [followBusy, setFollowBusy] = useState(false);
   const [followCheckLoading, setFollowCheckLoading] = useState(Boolean(fromLive && !isCurrentUser));
   const [followError, setFollowError] = useState('');
-  const followRequestRef = useRef(0);
+  const [authRevision, setAuthRevision] = useState(0);
+  const followRequestRef = useRef(false);
   const followGenerationRef = useRef(0);
   const [photoViewerVisible, setPhotoViewerVisible] = useState(false);
   const [sharedDetails, setSharedDetails] = useState({});
@@ -133,12 +135,25 @@ export default function PeerProfileScreen({ route, navigation }) {
 
   useEffect(() => {
     followGenerationRef.current += 1;
-    followRequestRef.current = 0;
+    followRequestRef.current = false;
     setFollowBusy(false);
     setFollowCheckLoading(Boolean(fromLive && !isCurrentUser));
     setIsFollowingCreator(Boolean(route.params?.isFollowing));
     setFollowError('');
   }, [creatorId, route.params?.isFollowing, fromLive]);
+
+  useEffect(() => {
+    if (!fromLive || !SUPABASE_ENABLED) return undefined;
+    const { data } = supabase.auth.onAuthStateChange(() => {
+      followGenerationRef.current += 1;
+      followRequestRef.current = false;
+      setFollowBusy(false);
+      setIsFollowingCreator(false);
+      setFollowCheckLoading(true);
+      setAuthRevision((current) => current + 1);
+    });
+    return () => data?.subscription?.unsubscribe?.();
+  }, [fromLive]);
 
   useEffect(() => {
     if (!fromLive || !creatorId || isCurrentUser) {
@@ -156,13 +171,13 @@ export default function PeerProfileScreen({ route, navigation }) {
         if (active) setFollowCheckLoading(false);
       });
     return () => { active = false; };
-  }, [creatorId, fromLive, isCurrentUser]);
+  }, [authRevision, creatorId, fromLive, isCurrentUser]);
 
   const toggleLiveFollow = async () => {
     if (!fromLive || !creatorId || isCurrentUser || followCheckLoading || followRequestRef.current) return;
     const requestGeneration = followGenerationRef.current;
     const targetCreatorId = creatorId;
-    followRequestRef.current = requestGeneration || 1;
+    followRequestRef.current = true;
     setFollowBusy(true);
     setFollowError('');
     const nextFollowing = !isFollowingCreator;
