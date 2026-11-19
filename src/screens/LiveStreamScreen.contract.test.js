@@ -479,3 +479,11 @@ test('native LIVE automatically exits when the server confirms the stream has en
   assert.ok(screen.includes("navigation.replace('LiveHub')"));
   assert.ok(screen.includes('setConnection(null)'));
 });
+
+test('LIVE viewers can open the public creator profile from the stage controls', () => {
+  assert.ok(screen.includes('onOpenCreatorProfile'));
+  assert.ok(screen.includes('accessibilityLabel="Open LIVE creator profile"'));
+  assert.ok(screen.includes("navigation.navigate('LiveCreatorProfile'"));
+  assert.ok(screen.includes('currentLiveStreamId: creatorMode ? null : stream.id'));
+  assert.ok(screen.includes('onOpenCreatorProfile={openCreatorProfile}'));
+});
