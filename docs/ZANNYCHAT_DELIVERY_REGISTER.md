@@ -740,3 +740,14 @@ This is the current handoff point. Read this register and the Master Blueprint b
 - Frontend service now constructs an explicit four-field writable payload (`experienceMode`, `visibility`, `category`, `allowGuests`) and excludes `updatedAt`.
 - Frontend contract test asserts the metadata is not sent; backend contract test asserts unknown keys are rejected and `updated_at` is server-generated.
 - Latest frontend and backend CI runs for these regression changes are pending. Treat this as an important pre-merge correction, not production-verified behavior.
+
+
+## 27. LIVE creator preferences backend merged — 2026-11-19
+
+- Backend PR #153 merged to backend main as merge commit 88413b0e92fa5403016973f089cd49d583a7d1ee. Backend quality and advanced-calling checks passed on the final backend PR head before merge.
+- Production Supabase was queried after merge: latest applied migration is 20261118223000; migration 20261119180000 is not applied and `public.live_creator_preferences` does not yet exist. No production schema changes were made during this check.
+- The production security advisor currently reports RLS-enabled/no-policy informational findings for existing service-role-only LIVE tables. The new preferences migration is designed the same way: RLS enabled, direct PUBLIC/anon/authenticated privileges revoked, service_role granted.
+- Redundant duplicate apply workflow was removed. The backend now retains one manually confirmed exact-migration apply workflow plus one separate preview-only workflow. Both check that the only pending migration is 20261119180000 before any apply; the apply workflow also dry-runs and rechecks before execution.
+- Supabase's migration list and schema were independently inspected. The guarded workflow still needs to be dispatched from GitHub Actions; it has not run, and the migration remains unapplied.
+- Frontend PR #196 is still open. Latest premium/LIVE quality passed on commit 7bcebf798134d69ed90515d57ba49647e91c1a4f; the current advanced client workflow is still running for the PR's documentation-only successor commit c249e32979978700b579e79eb35c3ed257a4a856. Dependency and bundle checks are green on the current run; client quality remains pending.
+- Do not merge frontend PR #196 or claim LIVE Settings operational until the migration is applied and backend Render deployment plus authenticated API smoke checks are verified.
