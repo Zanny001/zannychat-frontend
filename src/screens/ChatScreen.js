@@ -32,7 +32,8 @@ import { useAudioRecorder, useAudioRecorderState, AudioModule, RecordingPresets,
 import { useTheme } from '../theme/ThemeContext';
 import Header from '../components/Header';
 import Avatar from '../components/Avatar';
-import ChatBubble, { QUICK_REACTIONS } from '../components/ChatBubble';
+import { QUICK_REACTIONS } from '../components/ChatBubble';
+import ChatMessageRow from '../components/ChatMessageRow';
 import InputBar from '../components/InputBar';
 import ActionSheet from '../components/ActionSheet';
 import { hexToRgba } from '../utils/color';
@@ -1674,27 +1675,20 @@ export default function ChatScreen({ route, navigation }) {
             )
           }
           renderItem={({ item }) => {
-            if (item.type === 'day') {
-              return (
-                <View style={{ alignItems: 'center', marginVertical: spacing.sm }}>
-                  <Text style={[typography.small, { color: colors.textSecondary }]}>{item.label}</Text>
-                </View>
-              );
-            }
+            if (item.type === 'day') return <ChatMessageRow item={item} />;
             const mine = isMineMessage(item);
             const reactionList = reactions[item.id] || [];
             // Unique emojis for the badge row, capped at 3 with a count.
             const uniqueEmojis = [...new Set(reactionList.map((r) => r.emoji))].slice(0, 3);
             const reactionExtra = reactionList.length > 3 ? reactionList.length : 0;
             return (
-              <ChatBubble
-                message={item}
-                isMine={mine}
-                senderName={display.isGroup && !mine ? item.senderName : undefined}
+              <ChatMessageRow
+                item={item}
+                mine={mine}
+                isGroup={display.isGroup}
                 status={mine ? computeStatus(item) : undefined}
                 seenByCount={mine && display.isGroup ? computeGroupSeenCount(item) : 0}
                 deliveredToCount={mine && display.isGroup ? computeGroupDeliveredCount(item) : 0}
-                replyPreview={item.replyPreview}
                 reactions={uniqueEmojis}
                 reactionExtra={reactionExtra}
                 searchHighlight={searchMatches.some((match) => match.id === item.id) || item.id === targetMessageId}
