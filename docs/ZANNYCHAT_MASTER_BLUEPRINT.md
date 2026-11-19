@@ -108,6 +108,8 @@ This inventory is the agreed review coverage, not a claim that each item maps on
 ## 4. Crown Aurora design system
 
 ### Visual identity
+
+The existing theme engine also carries the product's **Signal & Thread** semantic language: `signal` is the current user's voice and primary action; `thread` is the other participant's accent/presence. Preserve this semantic mapping while Crown Aurora remains the default brand palette. User-selected moods and custom accent palettes must continue to work; don't hard-code Crown Aurora colors into screens that should use semantic tokens.
 - Void navy foundation; raised navy/indigo surfaces.
 - Violet for primary action and focus; cyan for presence, connection and selected states.
 - Restrained crown gold for premium status and value—not routine decoration.
