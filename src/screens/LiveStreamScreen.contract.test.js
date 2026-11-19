@@ -481,7 +481,7 @@ test('native and web LIVE rooms disconnect and clear account-owned state on auth
 
 test('native LIVE automatically exits to the correct source when the server confirms the stream has ended', () => {
   assert.ok(screen.includes("['LIVE stream has ended', 'LIVE stream not found'].includes(e?.message)"));
-  assert.ok(screen.includes("navigation.replace('LiveHub')"));
+  assert.ok(screen.includes("navigation.replace('Main', { screen: 'LIVE' })"));
   assert.ok(screen.includes('route.params?.returnToCreatorProfile && navigation.canGoBack()'));
   assert.ok(screen.includes('navigation.goBack()'));
   assert.ok(screen.includes('returnFromLive();'));
