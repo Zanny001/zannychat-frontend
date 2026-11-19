@@ -192,7 +192,7 @@ export default function PeerProfileScreen({ route, navigation }) {
       if (requestGeneration === followGenerationRef.current) setFollowError(error?.message || 'Could not update this creator follow. Please try again.');
     } finally {
       if (requestGeneration === followGenerationRef.current) {
-        followRequestRef.current = 0;
+        followRequestRef.current = false;
         setFollowBusy(false);
       }
     }
