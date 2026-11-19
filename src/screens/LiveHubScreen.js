@@ -387,7 +387,7 @@ export default function LiveHubScreen({ navigation, route }) {
     }
 
     const shouldJoin = streamId && (
-      ['live_stream_started', 'live_invitation', 'live_guest_request', 'live_guest_invitation'].includes(type)
+      ['live_stream_started', 'live_invitation', 'live_guest_request', 'live_guest_invitation', 'live_event_started'].includes(type)
       || (type === 'live_guest_decision' && notification.status === 'accepted')
     );
     if (shouldJoin) {
