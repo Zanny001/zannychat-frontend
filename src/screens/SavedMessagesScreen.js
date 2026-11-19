@@ -60,6 +60,9 @@ export default function SavedMessagesScreen({ navigation }) {
           keyExtractor={(item) => String(item.id)}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={7}
           contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, flexGrow: 1 }}
           renderItem={({ item }) => (
 <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
