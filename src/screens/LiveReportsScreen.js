@@ -146,10 +146,10 @@ export default function LiveReportsScreen({ route, navigation }) {
                 </View>
               ))}
             </View>
-            <TouchableOpacity onPress={() => navigation.navigate('LiveModeration', { streamId, title: streamTitle })} accessibilityRole="button" accessibilityLabel="Open LIVE participant moderation" style={{ minHeight: 48, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            {route.params?.canManageParticipants !== false ? <TouchableOpacity onPress={() => navigation.navigate('LiveModeration', { streamId, title: streamTitle })} accessibilityRole="button" accessibilityLabel="Open LIVE participant moderation" style={{ minHeight: 48, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               <Ionicons name="shield-checkmark-outline" size={18} color={colors.primary} />
               <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Participant moderation</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> : null}
           </GlassCard>
 
           <View style={{ flexDirection: 'row', gap: spacing.xs, flexWrap: 'wrap' }}>
