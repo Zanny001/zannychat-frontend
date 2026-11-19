@@ -46,7 +46,7 @@ export default function LiveCreatorStudioScreen({ navigation }) {
       }
       if (!expectedUserId) {
         setSummary(null);
-        setError('Sign in to view your LIVE creator profile.');
+        setError('Sign in to open your LIVE Creator Studio.');
         return;
       }
       const result = await backendFetch('/live/creators/me/profile');
@@ -57,7 +57,7 @@ export default function LiveCreatorStudioScreen({ navigation }) {
     } catch (e) {
       if (requestId === refreshRequestRef.current) {
         setSummary(null);
-        setError(e?.message || 'Your LIVE creator profile is temporarily unavailable.');
+        setError(e?.message || 'Your LIVE Creator Studio is temporarily unavailable.');
       }
     } finally {
       if (requestId === refreshRequestRef.current) setLoading(false);
@@ -72,7 +72,7 @@ export default function LiveCreatorStudioScreen({ navigation }) {
       activeUserIdRef.current = nextUserId;
       refreshRequestRef.current += 1;
       setSummary(null);
-      setError(nextUserId ? '' : 'Sign in to view your LIVE creator profile.');
+      setError(nextUserId ? '' : 'Sign in to open your LIVE Creator Studio.');
       setLoading(Boolean(nextUserId));
       if (nextUserId) Promise.resolve().then(() => refresh());
     });
@@ -161,16 +161,16 @@ export default function LiveCreatorStudioScreen({ navigation }) {
             <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
-            <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.6 }]}>ZANNYCHAT · LIVE · Creator profile</Text>
-            <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 25 }]}>Creator studio</Text>
+            <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.6 }]}>ZANNYCHAT · LIVE · CREATOR STUDIO</Text>
+            <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 25 }]}>Creator Studio</Text>
           </View>
-          <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh creator profile" style={{ width: 46, height: 46, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+          <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh Creator Studio" style={{ width: 46, height: 46, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="refresh" size={19} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
         {loading && !summary ? <View style={{ padding: 40, alignItems: 'center' }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary, marginTop: 10 }]}>Preparing your creator studio…</Text></View> : null}
-        {!!error ? <GlassCard contentStyle={{ padding: spacing.lg, gap: spacing.md }}><Text style={[typography.body, { color: colors.danger }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading creator profile"><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
+        {!!error ? <GlassCard contentStyle={{ padding: spacing.lg, gap: spacing.md }}><Text style={[typography.body, { color: colors.danger }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading Creator Studio"><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
 
         <GlassCard glow contentStyle={{ padding: spacing.lg, gap: spacing.lg }}>
           <View style={{ position: 'absolute', top: -42, right: -24, width: 150, height: 150, borderRadius: 80, backgroundColor: hexToRgba(colors.primary, 0.12) }} />
