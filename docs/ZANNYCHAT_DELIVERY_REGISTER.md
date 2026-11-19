@@ -732,3 +732,11 @@ This is the current handoff point. Read this register and the Master Blueprint b
 - No dedicated LIVE scheduling/events or battle lifecycle routes/tables were found in the current backend inventory. No LiveEventsScreen or LiveBattleScreen exists in the current frontend inventory.
 - Gifts/wallet remain blocked until ledger, server-authoritative balance, idempotency, receipts/refunds, fraud controls and any required payment/KYC/legal/provider approvals are implemented. No simulated balances or purchases.
 - Keep Chat work paused and do not modify PR #185 or any Chat surfaces.
+
+
+## 26. LIVE preference payload integrity correction — 2026-11-19
+
+- Review found that GET/PUT responses include server-owned `updatedAt`, while the backend correctly rejects unknown PUT fields. Sending the loaded object unchanged would have caused a 400 when saving an existing preference.
+- Frontend service now constructs an explicit four-field writable payload (`experienceMode`, `visibility`, `category`, `allowGuests`) and excludes `updatedAt`.
+- Frontend contract test asserts the metadata is not sent; backend contract test asserts unknown keys are rejected and `updated_at` is server-generated.
+- Latest frontend and backend CI runs for these regression changes are pending. Treat this as an important pre-merge correction, not production-verified behavior.
