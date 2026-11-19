@@ -200,8 +200,8 @@ export default function ChatScreen({ route, navigation }) {
   const activeUserIdRef = useRef(undefined);
   const {
     messages, setMessages, loadingMessages, messageLoadError, olderLoadError,
-    hasMore, loadingOlder, load, loadOlder, reactions, setReactions,
-    participantReadState, messageDeliveryState, setMessageDeliveryState,
+    hasMore, loadingOlder, loadOlder, reactions, setReactions,
+    participantReadState, messageDeliveryState,
     peerTyping, onlineIds, resetTimeline,
   } = useChatTimeline({
     conversationId: conversation.id,
