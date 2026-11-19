@@ -10,6 +10,7 @@ import { hexToRgba } from '../utils/color';
 import { confirmAction, showAppAlert } from '../utils/appDialogs';
 import GlassCard from '../components/GlassCard';
 import { filterLiveStreams } from '../utils/liveDiscovery';
+import { loadLivePreferences } from '../services/livePreferences';
 
 const VISIBILITIES = [
   { value: 'public', label: 'Public' },
@@ -56,6 +57,7 @@ export default function LiveHubScreen({ navigation, route }) {
   const [currentUserId, setCurrentUserId] = useState(null);
   const pendingReplayPollStartedAt = useRef(0);
   const refreshRequestRef = useRef(0);
+  const livePreferencesRequestRef = useRef(0);
   const activeUserIdRef = useRef(null);
   const [followingIds, setFollowingIds] = useState([]);
   const [followingCreators, setFollowingCreators] = useState([]);
@@ -202,6 +204,26 @@ export default function LiveHubScreen({ navigation, route }) {
     });
     return () => data?.subscription?.unsubscribe?.();
   }, [refresh]);
+
+  useEffect(() => {
+    const requestId = ++livePreferencesRequestRef.current;
+    if (!currentUserId) return undefined;
+    let active = true;
+    (async () => {
+      try {
+        const preferences = await loadLivePreferences(currentUserId);
+        const latestUser = await getCurrentUser().catch(() => null);
+        if (!active || requestId !== livePreferencesRequestRef.current || latestUser?.id !== currentUserId) return;
+        setExperienceMode(preferences.experienceMode);
+        setVisibility(preferences.visibility);
+        setCategory(preferences.category);
+        setAllowGuests(preferences.allowGuests);
+      } catch {
+        // Defaults remain usable if device storage is temporarily unavailable.
+      }
+    })();
+    return () => { active = false; };
+  }, [currentUserId]);
 
   useFocusEffect(useCallback(() => {
     pendingReplayPollStartedAt.current = Date.now();
@@ -402,6 +424,9 @@ export default function LiveHubScreen({ navigation, route }) {
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => navigation.navigate('LiveLeaderboard')} accessibilityRole="button" accessibilityLabel="Open LIVE creator leaderboard" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="trophy-outline" size={19} color={colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.navigate('LiveSettings')} accessibilityRole="button" accessibilityLabel="Open LIVE settings" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="options-outline" size={19} color={colors.textSecondary} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh LIVE streams" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="refresh" size={18} color={colors.textSecondary} />
