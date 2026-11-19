@@ -144,6 +144,10 @@ export default function LivePreflightScreen({ route, navigation }) {
       setError('Allow the required microphone and camera permissions before starting.');
       return;
     }
+    if (!cameraPreviewReady) {
+      setError('Wait for the camera preview to become ready before starting your video LIVE.');
+      return;
+    }
     setBusy(true);
     setError('');
     try {
@@ -173,6 +177,7 @@ export default function LivePreflightScreen({ route, navigation }) {
     }
   }, [
     allowGuests,
+    cameraPreviewReady,
     category,
     description,
     experienceMode,
@@ -242,7 +247,7 @@ export default function LivePreflightScreen({ route, navigation }) {
                 </View>
                 {needsCamera && activeCameraPermission?.granted && (
                   <TouchableOpacity
-                    onPress={() => { setCameraReady(false); setCameraFacing((current) => current === 'front' ? 'back' : 'front'); }}
+                    onPress={() => { setError(''); setCameraReady(false); setCameraFacing((current) => current === 'front' ? 'back' : 'front'); }}
                     accessibilityRole="button"
                     accessibilityLabel="Switch camera"
                     style={{ minWidth: 48, minHeight: 44, borderRadius: 13, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 }}
