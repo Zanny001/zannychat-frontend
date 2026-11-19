@@ -3,12 +3,15 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const screen = fs.readFileSync(new URL('./LiveHubScreen.js', import.meta.url), 'utf8');
+const preflight = fs.readFileSync(new URL('./LivePreflightScreen.js', import.meta.url), 'utf8');
 
 test('LIVE hub supports public, follower-only and private broadcasts', () => {
   assert.ok(screen.includes("{ value: 'public', label: 'Public' }"));
   assert.ok(screen.includes("{ value: 'followers', label: 'Followers' }"));
   assert.ok(screen.includes("{ value: 'private', label: 'Private' }"));
-  assert.ok(screen.includes('visibility, allowGuests'));
+  assert.ok(screen.includes("navigation.navigate('LivePreflight'"));
+  assert.ok(screen.includes('visibility,'));
+  assert.ok(screen.includes('allowGuests,'));
 });
 
 test('LIVE hub creates private invitations and displays pending invitations', () => {
@@ -36,7 +39,8 @@ test('LIVE composer keeps classic broadcasts separate from themed video chat and
   assert.ok(screen.includes("value: 'broadcast', label: 'Classic Broadcast'"));
   assert.ok(screen.includes("value: 'video_chat', label: 'Video Chat'"));
   assert.ok(screen.includes("value: 'audio_room', label: 'Audio Room'"));
-  assert.ok(screen.includes('experienceMode, category'));
+  assert.ok(screen.includes('experienceMode,'));
+  assert.ok(screen.includes('category,'));
   assert.ok(screen.includes('LIVE_CATEGORIES'));
   assert.ok(screen.includes("experienceMode === 'audio_room' ? false"));
 });
@@ -53,23 +57,27 @@ test('LIVE hub uses the shared premium theme and supports focused discovery filt
   assert.ok(screen.includes('Your people.'));
 });
 
-test('browser Go LIVE requests camera and microphone permission before creating a stream', () => {
-  assert.ok(screen.includes("Platform.OS === 'web'"));
-  assert.ok(screen.includes('navigator.mediaDevices?.getUserMedia'));
-  assert.ok(screen.includes('audio: true'));
-  assert.ok(screen.includes('permissionStream.getTracks().forEach((track) => track.stop())'));
+test('creator pre-flight requests media permissions before creating a LIVE stream', () => {
+  assert.ok(preflight.includes('useCameraPermissions'));
+  assert.ok(preflight.includes('useMicrophonePermissions'));
+  assert.ok(preflight.includes('requestCameraPermission()'));
+  assert.ok(preflight.includes('requestMicrophonePermission()'));
+  assert.ok(preflight.includes('<CameraView'));
+  assert.ok(preflight.includes('if (!mediaPermissionsGranted)'));
+  assert.ok(preflight.indexOf('if (!mediaPermissionsGranted)') < preflight.indexOf("await backendFetch('/live'"));
 });
 
 
-test('web Go LIVE exposes startup failures in the page instead of relying on native alerts', () => {
-  assert.ok(screen.includes("setError(`Could not start LIVE: ${message}`)"));
-  assert.ok(screen.includes("Platform.OS !== 'web'"));
-  assert.ok(screen.includes("setStartStage('Creating your LIVE room…')"));
+test('creator pre-flight exposes startup failures in an accessible page alert', () => {
+  assert.ok(preflight.includes("setError(startError?.message || 'Could not start LIVE."));
+  assert.ok(preflight.includes('accessibilityRole="alert"'));
+  assert.equal(preflight.includes('Alert.alert'), false);
 });
 
-test('Go LIVE validates the server connection before opening the broadcast studio', () => {
-  assert.ok(screen.includes("!connection?.stream?.id || !connection?.livekitUrl || !connection?.token"));
-  assert.ok(screen.includes("navigation.navigate('LiveStream', { streamId: connection.stream.id, creatorMode: true })"));
+test('creator pre-flight validates the server connection before opening the broadcast studio', () => {
+  assert.ok(preflight.includes("!connection?.stream?.id || !connection?.livekitUrl || !connection?.token"));
+  assert.ok(preflight.includes("navigation.replace('LiveStream', {"));
+  assert.ok(preflight.includes('streamId: connection.stream.id'));
 });
 
 test('LIVE hub receives direct guest-stage invitations and opens the stage for invitees', () => {
