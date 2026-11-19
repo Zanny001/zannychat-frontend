@@ -42,7 +42,9 @@ test('LIVE composer keeps classic broadcasts separate from themed video chat and
   assert.ok(screen.includes('experienceMode,'));
   assert.ok(screen.includes('category,'));
   assert.ok(screen.includes('LIVE_CATEGORIES'));
-  assert.ok(screen.includes("experienceMode === 'audio_room' ? false"));
+  assert.ok(preflight.includes("const needsCamera = experienceMode !== 'audio_room'"));
+  assert.ok(preflight.includes("const cameraGranted = !needsCamera || Boolean(activeCameraPermission?.granted)"));
+  assert.ok(preflight.includes("const microphoneGranted = Boolean(activeMicrophonePermission?.granted)"));
 });
 
 test('LIVE hub uses the shared premium theme and supports focused discovery filters', () => {
