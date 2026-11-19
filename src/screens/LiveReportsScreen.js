@@ -186,10 +186,10 @@ export default function LiveReportsScreen({ route, navigation }) {
                   <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: '800' }]}>Start review</Text>
                 </TouchableOpacity> : null}
                 <TouchableOpacity disabled={busy} onPress={() => review(item.id, 'dismissed')} accessibilityRole="button" accessibilityLabel="Dismiss LIVE report" style={{ flex: 1, minWidth: 100, minHeight: 48, borderRadius: 13, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: busy ? 0.6 : 1 }}>
-                  <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800' }}>Dismiss</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800' }]}>Dismiss</Text>
                 </TouchableOpacity>
                 <TouchableOpacity disabled={busy} onPress={() => review(item.id, 'resolved')} accessibilityRole="button" accessibilityLabel="Resolve LIVE report" style={{ flex: 1, minWidth: 100, minHeight: 48, borderRadius: 13, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', opacity: busy ? 0.6 : 1 }}>
-                  <Text style={[typography.caption, { color: colors.onPrimary, fontWeight: '900' }}>{busy ? 'Updating…' : 'Resolve'}</Text>
+                  <Text style={[typography.caption, { color: colors.onPrimary, fontWeight: '900' }]}>{busy ? 'Updating…' : 'Resolve'}</Text>
                 </TouchableOpacity>
               </View> : <Text style={[typography.caption, { color: colors.textSecondary }]}>Reviewed by an authorised LIVE moderator.</Text>}
             </GlassCard>;
