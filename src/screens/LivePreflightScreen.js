@@ -170,7 +170,7 @@ export default function LivePreflightScreen({ route, navigation }) {
     setError('');
     try {
       let effectiveInviteeIds = inviteeIds;
-      if (eventId) {
+      if (eventId && visibility === 'private') {
         const eventInvitees = await backendFetch('/live/events/' + encodeURIComponent(eventId) + '/invitees');
         effectiveInviteeIds = Array.isArray(eventInvitees?.inviteeIds) ? eventInvitees.inviteeIds : [];
         if (visibility === 'private' && effectiveInviteeIds.length === 0) {
