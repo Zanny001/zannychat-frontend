@@ -59,7 +59,7 @@ Recent GitHub state was rechecked before this priority change:
 | [#195](https://github.com/Zanny001/zannychat-frontend/pull/195) | Creator post-broadcast summary | Merged; production/device acceptance remains pending |
 | [#196](https://github.com/Zanny001/zannychat-frontend/pull/196) | LIVE Crown Leaderboard and account-scoped creator defaults | Open draft; frontend quality workflows running on latest head; Vercel preview rate-limited; do not merge until required checks/preview are resolved |
 
-PRs #189, #191, #193, #194 and #195 are merged. PR #196 remains open/draft for the leaderboard and creator-defaults slice. Do not revive closed branches wholesale or duplicate merged work. The user has paused further Chat implementation; keep all new execution focused on LIVE until explicitly redirected.
+PRs #189, #191, #193, #194 and #195 are merged. PR #196 remains open/draft for the leaderboard and backend-backed creator defaults; backend PR #153 remains open/draft for the authenticated preferences API and migration. Do not revive closed branches wholesale or duplicate merged work. The user has paused further Chat implementation; keep all new execution focused on LIVE until explicitly redirected.
 
 ## 3. Product domains and acceptance backlog
 
@@ -133,7 +133,7 @@ PRs #189, #191, #193, #194 and #195 are merged. PR #196 remains open/draft for t
 | LIVE-05 | Chat/comments/reactions/moderation/reports | Two-account delivery, rate limits, hide/block/report and moderator permissions | Moderation/Reports workspaces merged in PR #193; production logs show no reaction-failure messages 15–19 Nov after 14 Nov RPC fixes; two-account acceptance pending |
 | LIVE-06 | Battles/events/gifts/wallet/leaderboard/analytics | Real transactional models, abuse controls, clear Naira/unit conversion and audit trail | Aggregate analytics merged; all-time leaderboard API merged and screen in PR #196; battles, LIVE events/scheduling and gift/wallet ledger remain blocked pending backend/provider/legal design |
 | LIVE-07 | Replay recording/library/player | Egress completion, DB row, private object, signed playback, unauthorized denial | Production READY artifact and playback endpoint HTTP 200 verified; native/web player decoding, expiry and unauthorized denial still require runtime acceptance |
-| LIVE-08 | LIVE discovery/creator profile/notifications/settings | Real data, privacy and navigation | Creator Studio/Profile split merged in PR #191; Hub/stage profile entry points use privacy-aware PeerProfile; dedicated device-local defaults screen implemented on PR #196 branch; awaiting CI/merge; cross-device sync intentionally not claimed |
+| LIVE-08 | LIVE discovery/creator profile/notifications/settings | Real data, privacy and navigation | Creator Studio/Profile split merged in PR #191; Hub/stage profile entry points use privacy-aware PeerProfile; dedicated account-synced defaults screen wired to authenticated backend API on PR #196 branch; backend PR #153 adds durable Supabase persistence; both awaiting review/merge and guarded production migration |
 | LIVE-09 | LIVE safety | Age/consent/blur/report/evidence and minor-safety controls | Blocked before random matching ships |
 
 
@@ -160,7 +160,7 @@ The 18 screens in the supplied Crown Aurora audit are nested within the wider ap
 | 15 | Moderation | Dedicated LiveModerationScreen merged in PR #193; supports guest mic/spotlight, guest demotion, stream-scoped viewer removal and moderator appointments | Runtime permission/two-account tests and evidence/audit history still required |
 | 16 | Guest Queue | Dedicated LiveGuestQueueScreen merged in PR #193; pending requests, approve/decline, 5-seat capacity guard and empty/error/refresh states | Historical approved/declined/expired request states require a backend history response; verify two-account and device flows |
 | 17 | Reports | Dedicated LiveReportsScreen merged in PR #193; open/reviewing/resolved/dismissed states and moderator authorization | Evidence attachment, assignment, appeal and durable audit-history flows remain |
-| 18 | LIVE Settings | Dedicated LiveSettingsScreen on PR #196 branch; account-keyed device-local defaults for mode, audience, category and guest access | Complete creator/viewer preferences, privacy, notifications, data saver, blocked/muted users, language/region and account controls; cross-device sync needs a backend contract |
+| 18 | LIVE Settings | Dedicated LiveSettingsScreen on PR #196 branch; authenticated account-synced defaults for mode, audience, category and guest access via backend PR #153 and RLS-protected Supabase table | Complete creator/viewer preferences, privacy, notifications, data saver, blocked/muted users, language/region and account controls; cross-device sync needs a backend contract |
 
 ### Additional required LIVE screens and journeys from the audit
 
@@ -649,7 +649,7 @@ This is the current handoff point. Read this register and the Master Blueprint b
 - Analytics currently exposes aggregate creator totals only; date-range time series, watch-time attribution and export need backend data contracts.
 - Guest Queue currently lists pending requests; historical approved/declined/expired states need a backend history response.
 - Reports still need evidence attachment, assignment, appeal and durable audit history. Safety Centre, age/region eligibility, creator policy acceptance and minor-safety gates remain incomplete.
-- LIVE Settings now has a dedicated screen and account-keyed device-local creator defaults on PR #196; broader LIVE-specific viewer/privacy/notification/data-saver controls and cross-device sync remain open; global Privacy & Safety, Notifications and Sessions routes are linked.
+- LIVE Settings now has a dedicated screen and backend-backed account-synced creator defaults on PR #196/#153; broader LIVE-specific viewer/privacy/notification/data-saver controls remain open; global Privacy & Safety, Notifications and Sessions routes are linked.
 - Audio Room and Video Chat Room remain modes within Broadcast, not separate navigation routes; their device/audio-route acceptance remains pending.
 
 ### Next execution order
