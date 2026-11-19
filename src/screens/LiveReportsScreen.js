@@ -155,14 +155,14 @@ export default function LiveReportsScreen({ route, navigation }) {
           <View style={{ flexDirection: 'row', gap: spacing.xs, flexWrap: 'wrap' }}>
             {FILTERS.map((item) => {
               const selected = filter === item.value;
-              return <TouchableOpacity key={item.value} onPress={() => setFilter(item.value)} accessibilityRole="radio" accessibilityState={{ checked: selected }} style={{ minHeight: 44, paddingHorizontal: spacing.md, borderRadius: 14, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary : colors.surface, justifyContent: 'center' }}>
+              return <TouchableOpacity key={item.value} onPress={() => setFilter(item.value)} accessibilityRole="radio" accessibilityLabel={'Filter LIVE reports: ' + item.label} accessibilityState={{ checked: selected }} style={{ minHeight: 44, paddingHorizontal: spacing.md, borderRadius: 14, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary : colors.surface, justifyContent: 'center' }}>
                 <Text style={[typography.caption, { color: selected ? colors.onPrimary : colors.textSecondary, fontWeight: '800' }]}>{item.label}</Text>
               </TouchableOpacity>;
             })}
           </View>
 
           {loading && !reports.length ? <View style={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary }]}>Loading safety reports…</Text></View> : null}
-          {!!error ? <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text accessibilityRole="alert" style={[typography.body, { color: colors.danger }]}>{error}</Text><TouchableOpacity onPress={() => refresh()} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
+          {!!error ? <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text accessibilityRole="alert" style={[typography.body, { color: colors.danger }]}>{error}</Text><TouchableOpacity onPress={() => refresh()} accessibilityRole="button" accessibilityLabel="Retry loading LIVE reports" style={{ minHeight: 44, justifyContent: 'center' }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
           {!loading && !error && visibleReports.length === 0 ? <GlassCard contentStyle={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}>
             <Ionicons name="shield-checkmark-outline" size={30} color={colors.textSecondary} />
             <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>No reports in this view</Text>
@@ -182,7 +182,7 @@ export default function LiveReportsScreen({ route, navigation }) {
               <Text style={[typography.caption, { color: colors.textSecondary }]}>Submitted {formatDate(item.created_at)}</Text>
               {item.details ? <Text selectable style={[typography.body, { color: colors.textPrimary, lineHeight: 22 }]}>{item.details}</Text> : <Text style={[typography.caption, { color: colors.textSecondary }]}>No additional details were supplied.</Text>}
               {!terminal ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-                {item.status === 'open' ? <TouchableOpacity disabled={busy} onPress={() => review(item.id, 'reviewing')} accessibilityRole="button" style={{ flex: 1, minWidth: 110, minHeight: 48, borderRadius: 13, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: busy ? 0.6 : 1 }}>
+                {item.status === 'open' ? <TouchableOpacity disabled={busy} onPress={() => review(item.id, 'reviewing')} accessibilityRole="button" accessibilityLabel="Start reviewing LIVE report" style={{ flex: 1, minWidth: 110, minHeight: 48, borderRadius: 13, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: busy ? 0.6 : 1 }}>
                   <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: '800' }]}>Start review</Text>
                 </TouchableOpacity> : null}
                 <TouchableOpacity disabled={busy} onPress={() => review(item.id, 'dismissed')} accessibilityRole="button" accessibilityLabel="Dismiss LIVE report" style={{ flex: 1, minWidth: 100, minHeight: 48, borderRadius: 13, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: busy ? 0.6 : 1 }}>
