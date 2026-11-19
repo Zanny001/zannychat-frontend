@@ -209,7 +209,7 @@ export default function LiveEventsScreen({ navigation }) {
               <Text style={[typography.caption,{color:colors.textSecondary}]}>Schedule up to five upcoming Events, with audience controls and capped attendance.</Text>
             </View>
           </View>
-          <TouchableOpacity onPress={()=>setShowComposer((v)=>!v)} accessibilityRole="button" accessibilityState={{expanded:showComposer}} style={{minHeight:50,borderRadius:16,backgroundColor:colors.primary,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:8}}>
+          <TouchableOpacity onPress={()=>setShowComposer((v)=>!v)} accessibilityRole="button" accessibilityLabel={showComposer?'Close Event setup':'Schedule a LIVE Event'} accessibilityState={{expanded:showComposer}} style={{minHeight:50,borderRadius:16,backgroundColor:colors.primary,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:8}}>
             <Ionicons name={showComposer?'close':'add-circle-outline'} size={19} color={colors.onPrimary}/>
             <Text style={[typography.bodyStrong,{color:colors.onPrimary}]}>{showComposer?'Close Event setup':'Schedule a LIVE Event'}</Text>
           </TouchableOpacity>
@@ -221,25 +221,25 @@ export default function LiveEventsScreen({ navigation }) {
           <TextInput value={description} onChangeText={(v)=>setDescription(v.slice(0,1000))} maxLength={1000} multiline placeholder="What will people experience?" placeholderTextColor={colors.textSecondary} accessibilityLabel="LIVE Event description" style={[fieldStyle,{minHeight:82,textAlignVertical:'top',paddingTop:12}]}/>
           <Text style={sectionLabel}>CATEGORY</Text>
           <View style={{flexDirection:'row',flexWrap:'wrap',gap:spacing.xs}}>
-            {CATEGORIES.map(([value,label])=><TouchableOpacity key={value} onPress={()=>setCategory(value)} accessibilityRole="radio" accessibilityState={{checked:category===value}} style={chip(category===value)}>
+            {CATEGORIES.map(([value,label])=><TouchableOpacity key={value} onPress={()=>setCategory(value)} accessibilityRole="radio" accessibilityLabel={label} accessibilityState={{checked:category===value}} style={chip(category===value)}>
               <Text style={[typography.caption,{color:category===value?colors.primary:colors.textSecondary,fontWeight:'800'}]}>{label}</Text>
             </TouchableOpacity>)}
           </View>
           <Text style={sectionLabel}>AUDIENCE</Text>
           <View style={{flexDirection:'row',flexWrap:'wrap',gap:spacing.xs}}>
-            {VISIBILITIES.map(([value,label,icon])=><TouchableOpacity key={value} onPress={()=>setVisibility(value)} accessibilityRole="radio" accessibilityState={{checked:visibility===value}} style={chip(visibility===value)}>
+            {VISIBILITIES.map(([value,label,icon])=><TouchableOpacity key={value} onPress={()=>setVisibility(value)} accessibilityRole="radio" accessibilityLabel={label} accessibilityState={{checked:visibility===value}} style={chip(visibility===value)}>
               <Ionicons name={icon} size={15} color={visibility===value?colors.primary:colors.textSecondary}/>
               <Text style={[typography.caption,{color:visibility===value?colors.primary:colors.textSecondary,fontWeight:'800'}]}>{label}</Text>
             </TouchableOpacity>)}
           </View>
           {visibility==='private'&&<View style={{gap:spacing.xs}}>
-            <TouchableOpacity onPress={loadCandidates} disabled={loadingContacts} accessibilityRole="button" style={{minHeight:46,borderWidth:1,borderColor:colors.border,borderRadius:14,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8}}>
+            <TouchableOpacity onPress={loadCandidates} disabled={loadingContacts} accessibilityRole="button" accessibilityLabel="Load contacts to invite to this private Event" style={{minHeight:46,borderWidth:1,borderColor:colors.border,borderRadius:14,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8}}>
               {loadingContacts?<ActivityIndicator color={colors.primary}/>:<Ionicons name="people-outline" size={18} color={colors.primary}/>}
               <Text style={[typography.caption,{color:colors.primary,fontWeight:'800'}]}>{loadingContacts?'Loading chat contacts…':'Choose private invitees'}</Text>
             </TouchableOpacity>
             <View style={{maxHeight:160}}>
               <ScrollView nestedScrollEnabled>
-                {candidates.map((person)=><TouchableOpacity key={person.id} onPress={()=>toggleInvitee(person.id)} accessibilityRole="checkbox" accessibilityState={{checked:selectedInvitees.includes(person.id)}} style={{minHeight:44,flexDirection:'row',alignItems:'center',gap:8,borderBottomWidth:1,borderBottomColor:colors.border}}>
+                {candidates.map((person)=><TouchableOpacity key={person.id} onPress={()=>toggleInvitee(person.id)} accessibilityRole="checkbox" accessibilityLabel={'Invite '+(person.name||'ZannyChat user')} accessibilityState={{checked:selectedInvitees.includes(person.id)}} style={{minHeight:44,flexDirection:'row',alignItems:'center',gap:8,borderBottomWidth:1,borderBottomColor:colors.border}}>
                   <Ionicons name={selectedInvitees.includes(person.id)?'checkbox':'square-outline'} size={19} color={colors.primary}/>
                   <Text numberOfLines={1} style={[typography.body,{color:colors.textPrimary,flex:1}]}>{person.name||'ZannyChat user'}</Text>
                 </TouchableOpacity>)}
@@ -258,7 +258,7 @@ export default function LiveEventsScreen({ navigation }) {
             <TextInput value={capacity} onChangeText={setCapacity} keyboardType="number-pad" placeholder="Attendees" placeholderTextColor={colors.textSecondary} accessibilityLabel="Maximum attendees" style={[fieldStyle,{flex:1}]}/>
           </View>
           <Text style={[typography.caption,{color:colors.textSecondary}]}>Events can be scheduled 10 minutes to 90 days ahead. Duration: 15–240 minutes. Capacity: 1–500.</Text>
-          <TouchableOpacity disabled={busy} onPress={createEvent} accessibilityRole="button" accessibilityState={{disabled:busy,busy}} style={{minHeight:52,borderRadius:16,backgroundColor:busy?colors.border:colors.primary,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:8}}>
+          <TouchableOpacity disabled={busy} onPress={createEvent} accessibilityRole="button" accessibilityLabel="Schedule LIVE Event" accessibilityState={{disabled:busy,busy}} style={{minHeight:52,borderRadius:16,backgroundColor:busy?colors.border:colors.primary,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:8}}>
             {busy?<ActivityIndicator color={colors.onPrimary}/>:<Ionicons name="calendar-outline" size={19} color={colors.onPrimary}/>}
             <Text style={[typography.bodyStrong,{color:colors.onPrimary}]}>{busy?'Saving Event…':'Schedule Event'}</Text>
           </TouchableOpacity>
@@ -274,10 +274,10 @@ export default function LiveEventsScreen({ navigation }) {
             <Text style={[typography.bodyStrong,{color:colors.textPrimary}]}>{event.title}</Text>
             <Text style={[typography.caption,{color:colors.textSecondary}]}>{formatDate(event.startsAt)}</Text>
             <View style={{flexDirection:'row',gap:spacing.xs}}>
-              <TouchableOpacity disabled={busy} onPress={()=>respondInvitation(event.id,'accepted')} accessibilityRole="button" style={{flex:1,minHeight:44,borderRadius:13,backgroundColor:colors.primary,alignItems:'center',justifyContent:'center'}}>
+              <TouchableOpacity disabled={busy} onPress={()=>respondInvitation(event.id,'accepted')} accessibilityRole="button" accessibilityLabel={'Accept invitation to '+event.title} style={{flex:1,minHeight:44,borderRadius:13,backgroundColor:colors.primary,alignItems:'center',justifyContent:'center'}}>
                 <Text style={[typography.caption,{color:colors.onPrimary,fontWeight:'900'}]}>Accept</Text>
               </TouchableOpacity>
-              <TouchableOpacity disabled={busy} onPress={()=>respondInvitation(event.id,'declined')} accessibilityRole="button" style={{flex:1,minHeight:44,borderRadius:13,borderWidth:1,borderColor:colors.border,alignItems:'center',justifyContent:'center'}}>
+              <TouchableOpacity disabled={busy} onPress={()=>respondInvitation(event.id,'declined')} accessibilityRole="button" accessibilityLabel={'Decline invitation to '+event.title} style={{flex:1,minHeight:44,borderRadius:13,borderWidth:1,borderColor:colors.border,alignItems:'center',justifyContent:'center'}}>
                 <Text style={[typography.caption,{color:colors.textSecondary,fontWeight:'900'}]}>Decline</Text>
               </TouchableOpacity>
             </View>
@@ -314,11 +314,11 @@ export default function LiveEventsScreen({ navigation }) {
                     <Ionicons name="radio" size={17} color={colors.onPrimary}/>
                     <Text style={[typography.caption,{color:colors.onPrimary,fontWeight:'900'}]}>Start LIVE from Event</Text>
                   </TouchableOpacity>}
-                  <TouchableOpacity disabled={busy} onPress={()=>cancelEvent(event)} accessibilityRole="button" style={{minHeight:42,borderWidth:1,borderColor:colors.danger,borderRadius:13,alignItems:'center',justifyContent:'center'}}>
+                  <TouchableOpacity disabled={busy} onPress={()=>cancelEvent(event)} accessibilityRole="button" accessibilityLabel={'Cancel LIVE Event '+event.title} style={{minHeight:42,borderWidth:1,borderColor:colors.danger,borderRadius:13,alignItems:'center',justifyContent:'center'}}>
                     <Text style={[typography.caption,{color:colors.danger,fontWeight:'900'}]}>Cancel Event</Text>
                   </TouchableOpacity>
                 </View>
-              : <TouchableOpacity disabled={busy||event.rsvpStatus==='going'||event.attendeeCount>=event.maxAttendees} onPress={()=>toggleRsvp(event)} accessibilityRole="button" accessibilityState={{disabled:busy||event.rsvpStatus==='going'||event.attendeeCount>=event.maxAttendees}} style={{minHeight:44,borderRadius:13,backgroundColor:event.rsvpStatus==='going'?colors.surface:colors.primary,borderWidth:event.rsvpStatus==='going'?1:0,borderColor:colors.border,alignItems:'center',justifyContent:'center'}}>
+              : <TouchableOpacity disabled={busy||event.rsvpStatus==='going'||event.attendeeCount>=event.maxAttendees} onPress={()=>toggleRsvp(event)} accessibilityRole="button" accessibilityLabel={event.rsvpStatus==='going'?'Cancel RSVP for '+event.title:'Reserve a place at '+event.title} accessibilityState={{disabled:busy||event.rsvpStatus==='going'||event.attendeeCount>=event.maxAttendees}} style={{minHeight:44,borderRadius:13,backgroundColor:event.rsvpStatus==='going'?colors.surface:colors.primary,borderWidth:event.rsvpStatus==='going'?1:0,borderColor:colors.border,alignItems:'center',justifyContent:'center'}}>
                   <Text style={[typography.caption,{color:event.rsvpStatus==='going'?colors.textSecondary:colors.onPrimary,fontWeight:'900'}]}>{event.rsvpStatus==='going'?'You are going':event.attendeeCount>=event.maxAttendees?'Event full':'Reserve my place'}</Text>
                 </TouchableOpacity>}
           </GlassCard>)}
