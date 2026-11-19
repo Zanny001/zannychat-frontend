@@ -22,7 +22,7 @@ test('LIVE leaderboard loads follow state and opens the privacy-aware creator pr
 });
 
 test('LIVE leaderboard explains public-only privacy and unsupported time windows', () => {
-  assert.ok(leaderboard.includes('Only public creator impact'));
+  assert.ok(leaderboard.includes('Only profiles visible to everyone are ranked.'));
   assert.ok(leaderboard.includes('Private, contacts-only and blocked creators are excluded.'));
   assert.ok(leaderboard.includes('weekly and monthly score history is not yet available'));
   assert.ok(leaderboard.includes('The leaderboard is waiting for creators'));
