@@ -19,6 +19,7 @@ export default function LiveModerationScreen({ route, navigation }) {
   const [error, setError] = useState('');
   const requestGeneration = useRef(0);
   const actionLock = useRef(false);
+  const actionGeneration = useRef(0);
 
   const refresh = useCallback(async (pull = false) => {
     const generation = ++requestGeneration.current;
@@ -59,6 +60,7 @@ export default function LiveModerationScreen({ route, navigation }) {
       requestGeneration.current += 1;
       setParticipants([]);
       setBusyUserId(null);
+      actionGeneration.current += 1;
       actionLock.current = false;
       Promise.resolve().then(() => refresh());
     });
@@ -73,13 +75,20 @@ export default function LiveModerationScreen({ route, navigation }) {
 
   const perform = async (userId, action, operation, successMessage) => {
     if (!streamId || !userId || actionLock.current) return;
+    const actionId = ++actionGeneration.current;
     actionLock.current = true;
     setBusyUserId(userId);
     try {
       const result = await operation();
+      if (actionId !== actionGeneration.current) return;
       if (action === 'remove') {
         const returned = result?.returnedToAudience;
-        showAppAlert('Participant updated', returned ? 'The guest has returned to the audience and can keep watching.' : successMessage);
+        const message = returned === true
+          ? 'The guest has returned to the audience and can keep watching.'
+          : result?.returnedToAudience === false
+            ? 'The guest connection had already ended. Guest access has been revoked.'
+            : successMessage;
+        showAppAlert('Participant updated', message);
       } else if (successMessage) {
         showAppAlert('LIVE moderation updated', successMessage);
       }
@@ -88,8 +97,10 @@ export default function LiveModerationScreen({ route, navigation }) {
       showAppAlert('Could not update LIVE participant', e?.message || 'Refresh the participant list and try again.');
       await refresh(true);
     } finally {
-      actionLock.current = false;
-      setBusyUserId(null);
+      if (actionId === actionGeneration.current) {
+        actionLock.current = false;
+        setBusyUserId(null);
+      }
     }
   };
 
