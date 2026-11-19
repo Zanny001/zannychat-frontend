@@ -310,3 +310,61 @@ Current `vercel.json` and `netlify.toml` both set `frame-ancestors 'none'; base-
 - PR #181 is in review: Stories feed and Friends rail virtualization; current source import includes FlatList explicitly. Backend status response pagination and privacy-picker/private-reply list virtualization remain open.
 - These are performance improvements, not final visual sign-off or device acceptance.
 
+
+
+## 12. Current 48-experience screen audit matrix
+
+This matrix follows the current navigator's 48 unique experiences (the `Main` route is a tab container, not counted as a separate experience). The historic 2026-11-16 source pass covered 46 registered screen modules; the current main imports 47 unique screen modules. The added `LiveReplayLibraryScreen` requires a fresh source/visual review. Historical source review is not runtime acceptance.
+
+| # | Experience | Current implementation evidence | Remaining acceptance |
+|---:|---|---|---|
+| 1 | Onboarding | Static responsive onboarding module; source-reviewed historically | First-install, small-screen, reduced-motion and text-scale checks |
+| 2 | Login | Credential form and explicit error states | Autofill/password manager, rate limits, anti-enumeration and device tests |
+| 3 | Signup | Account creation and validation flow | Duplicate-account, verification delivery and recovery tests |
+| 4 | Verify Email | Verification/resend flow | Delivery, cooldown, expiry and replayed-code rejection |
+| 5 | Password Recovery | Recovery request form | Anti-enumeration, delivery and rate-limit acceptance |
+| 6 | Password Reset | Reset form and validation | Expired/reused token, session invalidation and device tests |
+| 7 | LIVE Replay Library | Dedicated route/module and creator-scoped management exist in main | Verify real recordings, ownership, filters, signed playback, deletion and account switching |
+| 8 | Chats | Inbox FlatList render window merged in #178; existing server pagination/realtime retained | Visual density, search/filter/folder states, offline/retry and two-account acceptance |
+| 9 | Chat | Composer, message list, outboxes, media, read receipts, reactions and message utilities integrated | Full send/read/edit/delete/reply/forward/media/voice-note/keyboard/offline regression |
+| 10 | New Chat | Bounded contact directory merged in #179 | Permission, search, empty/error, invitation and two-account acceptance |
+| 11 | Forward Message | Bounded FlatList merged in #180 | Large recipient list, selection, failure/retry and privacy acceptance |
+| 12 | Saved Messages | Bounded local collection merged in #180 | Device-local disclosure, persistence, account switch and open-original-message checks |
+| 13 | Drafts | Bounded list, 100-conversation lookup cap and ID map merged in #180 | Offline, stale conversation, account isolation and deletion acceptance |
+| 14 | Pinned Messages | Bounded FlatList merged in #180 | Snapshot freshness, unpin permissions and open-original-message acceptance |
+| 15 | Chat Folders | Bounded FlatList merged in #180 | Large folder set, ordering, persistence and empty/error acceptance |
+| 16 | Shared Media | Media browsing module and private media services exist | Large media pagination, signed URL expiry, cache/cleanup and responsive bounds |
+| 17 | Chat Appearance | Theme/appearance settings and persisted theme engine exist | Preview/persistence, all moods, light/dark/high-contrast and text-scale review |
+| 18 | Peer Profile | Dedicated peer profile route | Visibility/block state, avatar privacy, actions and cross-account checks |
+| 19 | QR Contact | QR share/scan route | Camera permission, malformed/expired QR and cross-account scan |
+| 20 | Contact Discovery | Discovery route and backend rate-limit/privacy utilities | Permission denial, enumeration resistance and multi-account visibility |
+| 21 | Create Group | Contact selection uses a bounded list; backend validates participants/invites | Multi-account creation, duplicate members, capacity and invite permissions |
+| 22 | Group Management | Member/admin management; historical work virtualized roster | Backend roster pagination, role changes, admin-only actions and self-leave |
+| 23 | Join Group | Invite acceptance flow | Expired, revoked, max-use, blocked and unauthorized invite acceptance |
+| 24 | Channels / Explore | Channel directory/feed, posts, comments and reports; privacy-aware services | Full directory pagination/virtualization, discovery, moderation and private-channel tests |
+| 25 | Polls | Validated keyset service and vote-count RPC; historical virtualization work | Multi-select, close time, duplicate vote, result privacy and two-account tests |
+| 26 | Events | Event service with RSVP/create flows; historical keyset/virtualization work | Time-zone correctness, capacity, past/future filtering and RSVP race tests |
+| 27 | Calls | Calls tab/call history and direct/group call services | Two-device audio/video, history, Bluetooth/speaker, reconnect and notification acceptance |
+| 28 | Incoming Call | Dedicated incoming-call surface | Background/terminated delivery, decline/timeout and native receiver lifecycle |
+| 29 | Outgoing Call | Dedicated outgoing/ringing surface | Cancel, timeout, remote decline, network loss and cleanup |
+| 30 | One-to-one Call | LiveKit media surface and native call integration | Bidirectional audio/video, mid-call switch, route changes and reconnect on physical devices |
+| 31 | Group Call | Group-call room and participant management | Add/remove, role permissions, media handoff and multi-device cleanup |
+| 32 | LIVE Hub | Discovery/creator entry surface | Real discovery data, pagination, privacy filters, empty/error and navigation |
+| 33 | LIVE Broadcast | Broadcast route with LiveKit, creator/guest/viewer permissions | Two-account media, comments/reactions, moderation and room end/leave lifecycle |
+| 34 | Updates / Status | Updates tab; profile-avatar-first My Status behaviour | Expiry, audience privacy, viewer/reply/reaction and device acceptance |
+| 35 | Profile | Profile route and persisted user data | Responsive layout, avatar privacy, actions and account-switch tests |
+| 36 | Edit Profile | Profile update service | Validation, username uniqueness, media upload, persistence and cross-account isolation |
+| 37 | Settings | Settings route and theme/accessibility preferences | Complete preference persistence, navigation, destructive confirmation and accessibility |
+| 38 | Privacy & Security | Privacy/security service and recent-auth account deletion flow | Session/token revocation, visibility, block/report, deletion and RLS tests |
+| 39 | Notifications | Persisted push opt-out and token lifecycle fix recorded in historical audit | Real device delivery, unregister, permissions, token refresh and account switch |
+| 40 | Data Storage | Media quality/auto-download controls | Actual storage usage, low-storage behaviour and cleanup correctness |
+| 41 | Data Export | Export request/status surface | Real export generation, download security, completeness and deletion lifecycle |
+| 42 | Sessions | Session summary and revoke-other-sessions action | Cross-device revocation, expired sessions and refresh-token invalidation |
+| 43 | Help | Local FAQ/support surface | Valid support destinations, accessibility and contact/support flow |
+| 44 | LIVE Replay Player | Authenticated replay playback route | End-to-end Egress, webhook finalisation, private object, signed URL, expiry and unauthorized denial |
+| 45 | LIVE Creator Profile | Creator profile/impact route | Owner identity, follow state, real impact data and privacy isolation |
+| 46 | Scheduled Messages | Service/worker; historical bounded pending list and 100-recipient lookup | Time-zone, worker execution, cancellation, retries and search for older conversations |
+| 47 | LIVE primary tab | Six-destination navigation includes LIVE | Selected state, safe areas, deep links, back behaviour and accessibility |
+| 48 | Status Updates dedicated route | Dedicated StatusUpdates route shares the Updates implementation; #181 is current virtualization PR | Complete #181 CI, backend pagination, privacy picker/private reply list, keyboard and device tests |
+
+**Important separation:** The 18-screen LIVE Design Audit is an additional nested experience/capability checklist and must be completed in addition to this 48-route matrix. See the LIVE-01 requirement and the Master Blueprint's LIVE section.
