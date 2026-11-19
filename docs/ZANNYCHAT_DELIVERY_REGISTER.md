@@ -390,7 +390,7 @@ This matrix follows the current navigator's 48 unique experiences (the `Main` ro
 The old PRs #151, #159, #160 and #161 were closed only after the above replacements were created from current main and merged. No user-facing features were removed.
 
 ### Production rollout status
-- Vercel production deployment for code commit `e1214f85b3bce25068d4c2ac187fd58483a4e8e8` reached **READY** (deployment `dpl_59wCUkd3jSsUWbkxydsEAQYRXrvZ`). The subsequent docs-only main commit `9a8c568e35ad1392ef117a1f680eaf659e7b1057` also reached **READY** (deployment `dpl_J3YW1cNxrsZvJzexCpe2GDLZcrr7`). The production alias `https://zannychat.vercel.app` was verified on the latest READY deployment. The new Chats/New Chat/message-collection/Stories performance work is therefore deployed.
+- Vercel production deployment for code commit `e1214f85b3bce25068d4c2ac187fd58483a4e8e8` reached **READY** (deployment `dpl_59wCUkd3jSsUWbkxydsEAQYRXrvZ`). The docs-only main commit `9a8c568e35ad1392ef117a1f680eaf659e7b1057` reached **READY** (deployment `dpl_J3YW1cNxrsZvJzexCpe2GDLZcrr7`). After PR #184, latest main commit `90deac5913dbdf7fa610fcf4d98e94c67a6ce3a5` also reached **READY** (deployment `dpl_BPonjj69GFNzF4ByjzqmxodYuebn`), and the production alias `https://zannychat.vercel.app` was verified on it. The inbox/New Chat/collections/Stories performance work and the ChatMessageRow extraction are deployed.
 - Backend Render remains live at `14860064a87c7637fc4f15dc6d75f4084b6f696a`; no backend source or database change was made in this interface pass.
 - Supabase schema remains untouched; the 106-migration / 64-table snapshot remains the latest read-only audit.
 
@@ -483,3 +483,15 @@ This confirms the catalog-level grant/search-path posture recorded in the earlie
 - The merged commit is not yet confirmed deployed to production at this checkpoint.
 
 **Next Chat architecture slice:** extract message timeline data lifecycle (initial load, cursor pagination, realtime subscription, read-state and stale-request guards) into a focused hook only after its current cleanup, request ownership and two-account contracts are mapped. Keep outbox/media/composer extraction separate so failure recovery is not entangled with pagination.
+
+
+## 18. Chat timeline lifecycle hook PR — 2026-11-19
+
+- PR #185 is open: `refactor(chat): extract timeline lifecycle into a domain hook`.
+- It moves initial history, cursor pagination, realtime message/reaction/typing/presence/read-state subscriptions, request-generation guards and focus cleanup into `src/hooks/useChatTimeline.js`.
+- ChatScreen retains optimistic message mutations, composer/outbox/media and presentation. Account-switch reset now delegates timeline state cleanup to the hook.
+- The unit script now includes `src/hooks/*.contract.test.js`; without this explicit glob, hook contract tests would not execute.
+- PR #185 frontend-quality and Advanced Calling workflows are running; Vercel and Netlify preview statuses are pending. Do not merge until both workflows pass and the hook's stale-account/unsubscribe/dedup contracts are reviewed.
+- Current main remains `90deac5913dbdf7fa610fcf4d98e94c67a6ce3a5`; PR #185 is not deployed.
+
+**Next Chat work after #185:** separate composer/outbox/media lifecycles only after the timeline hook is merged and regression-tested; then complete Chat visual/keyboard/accessibility acceptance before moving to the next screen family.
