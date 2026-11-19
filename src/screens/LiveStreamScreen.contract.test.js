@@ -492,7 +492,8 @@ test('LIVE viewers can open the public creator profile from the stage controls',
   assert.ok(screen.includes('onOpenCreatorProfile'));
   assert.ok(screen.includes('accessibilityLabel="Open LIVE creator profile"'));
   assert.ok(screen.includes("navigation.navigate('LiveCreatorProfile'"));
-  assert.ok(screen.includes('currentLiveStreamId: null'));
+  assert.ok(screen.includes('currentLiveStreamId: stream.id'));
+  assert.ok(screen.includes('alreadyViewingLive: true'));
   assert.ok(screen.includes('route.params?.creatorName || stream.creator_name || \'LIVE Creator\''));
   assert.ok(screen.includes('avatarColor: route.params?.creatorAvatarColor || stream.creator_avatar_color'));
   assert.ok(screen.includes('onOpenCreatorProfile={openCreatorProfile}'));
