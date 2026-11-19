@@ -11,8 +11,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.zannychat.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "ZannyChat uses the camera so you can take and send photos in your chats.",
-        "NSMicrophoneUsageDescription": "ZannyChat uses the microphone so you can record and send voice messages.",
+        "NSCameraUsageDescription": "ZannyChat uses the camera when you choose to take photos, make video calls or host and join video LIVE sessions.",
+        "NSMicrophoneUsageDescription": "ZannyChat uses the microphone when you record voice messages, make calls or host and join LIVE sessions.",
         "NSPhotoLibraryUsageDescription": "ZannyChat accesses your photo library so you can send photos and set a profile picture.",
         "NSPhotoLibraryAddUsageDescription": "ZannyChat can save photos from your chats to your photo library.",
         "NSAppTransportSecurity": {
@@ -104,7 +104,9 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "ZannyChat uses the camera to scan QR codes and connect you with contacts."
+          "cameraPermission": "ZannyChat uses the camera when you scan QR codes, make video calls or host and join video LIVE sessions.",
+          "microphonePermission": "ZannyChat uses the microphone when you make calls or host and join LIVE sessions.",
+          "recordAudioAndroid": true
         }
       ],
       [
@@ -138,8 +140,8 @@
       [
         "@config-plugins/react-native-webrtc",
         {
-          "cameraPermission": "ZannyChat uses the camera only when you start or answer a video call.",
-          "microphonePermission": "ZannyChat uses the microphone only when you start or answer a call."
+          "cameraPermission": "ZannyChat uses the camera only when you choose to take photos, start or answer a video call, or host and join video LIVE sessions.",
+          "microphonePermission": "ZannyChat uses the microphone only when you record voice messages, start or answer a call, or host and join LIVE sessions."
         }
       ],
       "expo-web-browser",
