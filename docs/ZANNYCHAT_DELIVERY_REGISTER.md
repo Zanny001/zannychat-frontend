@@ -191,3 +191,34 @@ At the end of every work session:
 - Update statuses truthfully.
 - Leave one precise next action and its dependencies.
 - Never mark the overall programme complete until every in-scope requirement is Accepted or explicitly descoped with the user's approval.
+
+
+## 7. Verified source architecture baseline — 2026-11-19
+
+This is a source-level inventory from frontend `main` at base commit `55fb010fc11b58590c26d111772d3db2cc0e08f3` and backend `main` at the latest commit observed in GitHub history, `14860064a87c7637fc4f15dc6d75f4084b6f696a`. It is not a complete dependency/data-flow audit.
+
+### Frontend
+- Expo SDK `~57.0.32`, React `19.2.3`, React Native `0.86.3`, React Navigation 7, Supabase JS `2.117.3`, LiveKit React Native `3.1.0` and LiveKit client `2.23.0`.
+- Entry point `App.js` owns startup orchestration: font readiness/fallback, session restoration timeout, Supabase auth-state subscription, push registration coordination, presence owner lifecycle, notification tap subscription and app error boundary.
+- `src/navigation/AppNavigator.js` imports **47 unique screen modules**. It declares 48 RootStack.Screen entries with 44 unique route names because QRContact, JoinGroup, LiveStream and LiveReplay are each declared more than once for conditional/deep-link route handling. Six primary tabs are confirmed: Chats, Calls, LIVE, Updates, Channels (labelled Explore) and Profile.
+- The older 46-module inventory is therefore stale against this current source snapshot. Keep the historic 46/48 count as provenance for the 17 Nov audit, but use 47 imported modules / 48 stack declarations / 44 distinct route names as the current parsed baseline until a complete registry script independently verifies it.
+- Current package scripts include unit contracts, release/contract/readiness/integrity audits, call recovery/native receiver checks and Expo web export. The workflow run triggered by PR #177 is currently in progress; record final results only after completion.
+
+### Backend
+- Node/Express API version `1.2.241`; a modular monolith with explicit route modules mounted by `src/index.js`.
+- Current route modules observed: health, conversations, AI, internal webhook, LiveKit Egress webhook, link preview, safety, account, channels, discovery, calls, call history, group calls, LIVE streams and LIVE history. Mounts include `/health`, `/conversations`, `/ai`, `/link-preview`, `/safety`, `/account`, `/channels`, `/discovery`, `/calls/history`, `/calls`, `/group-calls`, two routers under `/live`, `/webhooks/livekit` and `/webhooks`.
+- Background workers started by the API process include call invitation notifications, call-ended notification retries, group-call media cleanup, media participant/ended LIVE-room cleanup, stale call-session cleanup, account-storage cleanup and LIVE replay finalisation/recovery.
+- Backend structure is therefore already domain-modular within one Express process; the next audit must inspect route-to-service/data dependencies and worker lifecycle before proposing architecture refactors. Do not split services just for architectural fashion.
+
+### Open PR reconciliation note
+- PR #149 changes two existing historical audit/tracker documents: `docs/FULL_APP_AUDIT_AND_RELEASE_REGISTER_20261116.md` and `docs/ROYAL_NEON_SCREEN_REDESIGN_TRACKER.md`. It contains unique 17 Nov production/catalog, migration, replay, security and screen-sequence evidence. Keep it open for review; reconcile its unique evidence into this canonical register before deciding whether to merge. Do not merge it blindly or create a third competing master register.
+- PRs #151, #159, #160 and #161 are open and have distinct UI/performance scopes. Inspect their exact head commits, CI and current-main diffs before merge. PR #151 itself states that status service fetches are still not cursor-paginated and that privacy-picker/private-reply collections remain ScrollViews; retain those follow-ups.
+- PR #177 has Netlify deploy-preview success and Vercel pending at the time of this update. Premium status/LIVE quality and Advanced calling client checks are still running; this is documentation-only, but do not claim green CI until both workflows finish.
+
+### Immediate architecture-audit tasks
+1. Generate a current screen/route registry directly from `AppNavigator.js` and reconcile aliases/conditional declarations; avoid hand-maintained count drift.
+2. Inventory frontend services/hooks/context/state and map each screen to service/API/domain ownership.
+3. Inventory backend route handlers, service modules, data access, Supabase RPC calls and provider adapters.
+4. Inventory every Supabase migration/table/view/function/trigger/RLS/storage policy and compare repository migrations with production migration history before any database change.
+5. Map worker schedules, idempotency, retry semantics and observability; confirm which workers actually run in Render production.
+6. Map LiveKit, push, email/OAuth and media storage dependencies, their environment keys, free-tier constraints and production health checks.
