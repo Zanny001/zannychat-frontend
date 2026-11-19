@@ -44,7 +44,7 @@ test('pre-flight camera preview is scoped to the focused screen and has accessib
   assert.ok(preflight.includes('<CameraView'));
   assert.ok(preflight.includes('accessibilityLabel="Switch camera"'));
   assert.ok(preflight.includes('accessibilityLabel="Allow camera and microphone permissions"'));
-  assert.ok(preflight.includes('accessibilityLabel="Start LIVE broadcast"'));
+  assert.ok(preflight.includes("'Start audio LIVE room' : experienceMode === 'video_chat' ? 'Start video LIVE chat'"));
 });
 
 test('pre-flight is registered as a modal route without changing primary navigation', () => {
