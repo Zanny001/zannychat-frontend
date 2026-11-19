@@ -277,6 +277,7 @@ export default function LiveHubScreen({ navigation, route }) {
     if (visibility === 'private' && invitees.length === 0) {
       return Alert.alert('Add invitees', 'Choose at least one person from your existing chats.');
     }
+    setError('');
     // Keep room creation out of the setup form. The dedicated pre-flight
     // screen obtains device permissions and creates the room only after
     // the creator has reviewed the final audience and experience settings.
