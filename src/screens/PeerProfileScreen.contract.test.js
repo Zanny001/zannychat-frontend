@@ -22,6 +22,9 @@ test('LIVE Creator Profile exposes authenticated follow and watch actions only i
   assert.ok(source.includes('Follow creator'));
   assert.ok(source.includes('Watch LIVE'));
   assert.ok(source.includes('followRequestRef.current'));
+  assert.ok(source.includes("backendFetch('/live/following')"));
+  assert.ok(source.includes('followCheckLoading'));
+  assert.ok(source.includes('followGenerationRef.current'));
 });
 
 test('LIVE Hub links followed creators and live stream cards to the public profile', () => {
