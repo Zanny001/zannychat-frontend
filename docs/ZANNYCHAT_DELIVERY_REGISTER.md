@@ -390,8 +390,7 @@ This matrix follows the current navigator's 48 unique experiences (the `Main` ro
 The old PRs #151, #159, #160 and #161 were closed only after the above replacements were created from current main and merged. No user-facing features were removed.
 
 ### Production rollout status
-- Vercel production deployment for latest frontend main commit `e1214f85b3bce25068d4c2ac187fd58483a4e8e8` is **QUEUED** at this checkpoint (deployment `dpl_59wCUkd3jSsUWbkxydsEAQYRXrvZ`). Do not claim it is live until the deployment reaches READY and the production alias is confirmed.
-- The latest earlier frontend production deployment at `b6a51f36ab8981071efddb9cd0405c4c0299a118` is READY.
+- Vercel production deployment for code commit `e1214f85b3bce25068d4c2ac187fd58483a4e8e8` reached **READY** (deployment `dpl_59wCUkd3jSsUWbkxydsEAQYRXrvZ`). The subsequent docs-only main commit `9a8c568e35ad1392ef117a1f680eaf659e7b1057` also reached **READY** (deployment `dpl_J3YW1cNxrsZvJzexCpe2GDLZcrr7`). The production alias `https://zannychat.vercel.app` was verified on the latest READY deployment. The new Chats/New Chat/message-collection/Stories performance work is therefore deployed.
 - Backend Render remains live at `14860064a87c7637fc4f15dc6d75f4084b6f696a`; no backend source or database change was made in this interface pass.
 - Supabase schema remains untouched; the 106-migration / 64-table snapshot remains the latest read-only audit.
 
@@ -440,3 +439,9 @@ Measured from current frontend main after the #181 merge. Byte size and hook/fun
 - Development localhost origins are added only outside production.
 - Requests without an Origin (native/server-to-server) are allowed; browser origins not in the explicit set are rejected with 403. No wildcard production origin is configured.
 - This source review matches the intended production CORS design. Still verify the Render environment's actual CORS variables and run a production browser preflight when investigating a new origin rejection.
+
+
+### Chat architecture refactor checkpoint
+- PR #184 is open: extracts the conversation timeline day separator and ChatBubble composition into a presentation-only `ChatMessageRow` component, preserving all message state, status, search, reaction and action callbacks in ChatScreen.
+- PR #184 frontend quality and advanced-calling workflows are still running; do not merge until both pass and the diff is reviewed.
+- The larger ChatScreen decomposition (data lifecycle, outboxes/media, composer, header and overlays) remains a staged follow-up, not claimed complete.
