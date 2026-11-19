@@ -67,9 +67,10 @@ export default function LivePreflightScreen({ route, navigation }) {
   const microphoneGranted = Boolean(microphonePermission?.granted);
   const cameraGranted = !needsCamera || Boolean(cameraPermission?.granted);
   const mediaPermissionsGranted = microphoneGranted && cameraGranted;
+  const cameraPreviewReady = !needsCamera || cameraReady;
   const privateInviteesValid = visibility !== 'private' || inviteeIds.length > 0;
   const setupValid = Boolean(title) && privateInviteesValid;
-  const canStart = mediaPermissionsGranted && setupValid && !busy && !permissionBusy;
+  const canStart = mediaPermissionsGranted && cameraPreviewReady && setupValid && !busy && !permissionBusy;
 
   const requestMediaAccess = useCallback(async () => {
     setError('');
@@ -300,6 +301,11 @@ export default function LivePreflightScreen({ route, navigation }) {
             </View>
           )}
 
+          {needsCamera && cameraPermission?.granted && !cameraReady && (
+            <Text accessibilityRole="status" style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', lineHeight: 18 }]}>
+              Waiting for the camera preview. LIVE room creation stays locked until your camera is ready.
+            </Text>
+          )}
           <TouchableOpacity
             onPress={startLive}
             disabled={!canStart}
