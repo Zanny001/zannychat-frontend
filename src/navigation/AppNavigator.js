@@ -60,6 +60,7 @@ import LiveReplayLibraryScreen from '../screens/LiveReplayLibraryScreen';
 import LiveGuestQueueScreen from '../screens/LiveGuestQueueScreen';
 import LiveModerationScreen from '../screens/LiveModerationScreen';
 import LiveReportsScreen from '../screens/LiveReportsScreen';
+import LiveAnalyticsScreen from '../screens/LiveAnalyticsScreen';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { getCallParticipantName, getCallSessionById, subscribeToIncomingCalls, updateCallStatus } from '../services/calls';
 import { clearNativeCallMapping, getNativeCallMapping, initializeNativeCallSystem, reportIncomingCallIfNeeded, reportNativeCallEnded } from '../services/nativeCallSystem';
@@ -472,6 +473,7 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
           <RootStack.Screen name="LiveGuestQueue" component={LiveGuestQueueScreen} options={{ animation: 'slide_from_right' }} />
           <RootStack.Screen name="LiveModeration" component={LiveModerationScreen} options={{ animation: 'slide_from_right' }} />
           <RootStack.Screen name="LiveReports" component={LiveReportsScreen} options={{ animation: 'slide_from_right' }} />
+          <RootStack.Screen name="LiveAnalytics" component={LiveAnalyticsScreen} options={{ animation: 'slide_from_right' }} />
           <RootStack.Screen name="PeerProfile" component={PeerProfileScreen} />
           <RootStack.Screen name="NewChat" component={NewChatScreen} options={{ presentation: 'modal' }} />
           <RootStack.Screen name="QRContact" component={QRContactScreen} options={{ presentation: 'modal' }} />

@@ -195,8 +195,16 @@ export default function LiveCreatorStudioScreen({ navigation }) {
         </GlassCard>
 
         <View style={{ gap: spacing.xs }}>
-          <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 18 }]}>Creator impact</Text>
-          <Text style={[typography.caption, { color: colors.textSecondary }]}>Your community's reactions and daily support score</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm }}>
+            <View style={{ flex: 1, gap: spacing.xs }}>
+              <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 18 }]}>Creator impact</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>Your community's reactions and daily support score</Text>
+            </View>
+            <TouchableOpacity onPress={() => navigation.navigate('LiveAnalytics')} accessibilityRole="button" accessibilityLabel="Open Creator Analytics" style={{ minHeight: 44, paddingHorizontal: 12, borderRadius: 13, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <Ionicons name="analytics-outline" size={16} color={colors.primary} />
+              <Text style={[typography.caption, { color: colors.primary, fontWeight: '900' }]}>Insights</Text>
+            </TouchableOpacity>
+          </View>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
             <View style={{ width: '48%', flexGrow: 1 }}><Metric icon="sparkles" label="Impact score" value={impact.impact_score} colors={colors} typography={typography} /></View>
             <View style={{ width: '48%', flexGrow: 1 }}><Metric icon="heart" label="Total reactions" value={impact.total_reactions} colors={colors} typography={typography} /></View>
