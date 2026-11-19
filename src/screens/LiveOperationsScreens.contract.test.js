@@ -43,6 +43,7 @@ test('LIVE reports workspace supports the backend review lifecycle and accessibl
   assert.ok(reports.includes("'resolved'"));
   assert.ok(reports.includes('accessibilityRole="radio"'));
   assert.ok(reports.includes('No reports in this view'));
+  assert.ok(reports.includes('route.params?.canManageParticipants !== false'));
 });
 
 test('LIVE operations workspaces are registered and discoverable from Creator Studio and both room clients', () => {
