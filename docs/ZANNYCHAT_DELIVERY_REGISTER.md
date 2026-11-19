@@ -269,3 +269,44 @@ Read-only inspection of project `vithpppgyjmazxvogvno` at approximately 11:47 UT
 | #161 | [#178](https://github.com/Zanny001/zannychat-frontend/pull/178) | Chats inbox bounded render window |
 
 PR #149 remains open but stale; unique 17 Nov production and screen-audit evidence is being reconciled into this canonical register. PR #177 remains the draft documentation programme.
+
+
+## 11. Architecture map and design-system baseline — 2026-11-19
+
+### Frontend design system (verified source)
+- `src/theme/colors.js` defines nine built-in moods; `royalNeon` is the default Crown Aurora palette. The semantic model is Signal & Thread: the current user's voice/action uses `signal`, the other participant accent uses `thread`.
+- `ThemeContext` persists system/light/dark appearance, mood selection, custom palettes, text scale (`standard`, `large`, `extraLarge`) and high-contrast preference.
+- Shared primitives include `Header`, `GlassCard`, `GlassInput`, `InputBar` and ChatBubble. Blur is decorative; Android API 30 and below must retain the solid-tint fallback.
+- Typography uses Space Grotesk for display/numeric emphasis and Manrope for readable body text.
+- Existing composer behaviours (draft persistence, attachments, retry/recovery, message actions) are product-critical. Do not replace the composer with a static mockup.
+
+### Frontend domain/service dependency map (sampled current main)
+- Inbox: `api`, `presence`, `supabaseClient`, `chatFolders`, `statusUpdates`, status/story utilities.
+- Chat: `api`, `presence`, `calls`, `supabaseClient`, message/attachment outboxes, media preferences, saved/pinned messages, drafts, chat appearance and read-receipt utilities.
+- New Chat: `api`, `presence`, `supabaseClient`, calls and member-favorites utilities.
+- Status: `api`, `statusUpdates`, media recovery, audience/privacy selection, expiry and grouping utilities.
+- Channels: `backendClient`, `api`, channel pagination, directory, drafts, validation and publish guards.
+- Calls: `calls`, `backendClient`, `supabaseClient`, native call system, call policy and network status.
+- LIVE: `backendClient`, `api`, `supabaseClient`, LiveKit-facing routes/services and discovery utilities.
+- Profile/privacy: `api`, `backendClient`, `supabaseClient`, Google auth, auth validation and privacy checkup.
+
+This confirms a shared API/data layer with domain utilities, but some screens directly coordinate multiple clients/services. The next architecture pass must map ownership and avoid creating a second competing API/state layer.
+
+### Backend modular-monolith route map (verified current source)
+Express route modules mounted by `src/index.js`:
+- Health, conversations, AI, internal notifications/webhooks, LiveKit Egress webhook, link preview, safety, account, channels, discovery, calls, call history, LIVE history, group calls and LIVE streams.
+- Shared middleware includes auth and rate limiting. Provider/data adapters include Supabase admin, push, LiveKit tokens, LiveKit room administration, LiveKit Egress and replay finalisation.
+- Seven worker modules cover replay lifecycle/recovery/retention, call-end notification retries, stale call-session cleanup, LIVE participant/room cleanup, group-call media cleanup, account-storage cleanup and call-invitation notifications.
+- `src/index.js` schedules recurring work at 30-second and 60-second intervals and starts the LIVE replay worker. Verify actual worker health, idempotency, lock ownership and logs in production; source registration alone is not operational proof.
+- Render service is configured for one free instance in Frankfurt, with `/health/live` as the service health path. Avoid adding separate paid services without a clear requirement and explicit cost approval.
+
+### Browser security header finding
+Current `vercel.json` and `netlify.toml` both set `frame-ancestors 'none'; base-uri 'self'; object-src 'none'` but do not set `default-src` or `script-src`. This provides useful frame/base/object restrictions but is not a complete script-loading/XSS CSP. Treat as a security-hardening task: inventory real Supabase, Render, LiveKit, OAuth, font and media origins; validate a report-only policy against the Expo web export; then enforce a least-privilege policy with a rollback path. Do not guess an allowlist or break production login/media/calls.
+
+### Current UI performance implementation checkpoint
+- PR #178 merged: inbox FlatList now renders an initial 12 rows, batches 10 every 50ms and retains a 9-window render range; existing pagination/realtime/account isolation remains.
+- PR #179 merged: New Chat contact directory renders 12 initially, batches 12 every 50ms, with a 7-window range.
+- PR #180 merged: Saved/Pinned/Drafts/Forward/Folders use bounded render windows; Drafts skips conversation lookup when empty, caps lookup at 100 and indexes conversations by ID.
+- PR #181 is in review: Stories feed and Friends rail virtualization; current source import includes FlatList explicitly. Backend status response pagination and privacy-picker/private-reply list virtualization remain open.
+- These are performance improvements, not final visual sign-off or device acceptance.
+
