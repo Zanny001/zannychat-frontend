@@ -10,7 +10,7 @@ const calls = read('src/services/calls.js');
 const callHistory = read('src/screens/CallHistoryScreen.js');
 const newChat = read('src/screens/NewChatScreen.js');
 const liveHub = read('src/screens/LiveHubScreen.js');
-const creator = read('src/screens/LiveCreatorProfileScreen.js');
+const creatorStudio = read('src/screens/LiveCreatorStudioScreen.js');
 const replay = read('src/screens/LiveReplayScreen.js');
 const api = read('src/services/api.js');
 const editProfile = read('src/screens/EditProfileScreen.js');
@@ -35,9 +35,9 @@ test('past direct calls can be redialed as audio or video from the saved partici
 test('LIVE creators can delete replays and ended broadcasts from their management screens', () => {
   assert.match(liveHub, /Delete LIVE replay\?/);
   assert.match(liveHub, /item\.creatorId === currentUserId/);
-  assert.match(creator, /Delete past LIVE broadcast\?/);
-  assert.match(creator, /method: 'DELETE'/);
-  assert.match(creator, /Delete LIVE replay\?/);
+  assert.match(creatorStudio, /Delete past LIVE broadcast\?/);
+  assert.match(creatorStudio, /method: 'DELETE'/);
+  assert.match(creatorStudio, /Delete LIVE replay\?/);
   assert.match(replay, /Delete this LIVE replay/);
 });
 
