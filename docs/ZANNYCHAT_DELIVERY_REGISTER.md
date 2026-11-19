@@ -472,3 +472,14 @@ A fresh read-only PostgreSQL catalog query agrees with the 17 Nov audit:
 - Neither `anon` nor `authenticated` has CREATE on schema `public`.
 
 This confirms the catalog-level grant/search-path posture recorded in the earlier function-by-function review. It does not replace body-level review after future function/grant changes or adversarial tests of each RPC's ownership/authorization checks.
+
+
+## 17. Chat timeline component extraction merged — 2026-11-19
+
+- PR #184 merged as `90deac5913dbdf7fa610fcf4d98e94c67a6ce3a5`.
+- `ChatMessageRow` now owns the presentation-only day separator and ChatBubble composition. ChatScreen retains message ownership, read/delivery status, reactions, search state and callbacks.
+- Frontend quality, Advanced Calling bundle exposure/dependency/client quality workflows all passed; Netlify preview succeeded. Vercel preview remained pending due the team build quota.
+- This is a component boundary extraction, not the full ChatScreen refactor. No API, database, RLS, storage, realtime, pagination or message lifecycle behaviour changed.
+- The merged commit is not yet confirmed deployed to production at this checkpoint.
+
+**Next Chat architecture slice:** extract message timeline data lifecycle (initial load, cursor pagination, realtime subscription, read-state and stale-request guards) into a focused hook only after its current cleanup, request ownership and two-account contracts are mapped. Keep outbox/media/composer extraction separate so failure recovery is not entangled with pagination.
