@@ -151,19 +151,10 @@ export default function LiveEventsScreen({ navigation }) {
       } else {
         const created=await backendFetch('/live/events',{method:'POST',body:JSON.stringify({
           title:title.trim(),description:description.trim(),category,visibility,startsAt,durationMinutes,maxAttendees,
+          inviteeIds:visibility==='private'?selectedInvitees:[],
         })});
         const afterCreate=await getCurrentUser().catch(()=>null);
         if (afterCreate?.id!==expectedUserId) throw new Error('Your account changed. The Event was saved to the previous account; sign in there to manage it.');
-        if (visibility==='private') {
-          try {
-            await backendFetch('/live/events/'+encodeURIComponent(created.event.id)+'/invites',{
-              method:'POST',body:JSON.stringify({userIds:selectedInvitees}),
-            });
-          } catch(inviteError) {
-            await backendFetch('/live/events/'+encodeURIComponent(created.event.id)+'/cancel',{method:'POST'}).catch(()=>null);
-            throw new Error('The Event was not published because invitations could not be delivered. Please try again.');
-          }
-        }
         await ensureAccount();
         showAppAlert('LIVE Event scheduled','Your Event is saved. Invitees have been notified where applicable.');
       }
