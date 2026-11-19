@@ -51,7 +51,8 @@ export default function PeerProfileScreen({ route, navigation }) {
   const [isFollowingCreator, setIsFollowingCreator] = useState(Boolean(route.params?.isFollowing));
   const [followBusy, setFollowBusy] = useState(false);
   const [followError, setFollowError] = useState('');
-  const followRequestRef = useRef(false);
+  const followRequestRef = useRef(0);
+  const followGenerationRef = useRef(0);
   const [photoViewerVisible, setPhotoViewerVisible] = useState(false);
   const [sharedDetails, setSharedDetails] = useState({});
   const [coverUrl, setCoverUrl] = useState(null);
@@ -130,26 +131,35 @@ export default function PeerProfileScreen({ route, navigation }) {
   const extraDetails = getProfileDetails({ ...participant, ...sharedDetails });
 
   useEffect(() => {
+    followGenerationRef.current += 1;
+    followRequestRef.current = 0;
+    setFollowBusy(false);
     setIsFollowingCreator(Boolean(route.params?.isFollowing));
     setFollowError('');
   }, [creatorId, route.params?.isFollowing, fromLive]);
 
   const toggleLiveFollow = async () => {
     if (!fromLive || !creatorId || isCurrentUser || followRequestRef.current) return;
-    followRequestRef.current = true;
+    const requestGeneration = followGenerationRef.current;
+    const targetCreatorId = creatorId;
+    followRequestRef.current = requestGeneration || 1;
     setFollowBusy(true);
     setFollowError('');
     const nextFollowing = !isFollowingCreator;
     try {
-      const result = await backendFetch(`/live/creators/${creatorId}/follow`, {
+      const result = await backendFetch(`/live/creators/${targetCreatorId}/follow`, {
         method: nextFollowing ? 'POST' : 'DELETE',
       });
-      setIsFollowingCreator(result?.following === undefined ? nextFollowing : result.following === true);
+      if (requestGeneration === followGenerationRef.current) {
+        setIsFollowingCreator(result?.following === undefined ? nextFollowing : result.following === true);
+      }
     } catch (error) {
-      setFollowError(error?.message || 'Could not update this creator follow. Please try again.');
+      if (requestGeneration === followGenerationRef.current) setFollowError(error?.message || 'Could not update this creator follow. Please try again.');
     } finally {
-      followRequestRef.current = false;
-      setFollowBusy(false);
+      if (requestGeneration === followGenerationRef.current) {
+        followRequestRef.current = 0;
+        setFollowBusy(false);
+      }
     }
   };
 
@@ -170,7 +180,7 @@ export default function PeerProfileScreen({ route, navigation }) {
             accessibilityHint={avatarUrl ? 'Opens the profile photo viewer' : undefined}
             style={[styles.avatarHalo, { borderColor: hexToRgba(mood.signal, 0.54), backgroundColor: hexToRgba(colors.surface, 0.7) }]}
           >
-            <Avatar name={name} color={participant.avatarColor} imageUrl={avatarUrl} size={104} />
+            <Avatar name={name} color={participant.avatarColor || sharedDetails.avatarColor || sharedDetails.avatar_color} imageUrl={avatarUrl} size={104} />
             <View style={[styles.presenceDot, { backgroundColor: online ? colors.online : colors.textSecondary, borderColor: colors.surface }]} />
           </TouchableOpacity>
           <Text numberOfLines={2} style={[typography.title, { color: colors.textPrimary, marginTop: spacing.md, textAlign: 'center', fontSize: 25, paddingHorizontal: spacing.md }]}>{name}</Text>
