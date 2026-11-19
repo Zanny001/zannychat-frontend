@@ -278,7 +278,7 @@ export default function ChatScreen({ route, navigation }) {
       if (active) applyUserId('me');
     });
     return () => { active = false; };
-  }, [navigation]);
+  }, [navigation, resetTimeline]);
 
   useEffect(() => {
     const requestId = ++pinnedLoadRequestRef.current;
