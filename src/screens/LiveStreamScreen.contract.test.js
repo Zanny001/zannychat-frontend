@@ -263,8 +263,9 @@ test('LIVE navigation serializes only a stable stream ID and fetches a fresh aut
   assert.ok(screen.includes('const streamId = route.params?.streamId || initialConnection?.stream?.id || null'));
   assert.ok(screen.includes('`/live/${streamId}/join`'));
   assert.equal(screen.includes('navigation.setParams({ connection:'), false);
-  const hub = fs.readFileSync(new URL('./LiveHubScreen.js', import.meta.url), 'utf8');
-  assert.ok(hub.includes("navigation.navigate('LiveStream', { streamId: connection.stream.id, creatorMode: true })"));
+  const preflight = fs.readFileSync(new URL('./LivePreflightScreen.js', import.meta.url), 'utf8');
+  assert.ok(preflight.includes("navigation.replace('LiveStream', {"));
+  assert.ok(preflight.includes('streamId: connection.stream.id'));
   assert.ok(hub.includes("navigation.navigate('LiveStream', { streamId: stream.id, creatorMode: false })"));
   assert.equal(hub.includes("navigation.navigate('LiveStream', { connection"), false);
 });
