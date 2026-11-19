@@ -155,7 +155,7 @@ export default function LiveReportsScreen({ route, navigation }) {
           <View style={{ flexDirection: 'row', gap: spacing.xs, flexWrap: 'wrap' }}>
             {FILTERS.map((item) => {
               const selected = filter === item.value;
-              return <TouchableOpacity key={item.value} onPress={() => setFilter(item.value)} accessibilityRole="radio" accessibilityState={{ checked: selected }} style={{ minHeight: 42, paddingHorizontal: spacing.md, borderRadius: 14, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary : colors.surface, justifyContent: 'center' }}>
+              return <TouchableOpacity key={item.value} onPress={() => setFilter(item.value)} accessibilityRole="radio" accessibilityState={{ checked: selected }} style={{ minHeight: 44, paddingHorizontal: spacing.md, borderRadius: 14, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary : colors.surface, justifyContent: 'center' }}>
                 <Text style={[typography.caption, { color: selected ? colors.onPrimary : colors.textSecondary, fontWeight: '800' }]}>{item.label}</Text>
               </TouchableOpacity>;
             })}
