@@ -149,7 +149,7 @@ export default function LiveEventsScreen({ navigation }) {
         setEditingEventId(null);setTitle('');setDescription('');setSelectedInvitees([]);setVisibility('public');setCategory('social');setDuration('60');setCapacity('100');setShowComposer(false);setSchedule(initialSchedule());
         showAppAlert('Event updated','Your LIVE Event details and schedule have been updated.');
       } else {
-        const created=await backendFetch('/live/events',{method:'POST',body:JSON.stringify({
+        await backendFetch('/live/events',{method:'POST',body:JSON.stringify({
           title:title.trim(),description:description.trim(),category,visibility,startsAt,durationMinutes,maxAttendees,
           inviteeIds:visibility==='private'?selectedInvitees:[],
         })});
