@@ -252,7 +252,7 @@ export default function LivePreflightScreen({ route, navigation }) {
                 )}
               </View>
               <View style={{ width: '100%', aspectRatio: 16 / 9, minHeight: 180, maxHeight: 360, borderRadius: 19, overflow: 'hidden', backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
-                {needsCamera && cameraPermission?.granted && isFocused ? (
+                {needsCamera && activeCameraPermission?.granted && isFocused ? (
                   <>
                     <CameraView
                       style={{ width: '100%', height: '100%' }}
@@ -272,7 +272,7 @@ export default function LivePreflightScreen({ route, navigation }) {
                     <View style={{ width: 68, height: 68, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.14), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.25) }}>
                       <Ionicons name={experienceMode === 'audio_room' ? 'mic' : 'videocam-outline'} size={30} color={colors.primary} />
                     </View>
-                    <Text style={[typography.bodyStrong, { color: colors.textPrimary, textAlign: 'center' }]}>{experienceMode === 'audio_room' ? 'Your voice stage is ready to set up' : cameraPermission?.granted ? 'Camera preview is paused' : 'Camera access is needed'}</Text>
+                    <Text style={[typography.bodyStrong, { color: colors.textPrimary, textAlign: 'center' }]}>{experienceMode === 'audio_room' ? 'Your voice stage is ready to set up' : activeCameraPermission?.granted ? 'Camera preview is paused' : 'Camera access is needed'}</Text>
                     <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', lineHeight: 19 }]}>{experienceMode === 'audio_room' ? 'Your camera stays off. You can focus on the conversation and manage speakers from the room.' : 'Allow camera access to preview your framing. The camera preview stops when you leave this screen.'}</Text>
                   </View>
                 )}
@@ -317,7 +317,7 @@ export default function LivePreflightScreen({ route, navigation }) {
             </View>
           )}
 
-          {needsCamera && cameraPermission?.granted && !cameraReady && (
+          {needsCamera && activeCameraPermission?.granted && !cameraReady && (
             <Text accessibilityRole="status" style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', lineHeight: 18 }]}>
               Waiting for the camera preview. LIVE room creation stays locked until your camera is ready.
             </Text>
