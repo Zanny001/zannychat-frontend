@@ -54,6 +54,7 @@ export default function LiveEventsScreen({ navigation }) {
   const [duration,setDuration]=useState('60');
   const [capacity,setCapacity]=useState('100');
   const [showComposer,setShowComposer]=useState(false);
+  const [editingEventId,setEditingEventId]=useState(null);
   const [loading,setLoading]=useState(true);
   const [loadingContacts,setLoadingContacts]=useState(false);
   const [busy,setBusy]=useState(false);
@@ -113,6 +114,16 @@ export default function LiveEventsScreen({ navigation }) {
     });
   };
 
+  const beginEdit=(event)=>{
+    const starts=new Date(event.startsAt);
+    setEditingEventId(event.id);setTitle(event.title||'');setDescription(event.description||'');
+    setCategory(event.category||'social');
+    setVisibility(event.visibility||'public');
+    setSchedule({date:starts.getFullYear()+'-'+pad(starts.getMonth()+1)+'-'+pad(starts.getDate()),time:pad(starts.getHours())+':'+pad(starts.getMinutes())});
+    setDuration(String(event.durationMinutes||60));setCapacity(String(event.maxAttendees||500));
+    setShowComposer(true);
+  };
+
   const createEvent=async()=>{
     const startsAt=toIso(schedule.date,schedule.time);
     const durationMinutes=Number(duration),maxAttendees=Number(capacity);
@@ -124,24 +135,33 @@ export default function LiveEventsScreen({ navigation }) {
     setBusy(true);
     try {
       const expectedUserId=await ensureAccount();
-      const created=await backendFetch('/live/events',{method:'POST',body:JSON.stringify({
-        title:title.trim(),description:description.trim(),category,visibility,startsAt,durationMinutes,maxAttendees,
-      })});
-      const afterCreate=await getCurrentUser().catch(()=>null);
-      if (afterCreate?.id!==expectedUserId) throw new Error('Your account changed. The Event was saved to the previous account; sign in there to manage it.');
-      if (visibility==='private') {
-        try {
-          await backendFetch('/live/events/'+encodeURIComponent(created.event.id)+'/invites',{
-            method:'POST',body:JSON.stringify({userIds:selectedInvitees}),
-          });
-        } catch(inviteError) {
-          await backendFetch('/live/events/'+encodeURIComponent(created.event.id)+'/cancel',{method:'POST'}).catch(()=>null);
-          throw new Error('The Event was not published because invitations could not be delivered. Please try again.');
+      if (editingEventId) {
+        await backendFetch('/live/events/'+encodeURIComponent(editingEventId),{
+          method:'PATCH',body:JSON.stringify({title:title.trim(),description:description.trim(),category,startsAt,durationMinutes,maxAttendees}),
+        });
+        await ensureAccount();
+        setEditingEventId(null);setTitle('');setDescription('');setShowComposer(false);setSchedule(initialSchedule());
+        showAppAlert('Event updated','Your LIVE Event details and schedule have been updated.');
+      } else {
+        const created=await backendFetch('/live/events',{method:'POST',body:JSON.stringify({
+          title:title.trim(),description:description.trim(),category,visibility,startsAt,durationMinutes,maxAttendees,
+        })});
+        const afterCreate=await getCurrentUser().catch(()=>null);
+        if (afterCreate?.id!==expectedUserId) throw new Error('Your account changed. The Event was saved to the previous account; sign in there to manage it.');
+        if (visibility==='private') {
+          try {
+            await backendFetch('/live/events/'+encodeURIComponent(created.event.id)+'/invites',{
+              method:'POST',body:JSON.stringify({userIds:selectedInvitees}),
+            });
+          } catch(inviteError) {
+            await backendFetch('/live/events/'+encodeURIComponent(created.event.id)+'/cancel',{method:'POST'}).catch(()=>null);
+            throw new Error('The Event was not published because invitations could not be delivered. Please try again.');
+          }
         }
+        await ensureAccount();
+        showAppAlert('LIVE Event scheduled','Your Event is saved. Invitees have been notified where applicable.');
       }
-      await ensureAccount();
       setTitle('');setDescription('');setSelectedInvitees([]);setShowComposer(false);setSchedule(initialSchedule());
-      showAppAlert('LIVE Event scheduled','Your Event is saved. Invitees have been notified where applicable.');
       await refresh();
     } catch(e) { showAppAlert('Could not schedule Event',e?.message||'Please try again.'); }
     finally { setBusy(false); }
@@ -225,7 +245,7 @@ export default function LiveEventsScreen({ navigation }) {
               <Text style={[typography.caption,{color:category===value?colors.primary:colors.textSecondary,fontWeight:'800'}]}>{label}</Text>
             </TouchableOpacity>)}
           </View>
-          <Text style={sectionLabel}>AUDIENCE</Text>
+          {!editingEventId&&<Text style={sectionLabel}>AUDIENCE</Text>}
           <View style={{flexDirection:'row',flexWrap:'wrap',gap:spacing.xs}}>
             {VISIBILITIES.map(([value,label,icon])=><TouchableOpacity key={value} onPress={()=>setVisibility(value)} accessibilityRole="radio" accessibilityLabel={label} accessibilityState={{checked:visibility===value}} style={chip(visibility===value)}>
               <Ionicons name={icon} size={15} color={visibility===value?colors.primary:colors.textSecondary}/>
@@ -260,7 +280,7 @@ export default function LiveEventsScreen({ navigation }) {
           <Text style={[typography.caption,{color:colors.textSecondary}]}>Events can be scheduled 10 minutes to 90 days ahead. Duration: 15–240 minutes. Capacity: 1–500.</Text>
           <TouchableOpacity disabled={busy} onPress={createEvent} accessibilityRole="button" accessibilityLabel="Schedule LIVE Event" accessibilityState={{disabled:busy,busy}} style={{minHeight:52,borderRadius:16,backgroundColor:busy?colors.border:colors.primary,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:8}}>
             {busy?<ActivityIndicator color={colors.onPrimary}/>:<Ionicons name="calendar-outline" size={19} color={colors.onPrimary}/>}
-            <Text style={[typography.bodyStrong,{color:colors.onPrimary}]}>{busy?'Saving Event…':'Schedule Event'}</Text>
+            <Text style={[typography.bodyStrong,{color:colors.onPrimary}]}>{busy?'Saving Event…':editingEventId?'Save Event changes':'Schedule Event'}</Text>
           </TouchableOpacity>
         </GlassCard>}
 
@@ -307,6 +327,9 @@ export default function LiveEventsScreen({ navigation }) {
             <Text style={[typography.caption,{color:colors.textSecondary}]}>Hosted by {event.creator?.name||'LIVE Creator'}</Text>
             {event.creatorId===currentUserId
               ? <View style={{gap:spacing.xs}}>
+                  <TouchableOpacity disabled={busy} onPress={()=>beginEdit(event)} accessibilityRole="button" accessibilityLabel={'Edit LIVE Event '+event.title} style={{minHeight:42,borderWidth:1,borderColor:colors.border,borderRadius:13,alignItems:'center',justifyContent:'center'}}>
+                    <Text style={[typography.caption,{color:colors.primary,fontWeight:'900'}]}>Edit Event</Text>
+                  </TouchableOpacity>
                   {canStartEvent(event)&&<TouchableOpacity disabled={busy} onPress={()=>navigation.navigate('LivePreflight',{
                     title:event.title,description:event.description,visibility:event.visibility,category:event.category,
                     experienceMode:'broadcast',allowGuests:false,eventId:event.id,
@@ -318,8 +341,8 @@ export default function LiveEventsScreen({ navigation }) {
                     <Text style={[typography.caption,{color:colors.danger,fontWeight:'900'}]}>Cancel Event</Text>
                   </TouchableOpacity>
                 </View>
-              : <TouchableOpacity disabled={busy||event.rsvpStatus==='going'||event.attendeeCount>=event.maxAttendees} onPress={()=>toggleRsvp(event)} accessibilityRole="button" accessibilityLabel={event.rsvpStatus==='going'?'Cancel RSVP for '+event.title:'Reserve a place at '+event.title} accessibilityState={{disabled:busy||event.rsvpStatus==='going'||event.attendeeCount>=event.maxAttendees}} style={{minHeight:44,borderRadius:13,backgroundColor:event.rsvpStatus==='going'?colors.surface:colors.primary,borderWidth:event.rsvpStatus==='going'?1:0,borderColor:colors.border,alignItems:'center',justifyContent:'center'}}>
-                  <Text style={[typography.caption,{color:event.rsvpStatus==='going'?colors.textSecondary:colors.onPrimary,fontWeight:'900'}]}>{event.rsvpStatus==='going'?'You are going':event.attendeeCount>=event.maxAttendees?'Event full':'Reserve my place'}</Text>
+              : <TouchableOpacity disabled={busy||(event.rsvpStatus!=='going'&&event.attendeeCount>=event.maxAttendees)} onPress={()=>toggleRsvp(event)} accessibilityRole="button" accessibilityLabel={event.rsvpStatus==='going'?'Cancel RSVP for '+event.title:'Reserve a place at '+event.title} accessibilityState={{disabled:busy||event.rsvpStatus==='going'||event.attendeeCount>=event.maxAttendees}} style={{minHeight:44,borderRadius:13,backgroundColor:event.rsvpStatus==='going'?colors.surface:colors.primary,borderWidth:event.rsvpStatus==='going'?1:0,borderColor:colors.border,alignItems:'center',justifyContent:'center'}}>
+                  <Text style={[typography.caption,{color:event.rsvpStatus==='going'?colors.textSecondary:colors.onPrimary,fontWeight:'900'}]}>{event.rsvpStatus==='going'?'Cancel my RSVP':event.attendeeCount>=event.maxAttendees?'Event full':'Reserve my place'}</Text>
                 </TouchableOpacity>}
           </GlassCard>)}
         </View>
