@@ -19,20 +19,22 @@
 
 Never infer Accepted from route presence, a green build, a prototype, a merged PR or a successful deployment alone.
 
+**No mock-only LIVE delivery:** Every visible LIVE control must call a real authenticated service or a clearly labelled local-only preference. Every transactional capability must have server-side authorization, validation, idempotency where money/points/state can be duplicated, durable persistence, abuse controls, observable failure states and automated tests. Never ship fake viewers, invented scores, simulated gifts, placeholder balances or decorative controls that imply a completed transaction. A screen is not complete until its full service path and acceptance evidence are recorded.
+
 ## 1. Project state snapshot
 
 | Area | Last known evidence | Current register status | Required reconciliation |
 |---|---|---|---|
 | Crown Aurora direction | Frontend audit records palette, contrast principles and initial shared component work | Needs revalidation | Inspect current main and all open UI PRs; do not revive closed PR #85 blindly |
-| LIVE core UX | PR #191, #193 and #194 merged; main has dedicated Hub, Broadcast, Creator Preflight, Creator Studio, Replay Library, Replay Player, Guest Queue, Moderation, Reports and Creator Analytics routes, plus a public Creator Profile route reusing PeerProfileScreen. PR #195 adds the post-broadcast summary journey. Audio Room and Video Chat remain modes within Broadcast. | Core/operations and aggregate analytics implemented; post-live summary in review; 18-screen audit not accepted | Preserve LiveKit/media behaviour; complete remaining screens, backend capabilities, safety, states and device acceptance |
-| LIVE backend | Current src/routes/liveStreams.js exposes discovery, broadcast lifecycle, join/leave, comments, reactions, guest requests/invites, participants, moderators, reports, follows, creator profile and replay endpoints | Core endpoints exist; domain coverage incomplete | Map every endpoint to UI, authorization, RLS, rate limits and integration tests; scheduling/events, battles, leaderboard, gifts/wallet and time-series analytics still need real backend contracts |
+| LIVE core UX | PR #191, #193, #194 and #195 merged; main has dedicated Hub, Broadcast, Creator Preflight, Creator Studio, Replay Library, Replay Player, Guest Queue, Moderation, Reports, Creator Analytics and Post-LIVE Summary routes, plus a public Creator Profile route reusing PeerProfileScreen. PR #196 adds the leaderboard screen. Audio Room and Video Chat remain modes within Broadcast. | Core/operations, analytics and post-live summary implemented; leaderboard in review; 18-screen audit not accepted | Preserve LiveKit/media behaviour; complete remaining screens, backend capabilities, safety, states and device acceptance |
+| LIVE backend | Current src/routes/liveStreams.js exposes discovery, broadcast lifecycle, join/leave, comments, reactions, guest requests/invites, participants, moderators, reports, follows, creator profile, replay and all-time leaderboard endpoints | Core endpoints exist; domain coverage incomplete | Map every endpoint to UI, authorization, RLS, rate limits and integration tests; scheduling/events, battles, gifts/wallet and time-series analytics still need real backend contracts |
 | LIVE migrations | Two named migrations applied through successful guarded workflow run 44501209658 | Applied; do not rerun | Verify migration history only if needed; any correction is a new forward migration |
 | Replay | One production READY row and matching private MP4 object verified; production playback endpoint returned HTTP 200 on 2026-11-19 | Backend playback access verified; video-player/access acceptance partial | Verify native/web decoding, expired link, account switch, unauthorized viewer denial and deletion |
-| Full app inventory | ThemeContrast contract now audits 56 screen modules; the 18 LIVE experiences remain a nested product inventory, not a route count | 56 screen modules; route registry reconciled on the PR #195 branch | Reparse current RootStack registry after every screen addition; do not conflate route declarations with experiences |
+| Full app inventory | ThemeContrast contract now audits 58 screen modules; current AppNavigator has 57 RootStack.Screen declarations, 53 unique route names and 16 LIVE route entries | Screen-module and route counts reconciled on the PR #196 branch | Reparse current RootStack registry after every screen addition; do not conflate route declarations with experiences |
 | Parity scope | Retrieved parity gap analysis based on supplied original audit | Scope recorded; original source not re-opened in this pass | Retrieve original source before claiming any missing detail |
 | Account isolation | PRs #146/#147 merged in a previous audit; two-account acceptance was outstanding then | Needs revalidation | Run two-account tests across chat/media/realtime/calls/LIVE |
-| Backend deployment | Render production is deployed on 14860064a87c7637fc4f15dc6d75f4084b6f696a | Current deployed SHA verified | Recheck only after a backend change; no backend source change in PRs #191/#193/#194 |
-| Production frontend | Latest Vercel production deployment is still 1060ca0e8eae49dab427420c7200d526a1fde710 (PR #185); frontend main has advanced through PR #191/#193/#194 to b8cffebb6736ddc63a834c22bcf78196d7a1a09d | LIVE merges not yet confirmed in production | Pull main locally, then verify/trigger Vercel production deployment and confirm exact SHA before claiming LIVE changes are live |
+| Backend deployment | Render production is LIVE on 1bfe0c29c18ae9832aaa020a208b59e69cef68de after leaderboard PR #152 | Leaderboard API deployed; authenticated smoke test pending | Verify route auth/privacy behaviour and record exact SHA; no migration was required |
+| Production frontend | Vercel production is READY on 1b0bb2ab6495c781cde59408aaf08f9f3efaa92f at https://zannychat.vercel.app; includes PR #191/#193/#194/#195 | Deployed; real-device acceptance pending | Pull main locally, verify exact SHA and run production LIVE smoke tests; record five moderate npm advisories and Expo Google Services config warning |
 
 ## 2. PR reconciliation — LIVE-first checkpoint (2026-11-19)
 
@@ -51,8 +53,13 @@ Recent GitHub state was rechecked before this priority change:
 | [#187](https://github.com/Zanny001/zannychat-frontend/pull/187) | LIVE-first delivery register and source reconciliation | Merged; canonical register updated |
 | [#188](https://github.com/Zanny001/zannychat-frontend/pull/188) | First creator pre-flight branch | Closed as superseded by #189; no implementation was dropped |
 | [#189](https://github.com/Zanny001/zannychat-frontend/pull/189) | Creator pre-flight, media permissions, native permission explanations and contracts | Merged as 99811698c3f33516f61b667c5bce25a95108efe1; quality workflows passed; production deployment still not confirmed |
+| [#191](https://github.com/Zanny001/zannychat-frontend/pull/191) | Separate Creator Studio from public Creator Profile; preserve active-room return path | Merged as abb5bb4f7d169d45dd9b3adcdb15963b707ad33b; frontend quality/client/dependency/bundle checks passed |
+| [#193](https://github.com/Zanny001/zannychat-frontend/pull/193) | LIVE guest queue, moderation and safety workspaces | Merged; runtime/two-account acceptance remains pending |
+| [#194](https://github.com/Zanny001/zannychat-frontend/pull/194) | Authenticated Creator Analytics | Merged; aggregate-only metrics, trend data remains unavailable |
+| [#195](https://github.com/Zanny001/zannychat-frontend/pull/195) | Creator post-broadcast summary | Merged; production/device acceptance remains pending |
+| [#196](https://github.com/Zanny001/zannychat-frontend/pull/196) | LIVE Crown Leaderboard and account-scoped creator defaults | Open draft; frontend quality workflows running on latest head; Vercel preview rate-limited; do not merge until required checks/preview are resolved |
 
-PR #189 is merged; no open LIVE implementation PR remains in this focused set. Do not revive closed branches wholesale or duplicate merged work. The user has paused further Chat implementation; keep all new execution focused on LIVE until explicitly redirected.
+PRs #189, #191, #193, #194 and #195 are merged. PR #196 remains open/draft for the leaderboard and backend-backed creator defaults; backend PR #153 remains open/draft for the authenticated preferences API and migration. Do not revive closed branches wholesale or duplicate merged work. The user has paused further Chat implementation; keep all new execution focused on LIVE until explicitly redirected.
 
 ## 3. Product domains and acceptance backlog
 
@@ -124,9 +131,9 @@ PR #189 is merged; no open LIVE implementation PR remains in this focused set. D
 | LIVE-03 | Five-guest queue/invites/approval/removal | Enforced five-guest limit and authorization tests | Guest Queue UI merged in PR #193; backend enforcement exists; approved/declined/expired history and device acceptance remain |
 | LIVE-04 | Movable/resizable guest tiles | Bounded drag/resize on supported devices and reduced-motion fallback | Implemented; device QA needed |
 | LIVE-05 | Chat/comments/reactions/moderation/reports | Two-account delivery, rate limits, hide/block/report and moderator permissions | Moderation/Reports workspaces merged in PR #193; production logs show no reaction-failure messages 15–19 Nov after 14 Nov RPC fixes; two-account acceptance pending |
-| LIVE-06 | Battles/events/gifts/wallet/leaderboard/analytics | Real transactional models, abuse controls, clear Naira/unit conversion and audit trail | Aggregate Creator Analytics screen in PR #194; battles, LIVE events/scheduling, leaderboard and gift/wallet ledger APIs not present; transactional UI blocked pending backend/provider/legal design |
+| LIVE-06 | Battles/events/gifts/wallet/leaderboard/analytics | Real transactional models, abuse controls, clear Naira/unit conversion and audit trail | Aggregate analytics merged; all-time leaderboard API merged and screen in PR #196; battles, LIVE events/scheduling and gift/wallet ledger remain blocked pending backend/provider/legal design |
 | LIVE-07 | Replay recording/library/player | Egress completion, DB row, private object, signed playback, unauthorized denial | Production READY artifact and playback endpoint HTTP 200 verified; native/web player decoding, expiry and unauthorized denial still require runtime acceptance |
-| LIVE-08 | LIVE discovery/creator profile/notifications/settings | Real data, privacy and navigation | Creator Studio/Profile split merged in PR #191; Hub/stage profile entry points use privacy-aware PeerProfile; settings remain partial and need a dedicated preference contract |
+| LIVE-08 | LIVE discovery/creator profile/notifications/settings | Real data, privacy and navigation | Creator Studio/Profile split merged in PR #191; Hub/stage profile entry points use privacy-aware PeerProfile; dedicated account-synced defaults screen wired to authenticated backend API on PR #196 branch; backend PR #153 adds durable Supabase persistence; both awaiting review/merge and guarded production migration |
 | LIVE-09 | LIVE safety | Age/consent/blur/report/evidence and minor-safety controls | Blocked before random matching ships |
 
 
@@ -146,14 +153,14 @@ The 18 screens in the supplied Crown Aurora audit are nested within the wider ap
 | 8 | Replay Library | Dedicated LiveReplayLibraryScreen | Finish pagination/filters, thumbnails where available, processing/failure/expiry and owner actions |
 | 9 | Replay Player | Dedicated LiveReplayScreen using authenticated playback endpoint | Verify real playback on web/native, expiry, account switch, access denial, retry and deletion |
 | 10 | Creator Profile | LiveCreatorProfile route reuses privacy-aware PeerProfileScreen/LiveImpactCard; LIVE discovery and in-room entry points and follow/current-live action merged in PR #191 | Verify public/private profile visibility, follow/unfollow and return-to-active-stage on two accounts |
-| 11 | Leaderboard / Crown Race | No dedicated route or leaderboard endpoint identified in current LIVE router | Define ranking windows, eligibility, anti-manipulation, privacy and auditable score source |
+| 11 | Leaderboard / Crown Race | Backend GET /live/leaderboard merged in backend PR #152; frontend LiveLeaderboardScreen and LIVE Hub entry are in PR #196 | All-time impact ranking only; only public profiles are included; contacts-only/private and either-direction blocked creators are excluded. Weekly/monthly windows await time-series data |
 | 12 | Gifts / Gift Tray | In-room presentation surface exists; no gift transaction endpoint identified in current LIVE router | Real catalogue, balance check, spend confirmation, idempotent transaction, animation, receipt and inventory |
 | 13 | Wallet and Payouts | No dedicated LIVE wallet route or payout endpoint identified in current LIVE router | Balance ledger, top-up/provider billing, receipts, restore, KYC, bank selection, withdrawal and disputes |
 | 14 | Creator Analytics | Dedicated LiveAnalyticsScreen merged in PR #194; authenticated creator profile summary covers impact, reactions, supporters, followers, broadcasts and replay status | Current API provides aggregate totals/latest 100 replay records only; date-range trends, watch-time attribution and export remain blocked pending backend analytics support |
 | 15 | Moderation | Dedicated LiveModerationScreen merged in PR #193; supports guest mic/spotlight, guest demotion, stream-scoped viewer removal and moderator appointments | Runtime permission/two-account tests and evidence/audit history still required |
 | 16 | Guest Queue | Dedicated LiveGuestQueueScreen merged in PR #193; pending requests, approve/decline, 5-seat capacity guard and empty/error/refresh states | Historical approved/declined/expired request states require a backend history response; verify two-account and device flows |
 | 17 | Reports | Dedicated LiveReportsScreen merged in PR #193; open/reviewing/resolved/dismissed states and moderator authorization | Evidence attachment, assignment, appeal and durable audit-history flows remain |
-| 18 | LIVE Settings | No dedicated LIVE settings route identified | Creator/viewer preferences, privacy, notifications, data saver, blocked/muted users, language/region and account controls |
+| 18 | LIVE Settings | Dedicated LiveSettingsScreen on PR #196 branch; authenticated account-synced defaults for mode, audience, category and guest access via backend PR #153 and RLS-protected Supabase table | Complete creator/viewer preferences, privacy, notifications, data saver, blocked/muted users, language/region and account controls; cross-device sync needs a backend contract |
 
 ### Additional required LIVE screens and journeys from the audit
 
@@ -642,7 +649,7 @@ This is the current handoff point. Read this register and the Master Blueprint b
 - Analytics currently exposes aggregate creator totals only; date-range time series, watch-time attribution and export need backend data contracts.
 - Guest Queue currently lists pending requests; historical approved/declined/expired states need a backend history response.
 - Reports still need evidence attachment, assignment, appeal and durable audit history. Safety Centre, age/region eligibility, creator policy acceptance and minor-safety gates remain incomplete.
-- LIVE Settings remain partial in preflight/composer controls; define a persisted creator/viewer preference contract before shipping a settings screen.
+- LIVE Settings now has a dedicated screen and backend-backed account-synced creator defaults on PR #196/#153; broader LIVE-specific viewer/privacy/notification/data-saver controls remain open; global Privacy & Safety, Notifications and Sessions routes are linked.
 - Audio Room and Video Chat Room remain modes within Broadcast, not separate navigation routes; their device/audio-route acceptance remains pending.
 
 ### Next execution order
@@ -674,3 +681,73 @@ This is the current handoff point. Read this register and the Master Blueprint b
 - Native/web video decoding and replay expiry/unauthorized-denial tests remain open.
 - Pull the exact merged frontend main locally before device acceptance or production deployment.
 - Chat remains paused; PR #185 was already merged before this LIVE continuation and no additional Chat work has been performed.
+
+
+## 24. LIVE leaderboard and production deployment checkpoint — 2026-11-19
+
+**This section supersedes earlier production and next-step notes in sections 22–23.**
+
+### Production frontend
+- Frontend main after PR #195: 1b0bb2ab6495c781cde59408aaf08f9f3efaa92f.
+- Vercel production deployment is READY and aliases include https://zannychat.vercel.app.
+- Deployment logs show the Expo web export completed. The build also reported five moderate npm advisories and a non-fatal android.googleServicesFile Expo config warning; track both rather than treating the deploy as a full acceptance pass.
+- No manual deploy was run; Vercel auto-deployed after merge. Device acceptance is still pending.
+
+### LIVE leaderboard — backend PR #152 merged; frontend PR #196 in progress
+- Backend main and Render production are LIVE on commit 1bfe0c29c18ae9832aaa020a208b59e69cef68de after PR #152; authenticated smoke testing is still required.
+- GET /live/leaderboard supports all-time ranking only, backed by live_creator_impact aggregates.
+- It returns only public profile name/avatar colour and aggregate impact/reaction/supporter metrics; private/contact-only profiles and either-direction blocked creators are excluded.
+- Ranking is deterministic and capped at 50 returned entries. Weekly/monthly windows are rejected until time-series source data exists.
+- Frontend PR #196 adds LiveLeaderboardScreen, a LIVE Hub entry point, account-switch guards, following-state lookup and privacy-aware creator-profile navigation.
+
+### Current inventory on the PR #196 branch
+- 57 audited screen modules.
+- 56 RootStack.Screen declarations, 52 unique route names and 15 LIVE route entries (including nested duplicate names).
+- The 18-screen audit remains incomplete: battles, scheduled events/reminders, gifts/wallet, full LIVE settings, safety/age eligibility, report evidence/appeals and analytics time series remain open.
+
+### Next execution order
+1. Complete PR #196 and deploy backend main commit 1bfe0c29 before accepting the frontend leaderboard.
+2. Add the real scheduled LIVE Events flow, including reminders and creator cancellation/rescheduling.
+3. Design and implement Battle lifecycle and anti-manipulation rules.
+4. Complete persisted LIVE settings and guest-request history.
+5. Keep gifts/wallet/payouts blocked until a real idempotent ledger, payment provider, fraud/refund/KYC/legal requirements are available; do not simulate a money balance.
+6. Ask the user to pull exact frontend main locally and run two-account Android 10/11 and modern-device acceptance; verify replay playback and moderation permissions.
+7. Continue leaving Chat follow-ups untouched.
+
+
+## 25. LIVE account-synced creator defaults — 2026-11-19
+
+### Implementation checkpoint
+- Frontend PR #196: https://github.com/Zanny001/zannychat-frontend/pull/196. Backend PR #153: https://github.com/Zanny001/zannychat-backend/pull/153.
+- Backend adds authenticated GET/PUT /live/creators/me/preferences, strict server-side allowlists, account identity from verified req.user.id, and an RLS-enabled table with direct client grants revoked.
+- Creator defaults are applied only to the next LIVE setup; active streams are not mutated. Private LIVE still requires explicit invitee selection at setup.
+- The settings screen clearly reports that a successful save is stored in the ZannyChat account, not merely on the device. Hub fallback wording now accurately identifies the preferences service.
+- The standalone production migration workflow is manual, requires an explicit boolean confirmation, and refuses to apply unless exactly migration 20261119180000 is pending. It has not been dispatched; the migration has not been applied to production.
+- Backend quality and advanced-calling checks passed on current backend PR head 077edcd927e48abe9799e4eb21b073350a783ee7.
+- Frontend quality passed on earlier PR #196 head d0f86e9d; a copy-accuracy fix and regression assertion are now on the branch and current-head CI is running. Do not claim final frontend checks until those runs pass.
+- No PR has been merged as part of this checkpoint. Authenticated two-account/device acceptance and production migration remain pending.
+
+### Verified LIVE API inventory and next build targets
+- Existing backend routes cover discovery, follows, stream lifecycle, admission, invites, guest requests, comments, reactions, stage moderation, reports, creator impact, leaderboard and replay playback/deletion.
+- No dedicated LIVE scheduling/events or battle lifecycle routes/tables were found in the current backend inventory. No LiveEventsScreen or LiveBattleScreen exists in the current frontend inventory.
+- Gifts/wallet remain blocked until ledger, server-authoritative balance, idempotency, receipts/refunds, fraud controls and any required payment/KYC/legal/provider approvals are implemented. No simulated balances or purchases.
+- Keep Chat work paused and do not modify PR #185 or any Chat surfaces.
+
+
+## 26. LIVE preference payload integrity correction — 2026-11-19
+
+- Review found that GET/PUT responses include server-owned `updatedAt`, while the backend correctly rejects unknown PUT fields. Sending the loaded object unchanged would have caused a 400 when saving an existing preference.
+- Frontend service now constructs an explicit four-field writable payload (`experienceMode`, `visibility`, `category`, `allowGuests`) and excludes `updatedAt`.
+- Frontend contract test asserts the metadata is not sent; backend contract test asserts unknown keys are rejected and `updated_at` is server-generated.
+- Latest frontend and backend CI runs for these regression changes are pending. Treat this as an important pre-merge correction, not production-verified behavior.
+
+
+## 27. LIVE creator preferences backend merged — 2026-11-19
+
+- Backend PR #153 merged to backend main as merge commit 88413b0e92fa5403016973f089cd49d583a7d1ee. Backend quality and advanced-calling checks passed on the final backend PR head before merge.
+- Production Supabase was queried after merge: latest applied migration is 20261118223000; migration 20261119180000 is not applied and `public.live_creator_preferences` does not yet exist. No production schema changes were made during this check.
+- The production security advisor currently reports RLS-enabled/no-policy informational findings for existing service-role-only LIVE tables. The new preferences migration is designed the same way: RLS enabled, direct PUBLIC/anon/authenticated privileges revoked, service_role granted.
+- Redundant duplicate apply workflow was removed. The backend now retains one manually confirmed exact-migration apply workflow plus one separate preview-only workflow. Both check that the only pending migration is 20261119180000 before any apply; the apply workflow also dry-runs and rechecks before execution.
+- Supabase's migration list and schema were independently inspected. The guarded workflow still needs to be dispatched from GitHub Actions; it has not run, and the migration remains unapplied.
+- Frontend PR #196 is still open. Latest premium/LIVE quality passed on commit 7bcebf798134d69ed90515d57ba49647e91c1a4f; the current advanced client workflow is still running for the PR's documentation-only successor commit c249e32979978700b579e79eb35c3ed257a4a856. Dependency and bundle checks are green on the current run; client quality remains pending.
+- Do not merge frontend PR #196 or claim LIVE Settings operational until the migration is applied and backend Render deployment plus authenticated API smoke checks are verified.

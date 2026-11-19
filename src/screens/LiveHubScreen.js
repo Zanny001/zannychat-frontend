@@ -10,6 +10,7 @@ import { hexToRgba } from '../utils/color';
 import { confirmAction, showAppAlert } from '../utils/appDialogs';
 import GlassCard from '../components/GlassCard';
 import { filterLiveStreams } from '../utils/liveDiscovery';
+import { loadLivePreferences } from '../services/livePreferences';
 
 const VISIBILITIES = [
   { value: 'public', label: 'Public' },
@@ -56,6 +57,7 @@ export default function LiveHubScreen({ navigation, route }) {
   const [currentUserId, setCurrentUserId] = useState(null);
   const pendingReplayPollStartedAt = useRef(0);
   const refreshRequestRef = useRef(0);
+  const livePreferencesRequestRef = useRef(0);
   const activeUserIdRef = useRef(null);
   const [followingIds, setFollowingIds] = useState([]);
   const [followingCreators, setFollowingCreators] = useState([]);
@@ -203,10 +205,31 @@ export default function LiveHubScreen({ navigation, route }) {
     return () => data?.subscription?.unsubscribe?.();
   }, [refresh]);
 
+  const applyLivePreferences = useCallback(async (expectedUserId) => {
+    const requestId = ++livePreferencesRequestRef.current;
+    if (!expectedUserId) return;
+    try {
+      const preferences = await loadLivePreferences(expectedUserId);
+      const latestUser = await getCurrentUser().catch(() => null);
+      if (requestId !== livePreferencesRequestRef.current || latestUser?.id !== expectedUserId) return;
+      setExperienceMode(preferences.experienceMode);
+      setVisibility(preferences.visibility);
+      setCategory(preferences.category);
+      setAllowGuests(preferences.allowGuests);
+    } catch {
+      // Defaults remain usable if the account preferences service is temporarily unavailable.
+    }
+  }, []);
+
+  useEffect(() => {
+    applyLivePreferences(currentUserId);
+  }, [currentUserId, applyLivePreferences]);
+
   useFocusEffect(useCallback(() => {
     pendingReplayPollStartedAt.current = Date.now();
     refresh();
-  }, [refresh]));
+    applyLivePreferences(currentUserId);
+  }, [refresh, applyLivePreferences, currentUserId]));
 
   const hasPendingReplays = replays.some((item) => ['starting', 'recording', 'processing'].includes(item.status));
   useFocusEffect(useCallback(() => {
@@ -400,6 +423,12 @@ export default function LiveHubScreen({ navigation, route }) {
                   <Ionicons name="person-circle-outline" size={19} color={colors.primary} />
                   <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: '800' }]}>Studio</Text>
                 </TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.navigate('LiveLeaderboard')} accessibilityRole="button" accessibilityLabel="Open LIVE creator leaderboard" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="trophy-outline" size={19} color={colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.navigate('LiveSettings')} accessibilityRole="button" accessibilityLabel="Open LIVE settings" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="options-outline" size={19} color={colors.textSecondary} />
+                </TouchableOpacity>
                 <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh LIVE streams" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="refresh" size={18} color={colors.textSecondary} />
                 </TouchableOpacity>
@@ -471,7 +500,7 @@ export default function LiveHubScreen({ navigation, route }) {
                 <View style={{ gap: spacing.xs }}>
                   {LIVE_EXPERIENCE_MODES.map((mode) => {
                     const selected = experienceMode === mode.value;
-                    return <TouchableOpacity key={mode.value} onPress={() => { setExperienceMode(mode.value); if (mode.value !== 'broadcast') setAllowGuests(true); }} accessibilityRole="radio" accessibilityLabel={mode.label} accessibilityState={{ checked: selected }} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.sm, borderRadius: radii.md, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? hexToRgba(colors.primary, 0.10) : colors.surface }}>
+                    return <TouchableOpacity key={mode.value} onPress={() => setExperienceMode(mode.value)} accessibilityRole="radio" accessibilityLabel={mode.label} accessibilityState={{ checked: selected }} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.sm, borderRadius: radii.md, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? hexToRgba(colors.primary, 0.10) : colors.surface }}>
                       <View style={{ width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(selected ? colors.primary : colors.textSecondary, 0.12) }}><Ionicons name={mode.icon} size={20} color={selected ? colors.primary : colors.textSecondary} /></View>
                       <View style={{ flex: 1, minWidth: 0 }}>
                         <Text style={[typography.small, { color: selected ? colors.primary : colors.textPrimary, fontWeight: '900' }]}>{mode.label}</Text>
