@@ -85,11 +85,16 @@ export default function LiveEventsScreen({ navigation }) {
     const { data } = supabase.auth.onAuthStateChange((_event,session)=>{
       const nextId=session?.user?.id||null;
       setCurrentUserId(nextId);setEvents([]);setInvitations([]);setCandidates([]);setSelectedInvitees([]);
-      setTitle('');setDescription('');setVisibility('public');setCategory('social');setShowComposer(false);
+      setTitle('');setDescription('');setVisibility('public');setCategory('social');setShowComposer(false);setEditingEventId(null);
       if (nextId) Promise.resolve().then(()=>refresh());
     });
     return ()=>data?.subscription?.unsubscribe?.();
   },[refresh]);
+
+  const toggleComposer=()=>{
+    if (showComposer) { setEditingEventId(null);setTitle('');setDescription('');setSelectedInvitees([]);setSchedule(initialSchedule()); }
+    setShowComposer((value)=>!value);
+  };
 
   const ensureAccount=async()=>{
     const user=await getCurrentUser().catch(()=>null);
@@ -229,7 +234,7 @@ export default function LiveEventsScreen({ navigation }) {
               <Text style={[typography.caption,{color:colors.textSecondary}]}>Schedule up to five upcoming Events, with audience controls and capped attendance.</Text>
             </View>
           </View>
-          <TouchableOpacity onPress={()=>setShowComposer((v)=>!v)} accessibilityRole="button" accessibilityLabel={showComposer?'Close Event setup':'Schedule a LIVE Event'} accessibilityState={{expanded:showComposer}} style={{minHeight:50,borderRadius:16,backgroundColor:colors.primary,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:8}}>
+          <TouchableOpacity onPress={toggleComposer} accessibilityRole="button" accessibilityLabel={showComposer?'Close Event setup':'Schedule a LIVE Event'} accessibilityState={{expanded:showComposer}} style={{minHeight:50,borderRadius:16,backgroundColor:colors.primary,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:8}}>
             <Ionicons name={showComposer?'close':'add-circle-outline'} size={19} color={colors.onPrimary}/>
             <Text style={[typography.bodyStrong,{color:colors.onPrimary}]}>{showComposer?'Close Event setup':'Schedule a LIVE Event'}</Text>
           </TouchableOpacity>
