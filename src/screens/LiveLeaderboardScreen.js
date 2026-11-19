@@ -19,7 +19,7 @@ function formatNumber(value) {
 }
 
 export default function LiveLeaderboardScreen({ navigation }) {
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, typography } = useTheme();
   const [entries, setEntries] = useState([]);
   const [followingIds, setFollowingIds] = useState([]);
   const [currentUserId, setCurrentUserId] = useState(null);
