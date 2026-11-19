@@ -959,7 +959,7 @@ export default function LiveStreamScreen({ route, navigation }) {
     navigation.navigate('LiveCreatorProfile', {
       participant: { id: stream.creator_id, name: stream.creator_name || 'LIVE Creator' },
       fromLive: true,
-      currentLiveStreamId: creatorMode ? null : stream.id,
+      currentLiveStreamId: null,
       isCurrentUser: creatorMode,
     });
   }, [creatorMode, navigation, stream?.creator_id, stream?.creator_name, stream?.id]);
