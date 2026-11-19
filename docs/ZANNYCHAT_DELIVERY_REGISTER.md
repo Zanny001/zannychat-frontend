@@ -120,7 +120,7 @@ The following PRs are the active reconciliation set. All head branches and CI mu
 | LIVE-04 | Movable/resizable guest tiles | Bounded drag/resize on supported devices and reduced-motion fallback | Implemented; device QA needed |
 | LIVE-05 | Chat/comments/reactions/moderation/reports | Two-account delivery, rate limits, hide/block/report and moderator permissions | Needs revalidation |
 | LIVE-06 | Battles/events/gifts/wallet/leaderboard/analytics | Real transactional models, abuse controls, clear Naira/unit conversion and audit trail | Not started / verify existing partial code |
-| LIVE-07 | Replay recording/library/player | Egress completion, DB row, private object, signed playback, unauthorized denial | Source exists; production evidence needed |
+| LIVE-07 | Replay recording/library/player | Egress completion, DB row, private object, signed playback, unauthorized denial | One production READY row + matching private MP4 object verified; signed playback code reviewed; actual viewer playback/denial runtime test remains |
 | LIVE-08 | LIVE discovery/creator profile/notifications/settings | Real data, privacy and navigation | Needs revalidation |
 | LIVE-09 | LIVE safety | Age/consent/blur/report/evidence and minor-safety controls | Blocked before random matching ships |
 
@@ -390,8 +390,7 @@ This matrix follows the current navigator's 48 unique experiences (the `Main` ro
 The old PRs #151, #159, #160 and #161 were closed only after the above replacements were created from current main and merged. No user-facing features were removed.
 
 ### Production rollout status
-- Vercel production deployment for latest frontend main commit `e1214f85b3bce25068d4c2ac187fd58483a4e8e8` is **QUEUED** at this checkpoint (deployment `dpl_59wCUkd3jSsUWbkxydsEAQYRXrvZ`). Do not claim it is live until the deployment reaches READY and the production alias is confirmed.
-- The latest earlier frontend production deployment at `b6a51f36ab8981071efddb9cd0405c4c0299a118` is READY.
+- Vercel production deployment for code commit `e1214f85b3bce25068d4c2ac187fd58483a4e8e8` reached **READY** (deployment `dpl_59wCUkd3jSsUWbkxydsEAQYRXrvZ`). The docs-only main commit `9a8c568e35ad1392ef117a1f680eaf659e7b1057` reached **READY** (deployment `dpl_J3YW1cNxrsZvJzexCpe2GDLZcrr7`). After PR #184, latest main commit `90deac5913dbdf7fa610fcf4d98e94c67a6ce3a5` also reached **READY** (deployment `dpl_BPonjj69GFNzF4ByjzqmxodYuebn`), and the production alias `https://zannychat.vercel.app` was verified on it. The inbox/New Chat/collections/Stories performance work and the ChatMessageRow extraction are deployed.
 - Backend Render remains live at `14860064a87c7637fc4f15dc6d75f4084b6f696a`; no backend source or database change was made in this interface pass.
 - Supabase schema remains untouched; the 106-migration / 64-table snapshot remains the latest read-only audit.
 
@@ -401,3 +400,127 @@ The old PRs #151, #159, #160 and #161 were closed only after the above replaceme
 3. Continue the sequential visual/interaction review at **Chat** (the message conversation screen): message hierarchy, replies, edits/deletes, reactions, media/voice, composer/attachment sheet, keyboard, long-history scrolling, loading/empty/error/offline states and accessibility.
 4. Finish Stories server pagination and virtualize the status privacy picker/private-reply collection without weakening audience enforcement.
 5. Continue the remaining screen sequence from the Master Blueprint; no screen is skipped and no source review is called visual acceptance.
+
+
+## 14. Screen-module complexity baseline — 2026-11-19
+
+Measured from current frontend main after the #181 merge. Byte size and hook/function counts are source complexity indicators, not proof of defects; use them to prioritize safe modularization.
+
+| Screen module | Source bytes | Hook calls | Named local functions | Service imports | Architecture action |
+|---|---:|---:|---:|---:|---|
+| ChatScreen | 100,812 | 80 | 42 | 11 | Highest-priority decomposition; separate message lifecycle, outboxes/media, header, message list and composer/overlays |
+| ChannelsScreen | 77,812 | 60 | 1 | 2 | Separate directory, feed, composer, comments/moderation and pagination state |
+| StatusUpdatesScreen | 75,427 | 63 | 3 | 3 | Separate feed, composer, audience/privacy sheet, expiry and playback |
+| LiveStreamScreen | 70,108 | 66 | 4 | 2 | Separate room/session state, media stage, participants/guest queue, chat/reactions, moderation and controls |
+| LiveHubScreen | 53,719 | 36 | 0 | 3 | Separate discovery data, creator dashboard and navigation/presentation |
+| CallScreen | 38,193 | 42 | 0 | 4 | Separate call lifecycle, media/device routing and presentation controls |
+| GroupCallScreen | 26,030 | 24 | 1 | 4 | Separate room/participant lifecycle from tile/control presentation |
+| PrivacySecurityScreen | 30,362 | 20 | 4 | 4 | Separate privacy checkup, account deletion/reauth and session controls |
+| ProfileScreen | 10,458 | 7 | 1 | 2 | Lower complexity; focus on visual/accessibility consistency and real data states |
+
+### Refactor rules
+- Do not rewrite a whole large screen in one pass. Extract one coherent responsibility at a time, preserving props, route contracts, data ownership and visible behaviour.
+- Start with pure helpers and typed contracts; then hooks that own one lifecycle; then presentational components with explicit props.
+- Keep screens as composition/orchestration layers. Avoid new global state or duplicate API clients.
+- Each extraction needs regression contracts for account switching, stale async requests, cleanup/unsubscribe, retries and error states where applicable.
+- Re-run the full `test:unit`, release/contract/readiness/integrity audits and relevant platform workflows.
+- The Chat screen is next in the sequential visual/interaction audit, but its architecture refactor must not obscure the UI/UX acceptance pass.
+
+### Chat screen inspection checkpoint
+- Current `ChatScreen.js` already uses a bounded FlatList (12 initial rows, 10 per batch, 50ms batching, window 9) and `maintainVisibleContentPosition`.
+- Message bubbles are capped at 76% width; media previews use a window-size-aware sizing helper.
+- Header controls have compact and ultra-compact breakpoints (<480px and <380px), preserving call/video access on narrow phones while hiding lower-priority controls.
+- Composer is a shared `InputBar` with reply/edit, draft persistence, attachment and voice-recording states. Do not replace these with static designs.
+- Next review should focus on screenshot/runtime behaviour at 320/360/390/430px, keyboard-open and safe-area layouts, long-history anchoring, accessibility/focus order, media retry and two-account message states before making visual changes.
+
+
+### Backend CORS verification — 2026-11-19
+- Backend `src/config/corsOptions.js` explicitly allows `https://zannychat.vercel.app`, `https://zannychat.netlify.app`, and the legacy Netlify origin, plus configured `CORS_ORIGINS` / `CORS_EXTRA_ORIGINS`.
+- Development localhost origins are added only outside production.
+- Requests without an Origin (native/server-to-server) are allowed; browser origins not in the explicit set are rejected with 403. No wildcard production origin is configured.
+- This source review matches the intended production CORS design. Still verify the Render environment's actual CORS variables and run a production browser preflight when investigating a new origin rejection.
+
+
+### Chat architecture refactor checkpoint
+- PR #184 is open: extracts the conversation timeline day separator and ChatBubble composition into a presentation-only `ChatMessageRow` component, preserving all message state, status, search, reaction and action callbacks in ChatScreen.
+- PR #184 frontend quality and advanced-calling workflows are still running; do not merge until both pass and the diff is reviewed.
+- The larger ChatScreen decomposition (data lifecycle, outboxes/media, composer, header and overlays) remains a staged follow-up, not claimed complete.
+
+
+## 15. LIVE replay production verification — 2026-11-19
+
+Read-only production catalog/storage inspection confirms the first complete recording artifact is now present:
+
+- One `live_stream_replays` row with `status=ready`.
+- Associated LIVE stream is `ended`, visibility `public`, and the replay creator matches the stream creator.
+- Recording duration: **43 seconds**.
+- Database file size: **3,292,044 bytes**.
+- A matching object exists in the private `live-replays` bucket at the recorded file path; object metadata size matches the database file size exactly and MIME type is `video/mp4`.
+- Replay expiry is **2026-11-26 10:58:14 UTC** (seven-day retention).
+- The five storage buckets are: public `avatars`; private `chat-media`, `live-replays`, `private-avatars` and `status-media`. The current storage policy inventory has 13 authenticated policies for avatars/chat/private-avatar/status media and no direct client policy for `live-replays`.
+- Backend `GET /live/replays/:replayId/playback` requires authentication, rejects non-ready/expired/missing records, checks the stream's visibility and block/participant/follower/invite/moderator rules, then issues a 360-second signed storage URL. Creator-only deletion and seven-day retention cleanup are implemented.
+
+**Acceptance distinction:** production Egress completion, database finalisation and private-object integrity are now verified. The actual authenticated playback request, signed URL response, browser/native video playback, expired-link behaviour and unauthorized-user denial have not been exercised in this read-only audit. Keep LIVE-07 at partial acceptance until those runtime checks pass. No replay row, object, policy, quota or migration was modified by this audit.
+
+## 16. SECURITY DEFINER catalog reconciliation — 2026-11-19
+
+A fresh read-only PostgreSQL catalog query agrees with the 17 Nov audit:
+- 67 public SECURITY DEFINER functions.
+- Zero without a function-level `search_path` setting.
+- Zero EXECUTE grants to PUBLIC and zero to `anon`.
+- Exactly 28 executable by `authenticated`.
+- Neither `anon` nor `authenticated` has CREATE on schema `public`.
+
+This confirms the catalog-level grant/search-path posture recorded in the earlier function-by-function review. It does not replace body-level review after future function/grant changes or adversarial tests of each RPC's ownership/authorization checks.
+
+
+## 17. Chat timeline component extraction merged — 2026-11-19
+
+- PR #184 merged as `90deac5913dbdf7fa610fcf4d98e94c67a6ce3a5`.
+- `ChatMessageRow` now owns the presentation-only day separator and ChatBubble composition. ChatScreen retains message ownership, read/delivery status, reactions, search state and callbacks.
+- Frontend quality, Advanced Calling bundle exposure/dependency/client quality workflows all passed; Netlify preview succeeded. Vercel preview remained pending due the team build quota.
+- This is a component boundary extraction, not the full ChatScreen refactor. No API, database, RLS, storage, realtime, pagination or message lifecycle behaviour changed.
+- The merged commit is not yet confirmed deployed to production at this checkpoint.
+
+**Next Chat architecture slice:** extract message timeline data lifecycle (initial load, cursor pagination, realtime subscription, read-state and stale-request guards) into a focused hook only after its current cleanup, request ownership and two-account contracts are mapped. Keep outbox/media/composer extraction separate so failure recovery is not entangled with pagination.
+
+
+## 18. Chat timeline lifecycle hook merged and deployed — 2026-11-19
+
+- PR #185 merged as `1060ca0e8eae49dab427420c7200d526a1fde710`.
+- Initial history, cursor pagination, realtime message/reaction/typing/presence/read-state subscriptions, request-generation guards and focus cleanup now live in `src/hooks/useChatTimeline.js`.
+- ChatScreen retains optimistic message mutations, composer/outbox/media and presentation. Account-switch reset delegates timeline state cleanup to the hook.
+- The unit script includes `src/hooks/*.contract.test.js`; the merged hook contract tests run as part of the suite.
+- Frontend quality passed with **949 tests, 0 failures**. Advanced Calling bundle, Android/iOS export and client-quality workflows passed.
+- Vercel production deployment `dpl_ErZDvBGhx1UuS27KieHBkmHvuhpm` reached **READY**, and `https://zannychat.vercel.app` was verified on it. The timeline hook is live.
+
+**Next Chat work:** isolate text outbox and attachment outbox separately, then complete Chat visual/keyboard/accessibility acceptance before moving to the next screen family.
+
+
+## 19. Message outbox hook merged — 2026-11-19
+
+- PR #186 merged as `a2f298b92b38c4c27a1ff058b5f6a4fa8cf4d23b`.
+- Pending text-message state, persistence, backoff, foreground retry scheduling and manual retry now live in `src/hooks/useMessageOutbox.js`.
+- It preserves the 50-message queue cap, request-ID idempotency, bounded oldest-first automatic batches, permanent/transient error distinction and authenticated-owner checks. Generation guards invalidate stale work on account/conversation changes.
+- Manual retry now calls the outbox retry path directly instead of reusing `handleSend`, avoiding accidental interaction with composer edit state.
+- Text and attachment retry locks are separate so a slow media retry does not block text recovery. Attachment outbox remains in ChatScreen for a later independent extraction.
+- Frontend quality passed with **954/954 unit tests**, 0 failures; call-recovery, native call-receiver, release, contract and integrity audits passed. Advanced Calling web/Android/iOS bundle exposure, Android Kotlin compilation, iOS prebuild and client-quality checks all passed. Netlify preview succeeded.
+- Vercel preview/production is blocked by the current team build-rate limit. Latest production alias still serves commit `1060ca0e8eae49dab427420c7200d526a1fde710`; the outbox merge `a2f298b` is **not yet deployed**. Do not claim it is live.
+- Source complexity after the two Chat hooks: `ChatScreen.js` reduced from **100,812 bytes / 80 hook calls** to **85,287 bytes / 48 hook calls**; `useChatTimeline.js` is 10,491 bytes and `useMessageOutbox.js` is 7,501 bytes.
+
+**Next Chat work:** extract the attachment outbox/recovery lifecycle without weakening its preserved-file, retry and duplicate-prevention guarantees; then complete Chat visual, keyboard, accessibility and two-account acceptance before moving to the next screen family.
+
+
+## 20. Current session resume checkpoint
+
+**Next immediate action:** inspect Vercel build-rate-limit recovery for main `a2f298b`; once production build capacity is available, verify `https://zannychat.vercel.app` is serving that exact SHA. Then continue the attachment-outbox extraction from current main.
+
+**Pending acceptance that must not be forgotten:**
+- Chat: attachment retry/outbox extraction; composer/media extraction; visual checks at 320/360/390/430px; keyboard/safe-area; accessibility/focus; two-account send/read/edit/delete/reaction/media tests.
+- LIVE: authenticated replay playback, signed-link expiry and unauthorized-viewer denial (one READY production replay record and matching private MP4 object already exist).
+- Status: backend cursor pagination and privacy-picker/private-reply virtualization.
+- Whole app: finish all 48 navigation experiences and the separate 18-screen LIVE design checklist; physical-device/native acceptance remains distinct from source/CI success.
+- Security: CSP origin inventory and least-privilege policy; preserve current RLS, private media and SECURITY DEFINER posture.
+- Database: no migration is currently requested by this Chat interface pass. Do not rerun the two LIVE migrations already applied on 2026-11-19.
+
+This is the handoff point for the next session. Read this register and the Master Blueprint before making further changes.

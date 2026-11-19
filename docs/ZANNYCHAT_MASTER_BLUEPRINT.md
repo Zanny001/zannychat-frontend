@@ -197,7 +197,7 @@ Capabilities include discovery/categories, public/follower/private visibility, s
 
 Preserve the established LiveKit integration, five-guest limit, guest permissions, moderator controls, comment/reaction behaviour, invitations, APIs, account isolation and replay access restrictions. The LIVE concept prototype is not production-connected proof. Replay source code, production replay rows, storage objects and successful playback are separate acceptance facts.
 
-**Safety gates:** random video matching cannot ship without age assurance, explicit consent, blur-by-default, immediate report/block and evidence handling. Minors' safety is a release blocker. Wallet/gifting/payout flows require clear unit conversion, fees, payout rules, fraud controls and legal/payment review.
+**Safety gates:** random video matching cannot ship without age assurance, explicit consent, blur-by-default, immediate report/block and evidence handling. Minors' safety is a release blocker. Wallet/gifting/payout flows require clear unit conversion, fees, payout rules, fraud controls and legal/payment review. Do not reintroduce the removed general in-chat wallet/ledger preview; any approved LIVE gifting wallet is a separate, explicitly scoped LIVE commerce domain with its own controls.
 
 ### 5.8 Advanced messaging/platform features
 - Polls/quizzes, events, live location, view-once/self-destruct media, transcripts, silent/scheduled messages and rich formatting.
@@ -304,3 +304,19 @@ A concept, source implementation, merged PR, successful build, deployed commit a
 - Companion execution state: `docs/ZANNYCHAT_DELIVERY_REGISTER.md`.
 
 These anchors must be re-verified before operational changes; they are not secrets and do not replace runtime configuration inspection.
+
+
+## 13. Continuity and memory protocol
+
+This programme must remain coherent even when a chat session ends, context is shortened or a different engineer resumes the work. **The repository is the durable memory; chat history is not the sole source of truth.**
+
+1. At the start of every work session, read this Master Blueprint and `docs/ZANNYCHAT_DELIVERY_REGISTER.md` from the current frontend main branch. Then inspect the current frontend/backend main SHAs, open PRs, production deployment SHAs and Supabase migration state before making changes.
+2. This Blueprint owns product scope, architecture, design principles, security requirements and acceptance standards. The Delivery Register owns the screen-by-screen status, requirement IDs, evidence, blockers, merged PRs/SHAs, deployment state and next action.
+3. Every implementation PR must cite the relevant requirement IDs, state what existing behaviour/data/security contracts it preserves, list tests and risks, and identify whether database/provider/deployment changes are involved.
+4. After each merge, update the Delivery Register with the exact merge SHA, CI results, migration result if applicable, production deployment state and the next unfinished acceptance item.
+5. Never mark a requirement complete because a screen exists, a PR merged, a preview passed or source code looks correct. Completion requires the requirement's stated end-to-end acceptance evidence; production claims require the exact production SHA/alias to be verified.
+6. Never create a parallel master roadmap, duplicate screen tracker or competing requirement list. New discoveries are added to these two documents under the existing requirement ID or a new ID.
+7. If chat recollection conflicts with current source, production evidence or these documents, verify the repository and live system; update the documents rather than relying on memory or repeating stale work.
+8. Keep one explicit **next action** and one **blocked/pending acceptance** list in the Delivery Register. Resume from those entries and preserve the original screen sequence.
+
+This protocol is mandatory until all in-scope requirements are either accepted in production or explicitly deferred with the user's approval.
