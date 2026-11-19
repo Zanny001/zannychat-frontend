@@ -3,7 +3,6 @@ import { countReadersForMessage, resolveMessageDeliveryStatus, countDeliveredRec
 import { buildGroupReceiptDetails } from '../utils/groupReceiptDetails';
 import {
   View,
-  AppState,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -34,11 +33,12 @@ import Header from '../components/Header';
 import Avatar from '../components/Avatar';
 import { QUICK_REACTIONS } from '../components/ChatBubble';
 import useChatTimeline from '../hooks/useChatTimeline';
+import useMessageOutbox from '../hooks/useMessageOutbox';
 import ChatMessageRow from '../components/ChatMessageRow';
 import InputBar from '../components/InputBar';
 import ActionSheet from '../components/ActionSheet';
 import { hexToRgba } from '../utils/color';
-import { savePendingMessage, loadPendingMessages, removePendingMessage, recordMessageRetryFailure, isMessageRetryDue } from '../services/messageOutbox';
+
 import { savePendingAttachment, loadPendingAttachments, removePendingAttachment, recordAttachmentRetryFailure } from '../services/attachmentOutbox';
 import { getAttachmentNextRetryAt, isAttachmentRetryDue } from '../utils/attachmentRetryPolicy';
 import { isPermanentMessageSendError } from '../utils/safeMessagingError';
@@ -135,8 +135,6 @@ export default function ChatScreen({ route, navigation }) {
   const [editing, setEditing] = useState(null); // { id, text } while editing own message
   const [suggestions, setSuggestions] = useState([]);
   const [sendError, setSendError] = useState('');
-  const [pendingOutbox, setPendingOutbox] = useState([]);
-  const [retryingOutbox, setRetryingOutbox] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState([]);
   const [retryingAttachments, setRetryingAttachments] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
@@ -158,25 +156,19 @@ export default function ChatScreen({ route, navigation }) {
   useEffect(() => {
     let active = true;
     if (!myUserId) {
-      setPendingOutbox([]);
       setPendingAttachments([]);
       return () => { active = false; };
     }
-    Promise.all([loadPendingMessages(myUserId, conversation?.id), loadPendingAttachments(myUserId, conversation?.id)])
-      .then(([messages, attachments]) => {
-        if (active && activeUserIdRef.current === myUserId) {
-          setPendingOutbox(messages);
-          setPendingAttachments(attachments);
-        }
+    loadPendingAttachments(myUserId, conversation?.id)
+      .then((attachments) => {
+        if (active && activeUserIdRef.current === myUserId) setPendingAttachments(attachments);
       })
       .catch(() => {
-        if (active && activeUserIdRef.current === myUserId) {
-          setPendingOutbox([]);
-          setPendingAttachments([]);
-        }
+        if (active && activeUserIdRef.current === myUserId) setPendingAttachments([]);
       });
     return () => { active = false; };
   }, [myUserId, conversation?.id]);
+
   const [pinnedMessages, setPinnedMessages] = useState([]);
   // Which sheet is open: null | 'attach' | 'overflow' | { message } —
   // all three render through the same branded ActionSheet component,
@@ -196,7 +188,7 @@ export default function ChatScreen({ route, navigation }) {
   const handledTargetMessageRef = useRef(null);
   const targetLookupForRef = useRef(null);
   const targetLookupPagesRef = useRef(0);
-  const automaticRetryInFlightRef = useRef(false);
+  const automaticAttachmentRetryInFlightRef = useRef(false);
   const activeUserIdRef = useRef(undefined);
   const {
     messages, setMessages, loadingMessages, messageLoadError, olderLoadError,
@@ -207,6 +199,17 @@ export default function ChatScreen({ route, navigation }) {
     conversationId: conversation.id,
     myUserId,
     activeUserIdRef,
+    stickToBottom,
+  });
+  const {
+    pendingOutbox, retryingOutbox, queuePendingMessage, removeQueuedMessage,
+    retryPendingMessages, resetOutbox,
+  } = useMessageOutbox({
+    conversationId: conversation.id,
+    myUserId,
+    activeUserIdRef,
+    setMessages,
+    setSendError,
     stickToBottom,
   });
   const resolvedConversationRequestRef = useRef(0);
@@ -235,9 +238,8 @@ export default function ChatScreen({ route, navigation }) {
       // account switch; leave the route so the new account must reopen access.
       setReplyingTo(null);
       setEditing(null);
-      setPendingOutbox([]);
+      resetOutbox();
       setPendingAttachments([]);
-      setRetryingOutbox(false);
       setRetryingAttachments(false);
       setPinnedMessages([]);
       setSuggestions([]);
@@ -260,7 +262,7 @@ export default function ChatScreen({ route, navigation }) {
       handledTargetMessageRef.current = null;
       targetLookupForRef.current = null;
       targetLookupPagesRef.current = 0;
-      automaticRetryInFlightRef.current = false;
+      automaticAttachmentRetryInFlightRef.current = false;
       if (navigation?.canGoBack?.()) navigation.goBack();
     };
 
@@ -278,7 +280,7 @@ export default function ChatScreen({ route, navigation }) {
       if (active) applyUserId('me');
     });
     return () => { active = false; };
-  }, [navigation, resetTimeline]);
+  }, [navigation, resetTimeline, resetOutbox]);
 
   useEffect(() => {
     const requestId = ++pinnedLoadRequestRef.current;
@@ -325,61 +327,6 @@ export default function ChatScreen({ route, navigation }) {
   // Recover queued text sends when the chat regains focus / the app returns
   // to the foreground. Stable request IDs preserve server-side idempotency;
   // bounded exponential backoff prevents a bad connection from being hammered.
-  const retryQueuedTextMessages = useCallback(async () => {
-    if (!myUserId || !conversation?.id || automaticRetryInFlightRef.current || AppState.currentState !== 'active'
-        || (SUPABASE_ENABLED && activeUserIdRef.current !== myUserId)) return;
-    const expectedUserId = myUserId;
-    automaticRetryInFlightRef.current = true;
-    try {
-      const queued = await loadPendingMessages(myUserId, conversation.id);
-      setPendingOutbox(queued);
-      // Keep foreground recovery responsive on large backlogs. Retry only a
-      // small oldest-first batch per cycle; the 15-second scheduler drains the rest.
-      const dueQueued = queued
-        .filter((item) => isMessageRetryDue(item))
-        .sort((a, b) => Date.parse(a.createdAt || 0) - Date.parse(b.createdAt || 0))
-        .slice(0, 5);
-      for (const item of dueQueued) {
-        if (SUPABASE_ENABLED && activeUserIdRef.current !== expectedUserId) return;
-        try {
-          const confirmed = await sendMessage(conversation.id, item.text, item.replyToId, item.requestId, expectedUserId);
-          if (SUPABASE_ENABLED && activeUserIdRef.current !== expectedUserId) return;
-          await removePendingMessage(myUserId, conversation.id, item.requestId);
-          setPendingOutbox((items) => items.filter((entry) => entry.requestId !== item.requestId));
-          setMessages((items) => items.some((entry) => entry.id === confirmed.id) ? items : [...items, confirmed]);
-          stickToBottom.current = true;
-        } catch (error) {
-          if (error?.code === 'AUTH_USER_CHANGED'
-              || (SUPABASE_ENABLED && activeUserIdRef.current !== expectedUserId)) return;
-          if (isPermanentMessageSendError(error)) {
-            const removed = await removePendingMessage(myUserId, conversation.id, item.requestId);
-            if (removed) setPendingOutbox((items) => items.filter((entry) => entry.requestId !== item.requestId));
-            setSendError(removed
-              ? (error?.message || 'This message can no longer be sent. Edit it and try again.')
-              : 'This message was rejected, but its local retry record could not be cleared. Check device storage before retrying.');
-          } else {
-            await recordMessageRetryFailure(myUserId, conversation.id, item.requestId, error);
-          }
-          // Background retries stay quiet. Permanent failures are removed
-          // from the retry queue and surfaced inline instead of retrying forever.
-        }
-      }
-      if (!SUPABASE_ENABLED || activeUserIdRef.current === expectedUserId) {
-        setPendingOutbox(await loadPendingMessages(expectedUserId, conversation.id));
-      }
-    } finally { automaticRetryInFlightRef.current = false; }
-  }, [myUserId, conversation?.id]);
-
-  useFocusEffect(
-    useCallback(() => {
-      retryQueuedTextMessages();
-      const interval = setInterval(() => retryQueuedTextMessages(), 15000);
-      const subscription = AppState.addEventListener('change', (state) => {
-        if (state === 'active') retryQueuedTextMessages();
-      });
-      return () => { clearInterval(interval); subscription.remove(); };
-    }, [retryQueuedTextMessages])
-  );
 
   // Smart replies only make sense when the other person spoke last —
   // suggesting replies to your own message is backwards. Guarded by
@@ -430,8 +377,7 @@ export default function ChatScreen({ route, navigation }) {
     stickToBottom.current = true;
     try {
       const confirmed = await sendMessage(conversation.id, text, replyTarget?.id, requestId);
-      await removePendingMessage(myUserId, conversation.id, requestId);
-      setPendingOutbox((items) => items.filter((item) => item.requestId !== requestId));
+      await removeQueuedMessage(requestId);
       // Swaps the optimistic echo for the real, server-confirmed message
       // (real id, real timestamp) — without this, Realtime would also
       // deliver this same insert back to us (it doesn't exclude the
@@ -448,12 +394,10 @@ export default function ChatScreen({ route, navigation }) {
       let queued = false;
       if (permanentFailure) {
         if (existingRequestId) {
-          const removed = await removePendingMessage(myUserId, conversation.id, requestId);
-          if (removed) setPendingOutbox((items) => items.filter((item) => item.requestId !== requestId));
+          await removeQueuedMessage(requestId);
         }
       } else {
-        queued = await savePendingMessage(myUserId, conversation.id, pending);
-        if (queued) setPendingOutbox((items) => [...items.filter((item) => item.requestId !== requestId), pending]);
+        queued = await queuePendingMessage(pending);
       }
       console.error('[ChatScreen] Message send failed:', err);
       const blocked = err?.code === '42501' || /row-level security|no longer have permission/i.test(err.message || '');
@@ -1519,7 +1463,7 @@ export default function ChatScreen({ route, navigation }) {
         {pendingOutbox.length > 0 ? (
           <View style={{ marginHorizontal: spacing.md, marginBottom: 8, padding: 10, borderRadius: 8, backgroundColor: hexToRgba(colors.accent, 0.10) }}>
             <Text style={{ color: colors.text, fontSize: 13 }}>{pendingOutbox.length} message{pendingOutbox.length === 1 ? '' : 's'} waiting to send. They are saved on this device.</Text>
-            <TouchableOpacity disabled={retryingOutbox} onPress={async () => { if (automaticRetryInFlightRef.current) return; automaticRetryInFlightRef.current = true; setRetryingOutbox(true); try { for (const item of [...pendingOutbox]) { const ok = await handleSend(item.text, item.requestId, item.replyToId); if (!ok) break; } } finally { automaticRetryInFlightRef.current = false; setRetryingOutbox(false); } }} style={{ alignSelf: 'flex-end', minHeight: 48, justifyContent: 'center', paddingHorizontal: 8 }} accessibilityRole="button" accessibilityLabel="Retry sending pending messages" accessibilityState={{ disabled: retryingOutbox, busy: retryingOutbox }}>
+            <TouchableOpacity disabled={retryingOutbox} onPress={retryPendingMessages} style={{ alignSelf: 'flex-end', minHeight: 48, justifyContent: 'center', paddingHorizontal: 8 }} accessibilityRole="button" accessibilityLabel="Retry sending pending messages" accessibilityState={{ disabled: retryingOutbox, busy: retryingOutbox }}>
               <Text style={{ color: colors.accent, fontWeight: '700' }}>{retryingOutbox ? 'Retrying…' : 'Retry pending messages'}</Text>
             </TouchableOpacity>
           </View>
