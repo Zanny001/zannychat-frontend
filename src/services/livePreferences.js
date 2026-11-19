@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { backendFetch, BACKEND_ENABLED } from './backendClient';
 
 export const LIVE_PREFERENCE_CATEGORIES = [
   'entertainment', 'social', 'politics', 'science', 'education', 'finance',
@@ -12,8 +12,6 @@ export const DEFAULT_LIVE_PREFERENCES = Object.freeze({
   allowGuests: false,
 });
 
-const STORAGE_PREFIX = 'zannychat:live-creator-preferences:v1:';
-
 export function normalizeLivePreferences(value) {
   const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
   return {
@@ -25,27 +23,27 @@ export function normalizeLivePreferences(value) {
       ? source.category : DEFAULT_LIVE_PREFERENCES.category,
     allowGuests: typeof source.allowGuests === 'boolean'
       ? source.allowGuests : DEFAULT_LIVE_PREFERENCES.allowGuests,
+    ...(typeof source.updatedAt === 'string' ? { updatedAt: source.updatedAt } : {}),
   };
 }
 
-function storageKey(userId) {
-  const id = String(userId || '').trim();
-  if (!id) throw new Error('Sign in to manage LIVE preferences.');
-  return STORAGE_PREFIX + id;
+function assertAccount(userId) {
+  if (!String(userId || '').trim()) throw new Error('Sign in to manage LIVE preferences.');
+  if (!BACKEND_ENABLED) throw new Error('LIVE settings require a connection to the ZannyChat service.');
 }
 
 export async function loadLivePreferences(userId) {
-  const raw = await AsyncStorage.getItem(storageKey(userId));
-  if (!raw) return { ...DEFAULT_LIVE_PREFERENCES };
-  try {
-    return normalizeLivePreferences(JSON.parse(raw));
-  } catch {
-    return { ...DEFAULT_LIVE_PREFERENCES };
-  }
+  assertAccount(userId);
+  const response = await backendFetch('/live/creators/me/preferences');
+  return normalizeLivePreferences(response?.preferences);
 }
 
 export async function saveLivePreferences(userId, preferences) {
+  assertAccount(userId);
   const normalized = normalizeLivePreferences(preferences);
-  await AsyncStorage.setItem(storageKey(userId), JSON.stringify(normalized));
-  return normalized;
+  const response = await backendFetch('/live/creators/me/preferences', {
+    method: 'PUT',
+    body: JSON.stringify(normalized),
+  });
+  return normalizeLivePreferences(response?.preferences);
 }
