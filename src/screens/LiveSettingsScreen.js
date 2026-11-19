@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, ScrollView, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,12 +34,15 @@ export default function LiveSettingsScreen({ navigation }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+  const loadRequestRef = useRef(0);
 
   const load = useCallback(async () => {
+    const requestId = ++loadRequestRef.current;
     setLoading(true);
     setError('');
     try {
       const user = await getCurrentUser();
+      if (requestId !== loadRequestRef.current) return;
       if (!user?.id) {
         setUserId(null);
         setPreferences({ ...DEFAULT_LIVE_PREFERENCES });
@@ -48,14 +51,14 @@ export default function LiveSettingsScreen({ navigation }) {
       }
       const next = await loadLivePreferences(user.id);
       const latestUser = await getCurrentUser();
-      if (latestUser?.id !== user.id) return;
+      if (requestId !== loadRequestRef.current || latestUser?.id !== user.id) return;
       setUserId(user.id);
       setPreferences(next);
       setSaved(false);
     } catch {
       setError('Your LIVE defaults could not be loaded. Please retry.');
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestRef.current) setLoading(false);
     }
   }, []);
 
@@ -68,6 +71,7 @@ export default function LiveSettingsScreen({ navigation }) {
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       const nextUserId = session?.user?.id || null;
       if (nextUserId === userId) return;
+      loadRequestRef.current += 1;
       setUserId(nextUserId);
       setPreferences({ ...DEFAULT_LIVE_PREFERENCES });
       setSaved(false);
