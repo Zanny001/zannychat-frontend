@@ -85,14 +85,14 @@ export default function LiveEventsScreen({ navigation }) {
     const { data } = supabase.auth.onAuthStateChange((_event,session)=>{
       const nextId=session?.user?.id||null;
       setCurrentUserId(nextId);setEvents([]);setInvitations([]);setCandidates([]);setSelectedInvitees([]);
-      setTitle('');setDescription('');setVisibility('public');setCategory('social');setShowComposer(false);setEditingEventId(null);
+      setTitle('');setDescription('');setVisibility('public');setCategory('social');setDuration('60');setCapacity('100');setShowComposer(false);setEditingEventId(null);
       if (nextId) Promise.resolve().then(()=>refresh());
     });
     return ()=>data?.subscription?.unsubscribe?.();
   },[refresh]);
 
   const toggleComposer=()=>{
-    if (showComposer) { setEditingEventId(null);setTitle('');setDescription('');setSelectedInvitees([]);setSchedule(initialSchedule()); }
+    if (showComposer) { setEditingEventId(null);setTitle('');setDescription('');setSelectedInvitees([]);setVisibility('public');setCategory('social');setDuration('60');setCapacity('100');setSchedule(initialSchedule()); }
     setShowComposer((value)=>!value);
   };
 
@@ -136,7 +136,7 @@ export default function LiveEventsScreen({ navigation }) {
     if (!startsAt || Date.parse(startsAt)<Date.now()+10*60*1000 || Date.parse(startsAt)>Date.now()+90*24*60*60*1000) return showAppAlert('Check the schedule','Choose a valid local date and time at least 10 minutes from now and within 90 days.');
     if (!Number.isInteger(durationMinutes)||durationMinutes<15||durationMinutes>240) return showAppAlert('Check the duration','Choose between 15 and 240 minutes.');
     if (!Number.isInteger(maxAttendees)||maxAttendees<1||maxAttendees>500) return showAppAlert('Check the capacity','Choose between 1 and 500 attendees.');
-    if (visibility==='private' && selectedInvitees.length===0) return showAppAlert('Choose invitees','Private Events need at least one person from your existing chats.');
+    if (!editingEventId && visibility==='private' && selectedInvitees.length===0) return showAppAlert('Choose invitees','Private Events need at least one person from your existing chats.');
     setBusy(true);
     try {
       const expectedUserId=await ensureAccount();
@@ -145,7 +145,7 @@ export default function LiveEventsScreen({ navigation }) {
           method:'PATCH',body:JSON.stringify({title:title.trim(),description:description.trim(),category,startsAt,durationMinutes,maxAttendees}),
         });
         await ensureAccount();
-        setEditingEventId(null);setTitle('');setDescription('');setShowComposer(false);setSchedule(initialSchedule());
+        setEditingEventId(null);setTitle('');setDescription('');setSelectedInvitees([]);setVisibility('public');setCategory('social');setDuration('60');setCapacity('100');setShowComposer(false);setSchedule(initialSchedule());
         showAppAlert('Event updated','Your LIVE Event details and schedule have been updated.');
       } else {
         const created=await backendFetch('/live/events',{method:'POST',body:JSON.stringify({
@@ -166,7 +166,7 @@ export default function LiveEventsScreen({ navigation }) {
         await ensureAccount();
         showAppAlert('LIVE Event scheduled','Your Event is saved. Invitees have been notified where applicable.');
       }
-      setTitle('');setDescription('');setSelectedInvitees([]);setShowComposer(false);setSchedule(initialSchedule());
+      setTitle('');setDescription('');setSelectedInvitees([]);setVisibility('public');setCategory('social');setDuration('60');setCapacity('100');setShowComposer(false);setSchedule(initialSchedule());
       await refresh();
     } catch(e) { showAppAlert('Could not schedule Event',e?.message||'Please try again.'); }
     finally { setBusy(false); }
@@ -250,14 +250,16 @@ export default function LiveEventsScreen({ navigation }) {
               <Text style={[typography.caption,{color:category===value?colors.primary:colors.textSecondary,fontWeight:'800'}]}>{label}</Text>
             </TouchableOpacity>)}
           </View>
-          {!editingEventId&&<Text style={sectionLabel}>AUDIENCE</Text>}
-          <View style={{flexDirection:'row',flexWrap:'wrap',gap:spacing.xs}}>
-            {VISIBILITIES.map(([value,label,icon])=><TouchableOpacity key={value} onPress={()=>setVisibility(value)} accessibilityRole="radio" accessibilityLabel={label} accessibilityState={{checked:visibility===value}} style={chip(visibility===value)}>
-              <Ionicons name={icon} size={15} color={visibility===value?colors.primary:colors.textSecondary}/>
-              <Text style={[typography.caption,{color:visibility===value?colors.primary:colors.textSecondary,fontWeight:'800'}]}>{label}</Text>
-            </TouchableOpacity>)}
-          </View>
-          {visibility==='private'&&<View style={{gap:spacing.xs}}>
+          {!editingEventId&&<>
+            <Text style={sectionLabel}>AUDIENCE</Text>
+            <View style={{flexDirection:'row',flexWrap:'wrap',gap:spacing.xs}}>
+              {VISIBILITIES.map(([value,label,icon])=><TouchableOpacity key={value} onPress={()=>setVisibility(value)} accessibilityRole="radio" accessibilityLabel={label} accessibilityState={{checked:visibility===value}} style={chip(visibility===value)}>
+                <Ionicons name={icon} size={15} color={visibility===value?colors.primary:colors.textSecondary}/>
+                <Text style={[typography.caption,{color:visibility===value?colors.primary:colors.textSecondary,fontWeight:'800'}]}>{label}</Text>
+              </TouchableOpacity>)}
+            </View>
+          </>}
+          {!editingEventId&&visibility==='private'&&<View style={{gap:spacing.xs}}>
             <TouchableOpacity onPress={loadCandidates} disabled={loadingContacts} accessibilityRole="button" accessibilityLabel="Load contacts to invite to this private Event" style={{minHeight:46,borderWidth:1,borderColor:colors.border,borderRadius:14,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8}}>
               {loadingContacts?<ActivityIndicator color={colors.primary}/>:<Ionicons name="people-outline" size={18} color={colors.primary}/>}
               <Text style={[typography.caption,{color:colors.primary,fontWeight:'800'}]}>{loadingContacts?'Loading chat contacts…':'Choose private invitees'}</Text>
