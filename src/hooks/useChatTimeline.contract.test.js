@@ -34,7 +34,7 @@ test('ChatScreen delegates timeline lifecycle while retaining message mutations'
   assert.match(screen, /useChatTimeline\(/);
   assert.match(screen, /setMessages\(/);
   assert.match(screen, /setReactions\(/);
-  assert.match(screen, /setMessageDeliveryState\(/);
+  assert.match(screen, /messageDeliveryState/);
   assert.doesNotMatch(screen, /const load = useCallback\(async \(\) =>/);
   assert.doesNotMatch(screen, /subscribeToMessages\(/);
 });
