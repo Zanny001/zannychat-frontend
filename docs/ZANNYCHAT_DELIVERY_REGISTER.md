@@ -222,3 +222,21 @@ This is a source-level inventory from frontend `main` at base commit `55fb010fc1
 4. Inventory every Supabase migration/table/view/function/trigger/RLS/storage policy and compare repository migrations with production migration history before any database change.
 5. Map worker schedules, idempotency, retry semantics and observability; confirm which workers actually run in Render production.
 6. Map LiveKit, push, email/OAuth and media storage dependencies, their environment keys, free-tier constraints and production health checks.
+
+
+## 8. Live Supabase architecture/security snapshot — 2026-11-19
+
+Read-only inspection of project `vithpppgyjmazxvogvno` at approximately 11:47 UTC. No schema, policy, data, storage or project setting was changed.
+
+- Project status: `ACTIVE_HEALTHY`; PostgreSQL 17.6.1.155.
+- Public schema: **64 tables; all 64 have RLS enabled**.
+- **37 tables have no RLS policies**, but a direct privilege check found zero SELECT/INSERT/UPDATE/DELETE privileges for both `anon` and `authenticated` on those tables. This is consistent with backend/service-role-only tables. Do not add broad policies simply to silence the advisor.
+- Public functions: 67 SECURITY DEFINER functions; all 67 have a pinned `search_path`; 28 are executable by `authenticated`; zero are executable by `anon`. The 28 authenticated-executable functions need function-by-function authorization review; the advisor warning is not proof of a vulnerability by itself.
+- Applied migration history: **106 migrations**, latest `20261118223000`. The latest two LIVE migrations are present in backend source and applied history: `20261118221000_live_experience_modes` and `20261118223000_block_removed_live_participants`. Never rerun them.
+- Security advisor: 37 informational RLS/no-policy findings, 28 authenticated-executable SECURITY DEFINER warnings, and one leaked-password-protection warning. Leaked-password protection is not enabled on the current Free plan; keep this as a disclosed residual risk within the ₦0 constraint.
+- Performance advisor: 61 unused-index INFO findings. Do not mass-drop indexes from this snapshot; low traffic and short observation windows can make useful indexes appear unused. Review query plans and usage over a meaningful period before any removal.
+- Health advisor: no findings at snapshot time.
+- Supabase Edge Functions: none listed.
+- The backend contains dedicated LIVE stream/history routes, LiveKit Egress webhook verification, replay worker and replay finalizer source. This verifies source presence only, not that production recording produced an object or playable replay.
+
+**Next security work:** enumerate all 28 SECURITY DEFINER functions, inspect each body and grants, verify caller identity/ownership checks and delegated helpers, then write tests for allowed and denied callers. Do not revoke grants or alter function security wholesale. For the 37 backend-only tables, retain the privilege model and add a documented role/access inventory so future migrations do not accidentally expose them.
