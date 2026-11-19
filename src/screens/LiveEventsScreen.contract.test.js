@@ -31,7 +31,7 @@ test('LIVE Events screen validates schedule, duration, capacity and private invi
   assert.ok(screen.includes('durationMinutes<15||durationMinutes>240'));
   assert.ok(screen.includes('maxAttendees<1||maxAttendees>500'));
   assert.ok(screen.includes("visibility==='private' && selectedInvitees.length===0"));
-  assert.ok(screen.includes('selectedInvitees.length>=25'));
+  assert.ok(screen.includes('current.length>=25'));
 });
 
 test('LIVE Events screen clears account-owned state and guards actions on account changes',()=>{
