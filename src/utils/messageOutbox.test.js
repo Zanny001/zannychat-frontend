@@ -18,19 +18,20 @@ test('message outbox uses bounded exponential retry backoff', async () => {
   assert.match(source, /attempts >= 100/);
 });
 
-test('chat screen retries queued messages on focus and app foreground without repeated alerts', async () => {
-  const source = await readFile(new URL('../screens/ChatScreen.js', import.meta.url), 'utf8');
+test('message outbox retries queued messages on focus and app foreground without repeated alerts', async () => {
+  const source = await readFile(new URL('../hooks/useMessageOutbox.js', import.meta.url), 'utf8');
   assert.match(source, /retryQueuedTextMessages/);
   assert.match(source, /AppState\.addEventListener\('change'/);
-  assert.match(source, /setInterval\(\(\) => retryQueuedTextMessages\(\), 15000\)/);
-  assert.match(source, /automaticRetryInFlightRef/);
+  assert.match(source, /setInterval\(\(\) => retryQueuedTextMessages\(\), RETRY_INTERVAL_MS\)/);
+  assert.match(source, /RETRY_INTERVAL_MS = 15000/);
+  assert.match(source, /retryInFlightRef/);
 });
 
-test('chat recovery limits each automatic retry pass and prioritizes oldest queued messages', async () => {
-  const source = await readFile(new URL('../screens/ChatScreen.js', import.meta.url), 'utf8');
+test('message recovery limits automatic retry batches and prioritizes oldest queued messages', async () => {
+  const source = await readFile(new URL('../hooks/useMessageOutbox.js', import.meta.url), 'utf8');
   assert.match(source, /\.sort\(\(a, b\) => Date\.parse\(a\.createdAt \|\| 0\) - Date\.parse\(b\.createdAt \|\| 0\)\)/);
-  assert.match(source, /\.slice\(0, 5\)/);
-  assert.match(source, /setInterval\(\(\) => retryQueuedTextMessages\(\), 15000\)/);
+  assert.match(source, /AUTOMATIC_RETRY_BATCH_SIZE = 5/);
+  assert.match(source, /\.slice\(0, force \? MAX_PENDING_MESSAGES : AUTOMATIC_RETRY_BATCH_SIZE\)/);
 });
 
 
@@ -65,11 +66,13 @@ test('message outbox refuses a new message when the bounded queue is full', asyn
 
 
 test('chat screen surfaces queue persistence failure instead of showing an unqueued message as pending', async () => {
-  const source = await readFile(new URL('../screens/ChatScreen.js', import.meta.url), 'utf8');
-  assert.match(source, /let queued = false/);
-  assert.match(source, /queued = await savePendingMessage/);
-  assert.match(source, /if \(queued\) setPendingOutbox\(/);
-  assert.match(source, /pending-message queue is full or local storage is unavailable/);
+  const screen = await readFile(new URL('../screens/ChatScreen.js', import.meta.url), 'utf8');
+  const outbox = await readFile(new URL('../hooks/useMessageOutbox.js', import.meta.url), 'utf8');
+  assert.match(screen, /let queued = false/);
+  assert.match(screen, /queued = await queuePendingMessage\(pending\)/);
+  assert.match(screen, /pending-message queue is full or local storage is unavailable/);
+  assert.match(outbox, /const saved = await savePendingMessage/);
+  assert.match(outbox, /if \(saved && generation === retryGenerationRef\.current/);
 });
 
 
