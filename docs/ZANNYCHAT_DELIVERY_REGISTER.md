@@ -19,6 +19,8 @@
 
 Never infer Accepted from route presence, a green build, a prototype, a merged PR or a successful deployment alone.
 
+**No mock-only LIVE delivery:** Every visible LIVE control must call a real authenticated service or a clearly labelled local-only preference. Every transactional capability must have server-side authorization, validation, idempotency where money/points/state can be duplicated, durable persistence, abuse controls, observable failure states and automated tests. Never ship fake viewers, invented scores, simulated gifts, placeholder balances or decorative controls that imply a completed transaction. A screen is not complete until its full service path and acceptance evidence are recorded.
+
 ## 1. Project state snapshot
 
 | Area | Last known evidence | Current register status | Required reconciliation |
