@@ -16,7 +16,7 @@ function Metric({ icon, label, value, colors, typography, note }) {
       </View>
       <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 23 }]}>{Number(value || 0).toLocaleString()}</Text>
       <Text style={[typography.caption, { color: colors.textSecondary }]}>{label}</Text>
-      {note ? <Text style={[typography.caption, { color: colors.textSecondary, fontSize: 10 }]}>{note}</Text> : null}
+      {note ? <Text style={[typography.caption, { color: colors.textSecondary, fontSize: 12 }]}>{note}</Text> : null}
     </GlassCard>
   );
 }
@@ -40,7 +40,7 @@ function titleCase(value) {
 }
 
 export default function LiveAnalyticsScreen({ navigation }) {
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, typography } = useTheme();
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -133,6 +133,7 @@ export default function LiveAnalyticsScreen({ navigation }) {
 
           {loading && !summary ? <View style={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary }]}>Preparing your LIVE insights…</Text></View> : null}
           {!!error ? <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text accessibilityRole="alert" style={[typography.body, { color: colors.danger }]}>{error}</Text><TouchableOpacity onPress={() => refresh()} accessibilityRole="button" accessibilityLabel="Retry loading LIVE analytics" style={{ minHeight: 48, justifyContent: 'center' }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
+          {!loading && !error && !summary ? <GlassCard contentStyle={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}><Ionicons name="analytics-outline" size={30} color={colors.textSecondary} /><Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Your analytics will appear here</Text><Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', lineHeight: 20 }]}>Start a LIVE broadcast to begin building your creator impact and replay history.</Text></GlassCard> : null}
 
           {summary ? <>
             <GlassCard glow contentStyle={{ padding: spacing.lg, gap: spacing.sm }}>
