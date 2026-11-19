@@ -32,10 +32,7 @@ test('LIVE leaderboard is reachable from LIVE Hub and every action has an access
   assert.ok(hub.includes("navigation.navigate('LiveLeaderboard')"));
   assert.ok(navigator.includes('name="LiveLeaderboard" component={LiveLeaderboardScreen}'));
   assert.ok(navigator.includes("import LiveLeaderboardScreen from '../screens/LiveLeaderboardScreen'"));
-  const controlCount = (leaderboard.match(/<TouchableOpacity/g) || []).length;
-  const roleCount = (leaderboard.match(/accessibilityRole=/g) || []).length;
-  const labelCount = (leaderboard.match(/accessibilityLabel=/g) || []).length;
-  assert.ok(controlCount >= 3);
-  assert.equal(roleCount, controlCount);
-  assert.equal(labelCount, controlCount);
+  const controlLines = leaderboard.split('\n').filter((line) => line.includes('<TouchableOpacity'));
+  assert.ok(controlLines.length >= 3);
+  assert.ok(controlLines.every((line) => line.includes('accessibilityRole=') && line.includes('accessibilityLabel=')));
 });
