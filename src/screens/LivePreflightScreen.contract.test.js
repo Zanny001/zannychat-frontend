@@ -83,3 +83,12 @@ test('pre-flight normalizes creator setup input before sending the create reques
   assert.ok(preflight.includes(": 'social'"));
   assert.ok(preflight.includes("['public', 'followers', 'private'].includes(params.visibility)"));
 });
+
+test('pre-flight prevents duplicate permission prompts and duplicate room creation', () => {
+  assert.ok(preflight.includes('const permissionRequestRef = useRef(false)'));
+  assert.ok(preflight.includes('const startRequestRef = useRef(false)'));
+  assert.ok(preflight.includes('if (permissionRequestRef.current) return;'));
+  assert.ok(preflight.includes('if (startRequestRef.current) return;'));
+  assert.ok(preflight.includes('permissionRequestRef.current = false'));
+  assert.ok(preflight.includes('startRequestRef.current = false'));
+});
