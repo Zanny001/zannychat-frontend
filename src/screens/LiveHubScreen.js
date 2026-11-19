@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, AppState, FlatList, Platform, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, FlatList, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
@@ -71,7 +71,6 @@ export default function LiveHubScreen({ navigation, route }) {
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [startStage, setStartStage] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showComposer, setShowComposer] = useState(false);
@@ -272,56 +271,25 @@ export default function LiveHubScreen({ navigation, route }) {
       : [...current, userId]);
   };
 
-  const startLive = async () => {
+  const startLive = () => {
     if (!title.trim()) return Alert.alert('Add a title', 'Give your LIVE stream a short title first.');
     const invitees = [...new Set(selectedInvitees)];
     if (visibility === 'private' && invitees.length === 0) {
       return Alert.alert('Add invitees', 'Choose at least one person from your existing chats.');
     }
-    setBusy(true);
     setError('');
-    setStartStage(Platform.OS === 'web' ? 'Requesting camera and microphone access…' : 'Preparing your LIVE room…');
-    try {
-      // Acquire browser media permission directly from the Go LIVE click.
-      // This avoids waiting for the authenticated API round-trip before the
-      // browser is asked to grant camera and microphone access.
-      if (Platform.OS === 'web') {
-        if (!navigator.mediaDevices?.getUserMedia) {
-          throw new Error('LIVE requires a secure HTTPS browser with camera and microphone support.');
-        }
-        const permissionStream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-          video: experienceMode === 'audio_room' ? false : { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
-        });
-        permissionStream.getTracks().forEach((track) => track.stop());
-      }
-      setStartStage('Creating your LIVE room…');
-      const connection = await backendFetch('/live', {
-        method: 'POST',
-        body: JSON.stringify({
-          title: title.trim(), description: description.trim(), visibility, allowGuests,
-          experienceMode, category,
-          inviteeIds: visibility === 'private' ? invitees : [],
-        }),
-      });
-      if (!connection?.stream?.id || !connection?.livekitUrl || !connection?.token) {
-        throw new Error(connection?.message || 'The server did not return a complete LIVE room connection. Please try again.');
-      }
-      setStartStage('Opening your LIVE studio…');
-      navigation.navigate('LiveStream', { streamId: connection.stream.id, creatorMode: true });
-      setTitle('');
-      setDescription('');
-      setSelectedInvitees([]);
-      setExperienceMode('broadcast');
-      setCategory('social');
-    } catch (e) {
-      const message = e?.message || 'The media service may not be configured yet.';
-      setError(`Could not start LIVE: ${message}`);
-      if (Platform.OS !== 'web') Alert.alert('Could not start LIVE', message);
-    } finally {
-      setBusy(false);
-      setStartStage('');
-    }
+    // Keep room creation out of the setup form. The dedicated pre-flight
+    // screen obtains device permissions and creates the room only after
+    // the creator has reviewed the final audience and experience settings.
+    navigation.navigate('LivePreflight', {
+      title: title.trim(),
+      description: description.trim(),
+      visibility,
+      allowGuests,
+      experienceMode,
+      category,
+      inviteeIds: visibility === 'private' ? invitees : [],
+    });
   };
 
   const joinLive = async (stream) => {
@@ -557,7 +525,6 @@ export default function LiveHubScreen({ navigation, route }) {
                 {busy ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name="radio" size={20} color={colors.onPrimary} />}
                 <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>{busy ? 'Connecting…' : 'Go LIVE'}</Text>
               </TouchableOpacity>
-              {!!startStage && <Text accessibilityRole="status" style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>{startStage}</Text>}
               </>}
             </GlassCard>
 
