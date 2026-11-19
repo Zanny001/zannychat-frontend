@@ -1,0 +1,193 @@
+# ZannyChat Master Delivery Register
+
+**Status:** Baseline reconciliation in progress  
+**Last reconciled:** 2026-11-19  
+**Companion charter:** [Master Product, Architecture & Design Blueprint](./ZANNYCHAT_MASTER_BLUEPRINT.md)
+
+> This is the single execution ledger. Update each row with an owner, source path, PR/commit, tests, deployment evidence and next action. Status labels describe evidence, not optimism.
+
+## Status vocabulary
+
+- **Accepted:** verified in production against explicit acceptance criteria.
+- **Implemented:** code exists; production acceptance may still be outstanding.
+- **Merged:** merged to main; not automatically deployed or accepted.
+- **In review:** open PR awaiting review/CI/merge.
+- **In progress:** active implementation.
+- **Not started:** no verified implementation.
+- **Blocked:** dependency or risk prevents safe progress.
+- **Needs revalidation:** prior evidence is stale or incomplete.
+
+Never infer Accepted from route presence, a green build, a prototype, a merged PR or a successful deployment alone.
+
+## 1. Project state snapshot
+
+| Area | Last known evidence | Current register status | Required reconciliation |
+|---|---|---|---|
+| Crown Aurora direction | Frontend audit records palette, contrast principles and initial shared component work | Needs revalidation | Inspect current main and all open UI PRs; do not revive closed PR #85 blindly |
+| LIVE core UX | PR #170 and PR #176 reported merged; themed modes, guest layout and controls | Merged; production acceptance reported by user | Preserve functionality; only reopen defects supported by new evidence |
+| LIVE backend RPC safety | Backend PR #151 reported merged and Render deploy live | Needs revalidation | Verify current backend main and Render deployed SHA |
+| LIVE migrations | Two named migrations applied through successful guarded workflow run 44501209658 | Applied; do not rerun | Verify migration history only if needed; any correction is a new forward migration |
+| Replay | Pipeline source exists; prior production evidence had zero replay rows/objects | Needs production revalidation | Check current recording, row/object creation and authorized playback independently |
+| Full app inventory | 46 registered modules / 48 experiences recorded in later audit | Inventory baseline | Reparse current route registry and reconcile additions/removals |
+| Parity scope | Retrieved parity gap analysis based on supplied original audit | Scope recorded; original source not re-opened in this pass | Retrieve original source before claiming any missing detail |
+| Account isolation | PRs #146/#147 merged in a previous audit; two-account acceptance was outstanding then | Needs revalidation | Run two-account tests across chat/media/realtime/calls/LIVE |
+| Backend deployment | Historical audit reported main/deploy SHA divergence; PR #151 later deployed | Needs revalidation | Compare current main SHA to Render deploy SHA |
+| Production frontend | Previous conversation reported Vercel READY at commit 55fb010 | Needs revalidation | Verify current production deployment and exact SHA |
+
+## 2. Open PR reconciliation — do not duplicate
+
+The following open frontend PRs were returned by GitHub on 2026-11-19. Their status and branch head must be rechecked before merge. Review diffs and CI; update this table after each decision.
+
+| PR | Scope | Current handling |
+|---|---|---|
+| [#149](https://github.com/Zanny001/zannychat-frontend/pull/149) | Docs: reconcile 17 Nov release and production evidence; 46 modules / 48 experiences; account-isolation and replay evidence | Reconcile with this register; avoid duplicate documentation and preserve unique evidence |
+| [#151](https://github.com/Zanny001/zannychat-frontend/pull/151) | Stories/status feed virtualization | Inspect diff/CI and merge only if current, non-conflicting and green |
+| [#159](https://github.com/Zanny001/zannychat-frontend/pull/159) | Bounded local collection/forwarding screens | Inspect diff/CI and merge only if current, non-conflicting and green |
+| [#160](https://github.com/Zanny001/zannychat-frontend/pull/160) | Bounded New Chat contact directory rendering | Inspect diff/CI and merge only if current, non-conflicting and green |
+| [#161](https://github.com/Zanny001/zannychat-frontend/pull/161) | Bounded inbox conversation rendering | Inspect diff/CI and merge only if current, non-conflicting and green |
+
+**Closed historical branch:** PR #85 (Crown Aurora premium system) was reported closed and unmerged. Do not reopen or cherry-pick wholesale. Inspect current main and recover only specific missing, tested changes with a clear reason.
+
+## 3. Product domains and acceptance backlog
+
+### A. Foundation, architecture and governance
+
+| ID | Deliverable | Acceptance evidence | Status |
+|---|---|---|---|
+| A-01 | Maintain this blueprint and one delivery register | Both documents versioned in GitHub; every active task links here | In progress |
+| A-02 | Reconcile frontend/backend main, active PRs, CI and deployment SHAs | Dated evidence for both repos and production services | Needs revalidation |
+| A-03 | Map actual frontend domain/module boundaries and dependencies | Current route/module inventory, dependency map, ownership and duplication findings | Not started |
+| A-04 | Map backend routes, services, workers and provider adapters | Route-to-domain map, data flow and external dependency inventory | Not started |
+| A-05 | Map Supabase tables, RPCs, triggers, RLS, storage and migration history | Production-aware schema/security map with owner and purpose | Not started |
+| A-06 | Establish feature contracts and error/result conventions | Shared typed contracts and regression tests | Not started |
+| A-07 | Add operational/rollback runbooks and deployment evidence | Health, logs, backup/restore and rollback procedures verified | Not started |
+
+### B. Design system and complete interface audit
+
+| ID | Screen / system | Acceptance evidence | Status |
+|---|---|---|---|
+| UI-01 | Design tokens, typography, semantic themes, spacing, radii, elevation, motion | Token inventory, theme matrix and contrast tests | Needs revalidation |
+| UI-02 | Shared Header, GlassCard, buttons, fields, rows, sheets, dialogs, tabs, navigation | Shared component catalogue and visual/interaction tests | Needs revalidation |
+| UI-03 | Main / Chats | Responsive visual review; pagination, unread, filters, search, empty/error/offline states | In review — PR #161 |
+| UI-04 | Chat | Composer, messages, replies, media, actions, receipts, keyboard and reconnect states | Not started |
+| UI-05 | New Chat / contact discovery | Search, permissions, keyboard, bounded list, empty/error states | In review — PR #160 |
+| UI-06 | Forward Message, Saved Messages, Drafts, Pinned Messages, Chat Folders | Real data, bounded rendering, actions, state and accessibility checks | In review — PR #159 |
+| UI-07 | Shared Media / Chat Appearance | Responsive media bounds, filtering, theme preview and persistence | Not started |
+| UI-08 | Updates / Stories | Creation, viewing, audiences, expiry, viewers, reactions, replies, mute and reporting | In review — PR #151; feature parity incomplete |
+| UI-09 | Calls family | Incoming/outgoing, history, direct/group call, participant and failure states | Needs revalidation |
+| UI-10 | LIVE family | All 18 audited experiences, 32 capabilities, safety and state coverage | Merged core work; detailed acceptance evidence needed |
+| UI-11 | Auth family | Onboarding, login/signup, OTP, recovery/reset, validation and error states | Not started |
+| UI-12 | Profile/account family | Profile/edit, peer profile, QR, sessions, settings, notifications | Not started |
+| UI-13 | Privacy/data/support family | Privacy/security, export, storage, help, account lifecycle | Not started |
+| UI-14 | Channels / Explore / Groups / Events / Polls | Discovery, management, admin, posting and moderation flows | Not started |
+| UI-15 | Responsive + accessibility matrix | Narrow/common/large phone, tablet, desktop; keyboard, screen reader, high contrast, text scale, reduced motion | Not started |
+| UI-16 | Physical-device verification | Android 10/11 and modern Android; supported iOS device; media/call permissions and lifecycle | Not started |
+
+### C. Messaging reliability and advanced communication
+
+| ID | Deliverable | Acceptance evidence | Status |
+|---|---|---|---|
+| MSG-01 | Reliable send/edit/delete/reply/forward/reaction/pin/save | Two-account integration tests; correct ordering and ownership | Needs revalidation |
+| MSG-02 | Delivery/read states and unread consistency | Server-authoritative state and reconnect tests | Not started |
+| MSG-03 | Media upload/download, progress, retry, cancellation and cleanup | Private storage tests, interrupted-network tests, signed URL expiry | Needs revalidation |
+| MSG-04 | Offline queue and reconnect reconciliation | No duplicate/lost messages under network interruption | Not started |
+| MSG-05 | Search across chats, contacts, groups and messages | Permission-aware search and pagination tests | Implemented partially; needs revalidation |
+| MSG-06 | Scheduled/silent messages and notification delivery | Worker schedule evidence, opt-out compliance and failure handling | Needs revalidation |
+| MSG-07 | Advanced message types (polls/quizzes, events, location, view-once, transcripts, formatting) | Per-type product/API/data/security/UI contract and tests | Not started |
+
+### D. Social, groups and channels
+
+| ID | Deliverable | Acceptance evidence | Status |
+|---|---|---|---|
+| SOC-01 | Full Stories/Status vertical slice | 24-hour expiry, audience enforcement, viewers/replies/reactions, cleanup | In review / incomplete |
+| SOC-02 | Groups and advanced administration | Roles, permissions, invite expiry/limits, join requests, logs, slow mode | Not started |
+| SOC-03 | Communities and announcement spaces | Parent/child model, permissions, discovery and moderation | Not started |
+| SOC-04 | Channels | Public/private discovery, follower management, posts, reactions, polls, counters, comments/discussion, protected content | Not started |
+| SOC-05 | Events and polls | Real create/respond/close flows, privacy, results and abuse controls | Not started |
+
+### E. Calls and LIVE
+
+| ID | Deliverable | Acceptance evidence | Status |
+|---|---|---|---|
+| CALL-01 | Direct audio/video call reliability | Two accounts hear/see each other; permissions, reconnect, cleanup | Needs revalidation |
+| CALL-02 | Mid-call audio/video switching | Switch without dropping session; device/permission tests | Needs revalidation |
+| CALL-03 | Group calls and participant management | Add/remove, mute, role and leave/end semantics | Needs revalidation |
+| CALL-04 | Call history, privacy and recovery | Server history, missed/failed states, session cleanup | Needs revalidation |
+| LIVE-01 | 18-screen Crown Aurora LIVE experience | All screens responsive, accessible and connected to actual services | Merged core; audit incomplete |
+| LIVE-02 | Broadcast/Audio/Video room modes | Mode-specific permissions and correct media publishing | Implemented; production revalidation |
+| LIVE-03 | Five-guest queue/invites/approval/removal | Enforced five-guest limit and authorization tests | Implemented; production revalidation |
+| LIVE-04 | Movable/resizable guest tiles | Bounded drag/resize on supported devices and reduced-motion fallback | Implemented; device QA needed |
+| LIVE-05 | Chat/comments/reactions/moderation/reports | Two-account delivery, rate limits, hide/block/report and moderator permissions | Needs revalidation |
+| LIVE-06 | Battles/events/gifts/wallet/leaderboard/analytics | Real transactional models, abuse controls, clear Naira/unit conversion and audit trail | Not started / verify existing partial code |
+| LIVE-07 | Replay recording/library/player | Egress completion, DB row, private object, signed playback, unauthorized denial | Source exists; production evidence needed |
+| LIVE-08 | LIVE discovery/creator profile/notifications/settings | Real data, privacy and navigation | Needs revalidation |
+| LIVE-09 | LIVE safety | Age/consent/blur/report/evidence and minor-safety controls | Blocked before random matching ships |
+
+### F. Privacy, security and platform integrity
+
+| ID | Deliverable | Acceptance evidence | Status |
+|---|---|---|---|
+| SEC-01 | Full RLS and ownership audit | Table-by-table policies plus allowed/denied two-account tests | Needs revalidation |
+| SEC-02 | RPC/function security audit | Grants, SECURITY DEFINER, search_path, input validation and role tests | Needs revalidation |
+| SEC-03 | Storage access audit | Public/private bucket intent, object ownership, signed URL tests | Needs revalidation |
+| SEC-04 | Auth/session/device security | Token refresh, revocation, expiry, session isolation and recovery | Needs revalidation |
+| SEC-05 | CORS, webhook and secrets review | Explicit origins, signature validation, secret rotation/no leakage | Needs revalidation |
+| SEC-06 | Data export/deletion and retention | Verified export, deletion integrity, cleanup and audit evidence | Needs revalidation |
+| SEC-07 | E2EE architecture and threat model | Independent protocol review, device keys, verification, revocation and recovery | Not started; do not claim E2EE |
+| SEC-08 | Encrypted backup/restore | Key recovery, cross-device restore and security review | Not started |
+| SEC-09 | Abuse prevention and moderation | Rate limits, reports, blocks, evidence retention, appeals and operational workflow | Needs revalidation |
+
+### G. Platform expansion (gated, not assumed shipped)
+
+| ID | Deliverable | Acceptance evidence | Status |
+|---|---|---|---|
+| EXT-01 | Linked-device QR pairing | Per-device identity/key lifecycle, approval, revocation and tests | Not started |
+| EXT-02 | Bot API and bot permissions | Versioned API, scopes, abuse controls and developer docs | Not started |
+| EXT-03 | Mini Apps | Sandboxing, permission model, origin isolation and review process | Not started |
+| EXT-04 | Business tools/catalogues | Business identity, admin roles, customer privacy and workflows | Not started |
+| EXT-05 | Monetization/subscriptions/paid media | Payment provider, compliance, fees, refunds, fraud and audit controls | Blocked pending product/legal/provider review |
+
+## 4. Release gates
+
+A release cannot pass until applicable gates have recorded evidence:
+
+1. **Source gate:** clean diff, reviewed PR, no duplicate implementation, no secrets.
+2. **Contract gate:** unit, contract, integration and regression tests pass.
+3. **Security gate:** ownership, RLS, RPC, storage, CORS and two-account tests pass.
+4. **UX gate:** responsive layout, accessibility, keyboard, theme and reduced-motion checks pass.
+5. **Platform gate:** web export and applicable Android/iOS build/device checks pass.
+6. **Data gate:** migration compatibility, backup, forward-only plan and rollback strategy verified.
+7. **Operations gate:** health/readiness, logs, workers, provider dependencies and alerts checked.
+8. **Deployment gate:** exact commit deployed; production smoke tests and rollback readiness recorded.
+9. **Acceptance gate:** user-visible flow works with real accounts and real data; evidence is linked here.
+
+## 5. Immediate execution order
+
+1. Reconcile current GitHub main, all open PRs, CI, backend main and Render/Vercel deployed SHAs. Decide each PR: merge, revise, close or defer—no blind merges.
+2. Reconcile PR #149's audit evidence with this canonical register; retain unique facts, eliminate duplicate competing ledgers.
+3. Complete the architecture baseline: frontend route/domain map, backend route/service map, Supabase data/RLS/storage map, provider/worker map.
+4. Continue sequential interface work from Main/Chats through Chat, New Chat, message utilities, Shared Media and Chat Appearance; then proceed through remaining registered screens without skipping.
+5. In parallel only where no overlapping files/domains, close the bounded rendering PRs and Stories work.
+6. Complete messaging reliability and two-account acceptance before adding advanced message types.
+7. Complete Stories, Groups/Communities, Channels and Events vertical slices.
+8. Complete calls reliability and LIVE production acceptance, including replay pipeline proof and safety gates.
+9. Complete privacy/security, E2EE and encrypted backup as separate reviewed programmes.
+10. Only then expand bots, Mini Apps, business and monetization after product/legal/provider decisions.
+
+## 6. Session handover checklist
+
+At the start of every work session:
+- Read this register and the Master Blueprint.
+- Check current main SHA in both repositories.
+- List open PRs and inspect overlapping files.
+- Check latest CI results and failed jobs.
+- Check current Vercel/Render deployment SHAs and status.
+- Check Supabase migration history before any DB action.
+- Identify the single highest-priority unblocked item and continue it.
+- Update this register with the exact checkpoint before ending.
+
+At the end of every work session:
+- Record changes, PR/commit, CI run, migration/deployment evidence, test results and unresolved blockers.
+- Update statuses truthfully.
+- Leave one precise next action and its dependencies.
+- Never mark the overall programme complete until every in-scope requirement is Accepted or explicitly descoped with the user's approval.
