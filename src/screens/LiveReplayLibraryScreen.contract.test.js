@@ -51,8 +51,8 @@ test('LIVE Hub replay deletion verifies ownership, active identity and pending s
 
 test('creator studio replay deletion is owner-only in both UI and handler', () => {
   assert.ok(creatorStudio.includes('getReplayCreatorId(item) !== expectedUserId'));
-  assert.ok(creatorProfile.includes('getReplayCreatorId(item) === activeUserIdRef.current'));
-  assert.ok(creatorProfile.includes('item?.creator_id || profile.id'));
-  assert.ok(creatorProfile.includes('beforeConfirmUser?.id !== expectedUserId'));
-  assert.ok(creatorProfile.includes('userAfterDelete?.id !== expectedUserId'));
+  assert.ok(creatorStudio.includes('getReplayCreatorId(item) === activeUserIdRef.current'));
+  assert.ok(creatorStudio.includes('item?.creator_id || profile.id'));
+  assert.ok(creatorStudio.includes('beforeConfirmUser?.id !== expectedUserId'));
+  assert.ok(creatorStudio.includes('userAfterDelete?.id !== expectedUserId'));
 });
