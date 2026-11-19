@@ -33,3 +33,9 @@ test('creator broadcast and replay deletions cannot mutate another account\'s re
   assert.equal((source.match(/const expectedUserId = activeUserIdRef.current/g) || []).length, 2);
   assert.equal((source.match(/latestUser\?\.id !== expectedUserId/g) || []).length, 3);
 });
+
+test('owner dashboard is consistently presented as Creator Studio', () => {
+  assert.ok(source.includes('CREATOR STUDIO'));
+  assert.ok(source.includes('Your LIVE Creator Studio is temporarily unavailable.'));
+  assert.ok(source.includes('Refresh Creator Studio'));
+});
