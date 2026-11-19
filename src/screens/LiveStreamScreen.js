@@ -534,15 +534,22 @@ export default function LiveStreamScreen({ route, navigation }) {
   const toggleCamera = (enabled) => setCameraEnabled(enabled);
   const toggleMicrophone = (enabled) => setMicrophoneEnabled(enabled);
 
+  const returnFromLive = useCallback(() => {
+    if (route.params?.returnToCreatorProfile && navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    // replace also handles direct/deep-linked LIVE entry with no prior route.
+    navigation.replace('LiveHub');
+  }, [navigation, route.params?.returnToCreatorProfile]);
+
   const exitEndedStream = useCallback(() => {
     if (endedRef.current) return;
     endedRef.current = true;
     setBusy(false);
     setConnection(null);
-    // replace, rather than goBack, also handles direct/deep-linked LIVE entry
-    // where there is no previous navigation route to return to.
-    navigation.replace('LiveHub');
-  }, [navigation]);
+    returnFromLive();
+  }, [returnFromLive]);
 
   const refreshComments = useCallback(async () => {
     if (!stream?.id || !isAppForeground() || commentsRefreshInFlight.current) return;
@@ -696,7 +703,7 @@ export default function LiveStreamScreen({ route, navigation }) {
     try {
       await backendFetch(`/live/${stream.id}/${creatorMode ? 'end' : 'leave'}`, { method: 'POST' });
       setBusy(false);
-      navigation.replace('LiveHub');
+      returnFromLive();
     } catch (error) {
       endedRef.current = false;
       setBusy(false);
