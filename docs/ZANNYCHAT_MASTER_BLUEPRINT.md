@@ -51,7 +51,7 @@ Preserve all six existing primary destinations:
 
 Do not remove or rename destinations simply to imitate a mockup. Secondary destinations remain discoverable through contextual navigation, profile/settings and feature-specific entry points. Keep navigation labels, selected state, back behaviour, deep links and Android hardware-back behaviour consistent.
 
-The canonical screen review sequence begins with Main/Chats, then Chat, New Chat, Forward Message, Saved Messages, Drafts, Pinned Messages, Chat Folders, Shared Media and Chat Appearance; continue through every registered screen family in the register. The agreed full audit scope is **48 navigation experiences**. A current source parse on 2026-11-19 finds **47 unique screen modules imported** by `AppNavigator.js`, 48 RootStack.Screen declarations (44 unique stack names because four names are conditionally declared more than once), and six primary tabs. The earlier 46-module count is historical and stale; the additional imported module is `LiveReplayLibraryScreen`. The 48 experience scope is the audit inventory below; module count, route declarations and experience count are distinct metrics.
+The canonical screen review sequence begins with Main/Chats, then Chat, New Chat, Forward Message, Saved Messages, Drafts, Pinned Messages, Chat Folders, Shared Media and Chat Appearance; continue through every registered screen family in the register. The agreed full audit scope is **48 navigation experiences**. A current source parse on 2026-11-19 finds **47 unique screen modules imported** by `AppNavigator.js`, 48 RootStack.Screen declarations, 44 unique stack route names (including the `Main` tab-container route), and six primary tabs. Four route names are conditionally declared more than once. The earlier 46-module count is historical and stale; `LiveReplayLibraryScreen` is now present. The 48 experiences are the 44 unique stack route names excluding the `Main` container, plus the six tabs, with `Channels` counted once. Module count, declarations and experience count are distinct metrics.
 
 ### Canonical 48-experience inventory
 1. Onboarding
@@ -60,7 +60,7 @@ The canonical screen review sequence begins with Main/Chats, then Chat, New Chat
 4. Verify Email
 5. Password Recovery
 6. Password Reset
-7. Main navigation shell
+7. LIVE Replay Library
 8. Chats
 9. Chat
 10. New Chat
