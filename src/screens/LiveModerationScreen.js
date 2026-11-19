@@ -94,6 +94,7 @@ export default function LiveModerationScreen({ route, navigation }) {
       }
       await refresh(true);
     } catch (e) {
+      if (actionId !== actionGeneration.current) return;
       showAppAlert('Could not update LIVE participant', e?.message || 'Refresh the participant list and try again.');
       await refresh(true);
     } finally {
