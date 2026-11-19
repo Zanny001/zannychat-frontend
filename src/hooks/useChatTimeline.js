@@ -236,8 +236,8 @@ export default function useChatTimeline({ conversationId, myUserId, activeUserId
 
   return {
     messages, setMessages, loadingMessages, messageLoadError, olderLoadError,
-    hasMore, loadingOlder, load, loadOlder, reactions, setReactions,
-    participantReadState, messageDeliveryState, setMessageDeliveryState,
+    hasMore, loadingOlder, loadOlder, reactions, setReactions,
+    participantReadState, messageDeliveryState,
     peerTyping, onlineIds, resetTimeline,
   };
 }
