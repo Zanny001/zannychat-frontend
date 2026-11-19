@@ -41,9 +41,16 @@ export async function loadLivePreferences(userId) {
 export async function saveLivePreferences(userId, preferences) {
   assertAccount(userId);
   const normalized = normalizeLivePreferences(preferences);
+  // updatedAt is server-owned metadata returned by GET/PUT, never a writable field.
+  const payload = {
+    experienceMode: normalized.experienceMode,
+    visibility: normalized.visibility,
+    category: normalized.category,
+    allowGuests: normalized.allowGuests,
+  };
   const response = await backendFetch('/live/creators/me/preferences', {
     method: 'PUT',
-    body: JSON.stringify(normalized),
+    body: JSON.stringify(payload),
   });
   return normalizeLivePreferences(response?.preferences);
 }
