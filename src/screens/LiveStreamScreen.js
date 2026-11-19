@@ -957,12 +957,12 @@ export default function LiveStreamScreen({ route, navigation }) {
   const openCreatorProfile = useCallback(() => {
     if (!stream?.creator_id) return;
     navigation.navigate('LiveCreatorProfile', {
-      participant: { id: stream.creator_id, name: stream.creator_name || 'LIVE Creator' },
+      participant: { id: stream.creator_id, name: route.params?.creatorName || stream.creator_name || 'LIVE Creator', avatarColor: route.params?.creatorAvatarColor || stream.creator_avatar_color },
       fromLive: true,
       currentLiveStreamId: null,
       isCurrentUser: creatorMode,
     });
-  }, [creatorMode, navigation, stream?.creator_id, stream?.creator_name, stream?.id]);
+  }, [creatorMode, navigation, route.params?.creatorName, route.params?.creatorAvatarColor, stream?.creator_id, stream?.creator_name]);
 
   const viewReplay = () => {
     if (!replay?.id) return;
