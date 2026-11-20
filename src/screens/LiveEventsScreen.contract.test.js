@@ -64,3 +64,11 @@ test('LIVE Events screen has accessible controls and loading, error and empty st
   assert.ok(screen.includes('accessibilityRole="alert"'));
   assert.ok(screen.includes('No upcoming Events yet'));
 });
+
+
+test('LIVE Events uses the shared premium content width and clear Hub navigation',()=>{
+  assert.ok(screen.includes("maxWidth:760"));
+  assert.ok(screen.includes("alignSelf:'center'"));
+  assert.ok(screen.includes('Back to LIVE Hub'));
+  assert.ok(screen.includes('UPCOMING EVENT'));
+});
