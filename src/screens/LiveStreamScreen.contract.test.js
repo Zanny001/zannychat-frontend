@@ -532,3 +532,15 @@ test('LIVE web creator roster cannot remove or appoint the host as a participant
   assert.ok(webScreen.includes("item.joined && item.role !== 'creator'"));
   assert.ok(webScreen.includes("item.role !== 'creator' && (item.moderator || item.joined)"));
 });
+
+
+test('native and web floating LIVE video tiles adapt to portrait and landscape viewport changes', () => {
+  assert.ok(screen.includes('useWindowDimensions'));
+  assert.ok(screen.includes('const boundsRef = useRef(bounds); boundsRef.current = bounds;'));
+  assert.ok(screen.includes('Math.min(boundsRef.current.width - current.width'));
+  assert.ok(screen.includes('Math.min(boundsRef.current.height - current.height'));
+  assert.ok(webScreen.includes('useWindowDimensions'));
+  assert.ok(webScreen.includes('const boundsRef = useRef(bounds); boundsRef.current = bounds;'));
+  assert.ok(webScreen.includes('Math.min(boundsRef.current.width - current.width'));
+  assert.ok(webScreen.includes('Math.min(boundsRef.current.height - current.height'));
+});
