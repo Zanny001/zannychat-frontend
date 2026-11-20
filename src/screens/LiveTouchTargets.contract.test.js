@@ -57,9 +57,12 @@ test('native and web LIVE overlays respect device insets without shrinking full-
   assert.match(native, /const insets = useSafeAreaInsets\(\)/);
   assert.match(native, /top: Math\.max\(insets\.top \+ 8/);
   assert.match(native, /top: Math\.max\(insets\.top \+ 72/);
+  assert.match(native, /top: Math\.max\(insets\.top \+ 118/);
+  assert.match(native, /top: Math\.max\(insets\.top \+ 164/);
   assert.match(native, /bottom: Math\.max\(insets\.bottom \+ 12/);
   assert.match(web, /const insets = useSafeAreaInsets\(\)/);
   assert.match(web, /top: insets\.top/);
+  assert.match(web, /top: insets\.top \+ 164/);
   assert.match(web, /bottom: 12 \+ insets\.bottom/);
   assert.match(web, /bottom: 150 \+ insets\.bottom/);
   assert.match(web, /return <View style=\{\{ flex: 1, minHeight: '100%'/);
