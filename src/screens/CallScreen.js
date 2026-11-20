@@ -17,7 +17,7 @@ import { getIceNetworkNotice } from '../utils/callNetworkStatus';
 const FALLBACK_ICE_SERVERS = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
 
 export default function CallScreen({ route, navigation }) {
-  const { colors, typography, resolvedMode } = useTheme();
+  const { colors, typography, resolvedMode, layout } = useTheme();
   const { call: initialCall, callId, conversationId, callType = 'audio', isCaller = false, participantName = 'ZannyChat contact', avatarColor, nativeCallId = null, nativeRequestId = null } = route.params || {};
   const [activeCallType, setActiveCallType] = useState(initialCall?.call_type || callType);
   const [remoteVideoActive, setRemoteVideoActive] = useState(false);
@@ -613,14 +613,14 @@ export default function CallScreen({ route, navigation }) {
       <StatusBar barStyle={!immersiveVideo && resolvedMode === 'light' ? 'dark-content' : 'light-content'} />
       {remoteVideoActive && remoteStream ? <RTCView streamURL={remoteStream.toURL()} objectFit="cover" style={StyleSheet.absoluteFill} /> : null}
       {activeCallType === 'video' && localStream && !cameraOff ? <RTCView streamURL={localStream.toURL()} mirror objectFit="cover" style={styles.localVideo} /> : null}
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, { width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }]}>
         <TouchableOpacity onPress={() => endCall(isCaller && call?.status === 'ringing' ? 'cancelled' : 'ended')} accessibilityRole="button" accessibilityLabel="Close call"><Ionicons name="chevron-down" size={26} color={foreground} /></TouchableOpacity>
         <View style={[styles.encryption, { backgroundColor: immersiveVideo ? 'rgba(255,255,255,0.08)' : hexToRgba(colors.surface, 0.78), borderColor: colors.border, borderWidth: immersiveVideo ? 0 : 1 }]}><Ionicons name="lock-closed" size={12} color={colors.accent} /><Text style={[typography.small, styles.encryptionText, { color: secondaryForeground }]}>Encrypted media transport</Text></View>
         {phase === 'Connected' && call?.status === 'accepted'
           ? <TouchableOpacity onPress={() => setInvitePickerVisible(true)} accessibilityRole="button" accessibilityLabel="Add people to call" style={styles.addPeopleButton}><Ionicons name="person-add" size={21} color={foreground} /></TouchableOpacity>
           : <View style={{ width: 26 }} />}
       </View>
-      <View style={styles.identity}>
+      <View style={[styles.identity, { width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center' }]}>
         {!remoteVideoActive ? <Avatar name={participantName} color={avatarColor || colors.primary} size={108} /> : null}
         <Text numberOfLines={2} style={[typography.display, styles.name, { color: foreground, maxWidth: '100%', paddingHorizontal: 8 }]}>{participantName}</Text>
         <Text style={[typography.body, styles.phase, { color: secondaryForeground }]}>{phase === 'Connected' ? formatTime(seconds) : phase}</Text>
@@ -629,7 +629,7 @@ export default function CallScreen({ route, navigation }) {
         {phase === 'Unavailable' ? <TouchableOpacity onPress={() => Alert.alert('Call unavailable', errorText || 'Please try again.')} accessibilityRole="button" accessibilityLabel="Show call connection details" style={[styles.retry, { backgroundColor: immersiveVideo ? 'rgba(255,255,255,0.12)' : colors.primary, borderRadius: 12 }]}><Text style={[typography.small, styles.retryText, { color: immersiveVideo ? '#FFFFFF' : colors.onPrimary }]}>Call details</Text></TouchableOpacity> : null}
         {phase !== 'Connected' && phase !== 'Unavailable' ? <ActivityIndicator style={{ marginTop: 18 }} color={foreground} /> : null}
       </View>
-      <View style={styles.bottom}>
+      <View style={[styles.bottom, { width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }]}>
         <View style={styles.controlsRow}>
           {iconButton(speakerOn ? 'volume-high' : 'volume-low', speakerOn ? 'Speaker' : 'Earpiece', toggleSpeaker, speakerOn)}
           {iconButton(muted ? 'mic-off' : 'mic', muted ? 'Unmute' : 'Mute', toggleMute, muted)}
