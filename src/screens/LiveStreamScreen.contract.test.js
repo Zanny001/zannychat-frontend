@@ -610,3 +610,19 @@ test('native LIVE guest video tiles use an adaptive non-overlapping stage layout
   assert.ok(screen.includes('count={floatingGuestVideos.length}'));
   assert.ok(screen.includes('getLiveStageTileFrame({ index, count, width: bounds.width, height: bounds.height })'));
 });
+
+
+test('native and web creator recovery keeps the loading state until the recovered stream join resolves', () => {
+  const nativeStart = screen.indexOf('    if (!streamId) {');
+  const nativeEnd = screen.indexOf('    if (initialConnection?.stream?.id === streamId', nativeStart);
+  const nativeRecovery = screen.slice(nativeStart, nativeEnd);
+  const webStart = webScreen.indexOf('    if (!streamId) {');
+  const webEnd = webScreen.indexOf('    if (initialConnection?.stream?.id === streamId', webStart);
+  const webRecovery = webScreen.slice(webStart, webEnd);
+  for (const recovery of [nativeRecovery, webRecovery]) {
+    assert.ok(recovery.includes('let recoveredActiveStream = false;'));
+    assert.ok(recovery.includes('recoveredActiveStream = true;'));
+    assert.ok(recovery.includes('!recoveredActiveStream'));
+    assert.equal(recovery.includes('!recoveredStreamId'), false);
+  }
+});
