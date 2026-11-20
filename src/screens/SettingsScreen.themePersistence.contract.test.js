@@ -13,7 +13,7 @@ test('theme preference storage failures are surfaced instead of silently swallow
   assert.match(theme, /void persist\(\(\) => AsyncStorage\.setItem\(MOOD_STORAGE_KEY, key\), 'mood'\)/);
   assert.match(theme, /void persist\(\(\) => AsyncStorage\.setItem\(APPEARANCE_STORAGE_KEY, mode\), 'appearance'\)/);
   assert.match(theme, /void persist\(\(\) => AsyncStorage\.multiSet\(/);
-  assert.match(theme, /\.catch\(\(\) => \{\s*if \(active\) setPersistenceError/);
+  assert.match(theme, /\.catch\(\(\) => \{\s*if \(active\) \{\s*failedPreferencesRef\.current\.add\('load'\)/);
 });
 
 test('settings exposes a dismissible accessible warning for preference persistence failures', () => {
