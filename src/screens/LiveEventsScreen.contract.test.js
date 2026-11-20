@@ -27,7 +27,7 @@ test('LIVE Events screen uses authenticated service-backed scheduling and RSVP a
   assert.ok(screen.includes("method:'PATCH'"));
   assert.ok(screen.includes('Save Event changes'));
   assert.ok(screen.includes('Cancel my RSVP'));
-  assert.ok(screen.includes("disabled={busy||(event.rsvpStatus!=='going'&&event.attendeeCount>=event.maxAttendees)}"));
+  assert.ok(screen.includes("disabled={busy||(event.rsvpStatus!=='going'&&attendeeCount>=maxAttendees)}"));
   assert.ok(preflight.includes('const streamEnded = await backendFetch'));
   assert.ok(preflight.includes("navigation.replace('LiveStream', { streamId: connection.stream.id, creatorMode: true })"));
   assert.ok(screen.includes("method:'PATCH'"));
@@ -71,4 +71,14 @@ test('LIVE Events uses the shared premium content width and clear Hub navigation
   assert.ok(screen.includes("alignSelf:'center'"));
   assert.ok(screen.includes('Back to LIVE Hub'));
   assert.ok(screen.includes('UPCOMING EVENT'));
+});
+
+
+test('LIVE Event cards provide date hierarchy, audience labels and accessible capacity progress',()=>{
+  assert.ok(screen.includes('accessibilityRole="progressbar"'));
+  assert.ok(screen.includes('accessibilityValue={{min:0,max:100,now:capacityPercent}}'));
+  assert.ok(screen.includes("startsAt.toLocaleString(undefined,{month:'short'})"));
+  assert.ok(screen.includes("startsAt.toLocaleString(undefined,{weekday:'short'})"));
+  assert.ok(screen.includes("event.visibility === 'private' ? 'INVITE ONLY'"));
+  assert.ok(screen.includes("capacityPercent>=100?'FULL':capacityPercent+'% RESERVED'"));
 });
