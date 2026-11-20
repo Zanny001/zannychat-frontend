@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, StyleSheet, Modal, Image, Pressable, StatusBar } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View, StyleSheet, Modal, Image, Pressable, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import Avatar from '../components/Avatar';
@@ -199,7 +200,7 @@ export default function PeerProfileScreen({ route, navigation }) {
     }
   };
 
-  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+  return <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
     <Header title={fromLive ? "LIVE Creator" : "Profile"} onBack={() => navigation.goBack()} right={<View style={{ flexDirection: 'row', alignItems: 'center', paddingRight: spacing.xs }}><View style={[styles.livePill, { backgroundColor: hexToRgba(online ? colors.online : colors.textSecondary, 0.12), borderColor: hexToRgba(online ? colors.online : colors.textSecondary, 0.26) }]}><View style={[styles.liveDot, { backgroundColor: online ? colors.online : colors.textSecondary }]} /><Text style={[typography.caption, { color: online ? colors.online : colors.textSecondary, fontWeight: '700' }]}>{online ? 'ONLINE' : 'CONTACT'}</Text></View></View>} />
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.xl, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
       <GlassCard style={{ borderRadius: 30, overflow: 'hidden' }} contentStyle={{ padding: 0 }} intensity={48} tintAlpha={0.56}>
