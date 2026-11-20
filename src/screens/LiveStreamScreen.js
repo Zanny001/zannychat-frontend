@@ -21,6 +21,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 import LiveCategoryBackdrop from '../components/LiveCategoryBackdrop';
 import { formatLiveBroadcastTimeRemaining, getLiveBroadcastTimeRemaining, LIVE_BROADCAST_WARNING_MS } from '../utils/liveBroadcastTimeout';
+import { getActiveCreatorStreamId } from '../utils/liveCreatorRecovery';
 
 const LIVE_REACTION_EMOJI = Object.freeze({ heart: '❤️', clap: '👏', laugh: '😂', wow: '😮', fire: '🔥', idea: '💡', support: '🙌' });
 const isAppForeground = () => !AppState.currentState || AppState.currentState === 'active';
@@ -472,10 +473,14 @@ function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarn
 
 export default function LiveStreamScreen({ route, navigation }) {
   const { colors } = useTheme();
-  const initialConnection = route.params?.connection && typeof route.params.connection === 'object'
+  const initialConnection = route.params?.connection && typeof route.params.connection === 'object' && !Array.isArray(route.params.connection)
     ? route.params.connection
     : null;
-  const streamId = route.params?.streamId || initialConnection?.stream?.id || null;
+  const requestedStreamId = typeof route.params?.streamId === 'string'
+    ? route.params.streamId
+    : typeof initialConnection?.stream?.id === 'string' ? initialConnection.stream.id : null;
+  const [recoveredStreamId, setRecoveredStreamId] = useState(null);
+  const streamId = requestedStreamId || recoveredStreamId;
   const [connection, setConnection] = useState(initialConnection);
   const [connectionLoading, setConnectionLoading] = useState(Boolean(streamId && !initialConnection));
   const creatorMode = connection?.role === 'creator';
@@ -536,22 +541,40 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [error, setError] = useState('');
   const endedRef = useRef(false);
   const leaveRef = useRef(null);
+  const navigationExitPromptRef = useRef(false);
   const liveAuthOwnerRef = useRef(undefined);
   const connectionRequestRef = useRef(0);
 
   useEffect(() => {
+    let active = true;
+    const requestId = ++connectionRequestRef.current;
     if (!streamId) {
       setConnection(null);
-      setConnectionLoading(false);
-      setError('This LIVE link is incomplete. Reopen it from LIVE Hub.');
-      return undefined;
+      setConnectionLoading(true);
+      setError('');
+      backendFetch('/live/creators/me/profile')
+        .then((profile) => {
+          const activeId = getActiveCreatorStreamId(profile);
+          if (!activeId) throw new Error('No active LIVE broadcast was found on your creator account.');
+          if (active && requestId === connectionRequestRef.current) setRecoveredStreamId(activeId);
+        })
+        .catch((recoveryError) => {
+          if (active && requestId === connectionRequestRef.current) {
+            setError(recoveryError?.message || 'Could not recover your active LIVE broadcast. Return to LIVE Hub and try again.');
+          }
+        })
+        .finally(() => {
+          if (active && requestId === connectionRequestRef.current && !recoveredStreamId) setConnectionLoading(false);
+        });
+      return () => {
+        active = false;
+        if (connectionRequestRef.current === requestId) connectionRequestRef.current += 1;
+      };
     }
     if (initialConnection?.stream?.id === streamId && initialConnection?.token && initialConnection?.livekitUrl) {
       setConnectionLoading(false);
       return undefined;
     }
-    let active = true;
-    const requestId = ++connectionRequestRef.current;
     setConnection(null);
     setConnectionLoading(true);
     setError('');
@@ -564,7 +587,9 @@ export default function LiveStreamScreen({ route, navigation }) {
         if (active && requestId === connectionRequestRef.current) setConnection(nextConnection);
       })
       .catch((joinError) => {
-        if (active && requestId === connectionRequestRef.current) setError(joinError?.message || 'Could not join this LIVE stream.');
+        if (active && requestId === connectionRequestRef.current) {
+          setError(joinError?.message || 'Could not join this LIVE stream.');
+        }
       })
       .finally(() => {
         if (active && requestId === connectionRequestRef.current) setConnectionLoading(false);
@@ -709,7 +734,16 @@ export default function LiveStreamScreen({ route, navigation }) {
     const unsubscribe = navigation.addListener('beforeRemove', (event) => {
       if (endedRef.current) return;
       event.preventDefault();
-      leaveRef.current?.();
+      if (navigationExitPromptRef.current) return;
+      if (!creatorMode) {
+        leaveRef.current?.();
+        return;
+      }
+      navigationExitPromptRef.current = true;
+      Alert.alert('End LIVE broadcast?', 'Leaving the creator room will end the broadcast for everyone. Choose Stay LIVE to keep broadcasting.', [
+        { text: 'Stay LIVE', style: 'cancel', onPress: () => { navigationExitPromptRef.current = false; } },
+        { text: 'End LIVE', style: 'destructive', onPress: () => { navigationExitPromptRef.current = false; leaveRef.current?.(); } },
+      ], { cancelable: true, onDismiss: () => { navigationExitPromptRef.current = false; } });
     });
     return unsubscribe;
   }, [navigation, stream?.id, creatorMode]);

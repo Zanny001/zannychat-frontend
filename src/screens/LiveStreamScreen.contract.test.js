@@ -261,7 +261,7 @@ test('native LIVE screens expose audio output selection for viewers and creators
 });
 
 test('LIVE navigation serializes only a stable stream ID and fetches a fresh authorized token', () => {
-  assert.ok(screen.includes('const streamId = route.params?.streamId || initialConnection?.stream?.id || null'));
+  assert.ok(screen.includes('const requestedStreamId = typeof route.params?.streamId === \'string\''));
   assert.ok(screen.includes('`/live/${streamId}/join`'));
   assert.equal(screen.includes('navigation.setParams({ connection:'), false);
   const hub = fs.readFileSync(new URL('./LiveHubScreen.js', import.meta.url), 'utf8');
@@ -578,4 +578,20 @@ test('native and web LIVE stages expose server-derived role hierarchy and labell
   assert.ok(webScreen.includes('const compactRoomHeader = roomViewportWidth < 390;'));
   assert.ok(webScreen.includes('useWindowDimensions'));
   assert.ok(webScreen.includes("creatorMode ? 'HOST' : publisherMode ? 'GUEST' : moderatorMode ? 'MODERATOR' : 'VIEWER'"));
+});
+
+
+test('native and web LIVE rooms recover an active creator broadcast from the authenticated creator profile', () => {
+  assert.ok(screen.includes("backendFetch('/live/creators/me/profile')"));
+  assert.ok(webScreen.includes("backendFetch('/live/creators/me/profile')"));
+  assert.ok(screen.includes('getActiveCreatorStreamId(profile)'));
+  assert.ok(webScreen.includes('getActiveCreatorStreamId(profile)'));
+  assert.ok(screen.includes('!Array.isArray(route.params.connection)'));
+  assert.ok(webScreen.includes('!Array.isArray(route.params.connection)'));
+});
+
+test('creator back navigation requires explicit confirmation before ending a LIVE broadcast', () => {
+  assert.ok(screen.includes("Alert.alert('End LIVE broadcast?'"));
+  assert.ok(screen.includes("{ text: 'Stay LIVE', style: 'cancel'"));
+  assert.ok(webScreen.includes("window.confirm('End LIVE broadcast?"));
 });
