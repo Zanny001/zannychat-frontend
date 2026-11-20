@@ -81,3 +81,14 @@ This inventory does not certify every route handler. The following are still req
 7. Verify production worker liveness, last-success freshness, queue depth, lease expiry and alert delivery; source code and a successful CI run are not runtime proof.
 
 No production database, Auth, Storage, provider, deployment or infrastructure change was made while producing this map.
+
+## 5. Route-level authentication boundary verification
+
+A static pass across all 16 mounted route modules confirmed the following route-level boundary:
+
+- Thirteen business routers use `router.use(requireAuth, ...)` or `router.use(requireAuth)` before route registration: conversations, AI, link preview, safety, account, channels, discovery, calls, call history, group calls, LIVE history, LIVE streams and LIVE events.
+- The internal router does not use user auth; all four internal POST routes attach `requireInternalSecret` directly.
+- The LiveKit Egress webhook does not use user auth; its single route verifies the signed webhook against the raw body before processing.
+- The health router intentionally exposes three sanitized liveness/readiness/health endpoints without user auth.
+
+The inspected route modules declare 139 route handlers in total: 131 inherited through the 13 authenticated business routers, four internal-secret routes, one signed LiveKit webhook and three public health routes. This closes the router-level authentication placement check, but **does not** close the per-handler authorization audit: every service-role query/mutation still needs its own caller ownership, membership, role, block, audience and resource-state review.
