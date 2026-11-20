@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Avatar from '../components/Avatar';
 import CallInvitePicker from '../components/CallInvitePicker';
@@ -571,7 +572,7 @@ export default function CallScreenWeb({ route, navigation }) {
   );
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: immersiveVideo ? '#11101A' : colors.background }]}>
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={[styles.safe, { backgroundColor: immersiveVideo ? '#11101A' : colors.background }]}>
       <StatusBar barStyle={!immersiveVideo && resolvedMode === 'light' ? 'dark-content' : 'light-content'} />
       {React.createElement('audio', {
         ref: remoteAudioRef, autoPlay: true, playsInline: true,
