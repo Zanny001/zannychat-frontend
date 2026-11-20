@@ -1,8 +1,10 @@
 # ZannyChat Master Delivery Register
 
-**Status:** LIVE-first implementation active; all non-LIVE work paused  
-**Last reconciled:** 2026-11-19  
-**Companion charter:** [Master Product, Architecture & Design Blueprint](./ZANNYCHAT_MASTER_BLUEPRINT.md)
+**Status:** Full-product phased execution resumed; LIVE incident stabilization remains the immediate runtime priority  
+**Last reconciled:** 2026-11-20  
+**Companion charter:** [Master Product, Architecture & Design Blueprint](./ZANNYCHAT_MASTER_BLUEPRINT.md)  
+**Execution sequence:** [Master Execution Phases](./MASTER_EXECUTION_PHASES_20261120.md)  
+**Architecture evidence:** [Architecture and Security Snapshot](./ARCHITECTURE_SECURITY_SNAPSHOT_20261120.md)
 
 > This is the single execution ledger. Update each row with an owner, source path, PR/commit, tests, deployment evidence and next action. Status labels describe evidence, not optimism.
 
@@ -751,3 +753,49 @@ This is the current handoff point. Read this register and the Master Blueprint b
 - Supabase's migration list and schema were independently inspected. The guarded workflow still needs to be dispatched from GitHub Actions; it has not run, and the migration remains unapplied.
 - Frontend PR #196 is still open. Latest premium/LIVE quality passed on commit 7bcebf798134d69ed90515d57ba49647e91c1a4f; the current advanced client workflow is still running for the PR's documentation-only successor commit c249e32979978700b579e79eb35c3ed257a4a856. Dependency and bundle checks are green on the current run; client quality remains pending.
 - Do not merge frontend PR #196 or claim LIVE Settings operational until the migration is applied and backend Render deployment plus authenticated API smoke checks are verified.
+
+
+## 28. Full-product execution and production reconciliation — 2026-11-20
+
+This section supersedes earlier status statements in this register where current GitHub or read-only production evidence differs. Historical entries are retained as dated history, not current state.
+
+### Governing documents and scope
+- The complete phase sequence is now versioned in [Master Execution Phases](./MASTER_EXECUTION_PHASES_20261120.md), merged in frontend PR #213 as `a43a362e9bde55a71631f03c2852a8a3035c5aa1`.
+- The read-only current architecture/security inventory is in [Architecture and Security Snapshot](./ARCHITECTURE_SECURITY_SNAPSHOT_20261120.md).
+- The user's direction resumes the wider product programme; the earlier LIVE-only pause is no longer the governing priority. Preserve the dependency order and keep the current LIVE incident visible as Phase 0.
+- No production migration, data mutation, Auth setting change, Storage change or infrastructure change was performed during this reconciliation.
+
+### Current merged code and release evidence
+| Change | Current evidence | Status |
+|---|---|---|
+| LIVE creator preferences backend | Backend PR #153 merged as `88413b0e92fa5403016973f089cd49d583a7d1ee` | Merged |
+| LIVE leaderboard/settings frontend | Frontend PR #196 merged as `6a58b158f9802ee11d58a783b3f440187436f28c` | Merged; production API/migration acceptance remains separate |
+| LIVE reaction authorization/error mapping | Backend PR #167 merged as `80099bf82e3ce59c8958cf82db3f38c837c340ae` | Merged; two-account runtime acceptance remains separate |
+| Web LIVE stage ReferenceError fix | Frontend PR #212 merged as `1cc99815d1ef82e7b97fcc3d7987d3e095377377` | Merged; Vercel deployment reported READY; real creator/viewer browser and media acceptance remains pending |
+| Master execution programme | Frontend PR #213 merged as `a43a362e9bde55a71631f03c2852a8a3035c5aa1` | Merged; documentation only |
+
+The Vercel check for documentation PR #213 reported `upgradeToPro=build-rate-limit`. This is a team build quota failure, not an application test result. Do not upgrade the plan under the ₦0 constraint solely to clear it.
+
+### Current Supabase read-only reconciliation — 2026-11-20
+- Migration inventory returned 110 applied rows; latest row observed: `20261119220130 / live_stream_hard_timeout`.
+- The LIVE creator-preferences migration is applied. History reports `20261119184056 / live_creator_preferences_20261119180000`; the source file is `20261119180000_live_creator_preferences.sql`. The table exists, RLS is enabled, direct anon/authenticated SELECT is denied, and service_role SELECT is granted. This supersedes the stale statements in sections 1 and 27 that said PR #153 remained open or its migration was unapplied. Reconcile the recorded version/name against the guarded workflow log before future migration work; do not repair or replay history from this observation alone.
+- 69 public tables were observed; all have RLS enabled. 42 have no policies but a direct effective-privilege query found no anon/authenticated SELECT/INSERT/UPDATE/DELETE on those tables. Preserve the backend/service-role-only access model.
+- 76 public functions are SECURITY DEFINER; 28 are executable by authenticated, none of those 28 by anon, and all have configured search_path. Initial body triage found identity binding or delegation for all 28; complete caller/argument/ownership review remains open.
+- Storage buckets observed: live-replays, chat-media, private-avatars and status-media are private; avatars is public. Keep public/private avatar paths distinct.
+- Security advisor: leaked-password protection disabled (plan-gated on current Free plan); no setting change or paid upgrade authorized.
+- Performance advisor: two unindexed foreign keys (`live_event_invites.invited_by`, `live_event_reminder_deliveries.user_id`) and 66 unused-index notices. No index was added or removed; require query-plan/workload evidence first.
+- Health advisor returned no findings at the snapshot time.
+
+### Current source inventory correction
+- Current `AppNavigator.js` parse: 56 unique screen modules imported, 57 stack declarations, 53 unique stack route names and six primary tabs.
+- The existing 48-experience matrix remains a product-journey inventory, not a source-module count. It must be reconciled against current routes/modules without silently deleting scope or double-counting shared screens.
+- Backend `src/index.js` currently mounts 16 route modules and starts nine recurring worker loops. Update older architecture summaries that say seven workers.
+
+### Immediate next actions
+1. Phase 0: confirm the existing Gas broadcast opens for creator and viewer after PR #212 deployment; verify remote audio/video and interactions without ending or duplicating the broadcast.
+2. Phase 1: complete route-to-service, backend route-to-worker, table/RPC/trigger/storage ownership, delegated function and migration-provenance maps.
+3. Phase 2: reconcile PR #85's unique changes against current main and review the current 48-experience product matrix against the 56-module/53-route source inventory.
+4. Phase 3: complete two-account privacy/block/status acceptance (backend issue #19; frontend issue #16).
+5. Phase 4 onward: resume the full-product programme in the dependency order in the Master Execution Phases document.
+
+**Acceptance remains evidence-based:** merged code, green CI, applied migrations, deployment READY, browser acceptance, two-account acceptance and physical-device acceptance are separate facts. Keep each separately recorded.
