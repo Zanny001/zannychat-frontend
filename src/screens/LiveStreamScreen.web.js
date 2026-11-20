@@ -147,6 +147,8 @@ function Action({ colors, label, accessibilityLabel, onPress, disabled = false, 
 
 export default function LiveStreamScreen({ route, navigation }) {
   const { colors, typography } = useTheme();
+  const { width: roomViewportWidth } = useWindowDimensions();
+  const compactRoomHeader = roomViewportWidth < 390;
   const initialConnection = route.params?.connection && typeof route.params.connection === 'object'
     ? route.params.connection
     : null;
@@ -978,7 +980,10 @@ export default function LiveStreamScreen({ route, navigation }) {
         <Text numberOfLines={1} style={{ color: 'rgba(255,255,255,0.68)', fontSize: 11, marginTop: 2 }}>{status}</Text>
         {creatorMode && timeoutLabel ? <Text accessibilityRole="timer" accessibilityLabel={timeoutRemainingMs === 0 ? 'LIVE time limit reached; ending automatically' : timeoutWarning ? 'LIVE ends in less than ten minutes' : 'LIVE time remaining ' + timeoutLabel} style={{ color: timeoutWarning ? '#FF9EAB' : '#C9B8FF', fontSize: 10, fontWeight: '900', marginTop: 3, letterSpacing: 0.4 }}>{timeoutRemainingMs === 0 ? 'TIME LIMIT REACHED · ENDING' : timeoutWarning ? 'ENDS IN ' + timeoutLabel : 'TIME LEFT ' + timeoutLabel}</Text> : null}
       </View>
-      <Action colors={colors} label="☰" accessibilityLabel="Open LIVE controls menu" onPress={() => setShowOverlayMenu((value) => !value)} />
+      {!compactRoomHeader ? (<View style={{ paddingHorizontal: 9, paddingVertical: 6, borderRadius: 10, backgroundColor: 'rgba(185,164,255,0.16)', borderWidth: 1, borderColor: 'rgba(185,164,255,0.3)' }}>
+        <Text style={{ color: '#D8CBFF', fontSize: 9, fontWeight: '900', letterSpacing: 0.45 }}>{creatorMode ? 'HOST' : publisherMode ? 'GUEST' : moderatorMode ? 'MODERATOR' : 'VIEWER'}</Text>
+      </View>) : null}
+      <Action colors={colors} label="Tools" accessibilityLabel="Open LIVE controls menu" onPress={() => setShowOverlayMenu((value) => !value)} />
       <Action colors={colors} label={creatorMode ? 'End' : 'Leave'} danger disabled={busy} onPress={leave} />
     </View>
 
