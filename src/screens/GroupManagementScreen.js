@@ -13,7 +13,7 @@ import { validateGroupMetadata } from '../utils/groupMetadataValidation';
 export default function GroupManagementScreen({ navigation, route }) {
   const conversation = route?.params?.conversation;
   const conversationId = conversation?.id;
-  const { colors, spacing, typography, radii } = useTheme();
+  const { colors, spacing, typography, radii, layout } = useTheme();
   const [members, setMembers] = useState([]);
   const [memberSearch, setMemberSearch] = useState('');
   const [memberRoleFilter, setMemberRoleFilter] = useState('all');
@@ -128,7 +128,7 @@ ${invite.token}` });
       initialNumToRender={12}
       maxToRenderPerBatch={12}
       windowSize={7}
-      contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xl, flexGrow: 1 }}
+      contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xl, flexGrow: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
       ListHeaderComponent={<View><GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Manage members</Text>
         <Text style={[typography.caption, { color: colors.textSecondary }]}>{isAdmin ? 'You are a group admin. Changes are verified by the server.' : 'You can review members and leave the group. Only admins can change other members.'}</Text>
