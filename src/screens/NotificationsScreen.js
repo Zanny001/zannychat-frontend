@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Switch, TextInput, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Switch, TextInput, Alert, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import Header from '../components/Header';
@@ -132,7 +133,7 @@ export default function NotificationsScreen({ navigation }) {
             : 'Enabled in settings; device registration has not yet been confirmed.';
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Notifications" onBack={() => navigation.goBack()} />
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         {persistenceError ? (
