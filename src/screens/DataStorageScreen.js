@@ -6,24 +6,40 @@ import GlassCard from '../components/GlassCard';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 import { PHOTO_QUALITY_OPTIONS } from '../utils/mediaQuality';
-import { loadMediaPreferences, updateMediaPreferences } from '../services/mediaPreferences';
+import { getMediaPreferences, loadMediaPreferences, updateMediaPreferences } from '../services/mediaPreferences';
 
 export default function DataStorageScreen({ navigation }) {
   const { colors, spacing, typography, mood, layout } = useTheme();
   const [prefs, setPrefs] = useState({ photoQuality: 'balanced', dataSaver: false });
   const [loaded, setLoaded] = useState(false);
+  const [persistenceError, setPersistenceError] = useState('');
 
   useEffect(() => {
     let active = true;
-    loadMediaPreferences().then((value) => {
-      if (active) { setPrefs(value); setLoaded(true); }
-    });
+    loadMediaPreferences()
+      .then((value) => {
+        if (active) { setPrefs(value); setPersistenceError(''); }
+      })
+      .catch((error) => {
+        if (active) {
+          setPrefs(getMediaPreferences());
+          setPersistenceError(error?.message || 'Media preferences could not be loaded from this device.');
+        }
+      })
+      .finally(() => { if (active) setLoaded(true); });
     return () => { active = false; };
   }, []);
 
-  async function update(patch) {
-    const next = await updateMediaPreferences(patch);
-    setPrefs(next);
+  async function update(patch = {}) {
+    try {
+      const next = await updateMediaPreferences(patch);
+      setPrefs(next);
+      setPersistenceError('');
+    } catch (error) {
+      // The service retains the current selection in memory, but persistence failed.
+      setPrefs(getMediaPreferences());
+      setPersistenceError(error?.message || 'Your preferences could not be saved on this device.');
+    }
   }
 
   return (
@@ -41,10 +57,30 @@ export default function DataStorageScreen({ navigation }) {
             Choose how much detail your photos keep when you share them, and reduce upload data when you need to.
           </Text>
           <View style={styles.heroFooter}>
-            <View style={[styles.statusDot, { backgroundColor: colors.online }]} />
-            <Text style={[typography.small, { color: colors.textSecondary, marginLeft: 7 }]}>PREFERENCES SAVED ON THIS DEVICE</Text>
+            <View style={[styles.statusDot, { backgroundColor: persistenceError ? colors.warning : colors.online }]} />
+            <Text style={[typography.small, { color: colors.textSecondary, marginLeft: 7 }]}>
+              {persistenceError ? 'SESSION ONLY · NOT SAVED' : 'PREFERENCES SAVED ON THIS DEVICE'}
+            </Text>
           </View>
         </View>
+
+        {persistenceError ? (
+          <View accessibilityRole="alert" accessibilityLiveRegion="polite" style={[styles.persistenceWarning, { backgroundColor: colors.surface, borderColor: colors.warning, marginTop: spacing.md }]}>
+            <Ionicons name="alert-circle-outline" size={20} color={colors.warning} />
+            <View style={{ flex: 1, minWidth: 0, marginHorizontal: spacing.sm }}>
+              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Device storage issue</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 19, marginTop: 3 }]}>{persistenceError}</Text>
+              <TouchableOpacity
+                onPress={() => update({})}
+                accessibilityRole="button"
+                accessibilityLabel="Try saving media preferences again"
+                style={styles.retryButton}
+              >
+                <Text style={[typography.caption, { color: colors.primary, fontWeight: '700' }]}>Try saving again</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : null}
 
         <View style={styles.sectionHeading}>
           <Text style={[typography.heading, { color: colors.textPrimary }]}>Photo upload quality</Text>
@@ -68,7 +104,7 @@ export default function DataStorageScreen({ navigation }) {
                 <View style={[styles.qualityIcon, { backgroundColor: selected ? hexToRgba(mood.signal, 0.16) : colors.surfaceAlt }]}>
                   <Ionicons name={icon} size={21} color={selected ? mood.signal : colors.textSecondary} />
                 </View>
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{option.label}</Text>
                   <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>{option.detail}</Text>
                 </View>
@@ -124,6 +160,8 @@ const styles = StyleSheet.create({
   heroIcon: { width: 48, height: 48, borderRadius: 16, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   heroFooter: { flexDirection: 'row', alignItems: 'center', marginTop: 22 },
   statusDot: { width: 7, height: 7, borderRadius: 4 },
+  persistenceWarning: { borderWidth: 1, borderRadius: 16, padding: 14, flexDirection: 'row', alignItems: 'flex-start' },
+  retryButton: { minHeight: 44, alignSelf: 'flex-start', justifyContent: 'center', marginTop: 5, paddingRight: 12 },
   sectionHeading: { marginTop: 28, marginBottom: 14 },
   qualityList: { gap: 10 },
   qualityOption: { minHeight: 78, borderWidth: 1, borderRadius: 19, padding: 13, flexDirection: 'row', alignItems: 'center' },
