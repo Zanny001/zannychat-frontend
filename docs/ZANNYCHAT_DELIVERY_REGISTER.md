@@ -799,3 +799,48 @@ The Vercel check for documentation PR #213 reported `upgradeToPro=build-rate-lim
 5. Phase 4 onward: resume the full-product programme in the dependency order in the Master Execution Phases document.
 
 **Acceptance remains evidence-based:** merged code, green CI, applied migrations, deployment READY, browser acceptance, two-account acceptance and physical-device acceptance are separate facts. Keep each separately recorded.
+
+## 29. Phase 1 worker and migration-provenance review — 2026-11-20
+
+This section supersedes earlier worker/migration statements where the source and read-only production evidence below is more specific.
+
+### New verified implementation and design checkpoints
+| Change | Evidence | Status |
+|---|---|---|
+| Premium LIVE shared screen system | Frontend PR #203 merged; shared Crown Aurora header/hierarchy applied across LIVE destinations | Merged; visual/device acceptance remains separate |
+| Premium LIVE room controls | Frontend PR #205 merged; role-aware header and labelled controls | Merged; physical-device acceptance remains separate |
+| Premium LIVE Events cards/layout | Frontend PRs #206 and #207 merged | Merged; runtime and responsive acceptance remain separate |
+| Premium LIVE Creator Studio tools launcher | Frontend PR #208 merged | Merged; destination workflows remain separately tested |
+| Chat Appearance persistence feedback | Frontend PR #215 merged as `b84f117750672ba1190fb34440e06b8d7fc99881` | Merged; unit/contract, Android compile, iOS prebuild, web/Android export, release, dependency and bundle checks passed; device-level storage-failure simulation remains open |
+
+PR #204 was closed unmerged and superseded by PR #205; do not revive it. PR #215's Vercel status reported the known team `upgradeToPro=build-rate-limit` failure. The GitHub Actions application-quality, native compile/prebuild/export, dependency and bundle checks passed. This is not a source failure and does not justify a paid upgrade under the ₦0 constraint.
+
+### Worker lifecycle review
+The companion [Architecture and Security Snapshot](./ARCHITECTURE_SECURITY_SNAPSHOT_20261120.md), sections 7–8, records source-level findings for all nine recurring workers. Key open risks:
+- Account-storage cleanup uses only a process-local overlap guard and no visible database claim lease; verify actual deployment topology and job semantics before considering any change.
+- Group-call media teardown uses a bounded ended-room scan and conditional completion marker but no visible DB claim lease.
+- Ended LIVE-room deletion and replay recovery use periodic scans without a durable distributed lease visible in the inspected worker code.
+- Call invitation/end notification, media-participant cleanup, LIVE event reminders and LIVE timeout warnings use database RPC claim/cleanup paths; inspect the full SQL bodies and retry/lease-expiry semantics before declaring those paths fully audited.
+- Source logs do not establish worker liveness, last-success freshness or alert delivery in production.
+
+No worker was manually invoked and no production job, media room, storage object or row was modified.
+
+### Migration provenance — corrected
+- Production migration history lists `20261119184056 / live_creator_preferences_20261119180000`; the source filename is `20261119180000_live_creator_preferences.sql`.
+- Historical workflow run `44501209658` applied only `20261118221000_live_experience_modes.sql` and `20261118223000_block_removed_live_participants.sql`; it is not evidence for creator-preferences migration provenance.
+- The current `.github/workflows/live-creator-preferences-migration.yml` expects `20261119180000` as the sole pending migration. With the observed production history, it should refuse to apply.
+- The exact mechanism/source checksum behind history version `20261119184056` remains unresolved. Do not dispatch the workflow, replay SQL, edit migration history or create a timestamp-normalizing migration until the original apply event is reconciled.
+
+### Current next action
+1. Continue Phase 1 read-only review of claim/cleanup RPC definitions, trigger ownership, grants and delegated SECURITY DEFINER helper chains.
+2. Confirm the production worker instance topology and collect worker last-success/error evidence without manually running destructive cleanup.
+3. Complete the frontend experience-to-route/service matrix and the backend route-to-service/provider map.
+4. Keep Phase 0 Gas creator/viewer browser acceptance open until the user confirms the existing broadcast works after PR #212 deployment.
+5. Continue Phase 2 across the entire app; LIVE PRs #203 and #205–#208 improve the LIVE design language but do not constitute full-app visual acceptance.
+
+No production database, Auth, Storage, deployment or infrastructure mutation was performed by this review.
+
+### Production worker-RPC grant verification
+A read-only production query inspected the definitions and effective grants of the call-notification, media-cleanup, LIVE-event reminder and LIVE-timeout claim/cleanup RPCs. All inspected functions are SECURITY DEFINER with configured search paths and are executable by `service_role` only—not by `anon` or `authenticated`. Call invitation/end and event-reminder claims use `FOR UPDATE SKIP LOCKED`; stale claim recovery windows observed were five minutes, two minutes and ten minutes respectively. LIVE timeout warning claim/release is an atomic stream-row update. Media/call cleanup RPCs perform guarded state transitions and bounded cleanup. See the companion snapshot for exact scope and limitations.
+
+The production `account_storage_cleanup_jobs` table is service-role-only and its allowed states are `held` and `pending`; no persistent processing lease exists. The worker's in-process guard therefore does not coordinate multiple backend processes. Keep this as a conditional hardening candidate—not a confirmed production incident—until actual deployment topology and job lifecycle are verified. No schema or job change was made.

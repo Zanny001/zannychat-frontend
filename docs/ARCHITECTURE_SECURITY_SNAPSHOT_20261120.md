@@ -171,3 +171,47 @@ Backend `src/config/corsOptions.js` uses explicit production origins including `
 7. Convert confirmed issues into small, scoped implementation PRs; keep uncertain findings as open review tasks.
 
 **No production schema change, privilege change, Storage policy change, Auth setting change, CORS/CSP change or index change is authorized by this snapshot.**
+
+## 7. Background-worker lifecycle review — source inspection, 2026-11-20
+
+This is a source-level control-flow review of the nine worker loops started by `src/index.js`. It does not establish that a worker is running or succeeding in production.
+
+| Worker | Claim / coordination observed | Retry, cleanup and observable outcome | Review status |
+|---|---|---|---|
+| Call invitation notifications | `claim_call_invitation_notifications` RPC claims bounded batches; queue rows carry a lease timestamp | 15-second exponential retry capped at 15 minutes; maximum 10 attempts; expired/no-token outcomes are recorded; errors are logged | DB claim path and bounded retry observed; inspect RPC body/lease expiry and alerting |
+| Call-ended notifications | `claim_call_end_notifications` RPC claims bounded batches; lease field is cleared on completion/retry | 15-second exponential retry capped at 15 minutes; maximum 12 attempts; terminal state and last error recorded | DB claim path and bounded retry observed; inspect RPC body/lease expiry and alerting |
+| Group-call media teardown | Bounded scan of ended rooms with `media_terminated_at IS NULL`; no DB claim lease in worker | Deletes room then conditionally stamps termination; LiveKit 404 is treated as already absent; failed deletes remain retryable and are logged | Safe to retry by source semantics; multi-instance duplicate attempts remain possible |
+| Media participant heartbeat / ended LIVE-room cleanup | Stale participant state is handled by `cleanup_stale_media_participants` RPC; ended LIVE rooms are scanned after a 60-second grace period | Three-minute default stale threshold; active/recording replays protect rooms from deletion; LiveKit 404 is idempotent | RPC ownership/lease body still needs review; LIVE-room deletion has no persistent claim marker in this worker |
+| Stale call-session cleanup | `cleanup_stale_call_signals` RPC | Runs every 60 seconds; deleted-signal count is logged when nonzero | RPC body and retention semantics still need review |
+| Account storage cleanup | Bounded scan of due `held`/`pending` jobs; only a process-local `workerRunning` guard is visible; no DB claim/lease is performed in this worker | Removes objects only from the enumerated personal buckets and owner/path-filtered rows, in batches of 100; successful job is deleted; failures use exponential retry capped at 24 hours | **Concurrency risk to assess:** multiple backend processes could select the same job; current source-level protection is process-local. Do not add a migration until deployment topology and job semantics are confirmed |
+| LIVE replay lifecycle/recovery | Module-level singleton guard; periodic scans of replay rows; no durable distributed worker lease is visible in the inspected worker | Recovery/reconciliation every 60 seconds; replay stop/recovery grace 15 minutes; maximum replay duration is imported from the Egress service; retention cleanup every six hours; private objects and expired rows are removed | Single-process lifecycle is explicit; multi-instance coordination and failure alerting need review |
+| LIVE event reminders | `claim_live_event_reminders` RPC claims a bounded batch and marks rows as sending | Provider acceptance marks sent; failure is recorded and logged; worker runs every 60 seconds | Inspect claim/reclaim semantics and retry window in the RPC body |
+| LIVE stream timeout warnings | `claim_live_stream_timeout_warnings` RPC; failed delivery is released through `release_live_stream_timeout_warning` | Runs every 30 seconds; creator warning is for the final 10 minutes of the four-hour stream cap; failed claims are released for retry | Claim/release path observed; inspect RPC body and alerting |
+
+### Cross-cutting findings and constraints
+
+- All nine starter loops use in-process overlap guards (or a module-level singleton for replay). These guards do not coordinate separate Node processes.
+- The source has bounded batch sizes and worker-specific logs, but no centralized heartbeat/last-success metric or alert delivery contract was established in this pass.
+- The current single-instance deployment constraint reduces—but does not eliminate—cross-process races during restarts, overlapping deploys or future scale-out. Confirm the actual production instance topology before changing worker coordination.
+- Prioritize a read-only review of the SQL bodies for the claim/cleanup RPCs and the account-storage job state machine. Any DDL or job-state migration is a separate proposal requiring impact/rollback review and the user's explicit approval.
+- Never run cleanup workers manually against production as a diagnostic: account-storage and replay cleanup perform irreversible object/row deletion after their expiry/eligibility checks.
+
+## 8. LIVE creator-preferences migration provenance
+
+Read-only production history lists `20261119184056 / live_creator_preferences_20261119180000`; the repository source file is `20261119180000_live_creator_preferences.sql`. The table exists with RLS enabled, direct `anon`/`authenticated` table access revoked, and service-role access granted.
+
+The inspected historical workflow run `44501209658` is **not** the creator-preferences migration run: its successful log shows only `20261118221000_live_experience_modes.sql` and `20261118223000_block_removed_live_participants.sql` were applied. The current guarded workflow `.github/workflows/live-creator-preferences-migration.yml` expects exactly `20261119180000` to be pending and would refuse to apply if the observed production history remains unchanged. The actual mechanism that recorded version `20261119184056` was not established from the available workflow evidence.
+
+**Do not dispatch the guarded workflow, replay the SQL, edit migration history, or create a compensating migration to normalize the timestamp.** Reconcile the original apply event and source checksum through the appropriate Supabase/GitHub audit trail first. The table's observed existence and privileges are not proof of the exact source checksum that was applied.
+
+### Database claim RPC and service-role authorization checks
+
+A read-only production query retrieved the full definitions and effective execute grants for the worker RPCs listed above:
+
+- `claim_call_invitation_notifications` and `claim_call_end_notifications` use row-level `FOR UPDATE SKIP LOCKED` claiming and recover stale processing leases after five and two minutes respectively. The inspected overloads are executable by `service_role`, not by `anon` or `authenticated`.
+- `claim_live_event_reminders` inserts missing recipient rows idempotently, rechecks event audience and bidirectional block visibility, then claims due rows with `FOR UPDATE OF d SKIP LOCKED`. Stale `sending` rows are reclaimable after ten minutes. It is executable only by `service_role`.
+- `claim_live_stream_timeout_warnings` atomically marks eligible live streams at the 3h50m threshold; `release_live_stream_timeout_warning` clears the marker only while the stream remains live. Both are executable only by `service_role`.
+- `cleanup_stale_media_participants` validates its cutoff and atomically ends over-age/stale LIVE streams, marks stale participants left and ends empty group-call rooms. `cleanup_stale_call_signals` expires ringing calls, closes accepted sessions after three minutes without activity and deletes terminal/old signaling rows. Both are executable only by `service_role`.
+- All inspected worker RPCs are SECURITY DEFINER with an explicit configured search path. The effective grant check found no `anon` or `authenticated` EXECUTE privilege and confirmed `service_role` EXECUTE.
+
+The production `account_storage_cleanup_jobs` table has only `held` and `pending` allowed states; it has no processing/lease column in the observed schema. Effective table privileges are service-role-only. This confirms the worker's process-local guard is not backed by a database claim lease. It is a concurrency-hardening candidate if the backend ever runs multiple workers/processes, but no change is justified until deployment topology, job creation semantics and duplicate-cleanup behaviour are verified. Do not add a state or lease column without an explicitly approved migration.
