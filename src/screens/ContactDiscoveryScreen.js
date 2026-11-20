@@ -12,7 +12,7 @@ import { BACKEND_ENABLED } from '../services/backendClient';
 import { SUPABASE_ENABLED } from '../services/supabaseClient';
 
 export default function ContactDiscoveryScreen({ navigation }) {
-  const { colors, spacing, typography, radii } = useTheme();
+  const { colors, spacing, typography, radii, layout } = useTheme();
   const [settings, setSettings] = useState(null);
   const [phones, setPhones] = useState('');
   const [importedContacts, setImportedContacts] = useState([]);
@@ -131,7 +131,7 @@ export default function ContactDiscoveryScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Find friends" onBack={() => navigation.goBack()} />
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         <GlassCard contentStyle={{ gap: spacing.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
             <View style={{ width: 46, height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface }}><Ionicons name="people-circle-outline" size={27} color={colors.primary} /></View>

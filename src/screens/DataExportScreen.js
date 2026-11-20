@@ -11,7 +11,7 @@ import { SUPABASE_ENABLED } from '../services/supabaseClient';
 import { createPersonalDataExport } from '../services/personalDataExport';
 
 export default function DataExportScreen({ navigation }) {
-  const { colors, spacing, typography, mood } = useTheme();
+  const { colors, spacing, typography, mood, layout } = useTheme();
   const [busy, setBusy] = useState(false);
 
   async function exportData() {
@@ -44,7 +44,7 @@ export default function DataExportScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Export your data" onBack={() => navigation.goBack()} />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xl }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xl, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         <View style={[styles.hero, { backgroundColor: colors.surface, borderColor: hexToRgba(colors.textPrimary, 0.1) }]}>
           <View style={[styles.orb, { backgroundColor: hexToRgba(mood.signal, 0.2), top: -56, right: -44 }]} />
           <View style={[styles.orb, { backgroundColor: hexToRgba(mood.thread, 0.16), bottom: -76, left: 42, width: 150, height: 150 }]} />

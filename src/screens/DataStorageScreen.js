@@ -9,7 +9,7 @@ import { PHOTO_QUALITY_OPTIONS } from '../utils/mediaQuality';
 import { loadMediaPreferences, updateMediaPreferences } from '../services/mediaPreferences';
 
 export default function DataStorageScreen({ navigation }) {
-  const { colors, spacing, typography, mood } = useTheme();
+  const { colors, spacing, typography, mood, layout } = useTheme();
   const [prefs, setPrefs] = useState({ photoQuality: 'balanced', dataSaver: false });
   const [loaded, setLoaded] = useState(false);
 
@@ -29,7 +29,7 @@ export default function DataStorageScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Data & storage" onBack={() => navigation.goBack()} />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xl }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xl, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         <View style={[styles.hero, { backgroundColor: colors.surface, borderColor: hexToRgba(colors.textPrimary, 0.1) }]}>
           <View style={[styles.orb, styles.orbOne, { backgroundColor: hexToRgba(mood.signal, 0.22) }]} />
           <View style={[styles.orb, styles.orbTwo, { backgroundColor: hexToRgba(mood.thread, 0.2) }]} />

@@ -15,7 +15,7 @@ import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import LiveImpactCard from '../components/LiveImpactCard';
 
 function DetailRow({ icon, label, value, last = false }) {
-  const { colors, spacing, typography, radii } = useTheme();
+  const { colors, spacing, typography, radii, layout } = useTheme();
   if (value === null || value === undefined || String(value).trim() === '') return null;
   return <View style={[styles.detailRow, { paddingVertical: spacing.md, borderBottomColor: colors.border, borderBottomWidth: last ? 0 : StyleSheet.hairlineWidth }]}>
     <View style={[styles.detailIcon, { backgroundColor: hexToRgba(colors.primary, 0.12), borderRadius: radii.md }]}><Ionicons name={icon} size={18} color={colors.primary} /></View>
@@ -201,7 +201,7 @@ export default function PeerProfileScreen({ route, navigation }) {
 
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
     <Header title={fromLive ? "LIVE Creator" : "Profile"} onBack={() => navigation.goBack()} right={<View style={{ flexDirection: 'row', alignItems: 'center', paddingRight: spacing.xs }}><View style={[styles.livePill, { backgroundColor: hexToRgba(online ? colors.online : colors.textSecondary, 0.12), borderColor: hexToRgba(online ? colors.online : colors.textSecondary, 0.26) }]}><View style={[styles.liveDot, { backgroundColor: online ? colors.online : colors.textSecondary }]} /><Text style={[typography.caption, { color: online ? colors.online : colors.textSecondary, fontWeight: '700' }]}>{online ? 'ONLINE' : 'CONTACT'}</Text></View></View>} />
-    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.xl }}>
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.xl, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
       <GlassCard style={{ borderRadius: 30, overflow: 'hidden' }} contentStyle={{ padding: 0 }} intensity={48} tintAlpha={0.56}>
         <View style={[styles.heroBackdrop, { backgroundColor: hexToRgba(mood.signal, 0.13) }]}>
           {coverUrl ? <Image source={{ uri: coverUrl }} style={styles.coverBackdrop} resizeMode="cover" /> : null}

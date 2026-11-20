@@ -13,7 +13,7 @@ import { backendFetch } from '../services/backendClient';
 import LiveImpactCard from '../components/LiveImpactCard';
 
 export default function ProfileScreen({ navigation }) {
-  const { colors, spacing, typography, mood } = useTheme();
+  const { colors, spacing, typography, mood, layout } = useTheme();
   const [user, setUser] = useState(null);
   const [liveImpact, setLiveImpact] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -65,7 +65,7 @@ export default function ProfileScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Profile" brand />
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: tabBarHeight + spacing.lg }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: tabBarHeight + spacing.lg, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         {profileError ? (
           <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
             <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textPrimary }]}>{profileError}</Text>

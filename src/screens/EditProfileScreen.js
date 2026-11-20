@@ -95,7 +95,7 @@ function validateWebsite(value) {
 }
 
 export default function EditProfileScreen({ navigation }) {
-  const { colors, spacing, typography, radii } = useTheme();
+  const { colors, spacing, typography, radii, layout } = useTheme();
   const [user, setUser] = useState(null);
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
@@ -224,7 +224,7 @@ export default function EditProfileScreen({ navigation }) {
         </TouchableOpacity>
       } />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl }}>
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
           <Section title="Profile appearance" colors={colors} spacing={spacing} typography={typography} radii={radii}>
             <TouchableOpacity onPress={() => chooseImage('cover')} disabled={uploadingCover} accessibilityRole="button" accessibilityLabel="Add or change profile cover image" accessibilityState={{ disabled: uploadingCover, busy: uploadingCover }} style={[styles.cover, { backgroundColor: colors.surfaceElevated, borderRadius: radii.md }]}>
               {(coverPreviewUri || details.cover_image_url) ? <Image source={{ uri: coverPreviewUri || details.cover_image_url }} resizeMode="cover" style={StyleSheet.absoluteFillObject} /> : <Ionicons name="image-outline" size={26} color={colors.textSecondary} />}
