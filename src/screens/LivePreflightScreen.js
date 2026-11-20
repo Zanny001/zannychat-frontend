@@ -17,6 +17,7 @@ import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo
 import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
 import { useTheme } from '../theme/ThemeContext';
+import LivePremiumHeader from '../components/LivePremiumHeader';
 import { hexToRgba } from '../utils/color';
 
 const MODE_LABELS = {
@@ -251,23 +252,17 @@ export default function LivePreflightScreen({ route, navigation }) {
         contentContainerStyle={{ paddingHorizontal: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.xxl || 36, alignItems: 'center' }}
       >
         <View style={{ width: '100%', maxWidth: 760, gap: spacing.md }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              accessibilityRole="button"
-              accessibilityLabel="Return to LIVE setup"
-              style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
-            </TouchableOpacity>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.4 }]}>ZANNYCHAT · LIVE STUDIO</Text>
-              <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 25, marginTop: 2 }]}>Pre-flight check</Text>
-            </View>
-            <View style={{ paddingHorizontal: 10, paddingVertical: 7, borderRadius: 12, backgroundColor: hexToRgba(colors.gold || colors.accent, 0.13), borderWidth: 1, borderColor: hexToRgba(colors.gold || colors.accent, 0.28) }}>
-              <Text style={[typography.caption, { color: colors.gold || colors.accent, fontWeight: '900' }]}>CREATOR</Text>
-            </View>
-          </View>
+          <LivePremiumHeader
+            navigation={navigation}
+            eyebrow="ZANNYCHAT · LIVE STUDIO"
+            backLabel="Return to LIVE setup"
+            title="Pre-flight check"
+            subtitle={MODE_LABELS[experienceMode] + ' · ' + (visibility === 'private' ? 'Invite only' : visibility === 'followers' ? 'Followers' : 'Public')}
+            icon={experienceMode === 'audio_room' ? 'headset-outline' : experienceMode === 'video_chat' ? 'people-circle-outline' : 'radio-outline'}
+            badge="CREATOR"
+            onRefresh={refreshMediaPermissions}
+            refreshLabel="Recheck camera and microphone permissions"
+          />
 
           <View style={{ borderRadius: 24, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.3) }}>
             <View style={{ padding: spacing.md, gap: 6 }}>
