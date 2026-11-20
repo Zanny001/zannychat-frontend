@@ -33,7 +33,7 @@ const FAQ = [
 ];
 
 export default function HelpScreen({ navigation }) {
-  const { colors, spacing, typography } = useTheme();
+  const { colors, spacing, typography, layout } = useTheme();
   const [openIndex, setOpenIndex] = useState(null);
   const version = Constants.expoConfig?.version || '1.0.0';
 
@@ -53,7 +53,7 @@ export default function HelpScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Help" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         {FAQ.map((item, index) => {
           const open = openIndex === index;
           return (
