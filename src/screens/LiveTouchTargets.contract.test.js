@@ -23,6 +23,7 @@ test('LIVE reaction and native/web resize handles meet 44pt targets', () => {
   const native = read('LiveStreamScreen.js');
   const web = read('LiveStreamScreen.web.js');
   assert.match(native, /minWidth: 44, minHeight: 44/);
+  assert.match(native, /showComments && <ScrollView horizontal/);
   assert.match(native, /width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderBottomLeftRadius/);
   assert.match(web, /width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderBottomLeftRadius/);
   assert.match(web, /width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderTopLeftRadius/);
