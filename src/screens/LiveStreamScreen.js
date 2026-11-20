@@ -547,6 +547,7 @@ export default function LiveStreamScreen({ route, navigation }) {
     let active = true;
     const requestId = ++connectionRequestRef.current;
     if (!streamId) {
+      let recoveredActiveStream = false;
       setConnection(null);
       setConnectionLoading(true);
       setError('');
@@ -554,7 +555,10 @@ export default function LiveStreamScreen({ route, navigation }) {
         .then((profile) => {
           const activeId = getActiveCreatorStreamId(profile);
           if (!activeId) throw new Error('No active LIVE broadcast was found on your creator account.');
-          if (active && requestId === connectionRequestRef.current) setRecoveredStreamId(activeId);
+          if (active && requestId === connectionRequestRef.current) {
+            recoveredActiveStream = true;
+            setRecoveredStreamId(activeId);
+          }
         })
         .catch((recoveryError) => {
           if (active && requestId === connectionRequestRef.current) {
@@ -562,7 +566,7 @@ export default function LiveStreamScreen({ route, navigation }) {
           }
         })
         .finally(() => {
-          if (active && requestId === connectionRequestRef.current && !recoveredStreamId) setConnectionLoading(false);
+          if (active && requestId === connectionRequestRef.current && !recoveredActiveStream) setConnectionLoading(false);
         });
       return () => {
         active = false;
