@@ -22,6 +22,17 @@ import { formatLiveBroadcastTimeRemaining, getLiveBroadcastTimeRemaining, LIVE_B
 const LIVE_REACTION_EMOJI = Object.freeze({ heart: '❤️', clap: '👏', laugh: '😂', wow: '😮', fire: '🔥', idea: '💡', support: '🙌' });
 const isDocumentVisible = () => typeof document === 'undefined' || document.visibilityState !== 'hidden';
 
+function isLiveFeedInvalidation(payload, topic) {
+  if (topic !== 'zanny.live.feed.v1' || !payload || payload.length > 512) return false;
+  try {
+    const event = JSON.parse(String.fromCharCode(...Array.from(payload)));
+    return event?.v === 1 && event?.type === 'feed_changed';
+  } catch (_) {
+    return false;
+  }
+}
+
+
 function FloatingReaction({ item, index, onComplete }) {
   const progress = useSharedValue(0);
   const reducedMotion = useReducedMotion();
@@ -535,10 +546,24 @@ export default function LiveStreamScreen({ route, navigation }) {
     } finally { commentsRefreshInFlight.current = false; }
   }, [stream?.id, exitEndedStream]);
 
+
+  useEffect(() => {
+    if (!room || !stream?.id) return undefined;
+    const onDataReceived = (payload, _participant, _kind, topic) => {
+      if (isLiveFeedInvalidation(payload, topic)) refreshComments();
+    };
+    room.on(RoomEvent.DataReceived, onDataReceived);
+    room.on(RoomEvent.Reconnected, refreshComments);
+    return () => {
+      room.off(RoomEvent.DataReceived, onDataReceived);
+      room.off(RoomEvent.Reconnected, refreshComments);
+    };
+  }, [room, stream?.id, refreshComments]);
+
   useEffect(() => {
     if (!stream?.id) return undefined;
     refreshComments();
-    const timer = setInterval(refreshComments, 6000);
+    const timer = setInterval(refreshComments, 30_000);
     return () => clearInterval(timer);
   }, [stream?.id, refreshComments]);
 
