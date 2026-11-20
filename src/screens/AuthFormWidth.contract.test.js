@@ -26,6 +26,7 @@ test('authentication journeys share a moderate form width token', () => {
 test('auth forms remain fluid on narrow screens', () => {
   for (const file of screens.slice(1, 6)) {
     const source = readFileSync(new URL('./' + file, import.meta.url), 'utf8');
-    assert.match(source, /width: '100%', maxWidth: layout\.formMaxWidth/, file + ' must remain responsive');
+    assert.match(source, /width: '100%'/, file + ' must remain fluid below the max width');
+    assert.match(source, /maxWidth: layout\.formMaxWidth/, file + ' must retain the form width cap');
   }
 });
