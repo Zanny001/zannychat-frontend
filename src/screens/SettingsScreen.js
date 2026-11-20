@@ -13,7 +13,7 @@ import { SUPABASE_ENABLED } from '../services/supabaseClient';
 import { BACKEND_ENABLED, checkBackendHealth } from '../services/backendClient';
 
 export default function SettingsScreen({ navigation }) {
-  const { colors, spacing, typography, radii, paletteKey, palettes, setPalette, customPalette, setCustomPalette, appearance, setAppearance, resolvedMode, textScale, setTextScale, highContrast, setHighContrast } = useTheme();
+  const { colors, spacing, typography, radii, paletteKey, palettes, setPalette, customPalette, setCustomPalette, appearance, setAppearance, resolvedMode, textScale, setTextScale, highContrast, setHighContrast, persistenceError, clearPersistenceError } = useTheme();
   const [customSignal, setCustomSignal] = useState(customPalette?.signal || '#795CFF');
   const [customThread, setCustomThread] = useState(customPalette?.thread || '#39E7E0');
   const [customGold, setCustomGold] = useState(customPalette?.gold || '#FFD58A');
@@ -56,6 +56,15 @@ export default function SettingsScreen({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Appearance & theme" onBack={() => navigation.goBack()} />
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg }}>
+        {persistenceError ? (
+          <View style={[styles.persistenceWarning, { backgroundColor: colors.surface, borderColor: colors.warning, borderRadius: radii.md, marginBottom: spacing.md }]}>
+            <Ionicons name="alert-circle-outline" size={19} color={colors.warning} />
+            <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={[typography.caption, { color: colors.textPrimary, flex: 1, minWidth: 0, marginHorizontal: spacing.sm }]}>{persistenceError}</Text>
+            <TouchableOpacity onPress={clearPersistenceError} accessibilityRole="button" accessibilityLabel="Dismiss preference storage warning" style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="close" size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        ) : null}
         <ConnectionsPanel />
 
         <TouchableOpacity
@@ -391,6 +400,7 @@ function ConnectionRow({ label, detail, status, last }) {
 }
 
 const styles = StyleSheet.create({
+  persistenceWarning: { minHeight: 56, flexDirection: 'row', alignItems: 'center', borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6 },
   optionRow: { flexDirection: 'row', gap: 8 },
   customColorRow: { flexDirection: 'row', gap: 10 },
   customColorField: { flex: 1, minWidth: 0 },
