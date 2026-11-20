@@ -472,6 +472,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [floatingReactions, setFloatingReactions] = useState([]);
   const seenReactionIds = useRef(new Set());
   const commentsRefreshInFlight = useRef(false);
+  const commentsRefreshQueued = useRef(false);
   const guestStatusRefreshInFlight = useRef(false);
   const guestRequestsRefreshInFlight = useRef(false);
   const replayRefreshInFlight = useRef(false);
@@ -604,7 +605,8 @@ export default function LiveStreamScreen({ route, navigation }) {
   }, [returnFromLive]);
 
   const refreshComments = useCallback(async () => {
-    if (!stream?.id || !isAppForeground() || commentsRefreshInFlight.current) return;
+    if (!stream?.id || !isAppForeground()) return;
+    if (commentsRefreshInFlight.current) { commentsRefreshQueued.current = true; return; }
     commentsRefreshInFlight.current = true;
     try {
       const result = await backendFetch(`/live/${stream.id}/comments`);
@@ -629,6 +631,10 @@ export default function LiveStreamScreen({ route, navigation }) {
       }
     } finally {
       commentsRefreshInFlight.current = false;
+      if (commentsRefreshQueued.current) {
+        commentsRefreshQueued.current = false;
+        void refreshComments();
+      }
     }
   }, [stream?.id, exitEndedStream]);
 
