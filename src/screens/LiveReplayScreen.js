@@ -123,7 +123,7 @@ export default function LiveReplayScreen({ route, navigation }) {
             } catch (e) {
               showAppAlert('Could not delete replay', e?.message || 'Please try again.');
             }
-          }} accessibilityRole="button" accessibilityLabel="Delete this LIVE replay" style={{ width: 46, height: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.danger + '55' }}>
+          }} accessibilityRole="button" accessibilityLabel="Delete this LIVE replay" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.danger + '55' }}>
             <Ionicons name="trash-outline" size={19} color={colors.danger} />
           </TouchableOpacity>
         ) : null}
