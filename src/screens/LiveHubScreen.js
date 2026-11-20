@@ -48,7 +48,7 @@ const LIVE_CATEGORIES = [
 ];
 
 export default function LiveHubScreen({ navigation, route }) {
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, radii, typography, layout } = useTheme();
   const { width: viewportWidth } = useWindowDimensions();
   const compactHeader = viewportWidth < 380;
   const [streams, setStreams] = useState([]);
@@ -417,7 +417,7 @@ export default function LiveHubScreen({ navigation, route }) {
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingBottom: spacing.xxl || spacing.xl }}
         ListHeaderComponent={
-          <View style={{ width: '100%', maxWidth: 820, alignSelf: 'center' }}>
+          <View style={{ width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
             <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.md, gap: spacing.md }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                 <View style={{ width: 40, height: 40, borderRadius: 15, backgroundColor: hexToRgba(colors.primary, 0.16), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.34), alignItems: 'center', justifyContent: 'center' }}>
@@ -724,7 +724,7 @@ export default function LiveHubScreen({ navigation, route }) {
           </View>
         }
         renderItem={({ item }) => (
-          <GlassCard glow style={{ width: '94%', maxWidth: 760, alignSelf: 'center', marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+          <GlassCard glow style={{ width: '94%', maxWidth: layout.contentMaxWidth, alignSelf: 'center', marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
             <TouchableOpacity disabled={busy} onPress={() => joinLive(item)} accessibilityRole="button" accessibilityLabel={'Join LIVE: ' + item.title} accessibilityState={{ disabled: busy, busy }} style={{ gap: spacing.sm }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, backgroundColor: hexToRgba(colors.danger, 0.12), borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.25) }}>
