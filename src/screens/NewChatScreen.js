@@ -31,7 +31,7 @@ import {
 } from '../services/api';
 
 export default function NewChatScreen({ navigation, route }) {
-  const { colors, spacing, typography } = useTheme();
+  const { colors, spacing, typography, layout } = useTheme();
 
   const [contacts, setContacts] = useState([]);
   const [loadingContacts, setLoadingContacts] = useState(true);
@@ -351,6 +351,7 @@ export default function NewChatScreen({ navigation, route }) {
         onBack={() => navigation.goBack()}
       />
 
+      <View style={{ flex: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
       {!isShareMode && (
         <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md, gap: spacing.sm, marginBottom: spacing.sm }}>
           <Text style={[typography.title, { color: colors.textPrimary }]}>Find people on ZannyChat</Text>
@@ -519,6 +520,7 @@ export default function NewChatScreen({ navigation, route }) {
           }}
         />
       )}
+      </View>
     </SafeAreaView>
   );
 }
