@@ -13,7 +13,7 @@ import { SUPABASE_ENABLED } from '../services/supabaseClient';
 import { BACKEND_ENABLED, checkBackendHealth } from '../services/backendClient';
 
 export default function SettingsScreen({ navigation }) {
-  const { colors, spacing, typography, radii, paletteKey, palettes, setPalette, customPalette, setCustomPalette, appearance, setAppearance, resolvedMode, textScale, setTextScale, highContrast, setHighContrast, persistenceError, clearPersistenceError } = useTheme();
+  const { colors, spacing, typography, radii, paletteKey, palettes, setPalette, customPalette, setCustomPalette, appearance, setAppearance, resolvedMode, textScale, setTextScale, highContrast, setHighContrast, persistenceError, clearPersistenceError, layout } = useTheme();
   const [customSignal, setCustomSignal] = useState(customPalette?.signal || '#795CFF');
   const [customThread, setCustomThread] = useState(customPalette?.thread || '#39E7E0');
   const [customGold, setCustomGold] = useState(customPalette?.gold || '#FFD58A');
@@ -55,7 +55,7 @@ export default function SettingsScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Appearance & theme" onBack={() => navigation.goBack()} />
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg }}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         {persistenceError ? (
           <View style={[styles.persistenceWarning, { backgroundColor: colors.surface, borderColor: colors.warning, borderRadius: radii.md, marginBottom: spacing.md }]}>
             <Ionicons name="alert-circle-outline" size={19} color={colors.warning} />
