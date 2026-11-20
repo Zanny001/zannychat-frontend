@@ -579,6 +579,10 @@ export default function LiveStreamScreen({ route, navigation }) {
 
 
   useEffect(() => {
+    // The LiveKit Room is created by the connection effect above and stored
+    // in roomRef. Read it here instead of referencing an out-of-scope
+    // `room` variable during render (which crashes the entire web app).
+    const room = roomRef.current;
     if (!room || !stream?.id) return undefined;
     const onDataReceived = (payload, _participant, _kind, topic) => {
       if (isLiveFeedInvalidation(payload, topic)) refreshComments();
@@ -589,7 +593,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       room.off(RoomEvent.DataReceived, onDataReceived);
       room.off(RoomEvent.Reconnected, refreshComments);
     };
-  }, [room, stream?.id, refreshComments]);
+  }, [stream?.id, connection?.token, refreshComments]);
 
   useEffect(() => {
     if (!stream?.id) return undefined;
