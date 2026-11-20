@@ -224,6 +224,7 @@ export default function LiveEventsScreen({ navigation }) {
         <LivePremiumHeader
           navigation={navigation}
           eyebrow="ZANNYCHAT · LIVE EVENTS"
+            backLabel="Go back"
           title="LIVE Events"
           subtitle="Plan a moment. Bring your people together."
           icon="calendar-outline"
