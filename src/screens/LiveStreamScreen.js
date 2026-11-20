@@ -21,7 +21,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
 import LiveCategoryBackdrop from '../components/LiveCategoryBackdrop';
 import { formatLiveBroadcastTimeRemaining, getLiveBroadcastTimeRemaining, LIVE_BROADCAST_WARNING_MS } from '../utils/liveBroadcastTimeout';
-import { getActiveCreatorStreamId } from '../utils/liveCreatorRecovery';
+import { getActiveCreatorStreamId, hasLiveConnectionCredentials } from '../utils/liveCreatorRecovery';
 import { getLiveStageTileFrame } from '../utils/liveStageLayout';
 
 const LIVE_REACTION_EMOJI = Object.freeze({ heart: '❤️', clap: '👏', laugh: '😂', wow: '😮', fire: '🔥', idea: '💡', support: '🙌' });
@@ -478,7 +478,8 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [recoveredStreamId, setRecoveredStreamId] = useState(null);
   const streamId = requestedStreamId || recoveredStreamId;
   const [connection, setConnection] = useState(initialConnection);
-  const [connectionLoading, setConnectionLoading] = useState(Boolean(streamId && !initialConnection));
+  const [connectionLoading, setConnectionLoading] = useState(!hasLiveConnectionCredentials(initialConnection));
+  const [connectionRetry, setConnectionRetry] = useState(0);
   const creatorMode = connection?.role === 'creator';
   const moderatorMode = Boolean(creatorMode || connection?.canModerate);
   const stream = connection?.stream;
@@ -595,7 +596,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       active = false;
       if (connectionRequestRef.current === requestId) connectionRequestRef.current += 1;
     };
-  }, [streamId]);
+  }, [streamId, connectionRetry]);
 
   const refreshReplay = useCallback(async () => {
     if (!stream?.id || !creatorMode || !replayEnabled || !isAppForeground() || replayRefreshInFlight.current) return;
@@ -1170,7 +1171,12 @@ export default function LiveStreamScreen({ route, navigation }) {
     navigation.navigate('LiveReplay', { replay: { ...replay, streamTitle: stream?.title || 'LIVE replay' } });
   };
 
-  if (!connection || !stream) return <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}><ActivityIndicator color={colors.primary} /><Text style={{ color: colors.textPrimary, marginTop: 12 }}>{connectionLoading ? 'Connecting to LIVE…' : error || 'This LIVE room is unavailable.'}</Text></SafeAreaView>;
+  if (!connection || !stream) return <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background, paddingHorizontal: 28 }}>
+    {connectionLoading ? <ActivityIndicator size="large" color={colors.accent} /> : null}
+    <Text style={{ color: colors.textPrimary, marginTop: 14, fontSize: 16, fontWeight: '800', textAlign: 'center' }}>{connectionLoading ? (requestedStreamId ? 'Connecting to LIVE…' : 'Recovering your LIVE broadcast…') : error || 'This LIVE room is unavailable.'}</Text>
+    {!connectionLoading ? <TouchableOpacity onPress={() => setConnectionRetry((value) => value + 1)} accessibilityRole="button" accessibilityLabel="Retry LIVE connection" style={{ marginTop: 16, minHeight: 48, paddingHorizontal: 20, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary }}><Text style={{ color: colors.onPrimary, fontWeight: '900' }}>TRY AGAIN</Text></TouchableOpacity> : null}
+    <TouchableOpacity onPress={() => navigation.replace('Main', { screen: 'LIVE' })} accessibilityRole="button" accessibilityLabel="Return to LIVE Hub" style={{ marginTop: 8, minHeight: 48, paddingHorizontal: 20, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceAlt }}><Text style={{ color: colors.textPrimary, fontWeight: '800' }}>BACK TO LIVE HUB</Text></TouchableOpacity>
+  </SafeAreaView>;
   return (
     <View style={{ flex: 1, backgroundColor: '#05050A' }}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
