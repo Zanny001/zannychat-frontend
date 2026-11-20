@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Image,
-  Platform, Alert, ActivityIndicator, ScrollView, Switch, Modal,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Image, Platform, Alert, ActivityIndicator, ScrollView, Switch, Modal } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../theme/ThemeContext';
@@ -217,7 +215,7 @@ export default function EditProfileScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Edit profile" onBack={() => navigation.goBack()} right={
         <TouchableOpacity onPress={handleSave} disabled={saving || uploadingPhoto || uploadingCover} accessibilityRole="button" accessibilityLabel="Save profile" accessibilityState={{ disabled: saving || uploadingPhoto || uploadingCover, busy: saving }} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.sm }}>
           {saving ? <ActivityIndicator size="small" color={colors.primary} /> : <Text style={[typography.bodyStrong, { color: colors.primary }]}>Save</Text>}
