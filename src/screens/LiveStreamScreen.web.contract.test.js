@@ -110,7 +110,7 @@ test('web viewer-to-guest token handoff preserves LIVE room membership until act
 });
 
 test('web LIVE route uses a stream ID and fetches its connection after navigation', () => {
-  assert.ok(web.includes('const streamId = route.params?.streamId || initialConnection?.stream?.id || null'));
+  assert.ok(web.includes('const requestedStreamId = typeof route.params?.streamId === \'string\''));
   assert.ok(web.includes('`/live/${streamId}/join`'));
   assert.equal(web.includes('navigation.setParams({ connection:'), false);
 });
