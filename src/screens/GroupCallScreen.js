@@ -13,7 +13,7 @@ import { endNativeCall, fulfillNativeIncomingConnected, reportNativeCallEnded, r
 
 function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onParticipantsChange, endLabel, nativeCallId, nativeRequestId, isCaller, onRoomConnected, directCall }) {
   const room = useRoomContext();
-  const { colors, typography } = useTheme();
+  const { colors, typography, layout } = useTheme();
   const cameraTracks = useTracks([Track.Source.Camera]);
   const participants = useParticipants();
   const [muted, setMuted] = useState(false);
@@ -132,6 +132,7 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
 
       {(isVideo || tracks.length > 0) ? (
         <FlatList
+          style={{ width: '100%', maxWidth: layout.mediaStageMaxWidth, alignSelf: 'center', flexGrow: 1 }}
           data={tracks}
           keyExtractor={(track) => track.participant.identity}
           numColumns={2}
@@ -172,7 +173,7 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
         </View>
       )}
 
-      <View style={styles.controls}>
+      <View style={[styles.controls, { width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }]}>
         <Pressable
           onPress={toggleMute}
           accessibilityRole="button"
