@@ -8,7 +8,7 @@ import { CHAT_CANVASES, DEFAULT_CHAT_CANVAS, normalizeChatCanvas, resolveChatCan
 import { loadChatCanvas, saveChatCanvas } from '../services/chatAppearance';
 
 export default function ChatAppearanceScreen({ navigation }) {
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, radii, typography, layout } = useTheme();
   const [selected, setSelected] = useState(DEFAULT_CHAT_CANVAS);
   const [ready, setReady] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -42,7 +42,7 @@ export default function ChatAppearanceScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Chat appearance" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xl }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xl, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         <View style={[styles.eyebrow, { backgroundColor: `${colors.primary}18`, borderColor: `${colors.primary}35` }]}>
           <Ionicons name="sparkles-outline" size={15} color={colors.primary} />
           <Text style={[typography.small, { color: colors.primary, marginLeft: 7, letterSpacing: 1 }]}>YOUR CONVERSATION CANVAS</Text>

@@ -21,7 +21,7 @@ const EXCLUSIONS = [
 ];
 
 export default function ChatFoldersScreen({ navigation }) {
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, radii, typography, layout } = useTheme();
   const [userId, setUserId] = useState(null);
   const [folders, setFolders] = useState([]);
   const [name, setName] = useState('');
@@ -91,7 +91,7 @@ export default function ChatFoldersScreen({ navigation }) {
         initialNumToRender={8}
         maxToRenderPerBatch={8}
         windowSize={7}
-        contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, flexGrow: 1 }}
+        contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, flexGrow: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
         ListHeaderComponent={
           <View>
             <GlassCard glow style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md }}>

@@ -10,7 +10,7 @@ import { loadSavedMessages, removeSavedMessage } from '../services/savedMessages
 import { filterSavedMessages } from '../utils/savedMessages';
 
 export default function SavedMessagesScreen({ navigation }) {
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, radii, typography, layout } = useTheme();
   const [userId, setUserId] = useState(null);
   const [items, setItems] = useState([]);
   const [query, setQuery] = useState('');
@@ -42,7 +42,7 @@ export default function SavedMessagesScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Saved messages" subtitle="Your private, on-device collection" onBack={() => navigation.goBack()} />
-      <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md }}>
+      <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         <GlassCard noPadding glow intensity={24} tintAlpha={0.42}>
           <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, minHeight: 48 }}>
             <Ionicons name="search-outline" size={19} color={colors.textSecondary} />
@@ -63,7 +63,7 @@ export default function SavedMessagesScreen({ navigation }) {
           initialNumToRender={10}
           maxToRenderPerBatch={10}
           windowSize={7}
-          contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, flexGrow: 1 }}
+          contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, flexGrow: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
           renderItem={({ item }) => (
 <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>

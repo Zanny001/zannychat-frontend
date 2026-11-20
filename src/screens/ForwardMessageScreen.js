@@ -8,7 +8,7 @@ import GlassCard from '../components/GlassCard';
 import { fetchConversations, sendMessage } from '../services/api';
 
 export default function ForwardMessageScreen({ navigation, route }) {
-  const { colors, spacing, typography } = useTheme();
+  const { colors, spacing, typography, layout } = useTheme();
   const { messageText, sourceConversationId } = route.params || {};
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +44,7 @@ export default function ForwardMessageScreen({ navigation, route }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Forward message" onBack={() => navigation.goBack()} />
-      <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md }}>
+      <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         <GlassCard glow style={{ marginBottom: spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
             <Ionicons name="arrow-redo-outline" size={18} color={colors.accent} style={{ marginRight: spacing.sm, marginTop: 2 }} />
@@ -67,7 +67,7 @@ export default function ForwardMessageScreen({ navigation, route }) {
           initialNumToRender={10}
           maxToRenderPerBatch={10}
           windowSize={7}
-          contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.lg, flexGrow: 1 }}
+          contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.lg, flexGrow: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
           ListEmptyComponent={<Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl }]}>No other chats available to forward to.</Text>}
           renderItem={({ item }) => (
             <TouchableOpacity onPress={() => forwardTo(item)} disabled={Boolean(sendingId)} style={{ minHeight: 64 }} accessibilityRole="button" accessibilityLabel={`Forward message to ${item.participant?.name || item.name || 'group chat'}`} accessibilityState={{ disabled: Boolean(sendingId), busy: sendingId === item.id }} activeOpacity={0.8}>

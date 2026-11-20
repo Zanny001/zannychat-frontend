@@ -17,7 +17,7 @@ function updatedLabel(value) {
 }
 
 export default function DraftsScreen({ navigation }) {
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, radii, typography, layout } = useTheme();
   const [drafts, setDrafts] = useState([]);
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -94,7 +94,7 @@ export default function DraftsScreen({ navigation }) {
           initialNumToRender={10}
           maxToRenderPerBatch={10}
           windowSize={7}
-          contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, flexGrow: 1 }}
+          contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, flexGrow: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
           ListHeaderComponent={
             <View>
               <GlassCard glow style={{ marginBottom: spacing.md }}>
