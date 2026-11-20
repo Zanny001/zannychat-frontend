@@ -918,3 +918,14 @@ Three additional gaps are now documented in section 13 of the Architecture and S
 3. Owner updates to `profile_details.avatar_path/cover_path` and `profiles.avatar_url` are not guarded by owner-path/object integrity checks. Current production values are clean (three owner-matching public URLs, one owner-matching private avatar object, no cover paths), but a malicious direct table write can spoof another user's image or cause arbitrary external image fetches.
 
 These join the cross-mode active-call invariant gap in section 31. The remediation spans SECURITY DEFINER functions, trigger functions and table constraints and must be one reviewed migration set with SQL integration tests. No production changes were made. The explicit migration-approval gate remains in force.
+
+## 34. Worker reliability audit
+
+All nine recurring background loops and their principal SQL claim/cleanup functions have now been reviewed. Call invitation, call-ended and LIVE event reminder queues use `FOR UPDATE SKIP LOCKED` with bounded stale leases/retries; LIVE timeout warnings use a conditional atomic claim plus release-on-failure; stale participant and call-session cleanup use idempotent set-based updates; replay quota reserve/finalize is serialized by a singleton row and replay ID.
+
+Three scaling hardening items remain:
+1. Account-storage cleanup uses only a process-local running guard, not a database claim/lease; duplicate workers can process the same job if multiple backend instances run.
+2. LIVE replay-ready push is sent before `notification_sent_at` is persisted; webhook and recovery worker can race and send duplicate ready notifications. Add an atomic notification claim/lease.
+3. Group-call and ended-LIVE room cleanup rely on idempotent LiveKit 404 behavior; ended LIVE rooms are rechecked repeatedly because no deletion marker is persisted. This is safe but noisy/inefficient.
+
+The nine loops are started only when `src/index.js` is the process entrypoint. Production worker liveness, last-success freshness, queue depth, stale lease count and alerts remain unverified; Render was not inspected per the user's instruction. No worker was invoked and no production queue or resource was changed.

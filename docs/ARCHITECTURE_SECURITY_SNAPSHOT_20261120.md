@@ -301,3 +301,29 @@ A read-only data-shape check found no current bad pointers: three non-null publi
 6. Add SQL integration tests for each preference (everyone/contacts/nobody), forwarded invites, blocked inviter, group-call invite, direct-call promotion, cross-mode concurrent join, owner path, other-user path, missing object and valid legacy public avatar URL.
 
 These are migration-gated. No migration file was fabricated, no production SQL was applied, and no user data or storage object was changed.
+
+## 14. Background worker reliability and idempotency review — 2026-11-20
+
+All nine recurring loops started by `src/index.js` were inspected with their job modules and the key production claim/cleanup RPCs.
+
+| Worker | Claim / lease / retry model | Review result |
+|---|---|---|
+| Call invitation notifications | `claim_call_invitation_notifications` uses `FOR UPDATE SKIP LOCKED`; 5-minute stale processing lease; 10 attempts with exponential backoff capped at 15 minutes | Good DB claim/retry boundary; no-token cases expire rather than retry indefinitely |
+| Call-ended notifications | `claim_call_end_notifications` uses `FOR UPDATE SKIP LOCKED`; 2-minute stale lease; 12 attempts with exponential backoff capped at 15 minutes | Good DB claim/retry boundary; provider failures return to pending; no-token failures are bounded |
+| Group-call media cleanup | Selects ended rooms with `media_terminated_at IS NULL`, deletes LiveKit room, then stamps termination time | External delete is idempotent (LiveKit 404 is treated as already absent); no DB lease, so multiple instances may duplicate a harmless delete |
+| Media participant heartbeat cleanup | `cleanup_stale_media_participants` performs set-based status transitions for stale LIVE/group participants and ends empty group rooms | Atomic/idempotent state transition; 3-minute stale threshold; production liveness still unverified |
+| Call-session/signaling cleanup | `cleanup_stale_call_signals` marks expired ringing calls missed, stale accepted calls ended after 3 minutes, and deletes terminal/old signals | Set-based idempotent cleanup; no separate lease required for these row-state transitions |
+| Account storage cleanup | Selects due held/pending jobs; process-local `workerRunning` guard; retries with exponential delay capped at 24 hours; storage removal in 100-object batches | Storage deletion is repeatable, but there is no cross-instance DB claim/lease. Multiple backend instances can process the same job concurrently; add DB claim if service is scaled beyond one instance |
+| LIVE replay lifecycle | Periodic scans reconcile Egress, stop expired/ended recordings, and clean expired storage; quota reservation/finalization is serialized by a singleton row and keyed by replay ID | Quota reservation/finalization is idempotent. Stop timers and `started` guard are process-local. `notifyReplayReady` sends push before setting `notification_sent_at`, so concurrent webhook/worker finalization can send duplicate “replay ready” pushes; add a DB notification claim/lease before scaling horizontally |
+| LIVE event reminders | `claim_live_event_reminders` uses `FOR UPDATE SKIP LOCKED`, increments attempts and leases `sending` rows for 10 minutes; failed delivery is retryable before event start | Good database claim boundary; recipient eligibility, audience and creator block checks are included in claim query |
+| LIVE stream timeout warnings | Single conditional UPDATE claims streams in the 3:50–4:00 hour window by setting `timeout_warning_sent_at`; failed delivery calls a release RPC so next 30-second tick retries | Atomic one-time claim with explicit retry release; no attempt counter, but retry window is bounded by the four-hour stream cap |
+
+### Cross-cutting operational gaps
+
+- The in-process `running` / `started` guards prevent duplicate loops within one Node process only; they are not distributed locks.
+- Group-call room deletion and ended-LIVE room deletion rely on LiveKit's idempotent 404 behavior rather than a cross-instance claim. Ended LIVE room cleanup has no persisted “room deleted” marker and therefore rechecks already-deleted rooms on later ticks; harmless but noisy/inefficient.
+- Account-storage cleanup has no DB lease/claim, and replay-ready notification has no atomic notification lease. These should be hardened before horizontal scaling.
+- No worker currently exports a complete production heartbeat/last-success metric, queue depth, oldest due item, stale lease count or terminal-failure alert. Log output is not a durable operational SLO.
+- Workers start only in the `require.main === module` path. Deployment must execute `node src/index.js` (or explicitly start workers from its entrypoint); source inspection alone does not prove the production process is running all nine loops. Render was not inspected per the user's instruction.
+
+No worker was manually invoked and no queue, stream, call, replay, storage job or production state was modified during this review.
