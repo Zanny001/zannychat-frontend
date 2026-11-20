@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { SafeAreaView, FlatList, View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { FlatList, View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
@@ -78,7 +79,7 @@ export default function DraftsScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Drafts" subtitle="Unsent messages on this device" onBack={() => navigation.goBack()} />
       {loading ? (
         <View style={{ alignItems: 'center', paddingVertical: spacing.xxl }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Finding your drafts…</Text></View>

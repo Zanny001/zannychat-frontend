@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { SafeAreaView, FlatList, View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { FlatList, View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
@@ -40,7 +41,7 @@ export default function SavedMessagesScreen({ navigation }) {
   ]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Saved messages" subtitle="Your private, on-device collection" onBack={() => navigation.goBack()} />
       <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         <GlassCard noPadding glow intensity={24} tintAlpha={0.42}>
