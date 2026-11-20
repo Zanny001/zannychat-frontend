@@ -6,7 +6,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { acceptGroupInvite } from '../services/api';
 
 export default function JoinGroupScreen({ navigation, route }) {
-  const { colors, spacing, typography, radii } = useTheme();
+  const { colors, spacing, typography, radii, layout } = useTheme();
   const [token, setToken] = useState(route?.params?.token || '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -23,7 +23,7 @@ export default function JoinGroupScreen({ navigation, route }) {
   };
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
     <Header title="Join a group" subtitle="Use an invite from a group admin" onBack={() => navigation.goBack()} />
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center' }}>
       <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Group invite token</Text>
         <Text style={[typography.caption, { color: colors.textSecondary }]}>If you received a ZannyChat invite link but it did not open automatically, copy the token from the message and paste it here. Invites can expire or be revoked.</Text>

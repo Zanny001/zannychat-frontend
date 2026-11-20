@@ -15,7 +15,7 @@ import { fetchContacts, createGroupConversation } from '../services/api';
 const MIN_OTHER_MEMBERS = 2;
 
 export default function CreateGroupScreen({ navigation }) {
-  const { colors, spacing, typography, radii } = useTheme();
+  const { colors, spacing, typography, radii, layout } = useTheme();
   const [contacts, setContacts] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [name, setName] = useState('');
@@ -93,7 +93,7 @@ export default function CreateGroupScreen({ navigation }) {
       <FlatList
         data={contacts}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.lg, flexGrow: 1 }}
+        contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.lg, flexGrow: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
         ListEmptyComponent={
           loadingContacts ? (
             <ActivityIndicator color={colors.primary} style={{ padding: spacing.xl }} />

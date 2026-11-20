@@ -11,7 +11,7 @@ import { formatPollVoteSummary } from '../utils/pollResults';
 export default function PollsScreen({ navigation, route }) {
   const conversation = route.params?.conversation;
   const conversationId = conversation?.id || route.params?.conversationId;
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, radii, typography, layout } = useTheme();
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '', '', '']);
   const [allowMultiple, setAllowMultiple] = useState(false);
@@ -79,7 +79,7 @@ export default function PollsScreen({ navigation, route }) {
       initialNumToRender={8}
       maxToRenderPerBatch={8}
       windowSize={7}
-      contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, flexGrow: 1 }}
+      contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, flexGrow: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
       ListHeaderComponent={
         <View>
           <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
