@@ -67,7 +67,7 @@ test('LIVE Events screen has accessible controls and loading, error and empty st
 
 
 test('LIVE Events uses the shared premium content width and clear Hub navigation',()=>{
-  assert.ok(screen.includes("maxWidth:760"));
+  assert.match(screen, /maxWidth:\s*layout\.contentMaxWidth/);
   assert.ok(screen.includes("alignSelf:'center'"));
   assert.ok(screen.includes('Back to LIVE Hub'));
   assert.ok(screen.includes('UPCOMING EVENT'));

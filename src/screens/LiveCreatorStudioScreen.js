@@ -25,7 +25,7 @@ function Metric({ icon, label, value, colors, typography }) {
 }
 
 export default function LiveCreatorStudioScreen({ navigation }) {
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, radii, typography, layout } = useTheme();
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -156,7 +156,7 @@ export default function LiveCreatorStudioScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, alignItems: 'center' }}>
-        <View style={{ width: '100%', maxWidth: 760, alignSelf: 'center', gap: spacing.md }}>
+        <View style={{ width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center', gap: spacing.md }}>
         <LivePremiumHeader
           navigation={navigation}
           eyebrow="ZANNYCHAT · LIVE · CREATOR STUDIO"

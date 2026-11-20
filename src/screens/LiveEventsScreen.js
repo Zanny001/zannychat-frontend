@@ -42,7 +42,7 @@ function formatDate(value) {
 }
 
 export default function LiveEventsScreen({ navigation }) {
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, radii, typography, layout } = useTheme();
   const [events,setEvents]=useState([]);
   const [invitations,setInvitations]=useState([]);
   const [candidates,setCandidates]=useState([]);
@@ -221,7 +221,7 @@ export default function LiveEventsScreen({ navigation }) {
   return (
     <SafeAreaView style={{flex:1,backgroundColor:colors.background}}>
       <ScrollView contentContainerStyle={{paddingHorizontal:spacing.md,paddingTop:spacing.sm,paddingBottom:spacing.xl}} keyboardShouldPersistTaps="handled">
-        <View style={{width:'100%',maxWidth:760,alignSelf:'center',gap:spacing.md}}>
+        <View style={{width:'100%',maxWidth: layout.contentMaxWidth,alignSelf:'center',gap:spacing.md}}>
         <LivePremiumHeader
           navigation={navigation}
           eyebrow="ZANNYCHAT · LIVE EVENTS"

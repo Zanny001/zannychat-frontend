@@ -20,7 +20,7 @@ function formatNumber(value) {
 }
 
 export default function LiveLeaderboardScreen({ navigation }) {
-  const { colors, spacing, typography } = useTheme();
+  const { colors, spacing, typography, layout } = useTheme();
   const [entries, setEntries] = useState([]);
   const [followingIds, setFollowingIds] = useState([]);
   const [currentUserId, setCurrentUserId] = useState(null);
@@ -117,7 +117,7 @@ export default function LiveLeaderboardScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => refresh(true)} tintColor={colors.primary} />}
         contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, alignItems: 'center' }}
       >
-        <View style={{ width: '100%', maxWidth: 760, gap: spacing.md }}>
+        <View style={{ width: '100%', maxWidth: layout.contentMaxWidth, gap: spacing.md }}>
           <LivePremiumHeader
             navigation={navigation}
             eyebrow="ZANNYCHAT · LIVE COMMUNITY"

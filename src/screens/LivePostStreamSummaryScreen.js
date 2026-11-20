@@ -34,7 +34,7 @@ function replayMessage(status, enabled) {
 }
 
 export default function LivePostStreamSummaryScreen({ route, navigation }) {
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, radii, typography, layout } = useTheme();
   const creatorId = route.params?.creatorId || null;
   const title = route.params?.title || 'Your LIVE broadcast';
   const startedAt = route.params?.startedAt || null;
@@ -69,7 +69,7 @@ export default function LivePostStreamSummaryScreen({ route, navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, alignItems: 'center' }}>
-        <View style={{ width: '100%', maxWidth: 680, gap: spacing.md }}>
+        <View style={{ width: '100%', maxWidth: layout.contentMaxWidth, gap: spacing.md }}>
           <View style={{ alignItems: 'center', paddingTop: spacing.xl, paddingBottom: spacing.md, gap: spacing.sm }}>
             <View style={{ width: 78, height: 78, borderRadius: 26, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="checkmark-done-circle" size={42} color={colors.success} />

@@ -28,7 +28,7 @@ const CATEGORIES = [
 ];
 
 export default function LiveSettingsScreen({ navigation }) {
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, radii, typography, layout } = useTheme();
   const [preferences, setPreferences] = useState({ ...DEFAULT_LIVE_PREFERENCES });
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -115,7 +115,7 @@ export default function LiveSettingsScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, alignItems: 'center' }}>
-        <View style={{ width: '100%', maxWidth: 760, gap: spacing.md }}>
+        <View style={{ width: '100%', maxWidth: layout.contentMaxWidth, gap: spacing.md }}>
           <LivePremiumHeader
             navigation={navigation}
             eyebrow="ZANNYCHAT · LIVE PREFERENCES"

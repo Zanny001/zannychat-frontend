@@ -27,7 +27,7 @@ function titleCase(value) {
 }
 
 export default function LiveReportsScreen({ route, navigation }) {
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, radii, typography, layout } = useTheme();
   const streamId = route.params?.streamId || null;
   const streamTitle = route.params?.title || 'LIVE stage';
   const [reports, setReports] = useState([]);
@@ -123,7 +123,7 @@ export default function LiveReportsScreen({ route, navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => refresh(true)} tintColor={colors.primary} />} contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, alignItems: 'center' }}>
-        <View style={{ width: '100%', maxWidth: 760, gap: spacing.md }}>
+        <View style={{ width: '100%', maxWidth: layout.contentMaxWidth, gap: spacing.md }}>
           <LivePremiumHeader
             navigation={navigation}
             eyebrow="ZANNYCHAT · LIVE SAFETY"
