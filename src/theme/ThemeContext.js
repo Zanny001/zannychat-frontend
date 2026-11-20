@@ -21,7 +21,8 @@ export function ThemeProvider({ children }) {
   const [highContrast, setHighContrast] = useState(false);
   const [persistenceError, setPersistenceError] = useState('');
   const preferenceRevisionRef = useRef({ mood: 0, customPalette: 0, appearance: 0, accessibility: 0 });
-  const persistenceAttemptRef = useRef(0);
+  const persistenceAttemptRef = useRef({ mood: 0, customPalette: 0, appearance: 0, accessibility: 0 });
+  const failedPreferencesRef = useRef(new Set());
 
   useEffect(() => {
     let active = true;
@@ -52,7 +53,10 @@ export function ThemeProvider({ children }) {
         }
       })
       .catch(() => {
-        if (active) setPersistenceError('Saved appearance preferences could not be loaded from this device. Current session defaults remain active.');
+        if (active) {
+          failedPreferencesRef.current.add('load');
+          setPersistenceError('Saved appearance preferences could not be loaded from this device. Current session defaults remain active.');
+        }
       });
     return () => { active = false; };
   }, []);
@@ -67,20 +71,24 @@ export function ThemeProvider({ children }) {
       fontSize: Math.round(style.fontSize * scale * 10) / 10,
       ...(style.lineHeight ? { lineHeight: Math.round(style.lineHeight * scale) } : {}),
     }]));
-    const persist = async (write) => {
-      const attempt = ++persistenceAttemptRef.current;
+    const persist = async (write, key) => {
+      const attempt = ++persistenceAttemptRef.current[key];
       try {
         await write;
-        if (attempt === persistenceAttemptRef.current) setPersistenceError('');
+        if (attempt === persistenceAttemptRef.current[key]) {
+          failedPreferencesRef.current.delete(key);
+          if (failedPreferencesRef.current.size === 0) setPersistenceError('');
+        }
         return true;
       } catch (_) {
-        if (attempt === persistenceAttemptRef.current) {
+        if (attempt === persistenceAttemptRef.current[key]) {
+          failedPreferencesRef.current.add(key);
           setPersistenceError('Your preferences are active for this session, but could not be saved on this device. Check device storage and try again.');
         }
         return false;
       }
     };
-    const persistAccessibility = (next) => persist(AsyncStorage.setItem(ACCESSIBILITY_STORAGE_KEY, JSON.stringify(next)));
+    const persistAccessibility = (next) => persist(AsyncStorage.setItem(ACCESSIBILITY_STORAGE_KEY, JSON.stringify(next)), 'accessibility');
     return {
       colors: resolveMoodColors(mood, resolvedMode, highContrast),
       mood,
@@ -97,12 +105,15 @@ export function ThemeProvider({ children }) {
       textScale,
       highContrast,
       persistenceError,
-      clearPersistenceError: () => setPersistenceError(''),
+      clearPersistenceError: () => {
+        failedPreferencesRef.current.clear();
+        setPersistenceError('');
+      },
       setAppearance: (mode) => {
         if (['system', 'light', 'dark'].includes(mode)) {
           preferenceRevisionRef.current.appearance += 1;
           setAppearance(mode);
-          void persist(AsyncStorage.setItem(APPEARANCE_STORAGE_KEY, mode));
+          void persist(AsyncStorage.setItem(APPEARANCE_STORAGE_KEY, mode), 'appearance');
         }
       },
       setTextScale: (scaleKey) => {
@@ -121,7 +132,7 @@ export function ThemeProvider({ children }) {
         if (MOODS[key] || (key === 'custom' && customPalette)) {
           preferenceRevisionRef.current.mood += 1;
           setMoodKey(key);
-          void persist(AsyncStorage.setItem(MOOD_STORAGE_KEY, key));
+          void persist(AsyncStorage.setItem(MOOD_STORAGE_KEY, key), 'mood');
         }
       },
       setCustomPalette: (nextPalette) => {
@@ -134,7 +145,7 @@ export function ThemeProvider({ children }) {
         void persist(AsyncStorage.multiSet([
           [CUSTOM_PALETTE_STORAGE_KEY, JSON.stringify(normalized)],
           [MOOD_STORAGE_KEY, 'custom'],
-        ]));
+        ]), 'customPalette');
         return true;
       },
     };
