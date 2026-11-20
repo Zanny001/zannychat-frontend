@@ -10,9 +10,9 @@ test('theme preference storage failures are surfaced instead of silently swallow
   assert.match(theme, /failedPreferencesRef\.current\.add\(key\)/);
   assert.match(theme, /failedPreferencesRef\.current\.delete\(key\)/);
   assert.match(theme, /Your preferences are active for this session, but could not be saved on this device/);
-  assert.match(theme, /void persist\(AsyncStorage\.setItem\(MOOD_STORAGE_KEY, key\), 'mood'\)/);
-  assert.match(theme, /void persist\(AsyncStorage\.setItem\(APPEARANCE_STORAGE_KEY, mode\), 'appearance'\)/);
-  assert.match(theme, /void persist\(AsyncStorage\.multiSet\(/);
+  assert.match(theme, /void persist\(\(\) => AsyncStorage\.setItem\(MOOD_STORAGE_KEY, key\), 'mood'\)/);
+  assert.match(theme, /void persist\(\(\) => AsyncStorage\.setItem\(APPEARANCE_STORAGE_KEY, mode\), 'appearance'\)/);
+  assert.match(theme, /void persist\(\(\) => AsyncStorage\.multiSet\(/);
   assert.match(theme, /\.catch\(\(\) => \{\s*if \(active\) setPersistenceError/);
 });
 
