@@ -18,7 +18,7 @@ import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
 import LiveCategoryBackdrop from '../components/LiveCategoryBackdrop';
 import { formatLiveBroadcastTimeRemaining, getLiveBroadcastTimeRemaining, LIVE_BROADCAST_WARNING_MS } from '../utils/liveBroadcastTimeout';
-import { getActiveCreatorStreamId } from '../utils/liveCreatorRecovery';
+import { getActiveCreatorStreamId, hasLiveConnectionCredentials } from '../utils/liveCreatorRecovery';
 import { getLiveStageTileFrame } from '../utils/liveStageLayout';
 
 const LIVE_REACTION_EMOJI = Object.freeze({ heart: '❤️', clap: '👏', laugh: '😂', wow: '😮', fire: '🔥', idea: '💡', support: '🙌' });
@@ -154,7 +154,8 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [recoveredStreamId, setRecoveredStreamId] = useState(null);
   const streamId = requestedStreamId || recoveredStreamId;
   const [connection, setConnection] = useState(initialConnection);
-  const [connectionLoading, setConnectionLoading] = useState(Boolean(streamId && !initialConnection));
+  const [connectionLoading, setConnectionLoading] = useState(!hasLiveConnectionCredentials(initialConnection));
+  const [connectionRetry, setConnectionRetry] = useState(0);
   const stream = connection?.stream;
   const creatorMode = connection?.role === 'creator';
   const [timeoutClock, setTimeoutClock] = useState(Date.now());
@@ -362,7 +363,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       active = false;
       if (connectionRequestRef.current === requestId) connectionRequestRef.current += 1;
     };
-  }, [streamId]);
+  }, [streamId, connectionRetry]);
 
   useEffect(() => {
     if (connectionLoading) {
@@ -937,7 +938,12 @@ export default function LiveStreamScreen({ route, navigation }) {
     if (replay?.id) navigation.navigate('LiveReplay', { replay: { ...replay, streamTitle: stream?.title || 'LIVE replay' } });
   };
 
-  if (!stream || !connection) return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}><Text style={[typography.body, { color: colors.textPrimary }]}>This LIVE room is unavailable.</Text><Action colors={colors} label="Go back" onPress={() => navigation.goBack()} /></SafeAreaView>;
+  if (!stream || !connection) return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center', padding: 28, gap: 14 }}>
+    {connectionLoading ? <ActivityIndicator size="large" color={colors.accent} /> : null}
+    <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: '800', textAlign: 'center' }}>{connectionLoading ? (requestedStreamId ? 'Connecting to LIVE…' : 'Recovering your LIVE broadcast…') : error || 'This LIVE room is unavailable.'}</Text>
+    {!connectionLoading ? <Action colors={colors} label="Try again" onPress={() => setConnectionRetry((value) => value + 1)} /> : null}
+    <Action colors={colors} label="Go back" onPress={() => navigation.goBack()} />
+  </SafeAreaView>;
 
   const orderedRemoteTracks = [...remoteVideoTracks].sort((a, b) =>
     Number(b.participant.attributes?.zannychat_spotlight === 'true') - Number(a.participant.attributes?.zannychat_spotlight === 'true')
