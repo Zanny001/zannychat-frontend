@@ -122,6 +122,7 @@ export default function LiveAnalyticsScreen({ navigation }) {
           <LivePremiumHeader
             navigation={navigation}
             eyebrow="ZANNYCHAT · LIVE INSIGHTS"
+            backLabel="Back to Creator Studio"
             title="Creator analytics"
             subtitle="Verified creator impact and broadcast history"
             icon="analytics-outline"
