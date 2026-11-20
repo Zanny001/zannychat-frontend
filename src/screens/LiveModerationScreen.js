@@ -208,7 +208,7 @@ export default function LiveModerationScreen({ route, navigation }) {
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.name || 'ZannyChat participant'}</Text>
-                  <Text style={[typography.caption, { color: colors.textSecondary }]}>{label}{item.spotlighted ? ' · SPOTLIGHT' : ''}{item.microphoneMuted === true ? ' · MUTED' : ''}</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>{label}{item.spotlighted ? ' · SPOTLIGHT' : ''}{item.microphoneMuted === true ? ' · MIC MUTED' : item.microphoneMuted === false ? ' · MIC ON' : ''}{item.cameraEnabled === true ? ' · CAMERA ON' : item.cameraEnabled === false ? ' · CAMERA OFF' : ''}{item.connectionStatus === 'connected' ? ' · CONNECTED' : ' · RECONNECTING'}</Text>
                 </View>
                 {item.moderator ? <View style={{ paddingHorizontal: 8, paddingVertical: 5, borderRadius: 9, borderWidth: 1, borderColor: colors.primary }}><Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>MOD</Text></View> : null}
               </View>
