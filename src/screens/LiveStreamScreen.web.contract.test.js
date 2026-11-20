@@ -214,3 +214,10 @@ test('web creator has a visible END LIVE control with confirmation; viewers only
   assert.ok(web.includes("window.confirm('End LIVE broadcast? This will stop the broadcast for everyone.')"));
   assert.ok(web.includes('onPress={creatorMode ? confirmEnd : leave}'));
 });
+
+
+test('web LIVE guest video tiles use the adaptive non-overlapping stage layout', () => {
+  assert.ok(web.includes("from '../utils/liveStageLayout'"));
+  assert.ok(web.includes('floatingCount={floatingRemoteTracks.length}'));
+  assert.ok(web.includes('getLiveStageTileFrame({ index: floatingIndex, count: floatingCount, width: bounds.width, height: bounds.height })'));
+});

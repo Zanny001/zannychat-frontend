@@ -19,6 +19,7 @@ import { useTheme } from '../theme/ThemeContext';
 import LiveCategoryBackdrop from '../components/LiveCategoryBackdrop';
 import { formatLiveBroadcastTimeRemaining, getLiveBroadcastTimeRemaining, LIVE_BROADCAST_WARNING_MS } from '../utils/liveBroadcastTimeout';
 import { getActiveCreatorStreamId } from '../utils/liveCreatorRecovery';
+import { getLiveStageTileFrame } from '../utils/liveStageLayout';
 
 const LIVE_REACTION_EMOJI = Object.freeze({ heart: '❤️', clap: '👏', laugh: '😂', wow: '😮', fire: '🔥', idea: '💡', support: '🙌' });
 const isDocumentVisible = () => typeof document === 'undefined' || document.visibilityState !== 'hidden';
@@ -93,22 +94,16 @@ function FloatingLocalVideoTile({ containerRef, colors, role }) {
     <View {...resize.panHandlers} accessibilityRole="adjustable" accessibilityLabel="Resize your LIVE video frame" style={{ position: 'absolute', right: 0, top: 0, width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderBottomLeftRadius: 12, backgroundColor: 'rgba(0,0,0,0.78)' }}><Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '900' }}>↘</Text></View>
   </View>;
 }
-function RemoteVideoTile({ track, participant, colors, creatorId, spotlight = false, single = false, mainStage = false, floating = false, focused = false, onFocus, floatingIndex = 0 }) {
+function RemoteVideoTile({ track, participant, colors, creatorId, spotlight = false, single = false, mainStage = false, floating = false, focused = false, onFocus, floatingIndex = 0, floatingCount = 1 }) {
   const containerRef = useRef(null);
   const viewport = useWindowDimensions();
   const bounds = { width: Math.max(180, viewport.width - 28), height: Math.max(220, viewport.height - 238) };
-  const [frame, setFrame] = useState(() => ({ x: Math.max(0, viewport.width - 28 - 156), y: Math.min(Math.max(0, bounds.height - 208), floatingIndex * 142), width: 156, height: 208 }));
+  const [frame, setFrame] = useState(() => getLiveStageTileFrame({ index: floatingIndex, count: floatingCount, width: bounds.width, height: bounds.height }));
   const frameRef = useRef(frame); frameRef.current = frame;
   const boundsRef = useRef(bounds); boundsRef.current = bounds;
   useEffect(() => {
-    setFrame((current) => ({
-      ...current,
-      width: Math.min(current.width, bounds.width),
-      height: Math.min(current.height, bounds.height),
-      x: Math.max(0, Math.min(Math.max(0, bounds.width - Math.min(current.width, bounds.width)), current.x)),
-      y: Math.max(0, Math.min(Math.max(0, bounds.height - Math.min(current.height, bounds.height)), current.y)),
-    }));
-  }, [bounds.width, bounds.height]);
+    if (floating) setFrame(getLiveStageTileFrame({ index: floatingIndex, count: floatingCount, width: bounds.width, height: bounds.height }));
+  }, [bounds.width, bounds.height, floating, floatingIndex, floatingCount]);
   const gestureOrigin = useRef(frame); const resizeOrigin = useRef(frame);
   const dragResponder = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => false,
@@ -992,6 +987,7 @@ export default function LiveStreamScreen({ route, navigation }) {
             creatorId={stream.creator_id}
             floating
             floatingIndex={floatingIndex}
+            floatingCount={floatingRemoteTracks.length}
             focused={focusedStageIdentity === item.participant.identity}
             spotlight={item.participant.attributes?.zannychat_spotlight === 'true'}
             onFocus={() => setFocusedStageIdentity(item.participant.identity)}

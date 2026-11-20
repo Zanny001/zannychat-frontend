@@ -603,3 +603,10 @@ test('native creator has a visible END LIVE control with confirmation; viewers o
   assert.ok(screen.includes("Alert.alert('End LIVE broadcast?'"));
   assert.ok(screen.includes('onEnd={creatorMode ? confirmEnd : leave}'));
 });
+
+
+test('native LIVE guest video tiles use an adaptive non-overlapping stage layout', () => {
+  assert.ok(screen.includes("from '../utils/liveStageLayout'"));
+  assert.ok(screen.includes('count={floatingGuestVideos.length}'));
+  assert.ok(screen.includes('getLiveStageTileFrame({ index, count, width: bounds.width, height: bounds.height })'));
+});

@@ -22,6 +22,7 @@ import { hexToRgba } from '../utils/color';
 import LiveCategoryBackdrop from '../components/LiveCategoryBackdrop';
 import { formatLiveBroadcastTimeRemaining, getLiveBroadcastTimeRemaining, LIVE_BROADCAST_WARNING_MS } from '../utils/liveBroadcastTimeout';
 import { getActiveCreatorStreamId } from '../utils/liveCreatorRecovery';
+import { getLiveStageTileFrame } from '../utils/liveStageLayout';
 
 const LIVE_REACTION_EMOJI = Object.freeze({ heart: '❤️', clap: '👏', laugh: '😂', wow: '😮', fire: '🔥', idea: '💡', support: '🙌' });
 const isAppForeground = () => !AppState.currentState || AppState.currentState === 'active';
@@ -97,21 +98,15 @@ function FloatingReaction({ item, index, onComplete }) {
   );
 }
 
-function NativeFloatingGuestTile({ track, colors, focused, spotlighted, onFocus, index = 0, creatorId }) {
+function NativeFloatingGuestTile({ track, colors, focused, spotlighted, onFocus, index = 0, count = 1, creatorId }) {
   const viewport = useWindowDimensions();
   const bounds = { width: Math.max(180, viewport.width - 24), height: Math.max(180, viewport.height - 370) };
-  const [frame, setFrame] = useState(() => ({ x: Math.max(0, bounds.width - 156), y: Math.min(Math.max(0, bounds.height - 208), index * 142), width: 156, height: 208 }));
+  const [frame, setFrame] = useState(() => getLiveStageTileFrame({ index, count, width: bounds.width, height: bounds.height }));
   const frameRef = useRef(frame); frameRef.current = frame;
   const boundsRef = useRef(bounds); boundsRef.current = bounds;
   useEffect(() => {
-    setFrame((current) => ({
-      ...current,
-      width: Math.min(current.width, bounds.width),
-      height: Math.min(current.height, bounds.height),
-      x: Math.max(0, Math.min(Math.max(0, bounds.width - Math.min(current.width, bounds.width)), current.x)),
-      y: Math.max(0, Math.min(Math.max(0, bounds.height - Math.min(current.height, bounds.height)), current.y)),
-    }));
-  }, [bounds.width, bounds.height]);
+    setFrame(getLiveStageTileFrame({ index, count, width: bounds.width, height: bounds.height }));
+  }, [bounds.width, bounds.height, index, count]);
   const dragOrigin = useRef(frame); const resizeOrigin = useRef(frame);
   const drag = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => false,
@@ -335,7 +330,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarn
             <View pointerEvents="box-none" style={{ position: 'absolute', left: 12, right: 12, top: themedVideoChat ? 174 : 120, bottom: 250 }}>
               {floatingGuestVideos.slice(0, 5).map((item, index) => (
                 <NativeFloatingGuestTile key={item.participant.identity} track={item} colors={colors} creatorId={creatorId}
-                  index={index} focused={focusedStageIdentity === item.participant.identity}
+                  index={index} count={floatingGuestVideos.length} focused={focusedStageIdentity === item.participant.identity}
                   spotlighted={spotlightUserId === item.participant.identity}
                   onFocus={() => setFocusedStageIdentity(item.participant.identity)} />
               ))}
