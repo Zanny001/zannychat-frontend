@@ -1,6 +1,7 @@
 import React, { useCallback, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ActivityIndicator, Alert, Share, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View } from 'react-native';
+import { ActivityIndicator, Alert, Share, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
@@ -603,7 +604,7 @@ export default function ChannelsScreen({ navigation }) {
   const buttonStyle = (disabled = false) => ({ minHeight: 48, borderRadius: radii.md, backgroundColor: disabled ? colors.border : colors.primary, paddingHorizontal: spacing.md, alignItems: 'center', justifyContent: 'center', opacity: busy ? 0.65 : 1 });
   const buttonText = [typography.bodyStrong, { color: colors.onPrimary || colors.background }];
 
-  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+  return <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
     <Header title={selected ? "Channel" : "Explore"} subtitle={selected ? selected.title : "LIVE, public channels and communities"} onBack={() => selected ? clearSelectedChannel() : navigation.goBack()} />
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, gap: spacing.md, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
       <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
