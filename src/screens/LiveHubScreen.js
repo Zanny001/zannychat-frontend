@@ -429,16 +429,16 @@ export default function LiveHubScreen({ navigation, route }) {
                   <Ionicons name="person-circle-outline" size={19} color={colors.primary} />
                   <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: '800' }]}>Studio</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => navigation.navigate('LiveLeaderboard')} accessibilityRole="button" accessibilityLabel="Open LIVE creator leaderboard" style={{ width: 42, height: 42, borderRadius: 14, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                <TouchableOpacity onPress={() => navigation.navigate('LiveLeaderboard')} accessibilityRole="button" accessibilityLabel="Open LIVE creator leaderboard" style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="trophy-outline" size={19} color={colors.primary} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => navigation.navigate('LiveEvents')} accessibilityRole="button" accessibilityLabel="Open scheduled LIVE Events" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="calendar-outline" size={19} color={colors.primary} />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => navigation.navigate('LiveSettings')} accessibilityRole="button" accessibilityLabel="Open LIVE settings" style={{ width: 42, height: 42, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                <TouchableOpacity onPress={() => navigation.navigate('LiveSettings')} accessibilityRole="button" accessibilityLabel="Open LIVE settings" style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="options-outline" size={19} color={colors.textSecondary} />
                 </TouchableOpacity>
-                              </View>
+              </View>
 
               <View style={{ borderRadius: 28, padding: spacing.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: hexToRgba(colors.gold || colors.accent || colors.primary, 0.32), overflow: 'hidden' }}>
                 <View pointerEvents="none" style={{ position: 'absolute', top: -58, right: -38, width: 190, height: 190, borderRadius: 96, backgroundColor: hexToRgba(colors.accent || colors.primary, 0.14) }} />
