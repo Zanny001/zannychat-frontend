@@ -16,7 +16,7 @@ function formatRequestDate(value) {
 }
 
 export default function LiveGuestQueueScreen({ route, navigation }) {
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, radii, typography, layout } = useTheme();
   const streamId = route.params?.streamId || null;
   const streamTitle = route.params?.title || 'LIVE stage';
   const [requests, setRequests] = useState([]);
@@ -118,7 +118,7 @@ export default function LiveGuestQueueScreen({ route, navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => refresh(true)} tintColor={colors.primary} />}
         contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, alignItems: 'center' }}
       >
-        <View style={{ width: '100%', maxWidth: 760, gap: spacing.md }}>
+        <View style={{ width: '100%', maxWidth: layout.contentMaxWidth, gap: spacing.md }}>
           <LivePremiumHeader
             navigation={navigation}
             eyebrow="ZANNYCHAT · LIVE OPERATIONS"
