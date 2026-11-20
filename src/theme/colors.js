@@ -189,28 +189,56 @@ export function resolveMoodColors(mood, mode = 'dark', highContrast = false) {
   };
   const signal = mood.signal;
   const thread = mood.thread;
+  // Semantic foreground/accent tokens must remain readable on the lightest
+  // standard surface, not merely on pure white or the darkest screen canvas.
+  // This matters for cards, raised panels and selected rows in every mood.
+  const minimumTextContrast = highContrast ? 7 : 4.5;
+  const primary = light
+    ? accessibleAccent(signal, base.surfaceAlt, minimumTextContrast)
+    : accessibleText(signal, base.surfaceAlt, minimumTextContrast);
+  const primaryDark = light
+    ? accessibleAccent(signal, base.surfaceAlt, highContrast ? 7 : 5)
+    : accessibleText(signal, base.surfaceAlt, highContrast ? 7 : 5);
+  const accent = light
+    ? accessibleAccent(thread, base.surfaceAlt, minimumTextContrast)
+    : accessibleText(thread, base.surfaceAlt, minimumTextContrast);
+  const danger = light
+    ? accessibleAccent('#B4233A', base.surfaceAlt, minimumTextContrast)
+    : accessibleText(mood.danger, base.surfaceAlt, minimumTextContrast);
+  const success = light
+    ? accessibleAccent('#16794B', base.surfaceAlt, minimumTextContrast)
+    : accessibleText(ONLINE, base.surfaceAlt, minimumTextContrast);
+  const warning = light
+    ? accessibleAccent('#8A5A00', base.surfaceAlt, minimumTextContrast)
+    : accessibleText(mood.gold, base.surfaceAlt, minimumTextContrast);
+  const online = light
+    ? accessibleAccent(ONLINE, base.surfaceAlt, minimumTextContrast)
+    : accessibleText(ONLINE, base.surfaceAlt, minimumTextContrast);
+  const bubbleMine = light
+    ? tint(signal, 0.84)
+    : highContrast ? accessibleText(signal, mood.ink, 7) : signal;
   return {
     ...base,
-    primary: light ? accessibleAccent(signal, '#FFFFFF', 4.5) : signal,
-    primaryDark: light ? accessibleAccent(signal, '#FFFFFF', 5) : signal,
-    onPrimary: light ? '#FFFFFF' : contrastRatio(mood.ink, signal) >= 4.5 ? mood.ink : accessibleForeground(signal),
-    accent: light ? accessibleAccent(thread, '#FFFFFF', 4.5) : thread,
-    onAccent: light ? '#FFFFFF' : accessibleForeground(thread),
+    primary,
+    primaryDark,
+    onPrimary: accessibleForeground(primary),
+    accent,
+    onAccent: accessibleForeground(accent),
     signal,
     thread,
     gold: mood.gold,
-    bubbleMine: light ? tint(signal, 0.84) : signal,
-    // Bright signal surfaces need dark foregrounds; use the mood's ink in
-    // dark mode and a high-contrast neutral on tinted light-mode bubbles.
-    bubbleMineText: light ? '#171925' : contrastRatio(mood.ink, signal) >= 4.5 ? mood.ink : accessibleForeground(signal),
-    bubbleMineMeta: light ? '#414658' : contrastRatio(mood.inkRaised, signal) >= 4.5 ? mood.inkRaised : accessibleForeground(signal),
+    bubbleMine,
+    // Bright signal surfaces need a foreground that contrasts with the
+    // actual resolved bubble fill, including high-contrast mode.
+    bubbleMineText: light ? '#171925' : accessibleForeground(bubbleMine),
+    bubbleMineMeta: light ? '#414658' : accessibleForeground(bubbleMine),
     bubbleTheirs: light ? '#E9EDF5' : mood.inkRaisedAlt,
-    danger: light ? '#B4233A' : mood.danger,
-    onDanger: accessibleForeground(light ? '#B4233A' : mood.danger),
-    online: ONLINE,
-    success: light ? '#16794B' : ONLINE,
-    warning: light ? '#8A5A00' : mood.gold,
-    focusRing: light ? '#2458D3' : thread,
+    danger,
+    onDanger: accessibleForeground(danger),
+    online,
+    success,
+    warning,
+    focusRing: light ? '#2458D3' : accent,
   };
 }
 
