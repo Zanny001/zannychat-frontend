@@ -22,6 +22,17 @@ import { formatLiveBroadcastTimeRemaining, getLiveBroadcastTimeRemaining, LIVE_B
 const LIVE_REACTION_EMOJI = Object.freeze({ heart: '❤️', clap: '👏', laugh: '😂', wow: '😮', fire: '🔥', idea: '💡', support: '🙌' });
 const isDocumentVisible = () => typeof document === 'undefined' || document.visibilityState !== 'hidden';
 
+function isLiveFeedInvalidation(payload, topic) {
+  if (topic !== 'zanny.live.feed.v1' || !payload || payload.length > 512) return false;
+  try {
+    const event = JSON.parse(String.fromCharCode(...Array.from(payload)));
+    return event?.v === 1 && event?.type === 'feed_changed';
+  } catch (_) {
+    return false;
+  }
+}
+
+
 function FloatingReaction({ item, index, onComplete }) {
   const progress = useSharedValue(0);
   const reducedMotion = useReducedMotion();
@@ -192,6 +203,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [floatingReactions, setFloatingReactions] = useState([]);
   const seenReactionIds = useRef(new Set());
   const commentsRefreshInFlight = useRef(false);
+  const commentsRefreshQueued = useRef(false);
   const guestStatusRefreshInFlight = useRef(false);
   const guestRequestsRefreshInFlight = useRef(false);
   const replayRefreshInFlight = useRef(false);
@@ -509,7 +521,8 @@ export default function LiveStreamScreen({ route, navigation }) {
   }, [returnFromLive]);
 
   const refreshComments = useCallback(async () => {
-    if (!stream?.id || !isDocumentVisible() || commentsRefreshInFlight.current) return;
+    if (!stream?.id || !isDocumentVisible()) return;
+    if (commentsRefreshInFlight.current) { commentsRefreshQueued.current = true; return; }
     commentsRefreshInFlight.current = true;
     try {
       const result = await backendFetch(`/live/${stream.id}/comments`);
@@ -532,13 +545,33 @@ export default function LiveStreamScreen({ route, navigation }) {
       } else if (!endedRef.current) {
         setError((current) => current || err?.message || 'Comments unavailable.');
       }
-    } finally { commentsRefreshInFlight.current = false; }
+    } finally {
+      commentsRefreshInFlight.current = false;
+      if (commentsRefreshQueued.current) {
+        commentsRefreshQueued.current = false;
+        void refreshComments();
+      }
+    }
   }, [stream?.id, exitEndedStream]);
+
+
+  useEffect(() => {
+    if (!room || !stream?.id) return undefined;
+    const onDataReceived = (payload, _participant, _kind, topic) => {
+      if (isLiveFeedInvalidation(payload, topic)) refreshComments();
+    };
+    room.on(RoomEvent.DataReceived, onDataReceived);
+    room.on(RoomEvent.Reconnected, refreshComments);
+    return () => {
+      room.off(RoomEvent.DataReceived, onDataReceived);
+      room.off(RoomEvent.Reconnected, refreshComments);
+    };
+  }, [room, stream?.id, refreshComments]);
 
   useEffect(() => {
     if (!stream?.id) return undefined;
     refreshComments();
-    const timer = setInterval(refreshComments, 6000);
+    const timer = setInterval(refreshComments, 30_000);
     return () => clearInterval(timer);
   }, [stream?.id, refreshComments]);
 
