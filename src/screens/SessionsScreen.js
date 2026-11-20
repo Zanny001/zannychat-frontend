@@ -8,29 +8,71 @@ import Header from '../components/Header';
 import GlassCard from '../components/GlassCard';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
-import { SUPABASE_ENABLED } from '../services/supabaseClient';
+import { SUPABASE_ENABLED, supabase } from '../services/supabaseClient';
 import { getSessionSecurityInfo, signOutThisDevice, signOutEverywhere } from '../services/api';
+
+
+function sessionDeviceLabel(userAgent) {
+  const value = String(userAgent || '');
+  const os = /Android/i.test(value) ? 'Android' : /iPhone|iPad|iPod/i.test(value) ? 'iOS' : /Windows/i.test(value) ? 'Windows' : /Mac OS X|Macintosh/i.test(value) ? 'macOS' : /Linux/i.test(value) ? 'Linux' : '';
+  const browser = /Edg\//i.test(value) ? 'Edge' : /Firefox\//i.test(value) ? 'Firefox' : /Chrome\//i.test(value) ? 'Chrome' : /Safari\//i.test(value) ? 'Safari' : /ZannyChat/i.test(value) ? 'ZannyChat' : '';
+  return [os, browser].filter(Boolean).join(' · ') || 'Other device';
+}
+
+function formatSessionDate(value) {
+  if (!value) return 'Activity time unavailable';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Activity time unavailable' : date.toLocaleString();
+}
 
 export default function SessionsScreen({ navigation }) {
   const { colors, spacing, typography, mood, layout } = useTheme();
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [sessions, setSessions] = useState([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [sessionsError, setSessionsError] = useState('');
+
+  const loadSessions = useCallback(async (isActive = () => true) => {
+    if (!SUPABASE_ENABLED || !supabase) {
+      if (isActive()) { setSessions([]); setSessionsError('Connect a live account to view active sessions.'); setSessionsLoading(false); }
+      return;
+    }
+    setSessionsLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('list_my_auth_sessions');
+      if (error) throw error;
+      if (!isActive()) return;
+      setSessions(Array.isArray(data) ? data : []);
+      setSessionsError('');
+    } catch (error) {
+      if (!isActive()) return;
+      setSessions([]);
+      setSessionsError('Active sessions could not be loaded. Check your connection and retry. You can still use Sign out everywhere.');
+    } finally {
+      if (isActive()) setSessionsLoading(false);
+    }
+  }, []);
 
   useFocusEffect(useCallback(() => {
     let active = true;
     setLoading(true);
-    if (!SUPABASE_ENABLED) {
+    if (!SUPABASE_ENABLED || !supabase) {
       setSession(null);
       setLoading(false);
+      setSessions([]);
+      setSessionsError('Connect a live account to view active sessions.');
+      setSessionsLoading(false);
       return () => { active = false; };
     }
     getSessionSecurityInfo()
       .then((value) => { if (active) setSession(value); })
       .catch((error) => { if (active) Alert.alert('Could not load session', error?.message || 'Please try again.'); })
       .finally(() => { if (active) setLoading(false); });
+    loadSessions(() => active);
     return () => { active = false; };
-  }, []));
+  }, [loadSessions]));
 
   async function endSession(scope) {
     const global = scope === 'global';
@@ -54,6 +96,7 @@ export default function SessionsScreen({ navigation }) {
     );
   }
 
+  const otherSessions = sessions.filter((item) => !item.is_current);
   const deviceName = Device.modelName || Device.deviceName || 'This device';
   const platform = [Device.osName, Device.osVersion].filter(Boolean).join(' ');
 
@@ -67,7 +110,7 @@ export default function SessionsScreen({ navigation }) {
             <Ionicons name="phone-portrait-outline" size={26} color={mood.thread} />
           </View>
           <Text style={[typography.display, { color: colors.textPrimary, marginTop: 20 }]}>Your account, under control.</Text>
-          <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22, marginTop: 8 }]}>Review this device's sign-in and revoke access when you need to protect your account.</Text>
+          <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22, marginTop: 8 }]}>Review signed-in devices and protect your account when something looks unfamiliar.</Text>
         </View>
 
         <Text style={[typography.heading, { color: colors.textPrimary, marginTop: spacing.xl, marginBottom: spacing.sm }]}>Current device</Text>
@@ -96,12 +139,47 @@ export default function SessionsScreen({ navigation }) {
           )}
         </GlassCard>
 
+        <Text style={[typography.heading, { color: colors.textPrimary, marginTop: spacing.xl, marginBottom: spacing.sm }]}>Other active sessions</Text>
+        <GlassCard style={{ marginBottom: spacing.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{otherSessions.length} other {otherSessions.length === 1 ? 'device' : 'devices'}</Text>
+            <TouchableOpacity onPress={() => loadSessions()} disabled={sessionsLoading} accessibilityRole="button" accessibilityLabel="Refresh active sessions" accessibilityState={{ disabled: sessionsLoading, busy: sessionsLoading }} style={{ minHeight: 44, minWidth: 72, paddingHorizontal: 10, justifyContent: 'center', alignItems: 'center', opacity: sessionsLoading ? 0.55 : 1 }}>
+              <Text style={[typography.caption, { color: colors.primary, fontWeight: '700' }]}>{sessionsLoading ? 'Refreshing…' : 'Refresh'}</Text>
+            </TouchableOpacity>
+          </View>
+          {sessionsLoading ? <ActivityIndicator color={mood.signal} /> : sessionsError ? (
+            <View accessibilityRole="alert">
+              <Text style={[typography.caption, { color: colors.danger, lineHeight: 20 }]}>{sessionsError}</Text>
+              <TouchableOpacity onPress={() => loadSessions()} accessibilityRole="button" accessibilityLabel="Retry loading active sessions" style={{ minHeight: 44, alignSelf: 'flex-start', justifyContent: 'center', paddingHorizontal: 8 }}>
+                <Text style={[typography.caption, { color: colors.primary, fontWeight: '700' }]}>Retry loading sessions</Text>
+              </TouchableOpacity>
+            </View>
+          ) : otherSessions.length === 0 ? (
+            <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 21 }]}>No other active sessions were found for this account.</Text>
+          ) : otherSessions.map((item) => (
+            <View key={item.session_id} style={{ flexDirection: 'row', alignItems: 'flex-start', paddingVertical: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }}>
+              <View style={[styles.deviceIcon, { backgroundColor: hexToRgba(mood.thread, 0.12) }]}>
+                <Ionicons name="laptop-outline" size={22} color={mood.thread} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0, marginLeft: 12 }}>
+                <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{sessionDeviceLabel(item.user_agent)}</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4 }]}>Last active: {formatSessionDate(item.last_active_at)}</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>Signed in: {formatSessionDate(item.created_at)}</Text>
+                {item.not_after ? <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>Session expiry: {formatSessionDate(item.not_after)}</Text> : null}
+              </View>
+              <View style={[styles.activePill, { backgroundColor: hexToRgba(colors.success, 0.08), borderColor: hexToRgba(colors.success, 0.2) }]}>
+                <View style={[styles.dot, { backgroundColor: colors.online }]} /><Text style={[typography.small, { color: colors.textPrimary, marginLeft: 5 }]}>Active</Text>
+              </View>
+            </View>
+          ))}
+        </GlassCard>
+
         <GlassCard style={{ marginBottom: spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
             <Ionicons name="information-circle-outline" size={20} color={mood.signal} style={{ marginTop: 1 }} />
             <View style={{ flex: 1, minWidth: 0, marginLeft: 10 }}>
               <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>About other devices</Text>
-              <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 21, marginTop: 5 }]}>This app's current authentication integration cannot safely enumerate a list of every signed-in device. Rather than show a fake device list, use “Sign out everywhere” to request revocation of other sessions too. Token expiry and server validation affect how quickly access is cut off.</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 21, marginTop: 5 }]}>These entries show active Supabase Auth sessions. Use “Sign out everywhere” to revoke all sessions. Existing access tokens may remain valid until their expiry, so access may not stop immediately.</Text>
             </View>
           </View>
         </GlassCard>
