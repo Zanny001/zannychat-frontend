@@ -122,6 +122,7 @@ export default function LiveGuestQueueScreen({ route, navigation }) {
           <LivePremiumHeader
             navigation={navigation}
             eyebrow="ZANNYCHAT · LIVE OPERATIONS"
+            backLabel="Back to LIVE management"
             title="Guest queue"
             subtitle={"Review stage requests · " + streamTitle}
             icon="people-outline"
