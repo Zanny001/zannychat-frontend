@@ -33,3 +33,11 @@ test('LIVE feed packets never render untrusted data directly or enable client da
     assert.doesNotMatch(source, /publishData\s*\(/);
   }
 });
+
+test('LIVE refreshes queue a follow-up fetch when another event arrives during an in-flight request', () => {
+  for (const source of [native, web]) {
+    assert.match(source, /commentsRefreshQueued = useRef\(false\)/);
+    assert.match(source, /commentsRefreshInFlight\.current\) \{ commentsRefreshQueued\.current = true; return; \}/);
+    assert.match(source, /if \(commentsRefreshQueued\.current\)[\s\S]{0,180}void refreshComments\(\)/);
+  }
+});
