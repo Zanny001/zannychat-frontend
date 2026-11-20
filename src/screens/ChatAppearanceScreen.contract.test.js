@@ -21,3 +21,12 @@ test('chat appearance disables competing selections while saving and exposes an 
 test('chat canvas choices remain accessible radio options', () => {
   assert.ok(screen.includes('accessibilityRole="radio"'));
 });
+
+test('chat canvas load failures are visible and offer a retry path', () => {
+  assert.match(service, /getChatCanvasLoadError/);
+  assert.match(service, /Saved chat appearance could not be loaded from this device/);
+  assert.match(screen, /setLoadError\(getChatCanvasLoadError\(\)\)/);
+  assert.match(screen, /loadError \? 'alert'/);
+  assert.match(screen, /Retry loading saved appearance/);
+  assert.match(screen, /onPress=\{retryLoad\}/);
+});
