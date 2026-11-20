@@ -1,0 +1,28 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+const theme = readFileSync(new URL('../theme/ThemeContext.js', import.meta.url), 'utf8');
+const settings = readFileSync(new URL('./SettingsScreen.js', import.meta.url), 'utf8');
+
+test('theme preference storage failures are surfaced instead of silently swallowed', () => {
+  assert.match(theme, /const persist = async \(write\) =>/);
+  assert.match(theme, /Your preferences are active for this session, but could not be saved on this device/);
+  assert.match(theme, /void persist\(AsyncStorage\.setItem\(MOOD_STORAGE_KEY, key\)\)/);
+  assert.match(theme, /void persist\(AsyncStorage\.multiSet\(/);
+  assert.match(theme, /\.catch\(\(\) => \{\s*if \(active\) setPersistenceError/);
+});
+
+test('settings exposes a dismissible accessible warning for preference persistence failures', () => {
+  assert.match(settings, /persistenceError \?/);
+  assert.match(settings, /accessibilityRole="alert"/);
+  assert.match(settings, /accessibilityLiveRegion="polite"/);
+  assert.match(settings, /clearPersistenceError/);
+  assert.match(settings, /Dismiss preference storage warning/);
+});
+
+test('theme preference reads cannot overwrite a newer user selection', () => {
+  assert.match(theme, /const revisionAtStart = preferenceRevisionRef\.current/);
+  assert.match(theme, /revisionAtStart !== preferenceRevisionRef\.current/);
+  assert.match(theme, /preferenceRevisionRef\.current \+= 1/);
+});
