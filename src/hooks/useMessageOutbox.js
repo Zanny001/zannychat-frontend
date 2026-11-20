@@ -23,6 +23,7 @@ export default function useMessageOutbox({
   stickToBottom,
 }) {
   const [pendingOutbox, setPendingOutbox] = useState([]);
+  const [outboxLoadError, setOutboxLoadError] = useState('');
   const [retryingOutbox, setRetryingOutbox] = useState(false);
   const retryGenerationRef = useRef(0);
   const retryInFlightRef = useRef(false);
@@ -35,6 +36,7 @@ export default function useMessageOutbox({
     retryGenerationRef.current += 1;
     retryInFlightRef.current = false;
     setPendingOutbox([]);
+    setOutboxLoadError('');
     setRetryingOutbox(false);
   }, []);
 
@@ -49,11 +51,12 @@ export default function useMessageOutbox({
       .then((items) => {
         if (active && generation === retryGenerationRef.current && isOwnerCurrent(myUserId)) {
           setPendingOutbox(items);
+          setOutboxLoadError('');
         }
       })
-      .catch(() => {
+      .catch((error) => {
         if (active && generation === retryGenerationRef.current && isOwnerCurrent(myUserId)) {
-          setPendingOutbox([]);
+          setOutboxLoadError(error?.message || 'Your pending messages could not be loaded. Retry before sending offline messages.');
         }
       });
     return () => {
@@ -100,6 +103,7 @@ export default function useMessageOutbox({
       const queued = await loadPendingMessages(expectedUserId, conversationId);
       if (generation !== retryGenerationRef.current || !isOwnerCurrent(expectedUserId)) return;
       setPendingOutbox(queued);
+      setOutboxLoadError('');
       const dueQueued = queued
         .filter((item) => force || isMessageRetryDue(item))
         .sort((a, b) => Date.parse(a.createdAt || 0) - Date.parse(b.createdAt || 0))
@@ -131,11 +135,34 @@ export default function useMessageOutbox({
       }
       if (generation === retryGenerationRef.current && isOwnerCurrent(expectedUserId)) {
         setPendingOutbox(await loadPendingMessages(expectedUserId, conversationId));
+        setOutboxLoadError('');
+      }
+    } catch (error) {
+      if (generation === retryGenerationRef.current && isOwnerCurrent(expectedUserId)) {
+        setOutboxLoadError(error?.message || 'Your pending messages could not be read from this device. Retry before sending offline messages.');
       }
     } finally {
       if (generation === retryGenerationRef.current) retryInFlightRef.current = false;
     }
   }, [myUserId, conversationId, isOwnerCurrent, setMessages, setSendError, stickToBottom]);
+
+  const reloadOutbox = useCallback(async () => {
+    if (!myUserId || !conversationId || !isOwnerCurrent(myUserId)) return false;
+    const expectedUserId = myUserId;
+    const generation = retryGenerationRef.current;
+    try {
+      const items = await loadPendingMessages(expectedUserId, conversationId);
+      if (generation !== retryGenerationRef.current || !isOwnerCurrent(expectedUserId)) return false;
+      setPendingOutbox(items);
+      setOutboxLoadError('');
+      return true;
+    } catch (error) {
+      if (generation === retryGenerationRef.current && isOwnerCurrent(expectedUserId)) {
+        setOutboxLoadError(error?.message || 'Your pending messages could not be loaded. Check device storage and retry.');
+      }
+      return false;
+    }
+  }, [myUserId, conversationId, isOwnerCurrent]);
 
   const retryPendingMessages = useCallback(async () => {
     if (retryInFlightRef.current) return;
@@ -163,6 +190,8 @@ export default function useMessageOutbox({
 
   return {
     pendingOutbox,
+    outboxLoadError,
+    reloadOutbox,
     retryingOutbox,
     queuePendingMessage,
     removeQueuedMessage,
