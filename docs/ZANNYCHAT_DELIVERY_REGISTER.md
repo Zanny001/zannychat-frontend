@@ -929,3 +929,26 @@ Three scaling hardening items remain:
 3. Group-call and ended-LIVE room cleanup rely on idempotent LiveKit 404 behavior; ended LIVE rooms are rechecked repeatedly because no deletion marker is persisted. This is safe but noisy/inefficient.
 
 The nine loops are started only when `src/index.js` is the process entrypoint. Production worker liveness, last-success freshness, queue depth, stale lease count and alerts remain unverified; Render was not inspected per the user's instruction. No worker was invoked and no production queue or resource was changed.
+
+
+## 35. Reconciliation of privacy and replay findings against merged backend fixes — 2026-11-20
+
+This section supersedes the affected statements in sections 33–34, which predate backend PRs #169–#172.
+
+### Implemented in backend main
+- **PR #169 merged:** group-link acceptance now checks the invitee's `group_invite_permission`, shared-conversation relationship and bidirectional blocks before the service-role membership RPC. Regression tests cover `everyone` / `contacts` / `nobody`, blocks and contact relationship behavior.
+- **PR #171 merged:** unknown/invalid group-invite preference values fail closed rather than defaulting to allow.
+- **PR #170 merged:** initial group-call invitations, additional group-call invitations and direct-call-to-group upgrades now check `call_permission`, shared conversations and bidirectional blocks. Invalid preference values fail closed.
+- **PR #172 merged:** concurrent replay finalizers in one backend process now use an in-flight guard and re-read `notification_sent_at` before sending; removed replay rows are not notified.
+
+### Remaining qualification
+The group invite and group-call preference checks are enforced in trusted backend routes before their service-role RPCs, but are not yet atomic with the database membership/invitation write. A narrow check-to-write race remains if a preference or block changes between the read and RPC. Replay notification deduplication is process-local, not a distributed database lease; two backend instances can still race. These are follow-up hardening items, not reasons to describe the already-merged route fixes as absent.
+
+### Still open
+- Profile avatar/cover owner-path and object integrity enforcement remains migration-gated (snapshot section 13C).
+- Cross-mode active-call uniqueness remains migration-gated (snapshot section 10 / delivery register section 31).
+- Durable distributed claim/lease for account-storage cleanup and replay-ready notifications remains a pre-horizontal-scaling requirement (snapshot section 14).
+- Production worker liveness, queue depth, last-success and alert delivery remain unverified.
+- Gas LIVE creator/viewer acceptance remains unconfirmed by the user.
+
+No production migration, SQL, data, storage, auth, infrastructure or cleanup job was changed during this reconciliation.
