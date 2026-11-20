@@ -992,7 +992,7 @@ export default function LiveStreamScreen({ route, navigation }) {
           </View>}
         </View>
       )}
-      <View pointerEvents="box-none" style={{ position: 'absolute', top: (experienceMode === 'video_chat' ? 174 : 88) + insets.top, left: 14, right: 14, bottom: 150 }}>
+      <View pointerEvents="box-none" style={{ position: 'absolute', top: (experienceMode === 'video_chat' ? 174 : 88) + insets.top, left: 14, right: 14, bottom: 150 + insets.bottom }}>
         {floatingRemoteTracks.slice(0, 5).map((item, floatingIndex) => (
           <RemoteVideoTile
             key={item.track.sid}
@@ -1034,7 +1034,7 @@ export default function LiveStreamScreen({ route, navigation }) {
 
     {!!error && <View pointerEvents="box-none" style={{ position: 'absolute', top: insets.top + 78, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(100,20,35,0.86)' }}><Text accessibilityRole="alert" style={{ color: '#FFFFFF', fontSize: 12 }}>{error}</Text></View>}
     {!!stageNotice && <View pointerEvents="box-none" style={{ position: 'absolute', top: insets.top + 118, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(30,70,90,0.86)' }}><Text accessibilityRole="status" style={{ color: '#FFFFFF', fontSize: 12 }}>{stageNotice}</Text></View>}
-    {guestApproved && !publisherMode && <View pointerEvents="box-none" style={{ position: 'absolute', top: insets.top + 82, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(30,70,90,0.88)' }}><Text accessibilityRole="status" style={{ color: '#FFFFFF', fontSize: 12 }}>The creator invited you to the LIVE stage. Use the menu to join.</Text></View>}
+    {guestApproved && !publisherMode && <View pointerEvents="box-none" style={{ position: 'absolute', top: insets.top + 164, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(30,70,90,0.88)' }}><Text accessibilityRole="status" style={{ color: '#FFFFFF', fontSize: 12 }}>The creator invited you to the LIVE stage. Use the menu to join.</Text></View>}
 
     <View pointerEvents="box-none" style={{ position: 'absolute', left: 14, bottom: 96 + insets.bottom, width: 'min(390px, 70%)', maxHeight: '42%', gap: 8 }}>
       {commentsVisible && comments.slice(-4).map((item) => <View key={item.id} style={{ alignSelf: 'flex-start', maxWidth: '100%', flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingHorizontal: 11, paddingVertical: 8, borderRadius: 14, backgroundColor: 'rgba(5,5,11,0.68)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
