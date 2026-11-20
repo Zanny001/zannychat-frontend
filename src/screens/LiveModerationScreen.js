@@ -200,7 +200,7 @@ export default function LiveModerationScreen({ route, navigation }) {
             const busy = busyUserId === item.userId;
             const guest = item.role === 'guest';
             const viewer = item.role === 'viewer' && item.joined;
-            const label = guest ? 'STAGE GUEST' : viewer ? 'VIEWER' : item.moderator ? 'MODERATOR' : 'PARTICIPANT';
+            const label = item.role === 'creator' ? 'HOST' : guest ? 'STAGE GUEST' : viewer ? 'VIEWER' : item.moderator ? 'MODERATOR' : 'PARTICIPANT';
             return <GlassCard key={item.userId} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                 <View style={{ width: 46, height: 46, borderRadius: 15, backgroundColor: item.avatarColor || colors.primary, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
