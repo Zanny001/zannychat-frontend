@@ -21,3 +21,12 @@ test('chat folder screen blocks mutations and offers retry when device storage c
   assert.match(screen, /if \(loadFailed \|\| loading\)/);
   assert.match(screen, /Your existing folders are hidden until device storage can be read safely/);
 });
+
+
+test('failed folder refresh hides stale rows and disables edit/delete actions', () => {
+  const screen = read('./ChatFoldersScreen.js');
+  assert.match(screen, /setLoadFailed\(true\);\s*setFolders\(\[\]\)/);
+  assert.match(screen, /const edit = \(folder\) => \{ if \(loadFailed \|\| loading \|\| saving\)/);
+  assert.match(screen, /const remove = \(folder\) => \{ if \(loadFailed \|\| loading \|\| saving\)/);
+  assert.match(screen, /disabled=\{loadFailed \|\| loading \|\| saving\}/);
+});

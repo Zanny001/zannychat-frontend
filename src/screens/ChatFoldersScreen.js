@@ -44,6 +44,7 @@ export default function ChatFoldersScreen({ navigation }) {
       setFolders(await loadChatFolders(id));
     } catch (loadError) {
       setLoadFailed(true);
+      setFolders([]);
       setError(loadError?.message || 'Could not load chat folders.');
     }
     finally { setLoading(false); }
@@ -64,9 +65,9 @@ export default function ChatFoldersScreen({ navigation }) {
     } catch (err) { setError(err?.message || 'Could not save this folder.'); }
     finally { setSaving(false); }
   };
-  const edit = (folder) => { setEditingId(folder.id); setName(folder.name); setRules([...folder.rules]); setExcluded([...folder.excluded]); setError(''); };
+  const edit = (folder) => { if (loadFailed || loading || saving) { setError('Reload your saved folders before editing.'); return; } setEditingId(folder.id); setName(folder.name); setRules([...folder.rules]); setExcluded([...folder.excluded]); setError(''); };
   const cancelEdit = () => { setEditingId(null); setName(''); setRules(['unread']); setExcluded(['archived']); setError(''); };
-  const remove = (folder) => Alert.alert('Delete folder?', `Delete “${folder.name}”? Your chats and messages will not be deleted.`, [
+  const remove = (folder) => { if (loadFailed || loading || saving) { setError('Reload your saved folders before deleting.'); return; } Alert.alert('Delete folder?', `Delete “${folder.name}”? Your chats and messages will not be deleted.`, [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Delete', style: 'destructive', onPress: async () => {
       try {
@@ -76,7 +77,7 @@ export default function ChatFoldersScreen({ navigation }) {
         setError('Could not delete this folder. Please try again.');
       }
     } },
-  ]);
+  ]); };
 
   const Choice = ({ item, selected, onPress, subtitle }) => (
     <TouchableOpacity onPress={onPress} accessibilityRole="checkbox" accessibilityLabel={item.label} accessibilityState={{ checked: selected }} style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', paddingVertical: 10 }}>
@@ -124,8 +125,8 @@ export default function ChatFoldersScreen({ navigation }) {
           <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, flexDirection: 'row', alignItems: 'center' }}>
             <View style={{ width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: `${colors.primary}18` }}><Ionicons name="folder-open-outline" size={20} color={colors.primary} /></View>
             <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm }}><Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{folder.name}</Text><Text style={[typography.caption, { color: colors.textSecondary }]}>{folder.rules.join(' · ')}{folder.excluded.length ? ` · excludes ${folder.excluded.join(', ')}` : ''}</Text></View>
-            <TouchableOpacity onPress={() => edit(folder)} accessibilityRole="button" accessibilityLabel={`Edit ${folder.name} folder`} hitSlop={8} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="create-outline" size={19} color={colors.primary} /></TouchableOpacity>
-            <TouchableOpacity onPress={() => remove(folder)} accessibilityRole="button" accessibilityLabel={`Delete ${folder.name} folder`} hitSlop={8} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="trash-outline" size={19} color={colors.danger} /></TouchableOpacity>
+            <TouchableOpacity onPress={() => edit(folder)} disabled={loadFailed || loading || saving} accessibilityState={{ disabled: loadFailed || loading || saving }} accessibilityRole="button" accessibilityLabel={`Edit ${folder.name} folder`} hitSlop={8} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="create-outline" size={19} color={colors.primary} /></TouchableOpacity>
+            <TouchableOpacity onPress={() => remove(folder)} disabled={loadFailed || loading || saving} accessibilityState={{ disabled: loadFailed || loading || saving }} accessibilityRole="button" accessibilityLabel={`Delete ${folder.name} folder`} hitSlop={8} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="trash-outline" size={19} color={colors.danger} /></TouchableOpacity>
           </GlassCard>
         )}
         ListEmptyComponent={loading ? <ActivityIndicator color={colors.primary} /> : loadFailed ? <Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger, marginBottom: spacing.md }]}>Your existing folders are hidden until device storage can be read safely.</Text> : <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>No custom folders yet. Create one to organize your chats.</Text>}
