@@ -544,3 +544,10 @@ test('native and web floating LIVE video tiles adapt to portrait and landscape v
   assert.ok(webScreen.includes('Math.min(boundsRef.current.width - current.width'));
   assert.ok(webScreen.includes('Math.min(boundsRef.current.height - current.height'));
 });
+
+
+test('native in-stage guest approval cards include requester avatar and display name', () => {
+  assert.ok(screen.includes('item.avatarColor || colors.primary'));
+  assert.ok(screen.includes("(item.name || 'G').trim().charAt(0).toUpperCase()"));
+  assert.ok(screen.includes('Requested to join your stage'));
+});
