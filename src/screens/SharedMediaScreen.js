@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { SafeAreaView, FlatList, View, Text, TextInput, TouchableOpacity, Image, ActivityIndicator, Linking, Alert, StyleSheet } from 'react-native';
+import { FlatList, View, Text, TextInput, TouchableOpacity, Image, ActivityIndicator, Linking, Alert, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import GlassCard from '../components/GlassCard';
@@ -142,7 +143,7 @@ export default function SharedMediaScreen({ route, navigation }) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Shared media" subtitle={conversation.participant?.name || 'Conversation'} onBack={() => navigation.goBack()} />
       <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         <View style={[styles.tabRail, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.lg }]} accessibilityRole="tablist">

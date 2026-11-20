@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, SafeAreaView, FlatList, Share, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Share, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
@@ -115,7 +116,7 @@ ${invite.token}` });
     catch (err) { Alert.alert('Could not save group details', err?.message || 'Please try again.'); }
     finally { setMetadataBusy(false); }
   };
-  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+  return <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
     <Header title="Group members" subtitle={`${groupMetadata.name || conversation?.participant?.name || 'Group'} · ${members.length} members`} onBack={() => navigation.goBack()} />
     {loading ? <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} /> : error ? <View style={{ padding: spacing.lg }}>
       <Text style={[typography.body, { color: colors.textSecondary }]}>{error}</Text>

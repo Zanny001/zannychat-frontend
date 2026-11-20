@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, SafeAreaView, FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
@@ -68,7 +69,7 @@ export default function PollsScreen({ navigation, route }) {
     catch (e) { Alert.alert('Could not vote', e?.message || 'This poll may be closed.'); }
     finally { setVotingPollId(null); }
   };
-  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+  return <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
     <Header title="Polls" subtitle="Ask your conversation and vote" onBack={() => navigation.goBack()} />
     <FlatList
       style={{ flex: 1 }}

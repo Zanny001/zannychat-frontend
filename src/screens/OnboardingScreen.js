@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import Knot from '../components/Knot';
@@ -8,7 +9,7 @@ export default function OnboardingScreen({ navigation }) {
   const { colors, mood, spacing, typography, radii, layout } = useTheme();
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={{ flex: 1, width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center', justifyContent: 'space-between' }}>
       <View style={styles.hero}>
         <Knot size={132} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={11} animated />

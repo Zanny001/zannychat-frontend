@@ -1,15 +1,7 @@
 import React, { useState } from 'react';
 import { startGoogleOAuth } from '../services/googleAuth';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTheme } from '../theme/ThemeContext';
 import { signUpWithEmail } from '../services/api';
@@ -107,7 +99,7 @@ export default function SignupScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']}
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       <KeyboardAvoidingView
