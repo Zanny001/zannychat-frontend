@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, AppState, Dimensions, FlatList, KeyboardAvoidingView, PanResponder, Platform, SafeAreaView, StyleSheet, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, FlatList, KeyboardAvoidingView, PanResponder, Platform, SafeAreaView, StyleSheet, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -86,22 +86,32 @@ function FloatingReaction({ item, index, onComplete }) {
 }
 
 function NativeFloatingGuestTile({ track, colors, focused, spotlighted, onFocus, index = 0, creatorId }) {
-  const viewport = Dimensions.get('window');
+  const viewport = useWindowDimensions();
   const bounds = { width: Math.max(180, viewport.width - 24), height: Math.max(180, viewport.height - 370) };
   const [frame, setFrame] = useState(() => ({ x: Math.max(0, bounds.width - 156), y: Math.min(Math.max(0, bounds.height - 208), index * 142), width: 156, height: 208 }));
   const frameRef = useRef(frame); frameRef.current = frame;
+  const boundsRef = useRef(bounds); boundsRef.current = bounds;
+  useEffect(() => {
+    setFrame((current) => ({
+      ...current,
+      width: Math.min(current.width, bounds.width),
+      height: Math.min(current.height, bounds.height),
+      x: Math.max(0, Math.min(Math.max(0, bounds.width - Math.min(current.width, bounds.width)), current.x)),
+      y: Math.max(0, Math.min(Math.max(0, bounds.height - Math.min(current.height, bounds.height)), current.y)),
+    }));
+  }, [bounds.width, bounds.height]);
   const dragOrigin = useRef(frame); const resizeOrigin = useRef(frame);
   const drag = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => false,
     onMoveShouldSetPanResponder: (_event, gesture) => Math.abs(gesture.dx) > 4 || Math.abs(gesture.dy) > 4,
     onPanResponderGrant: () => { dragOrigin.current = frameRef.current; },
-    onPanResponderMove: (_event, gesture) => { const origin = dragOrigin.current; setFrame((current) => ({ ...current, x: Math.max(0, Math.min(bounds.width - current.width, origin.x + gesture.dx)), y: Math.max(0, Math.min(bounds.height - current.height, origin.y + gesture.dy)) })); },
+    onPanResponderMove: (_event, gesture) => { const origin = dragOrigin.current; setFrame((current) => ({ ...current, x: Math.max(0, Math.min(boundsRef.current.width - current.width, origin.x + gesture.dx)), y: Math.max(0, Math.min(boundsRef.current.height - current.height, origin.y + gesture.dy)) })); },
   })).current;
   const resize = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
     onPanResponderGrant: () => { resizeOrigin.current = frameRef.current; },
-    onPanResponderMove: (_event, gesture) => { const origin = resizeOrigin.current; setFrame((current) => ({ ...current, width: Math.max(116, Math.min(360, Math.min(bounds.width - current.x, origin.width + gesture.dx))), height: Math.max(154, Math.min(480, Math.min(bounds.height - current.y, origin.height + gesture.dy))) })); },
+    onPanResponderMove: (_event, gesture) => { const origin = resizeOrigin.current; setFrame((current) => ({ ...current, width: Math.max(116, Math.min(360, Math.min(boundsRef.current.width - current.x, origin.width + gesture.dx))), height: Math.max(154, Math.min(480, Math.min(boundsRef.current.height - current.y, origin.height + gesture.dy))) })); },
   })).current;
   return <View {...drag.panHandlers} style={{ position: 'absolute', left: frame.x, top: frame.y, width: frame.width, height: frame.height, borderRadius: 18, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1.5, borderColor: focused || spotlighted ? colors.accent : 'rgba(255,255,255,0.82)', shadowColor: '#000000', shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 9 }}>
     <VideoTrack trackRef={track} objectFit="cover" style={{ width: '100%', height: '100%' }} />
