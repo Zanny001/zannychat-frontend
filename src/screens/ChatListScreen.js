@@ -36,7 +36,7 @@ const FILTERS = [
 const PAGE_SIZE = 50;
 
 export default function ChatListScreen({ navigation }) {
-  const { colors, mood, spacing, typography, radii } = useTheme();
+  const { colors, mood, spacing, typography, radii, layout } = useTheme();
   const tabBarHeight = useBottomTabBarHeight();
   const [conversations, setConversations] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -397,6 +397,7 @@ export default function ChatListScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={{ flex: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
       <View style={[styles.header, { paddingHorizontal: spacing.md }]}>
         <View style={styles.titleRow}>
           <Knot size={26} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={5} />
@@ -611,6 +612,7 @@ export default function ChatListScreen({ navigation }) {
           </View>
         }
       />
+      </View>
 
       {/* Long-press actions — the audit noted favoriting was
           long-press-only with zero visible hint; the sheet now also
