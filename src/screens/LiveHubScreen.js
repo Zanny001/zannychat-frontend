@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, AppState, FlatList, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, FlatList, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
@@ -49,6 +49,8 @@ const LIVE_CATEGORIES = [
 
 export default function LiveHubScreen({ navigation, route }) {
   const { colors, spacing, radii, typography } = useTheme();
+  const { width: viewportWidth } = useWindowDimensions();
+  const compactHeader = viewportWidth < 380;
   const [streams, setStreams] = useState([]);
   const [invitations, setInvitations] = useState([]);
   const [replays, setReplays] = useState([]);
@@ -421,21 +423,21 @@ export default function LiveHubScreen({ navigation, route }) {
                 <View style={{ width: 40, height: 40, borderRadius: 15, backgroundColor: hexToRgba(colors.primary, 0.16), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.34), alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="radio" size={21} color={colors.primary} />
                 </View>
-                <View style={{ flex: 1 }}>
+                {!compactHeader ? <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.8 }]}>ZANNYCHAT</Text>
                   <Text style={[typography.small, { color: colors.textSecondary, fontWeight: '700', letterSpacing: 1.1 }]}>LIVE STAGE</Text>
-                </View>
-                <TouchableOpacity onPress={() => navigation.navigate('LiveCreatorStudio')} accessibilityRole="button" accessibilityLabel="Open LIVE Creator Studio" style={{ minHeight: 42, paddingHorizontal: 9, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                </View> : <View style={{ flex: 1 }} />}
+                <TouchableOpacity onPress={() => navigation.navigate('LiveCreatorStudio')} accessibilityRole="button" accessibilityLabel="Open LIVE Creator Studio" style={{ minHeight: 48, paddingHorizontal: 10, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                   <Ionicons name="person-circle-outline" size={19} color={colors.primary} />
-                  <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: '800' }]}>Studio</Text>
+                  {!compactHeader ? <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: '800' }]}>Studio</Text> : null}
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => navigation.navigate('LiveLeaderboard')} accessibilityRole="button" accessibilityLabel="Open LIVE creator leaderboard" style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                <TouchableOpacity onPress={() => navigation.navigate('LiveLeaderboard')} accessibilityRole="button" accessibilityLabel="Open LIVE creator leaderboard" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="trophy-outline" size={19} color={colors.primary} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => navigation.navigate('LiveEvents')} accessibilityRole="button" accessibilityLabel="Open scheduled LIVE Events" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="calendar-outline" size={19} color={colors.primary} />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => navigation.navigate('LiveSettings')} accessibilityRole="button" accessibilityLabel="Open LIVE settings" style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                <TouchableOpacity onPress={() => navigation.navigate('LiveSettings')} accessibilityRole="button" accessibilityLabel="Open LIVE settings" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="options-outline" size={19} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
