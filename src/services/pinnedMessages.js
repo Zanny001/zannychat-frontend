@@ -6,8 +6,14 @@ const keyFor = (userId) => `zannychat.pinnedMessages.v1.${encodeURIComponent(Str
 const validItems = (items) => Array.isArray(items) ? items.filter((item) => item && item.id && item.messageId && item.conversationId) : [];
 
 async function loadLocal(userId) {
-  try { const raw = await AsyncStorage.getItem(keyFor(userId)); return validItems(raw ? JSON.parse(raw) : []); }
-  catch (_) { return []; }
+  try {
+    const raw = await AsyncStorage.getItem(keyFor(userId));
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (parsed !== null && !Array.isArray(parsed)) throw new Error('Pinned-message data has an unexpected format.');
+    return validItems(parsed || []);
+  } catch {
+    throw new Error('Your pinned-message bookmarks could not be read from this device. No pins were changed. Check device storage and retry.');
+  }
 }
 async function saveLocal(userId, items) { await AsyncStorage.setItem(keyFor(userId), JSON.stringify(validItems(items).slice(0, 300))); }
 
@@ -58,7 +64,8 @@ export async function pinMessageLocally(userId, message, conversation) {
 }
 
 export async function unpinMessageLocally(userId, pinId) {
-  const item = (await loadLocal(userId)).find((entry) => entry.id === pinId);
+  const current = await loadLocal(userId);
+  const item = current.find((entry) => entry.id === pinId);
   if (SUPABASE_ENABLED && supabase && item) {
     const { data: authData } = await supabase.auth.getUser();
     if (authData?.user?.id === userId) {
@@ -66,7 +73,7 @@ export async function unpinMessageLocally(userId, pinId) {
       if (error) throw new Error(error.message || 'Could not remove the shared pin.');
     }
   }
-  const next = removePinnedMessage(await loadLocal(userId), pinId);
+  const next = removePinnedMessage(current, pinId);
   await saveLocal(userId, next);
   return next;
 }
