@@ -191,6 +191,7 @@ export default function LiveReplayLibraryScreen({ navigation }) {
             <LivePremiumHeader
               navigation={navigation}
               eyebrow="ZANNYCHAT · LIVE ARCHIVE"
+            backLabel="Back to LIVE"
               title="Replay library"
               subtitle="Your best LIVE moments, kept close."
               icon="albums-outline"
