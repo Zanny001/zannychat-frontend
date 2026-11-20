@@ -22,7 +22,9 @@ test('settings exposes a dismissible accessible warning for preference persisten
 });
 
 test('theme preference reads cannot overwrite a newer user selection', () => {
-  assert.match(theme, /const revisionAtStart = preferenceRevisionRef\.current/);
-  assert.match(theme, /revisionAtStart !== preferenceRevisionRef\.current/);
-  assert.match(theme, /preferenceRevisionRef\.current \+= 1/);
+  assert.match(theme, /const revisionAtStart = \{ \.\.\.preferenceRevisionRef\.current \}/);
+  assert.match(theme, /revisionAtStart\.mood === preferenceRevisionRef\.current\.mood/);
+  assert.match(theme, /revisionAtStart\.appearance === preferenceRevisionRef\.current\.appearance/);
+  assert.match(theme, /revisionAtStart\.accessibility === preferenceRevisionRef\.current\.accessibility/);
+  assert.match(theme, /preferenceRevisionRef\.current\.customPalette \+= 1/);
 });
