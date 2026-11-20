@@ -21,7 +21,8 @@ test('Native LIVE stage uses immersive full-screen video with floating guests an
   assert.match(source, /VideoTrack trackRef=\{track\} objectFit="cover"/);
   assert.match(source, /floatingGuestVideos\.slice\(0, 5\)/);
   assert.match(source, /function NativeFloatingGuestTile/);
-  assert.match(source, /minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center'/);
+  assert.match(source, /width: 88,[\s\S]*?minHeight: 68,[\s\S]*?alignItems: 'center'/);
+  assert.match(source, /accessibilityState=\{\{ disabled, busy: loading \}\}/);
   assert.match(source, /minHeight: 48, minWidth: 132/);
 });
 
