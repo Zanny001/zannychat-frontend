@@ -151,6 +151,7 @@ export default function LiveModerationScreen({ route, navigation }) {
           <LivePremiumHeader
             navigation={navigation}
             eyebrow="ZANNYCHAT · LIVE CONTROL"
+            backLabel="Back to LIVE stage"
             title="Moderation"
             subtitle={"Roles and stage access · " + streamTitle}
             icon="shield-checkmark-outline"
