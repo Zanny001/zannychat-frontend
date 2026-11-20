@@ -11,7 +11,7 @@ import { answerNativeCall, endNativeCall } from '../services/nativeCallSystem';
 
 export default function IncomingCallScreen({ route, navigation }) {
   const { call, participantName = 'ZannyChat contact', avatarColor: avatarColorParam, autoAnswer = false, nativeCallId = null } = route.params || {};
-  const { colors, typography, resolvedMode } = useTheme();
+  const { colors, typography, resolvedMode, layout } = useTheme();
   const avatarColor = avatarColorParam || colors.primary;
   const [busy, setBusy] = useState(false);
   const closingRef = useRef(false);
@@ -102,13 +102,13 @@ export default function IncomingCallScreen({ route, navigation }) {
         <Text style={[typography.heading, styles.brand, { color: colors.textPrimary }]}>ZannyChat</Text>
         <Text style={[typography.caption, styles.secure, { color: colors.textSecondary }]}><Ionicons name="lock-closed" size={12} color={colors.accent} />  Private call invitation</Text>
       </View>
-      <View style={styles.person}>
+      <View style={[styles.person, { width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center' }]}>
         <View style={[styles.avatarRing, { borderColor: hexToRgba(colors.primary, 0.42), backgroundColor: hexToRgba(colors.surface, 0.55), shadowColor: colors.primary }]}><Avatar name={participantName} color={avatarColor} size={112} /></View>
         <Text numberOfLines={2} style={[typography.display, styles.name, { color: colors.textPrimary, maxWidth: '100%', paddingHorizontal: 8 }]}>{participantName}</Text>
         <Text style={[typography.body, styles.callKind, { color: colors.textSecondary }]}>{isVideo ? 'Incoming video call' : 'Incoming audio call'}</Text>
         <View style={[styles.statusPill, { backgroundColor: hexToRgba(colors.surface, 0.78), borderColor: colors.border }]}><View style={[styles.liveDot, { backgroundColor: colors.online }]} /><Text style={[typography.small, styles.statusText, { color: colors.textPrimary }]}>{remaining > 0 ? `Ringing · ${remaining}s` : 'Call expired'}</Text></View>
       </View>
-      <View style={styles.actions}>
+      <View style={[styles.actions, { width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center' }]}>
         <TouchableOpacity onPress={decline} disabled={busy} accessibilityRole="button" accessibilityLabel="Decline call" style={[styles.action, styles.decline, { backgroundColor: colors.danger, shadowColor: colors.danger }]}>
           <Ionicons name="call" size={28} color={colors.onDanger} style={{ transform: [{ rotate: '135deg' }] }} />
           <Text style={[typography.small, styles.actionText, { color: colors.onDanger }]}>Decline</Text>
