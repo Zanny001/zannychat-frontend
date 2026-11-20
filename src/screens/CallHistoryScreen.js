@@ -22,7 +22,7 @@ function formatDuration(seconds) {
 }
 
 export default function CallHistoryScreen({ navigation }) {
-  const { colors, spacing, typography, radii } = useTheme();
+  const { colors, spacing, typography, radii, layout } = useTheme();
   const [calls, setCalls] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -82,14 +82,14 @@ export default function CallHistoryScreen({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Calls" subtitle="Your moments, one connection away" />
       <FlatList
-        style={{ flex: 1 }}
+        style={{ flex: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
         data={calls}
         keyExtractor={(item) => `${item.isGroupCall ? 'group' : 'direct'}:${item.id}`}
         showsVerticalScrollIndicator={false}
         initialNumToRender={12}
         maxToRenderPerBatch={12}
         windowSize={7}
-        contentContainerStyle={{ padding: spacing.md, paddingBottom: 104, gap: spacing.lg, flexGrow: 1 }}
+        contentContainerStyle={{ padding: spacing.md, paddingBottom: 104, gap: spacing.lg, flexGrow: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
         ListHeaderComponent={<View style={{ gap: spacing.lg }}><View style={{ gap: spacing.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Quick connect</Text>
