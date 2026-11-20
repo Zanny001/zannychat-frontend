@@ -215,3 +215,20 @@ A read-only production query retrieved the full definitions and effective execut
 - All inspected worker RPCs are SECURITY DEFINER with an explicit configured search path. The effective grant check found no `anon` or `authenticated` EXECUTE privilege and confirmed `service_role` EXECUTE.
 
 The production `account_storage_cleanup_jobs` table has only `held` and `pending` allowed states; it has no processing/lease column in the observed schema. Effective table privileges are service-role-only. This confirms the worker's process-local guard is not backed by a database claim lease. It is a concurrency-hardening candidate if the backend ever runs multiple workers/processes, but no change is justified until deployment topology, job creation semantics and duplicate-cleanup behaviour are verified. Do not add a state or lease column without an explicitly approved migration.
+
+## 9. Authenticated SECURITY DEFINER function review — delegated paths and privacy semantics
+
+A read-only production query inspected all 28 public SECURITY DEFINER functions executable by `authenticated`. All 28 have configured search paths; none of the 28 is executable by `anon`. Twenty-four directly bind the acting identity to `auth.uid()`; the four without a direct check were reviewed with their delegated helper chains:
+
+- `cast_poll_vote(uuid, uuid)` delegates to `cast_poll_vote(uuid, uuid[])`, which checks `auth.uid()`, conversation membership, poll open state, unique option IDs, option ownership, and the single-/multi-select rule before replacing the caller's votes.
+- `create_conversation_poll(uuid, text, text[], timestamptz)` delegates to the five-argument overload, which checks `auth.uid()`, conversation membership, question/option lengths, unique options and future closing time.
+- `get_visible_profile_avatar_path(uuid)` delegates visibility to `can_view_profile_avatar(uuid)`; `get_visible_profile_cover_path(uuid)` uses the same helper and additionally requires non-empty public profile details.
+- `can_view_profile_avatar(uuid)` rejects null/anonymous viewers, allows the owner, denies either-direction blocks, enforces profile/photo `nobody` and `contacts` visibility, and requires shared conversation membership for contacts-only visibility.
+
+No identity bypass was found in those four delegated paths. Additional direct-body checks confirmed: `can_view_status` binds its viewer argument to `auth.uid()` and checks expiry, audience, exclusions and blocks; people-search RPCs share a per-user 30-request/minute quota and cap result sizes; contact/presence helpers enforce shared conversation and block/privacy rules; status view counts are owner-scoped and cap requests at 200 IDs; call heartbeats require an authenticated caller/callee on an accepted, recently active session; and profile-visibility updates validate enum values and require public avatar removal/private-copy prerequisites before restriction.
+
+### Privacy semantics requiring product confirmation (no mutation)
+
+`get_conversation_profile_directory(uuid[])` requires an authenticated viewer, caps the requested list at 500, and returns only users sharing a conversation with the viewer. It gates avatar URLs through `can_view_profile_avatar` and suppresses online state for blocked pairs or hidden presence. However, unlike `get_contact_directory` and public-profile lookup, it does not filter rows when `profile_visibility = 'nobody'`; it still returns basic conversation identity fields (name, username, avatar color, status). This may be intentional so existing conversation members can identify message participants, but the product meaning of the Edit Profile choice “Who can view your profile: Nobody” must be confirmed against this behavior before calling profile privacy fully certified. No policy, function or data change was made.
+
+The full SECURITY DEFINER audit is not closed: the remaining 24 direct-identity functions still need a complete per-function argument/ownership/membership review and caller-context tests, not merely the direct `auth.uid()` presence check.
