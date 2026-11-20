@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MOODS, DEFAULT_MOOD_KEY, resolveMoodColors, spacing, radii, layout, elevation } from './colors';
@@ -19,10 +19,16 @@ export function ThemeProvider({ children }) {
   const [appearance, setAppearance] = useState('system');
   const [textScale, setTextScale] = useState('standard');
   const [highContrast, setHighContrast] = useState(false);
+  const [persistenceError, setPersistenceError] = useState('');
+  const preferenceRevisionRef = useRef(0);
+  const persistenceAttemptRef = useRef(0);
 
   useEffect(() => {
+    let active = true;
+    const revisionAtStart = preferenceRevisionRef.current;
     AsyncStorage.multiGet([MOOD_STORAGE_KEY, APPEARANCE_STORAGE_KEY, ACCESSIBILITY_STORAGE_KEY, CUSTOM_PALETTE_STORAGE_KEY])
       .then((entries) => {
+        if (!active || revisionAtStart !== preferenceRevisionRef.current) return;
         const saved = Object.fromEntries(entries);
         if (saved[CUSTOM_PALETTE_STORAGE_KEY]) {
           try {
@@ -44,7 +50,10 @@ export function ThemeProvider({ children }) {
           } catch (_) {}
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (active) setPersistenceError('Saved appearance preferences could not be loaded from this device. Current session defaults remain active.');
+      });
+    return () => { active = false; };
   }, []);
 
   const value = useMemo(() => {
@@ -57,7 +66,20 @@ export function ThemeProvider({ children }) {
       fontSize: Math.round(style.fontSize * scale * 10) / 10,
       ...(style.lineHeight ? { lineHeight: Math.round(style.lineHeight * scale) } : {}),
     }]));
-    const persistAccessibility = (next) => AsyncStorage.setItem(ACCESSIBILITY_STORAGE_KEY, JSON.stringify(next)).catch(() => {});
+    const persist = async (write) => {
+      const attempt = ++persistenceAttemptRef.current;
+      try {
+        await write;
+        if (attempt === persistenceAttemptRef.current) setPersistenceError('');
+        return true;
+      } catch (_) {
+        if (attempt === persistenceAttemptRef.current) {
+          setPersistenceError('Your preferences are active for this session, but could not be saved on this device. Check device storage and try again.');
+        }
+        return false;
+      }
+    };
+    const persistAccessibility = (next) => persist(AsyncStorage.setItem(ACCESSIBILITY_STORAGE_KEY, JSON.stringify(next)));
     return {
       colors: resolveMoodColors(mood, resolvedMode, highContrast),
       mood,
@@ -73,41 +95,48 @@ export function ThemeProvider({ children }) {
       resolvedMode,
       textScale,
       highContrast,
+      persistenceError,
+      clearPersistenceError: () => setPersistenceError(''),
       setAppearance: (mode) => {
         if (['system', 'light', 'dark'].includes(mode)) {
+          preferenceRevisionRef.current += 1;
           setAppearance(mode);
-          AsyncStorage.setItem(APPEARANCE_STORAGE_KEY, mode).catch(() => {});
+          void persist(AsyncStorage.setItem(APPEARANCE_STORAGE_KEY, mode));
         }
       },
       setTextScale: (scaleKey) => {
         if (Object.prototype.hasOwnProperty.call(TEXT_SCALES, scaleKey)) {
+          preferenceRevisionRef.current += 1;
           setTextScale(scaleKey);
-          persistAccessibility({ textScale: scaleKey, highContrast });
+          void persistAccessibility({ textScale: scaleKey, highContrast });
         }
       },
       setHighContrast: (enabled) => {
+        preferenceRevisionRef.current += 1;
         setHighContrast(Boolean(enabled));
-        persistAccessibility({ textScale, highContrast: Boolean(enabled) });
+        void persistAccessibility({ textScale, highContrast: Boolean(enabled) });
       },
       setPalette: (key) => {
         if (MOODS[key] || (key === 'custom' && customPalette)) {
+          preferenceRevisionRef.current += 1;
           setMoodKey(key);
-          AsyncStorage.setItem(MOOD_STORAGE_KEY, key).catch(() => {});
+          void persist(AsyncStorage.setItem(MOOD_STORAGE_KEY, key));
         }
       },
       setCustomPalette: (nextPalette) => {
         const normalized = normalizeCustomPalette(nextPalette);
         if (!normalized) return false;
+        preferenceRevisionRef.current += 1;
         setCustomPaletteState(normalized);
         setMoodKey('custom');
-        AsyncStorage.multiSet([
+        void persist(AsyncStorage.multiSet([
           [CUSTOM_PALETTE_STORAGE_KEY, JSON.stringify(normalized)],
           [MOOD_STORAGE_KEY, 'custom'],
-        ]).catch(() => {});
+        ]));
         return true;
       },
     };
-  }, [moodKey, customPalette, appearance, systemScheme, textScale, highContrast]);
+  }, [moodKey, customPalette, appearance, systemScheme, textScale, highContrast, persistenceError]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
