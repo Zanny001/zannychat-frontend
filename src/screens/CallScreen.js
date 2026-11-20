@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { DeviceEventEmitter, ActivityIndicator, Alert, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { DeviceEventEmitter, ActivityIndicator, Alert, Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { RTCView, mediaDevices, RTCPeerConnection, RTCSessionDescription, RTCIceCandidate, MediaStream } from '@livekit/react-native-webrtc';
 import { AudioSession } from '@livekit/react-native';
@@ -609,7 +610,7 @@ export default function CallScreen({ route, navigation }) {
   );
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: immersiveVideo ? '#11101A' : colors.background }]}>
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={[styles.safe, { backgroundColor: immersiveVideo ? '#11101A' : colors.background }]}>
       <StatusBar barStyle={!immersiveVideo && resolvedMode === 'light' ? 'dark-content' : 'light-content'} />
       {remoteVideoActive && remoteStream ? <RTCView streamURL={remoteStream.toURL()} objectFit="cover" style={StyleSheet.absoluteFill} /> : null}
       {activeCallType === 'video' && localStream && !cameraOff ? <RTCView streamURL={localStream.toURL()} mirror objectFit="cover" style={styles.localVideo} /> : null}
