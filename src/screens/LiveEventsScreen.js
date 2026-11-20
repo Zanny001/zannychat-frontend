@@ -220,11 +220,12 @@ export default function LiveEventsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{flex:1,backgroundColor:colors.background}}>
-      <ScrollView contentContainerStyle={{padding:spacing.md,paddingBottom:spacing.xl,gap:spacing.md}} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{paddingHorizontal:spacing.md,paddingTop:spacing.sm,paddingBottom:spacing.xl}} keyboardShouldPersistTaps="handled">
+        <View style={{width:'100%',maxWidth:760,alignSelf:'center',gap:spacing.md}}>
         <LivePremiumHeader
           navigation={navigation}
           eyebrow="ZANNYCHAT · LIVE EVENTS"
-            backLabel="Go back"
+            backLabel="Back to LIVE Hub"
           title="LIVE Events"
           subtitle="Plan a moment. Bring your people together."
           icon="calendar-outline"
@@ -321,13 +322,16 @@ export default function LiveEventsScreen({ navigation }) {
 
         <View style={{gap:spacing.sm}}>
           <Text style={[typography.bodyStrong,{color:colors.textPrimary,fontSize:18}]}>Upcoming in your community</Text>
-          {loading&&<ActivityIndicator color={colors.primary} style={{marginVertical:spacing.md}}/>}
           {!!error&&<Text accessibilityRole="alert" style={[typography.caption,{color:colors.danger}]}>{error}</Text>}
           {!loading&&!error&&events.length===0&&<GlassCard contentStyle={{padding:spacing.lg,alignItems:'center',gap:spacing.sm}}>
             <Ionicons name="calendar-clear-outline" size={30} color={colors.primary}/>
             <Text style={[typography.bodyStrong,{color:colors.textPrimary}]}>No upcoming Events yet</Text>
             <Text style={[typography.caption,{color:colors.textSecondary,textAlign:'center'}]}>Schedule a LIVE Event or follow creators to discover their next gathering.</Text>
           </GlassCard>}
+          <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:spacing.sm}}>
+            <Text style={[typography.caption,{color:colors.textSecondary,fontWeight:'800',letterSpacing:0.5}]}>{events.length} {events.length===1?'UPCOMING EVENT':'UPCOMING EVENTS'}</Text>
+            {loading ? <ActivityIndicator size="small" color={colors.primary}/> : null}
+          </View>
           {events.map((event)=><GlassCard key={event.id} contentStyle={{padding:spacing.md,gap:spacing.sm}}>
             <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:spacing.sm}}>
               <Text style={[typography.caption,{color:colors.primary,fontWeight:'900',letterSpacing:0.8}]}>{event.category.toUpperCase()} · {event.visibility.toUpperCase()}</Text>
@@ -357,6 +361,7 @@ export default function LiveEventsScreen({ navigation }) {
                   <Text style={[typography.caption,{color:event.rsvpStatus==='going'?colors.textSecondary:colors.onPrimary,fontWeight:'900'}]}>{event.rsvpStatus==='going'?'Cancel my RSVP':event.attendeeCount>=event.maxAttendees?'Event full':'Reserve my place'}</Text>
                 </TouchableOpacity>}
           </GlassCard>)}
+        </View>
         </View>
       </ScrollView>
     </SafeAreaView>
