@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, AppState, FlatList, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, FlatList, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
@@ -49,6 +49,8 @@ const LIVE_CATEGORIES = [
 
 export default function LiveHubScreen({ navigation, route }) {
   const { colors, spacing, radii, typography } = useTheme();
+  const { width: viewportWidth } = useWindowDimensions();
+  const compactHeader = viewportWidth < 380;
   const [streams, setStreams] = useState([]);
   const [invitations, setInvitations] = useState([]);
   const [replays, setReplays] = useState([]);
@@ -418,16 +420,16 @@ export default function LiveHubScreen({ navigation, route }) {
           <View style={{ width: '100%', maxWidth: 820, alignSelf: 'center' }}>
             <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.md, gap: spacing.md }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                <View style={{ width: 42, height: 42, borderRadius: 15, backgroundColor: hexToRgba(colors.primary, 0.16), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.34), alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ width: 40, height: 40, borderRadius: 15, backgroundColor: hexToRgba(colors.primary, 0.16), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.34), alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="radio" size={21} color={colors.primary} />
                 </View>
-                <View style={{ flex: 1 }}>
+                {!compactHeader ? <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.8 }]}>ZANNYCHAT</Text>
                   <Text style={[typography.small, { color: colors.textSecondary, fontWeight: '700', letterSpacing: 1.1 }]}>LIVE STAGE</Text>
-                </View>
-                <TouchableOpacity onPress={() => navigation.navigate('LiveCreatorStudio')} accessibilityRole="button" accessibilityLabel="Open LIVE Creator Studio" style={{ minHeight: 48, paddingHorizontal: 10, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                </View> : <View style={{ flex: 1 }} />}
+                <TouchableOpacity onPress={() => navigation.navigate('LiveCreatorStudio')} accessibilityRole="button" accessibilityLabel="Open LIVE Creator Studio" style={{ minHeight: 48, paddingHorizontal: 10, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                   <Ionicons name="person-circle-outline" size={19} color={colors.primary} />
-                  <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: '800' }]}>Studio</Text>
+                  {!compactHeader ? <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: '800' }]}>Studio</Text> : null}
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => navigation.navigate('LiveLeaderboard')} accessibilityRole="button" accessibilityLabel="Open LIVE creator leaderboard" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="trophy-outline" size={19} color={colors.primary} />
@@ -438,13 +440,11 @@ export default function LiveHubScreen({ navigation, route }) {
                 <TouchableOpacity onPress={() => navigation.navigate('LiveSettings')} accessibilityRole="button" accessibilityLabel="Open LIVE settings" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="options-outline" size={19} color={colors.textSecondary} />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh LIVE streams" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="refresh" size={18} color={colors.textSecondary} />
-                </TouchableOpacity>
               </View>
 
-              <View style={{ borderRadius: 26, padding: spacing.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.3), overflow: 'hidden' }}>
-                <View pointerEvents="none" style={{ position: 'absolute', top: -48, right: -30, width: 170, height: 170, borderRadius: 90, backgroundColor: hexToRgba(colors.accent || colors.primary, 0.12) }} />
+              <View style={{ borderRadius: 28, padding: spacing.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: hexToRgba(colors.gold || colors.accent || colors.primary, 0.32), overflow: 'hidden' }}>
+                <View pointerEvents="none" style={{ position: 'absolute', top: -58, right: -38, width: 190, height: 190, borderRadius: 96, backgroundColor: hexToRgba(colors.accent || colors.primary, 0.14) }} />
+                <View pointerEvents="none" style={{ position: 'absolute', bottom: -58, left: -42, width: 142, height: 142, borderRadius: 72, backgroundColor: hexToRgba(colors.gold || colors.primary, 0.07) }} />
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: spacing.sm }}>
                   <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: colors.success || colors.primary }} />
                   <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.4 }]}>YOUR COMMUNITY, LIVE</Text>

@@ -6,6 +6,7 @@ import GlassCard from '../components/GlassCard';
 import { backendFetch } from '../services/backendClient';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
+import LivePremiumHeader from '../components/LivePremiumHeader';
 import { confirmAction, showAppAlert } from '../utils/appDialogs';
 
 export default function LiveModerationScreen({ route, navigation }) {
@@ -147,18 +148,16 @@ export default function LiveModerationScreen({ route, navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => refresh(true)} tintColor={colors.primary} />} contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, alignItems: 'center' }}>
         <View style={{ width: '100%', maxWidth: 760, gap: spacing.md }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-            <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Back to LIVE stage" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
-            </TouchableOpacity>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.4 }]}>ZANNYCHAT · LIVE CONTROL</Text>
-              <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 23 }]}>Moderation</Text>
-            </View>
-            <TouchableOpacity onPress={() => refresh(true)} accessibilityRole="button" accessibilityLabel="Refresh LIVE participants" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="refresh" size={19} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+          <LivePremiumHeader
+            navigation={navigation}
+            eyebrow="ZANNYCHAT · LIVE CONTROL"
+            backLabel="Back to LIVE stage"
+            title="Moderation"
+            subtitle={"Roles and stage access · " + streamTitle}
+            icon="shield-checkmark-outline"
+            onRefresh={() => refresh(true)}
+            refreshLabel="Refresh LIVE participants"
+          />
 
           <GlassCard glow contentStyle={{ padding: spacing.lg, gap: spacing.md }}>
             <Text style={[typography.caption, { color: colors.textSecondary }]}>ACTIVE SESSION</Text>

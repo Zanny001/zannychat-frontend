@@ -7,6 +7,7 @@ import { backendFetch } from '../services/backendClient';
 import { getCurrentUser } from '../services/api';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
+import LivePremiumHeader from '../components/LivePremiumHeader';
 
 function formatDate(value) {
   if (!value) return 'Recently updated';
@@ -117,18 +118,16 @@ export default function LiveLeaderboardScreen({ navigation }) {
         contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, alignItems: 'center' }}
       >
         <View style={{ width: '100%', maxWidth: 760, gap: spacing.md }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-            <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Back to LIVE Hub" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
-            </TouchableOpacity>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.4 }]}>ZANNYCHAT · LIVE RANKINGS</Text>
-              <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 24 }]}>Crown leaderboard</Text>
-            </View>
-            <TouchableOpacity onPress={() => refresh(true)} accessibilityRole="button" accessibilityLabel="Refresh LIVE leaderboard" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="refresh" size={19} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+          <LivePremiumHeader
+            navigation={navigation}
+            eyebrow="ZANNYCHAT · LIVE COMMUNITY"
+            backLabel="Back to LIVE Hub"
+            title="Creator leaderboard"
+            subtitle="Community impact, ranked fairly"
+            icon="trophy-outline"
+            onRefresh={() => refresh()}
+            refreshLabel="Refresh leaderboard"
+          />
 
           <GlassCard glow contentStyle={{ padding: spacing.lg, gap: spacing.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>

@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const screen = fs.readFileSync(new URL('./LiveReplayScreen.js', import.meta.url), 'utf8');
 const navigator = fs.readFileSync(new URL('../navigation/AppNavigator.js', import.meta.url), 'utf8');
+const premiumHeader = fs.readFileSync(new URL('../components/LivePremiumHeader.js', import.meta.url), 'utf8');
 
 test('private LIVE replay player requests a signed playback URL and plays in-app', () => {
   assert.ok(screen.includes("`/live/replays/${replayId}/playback`"));
@@ -20,8 +21,10 @@ test('LIVE replay player is registered in the authenticated navigator', () => {
 });
 
 test('all replay player actions expose explicit accessibility names', () => {
-  assert.ok(screen.includes('accessibilityLabel="Go back from LIVE replay"'));
-  assert.ok(screen.includes('accessibilityLabel="Refresh LIVE replay link"'));
+  assert.ok(screen.includes('backLabel="Go back from LIVE replay"'));
+  assert.ok(screen.includes('refreshLabel="Refresh LIVE replay link"'));
+  assert.ok(premiumHeader.includes('accessibilityLabel={backLabel}'));
+  assert.ok(premiumHeader.includes('accessibilityLabel={refreshLabel}'));
   assert.ok(screen.includes('accessibilityLabel="Retry LIVE replay playback"'));
 });
 

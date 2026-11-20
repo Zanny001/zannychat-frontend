@@ -7,6 +7,7 @@ import { getCurrentUser } from '../services/api';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { loadLivePreferences, saveLivePreferences, DEFAULT_LIVE_PREFERENCES } from '../services/livePreferences';
 import { useTheme } from '../theme/ThemeContext';
+import LivePremiumHeader from '../components/LivePremiumHeader';
 import { hexToRgba } from '../utils/color';
 
 const MODES = [
@@ -115,18 +116,16 @@ export default function LiveSettingsScreen({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, alignItems: 'center' }}>
         <View style={{ width: '100%', maxWidth: 760, gap: spacing.md }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-            <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Back to LIVE Hub" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
-            </TouchableOpacity>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.3 }]}>CREATOR CONTROLS</Text>
-              <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 25 }]}>LIVE settings</Text>
-            </View>
-            <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: hexToRgba(colors.primary, 0.12), alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="options-outline" size={21} color={colors.primary} />
-            </View>
-          </View>
+          <LivePremiumHeader
+            navigation={navigation}
+            eyebrow="ZANNYCHAT · LIVE PREFERENCES"
+            backLabel="Back to LIVE Hub"
+            title="LIVE settings"
+            subtitle="Set defaults for your next broadcast"
+            icon="options-outline"
+            onRefresh={() => refresh()}
+            refreshLabel="Refresh LIVE settings"
+          />
 
           <GlassCard glow contentStyle={{ padding: spacing.lg, gap: spacing.xs }}>
             <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 17 }]}>Your broadcast, your defaults</Text>

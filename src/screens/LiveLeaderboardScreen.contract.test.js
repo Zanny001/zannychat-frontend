@@ -5,6 +5,7 @@ import fs from 'node:fs';
 const leaderboard = fs.readFileSync(new URL('./LiveLeaderboardScreen.js', import.meta.url), 'utf8');
 const hub = fs.readFileSync(new URL('./LiveHubScreen.js', import.meta.url), 'utf8');
 const navigator = fs.readFileSync(new URL('../navigation/AppNavigator.js', import.meta.url), 'utf8');
+const premiumHeader = fs.readFileSync(new URL('../components/LivePremiumHeader.js', import.meta.url), 'utf8');
 
 test('LIVE leaderboard reads authenticated all-time ranking and follows account changes safely', () => {
   assert.ok(leaderboard.includes("backendFetch('/live/leaderboard?period=all_time&limit=50')"));
@@ -33,6 +34,9 @@ test('LIVE leaderboard is reachable from LIVE Hub and every action has an access
   assert.ok(navigator.includes('name="LiveLeaderboard" component={LiveLeaderboardScreen}'));
   assert.ok(navigator.includes("import LiveLeaderboardScreen from '../screens/LiveLeaderboardScreen'"));
   const controlLines = leaderboard.split('\n').filter((line) => line.includes('<TouchableOpacity'));
-  assert.ok(controlLines.length >= 3);
+  assert.ok(controlLines.length >= 1, 'leaderboard retains its follow action');
   assert.ok(controlLines.every((line) => line.includes('accessibilityRole=') && line.includes('accessibilityLabel=')));
+  assert.ok(leaderboard.includes('<LivePremiumHeader'));
+  assert.ok(premiumHeader.includes('accessibilityLabel={backLabel}'));
+  assert.ok(premiumHeader.includes('accessibilityLabel={refreshLabel}'));
 });

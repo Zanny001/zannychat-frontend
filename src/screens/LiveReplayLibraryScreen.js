@@ -6,6 +6,7 @@ import { backendFetch } from '../services/backendClient';
 import { getCurrentUser } from '../services/api';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
+import LivePremiumHeader from '../components/LivePremiumHeader';
 import GlassCard from '../components/GlassCard';
 import { hexToRgba } from '../utils/color';
 import { confirmAction, showAppAlert } from '../utils/appDialogs';
@@ -187,19 +188,16 @@ export default function LiveReplayLibraryScreen({ navigation }) {
         contentContainerStyle={{ paddingTop: spacing.md, paddingBottom: spacing.xxl || 32, flexGrow: 1, alignItems: 'center' }}
         ListHeaderComponent={
           <View style={{ width: '94%', maxWidth: 760, alignSelf: 'center', paddingBottom: spacing.lg || 24, gap: spacing.md }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Back to LIVE" style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="chevron-back" size={21} color={colors.textPrimary} />
-              </TouchableOpacity>
-              <View style={{ flex: 1 }}>
-                <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.3 }]}>ZANNYCHAT LIVE</Text>
-                <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 26 }]}>Replay library</Text>
-                <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>Your best LIVE moments, kept close.</Text>
-              </View>
-              <TouchableOpacity onPress={() => refresh(true)} accessibilityRole="button" accessibilityLabel="Refresh replay library" style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="refresh" size={18} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
+            <LivePremiumHeader
+              navigation={navigation}
+              eyebrow="ZANNYCHAT · LIVE ARCHIVE"
+            backLabel="Back to LIVE"
+              title="Replay library"
+              subtitle="Your best LIVE moments, kept close."
+              icon="albums-outline"
+              onRefresh={() => refresh(true)}
+              refreshLabel="Refresh replay library"
+            />
             <GlassCard glow contentStyle={{ padding: spacing.lg || 20, gap: spacing.md }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                 <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: hexToRgba(colors.primary, 0.12), alignItems: 'center', justifyContent: 'center' }}>

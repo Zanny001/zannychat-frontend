@@ -7,6 +7,7 @@ import { backendFetch } from '../services/backendClient';
 import { getCurrentUser } from '../services/api';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
+import LivePremiumHeader from '../components/LivePremiumHeader';
 
 function Metric({ icon, label, value, colors, typography, note }) {
   return (
@@ -118,18 +119,16 @@ export default function LiveAnalyticsScreen({ navigation }) {
         contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, alignItems: 'center' }}
       >
         <View style={{ width: '100%', maxWidth: 760, gap: spacing.md }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-            <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Back to Creator Studio" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
-            </TouchableOpacity>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.4 }]}>ZANNYCHAT · LIVE INSIGHTS</Text>
-              <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 24 }]}>Creator analytics</Text>
-            </View>
-            <TouchableOpacity onPress={() => refresh(true)} accessibilityRole="button" accessibilityLabel="Refresh LIVE analytics" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="refresh" size={19} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+          <LivePremiumHeader
+            navigation={navigation}
+            eyebrow="ZANNYCHAT · LIVE INSIGHTS"
+            backLabel="Back to Creator Studio"
+            title="Creator analytics"
+            subtitle="Verified creator impact and broadcast history"
+            icon="analytics-outline"
+            onRefresh={() => refresh(true)}
+            refreshLabel="Refresh LIVE analytics"
+          />
 
           {loading && !summary ? <View style={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary }]}>Preparing your LIVE insights…</Text></View> : null}
           {!!error ? <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text accessibilityRole="alert" style={[typography.body, { color: colors.danger }]}>{error}</Text><TouchableOpacity onPress={() => refresh()} accessibilityRole="button" accessibilityLabel="Retry loading LIVE analytics" style={{ minHeight: 48, justifyContent: 'center' }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}

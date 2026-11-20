@@ -6,6 +6,7 @@ import GlassCard from '../components/GlassCard';
 import { backendFetch } from '../services/backendClient';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
+import LivePremiumHeader from '../components/LivePremiumHeader';
 import { showAppAlert } from '../utils/appDialogs';
 
 function formatRequestDate(value) {
@@ -118,18 +119,16 @@ export default function LiveGuestQueueScreen({ route, navigation }) {
         contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, alignItems: 'center' }}
       >
         <View style={{ width: '100%', maxWidth: 760, gap: spacing.md }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-            <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Back to LIVE management" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
-            </TouchableOpacity>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.4 }]}>ZANNYCHAT · LIVE OPERATIONS</Text>
-              <Text numberOfLines={1} style={[typography.heading, { color: colors.textPrimary, fontSize: 23 }]}>Guest queue</Text>
-            </View>
-            <TouchableOpacity onPress={() => refresh(true)} accessibilityRole="button" accessibilityLabel="Refresh guest queue" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="refresh" size={19} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+          <LivePremiumHeader
+            navigation={navigation}
+            eyebrow="ZANNYCHAT · LIVE OPERATIONS"
+            backLabel="Back to LIVE management"
+            title="Guest queue"
+            subtitle={"Review stage requests · " + streamTitle}
+            icon="people-outline"
+            onRefresh={() => refresh()}
+            refreshLabel="Refresh guest queue"
+          />
 
           <GlassCard glow contentStyle={{ padding: spacing.lg, gap: spacing.sm }}>
             <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.1 }]}>CURRENT STAGE</Text>
