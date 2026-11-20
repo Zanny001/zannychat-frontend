@@ -728,6 +728,11 @@ export default function LiveStreamScreen({ route, navigation }) {
       setError(err?.message || (creatorMode ? 'Could not end the LIVE session.' : 'Could not leave the LIVE session.'));
     }
   };
+  const confirmEnd = () => {
+    if (!creatorMode || endedRef.current || busy) return;
+    const confirmed = typeof window !== 'undefined' && window.confirm('End LIVE broadcast? This will stop the broadcast for everyone.');
+    if (confirmed) leaveRef.current?.();
+  };
   leaveRef.current = leave;
   const toggleCamera = async () => {
     try { const next = !camera; await roomRef.current?.localParticipant.setCameraEnabled(next); setCamera(next); }
@@ -1013,7 +1018,7 @@ export default function LiveStreamScreen({ route, navigation }) {
         <Text style={{ color: '#D8CBFF', fontSize: 9, fontWeight: '900', letterSpacing: 0.45 }}>{creatorMode ? 'HOST' : publisherMode ? 'GUEST' : moderatorMode ? 'MODERATOR' : 'VIEWER'}</Text>
       </View>) : null}
       <Action colors={colors} label="Tools" accessibilityLabel="Open LIVE controls menu" onPress={() => setShowOverlayMenu((value) => !value)} />
-      <Action colors={colors} label={creatorMode ? 'End' : 'Leave'} danger disabled={busy} onPress={leave} />
+      <Action colors={colors} label={creatorMode ? 'END LIVE' : 'LEAVE'} accessibilityLabel={creatorMode ? 'End LIVE broadcast' : 'Leave LIVE stream'} danger={creatorMode} disabled={busy} onPress={creatorMode ? confirmEnd : leave} />
     </View>
 
     {!!error && <View pointerEvents="box-none" style={{ position: 'absolute', top: 78, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(100,20,35,0.86)' }}><Text accessibilityRole="alert" style={{ color: '#FFFFFF', fontSize: 12 }}>{error}</Text></View>}

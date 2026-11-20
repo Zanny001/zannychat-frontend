@@ -206,3 +206,11 @@ test('web LIVE disconnects and returns to LIVE Hub when the server confirms the 
   assert.ok(web.includes("navigation.replace('Main', { screen: 'LIVE' })"));
   assert.ok(web.includes("setStatus('LIVE ended')"));
 });
+
+
+test('web creator has a visible END LIVE control with confirmation; viewers only leave', () => {
+  assert.ok(web.includes("label={creatorMode ? 'END LIVE' : 'LEAVE'}"));
+  assert.ok(web.includes("accessibilityLabel={creatorMode ? 'End LIVE broadcast' : 'Leave LIVE stream'}"));
+  assert.ok(web.includes("window.confirm('End LIVE broadcast? This will stop the broadcast for everyone.')"));
+  assert.ok(web.includes('onPress={creatorMode ? confirmEnd : leave}'));
+});

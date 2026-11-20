@@ -595,3 +595,11 @@ test('creator back navigation requires explicit confirmation before ending a LIV
   assert.ok(screen.includes("{ text: 'Stay LIVE', style: 'cancel'"));
   assert.ok(webScreen.includes("window.confirm('End LIVE broadcast?"));
 });
+
+
+test('native creator has a visible END LIVE control with confirmation; viewers only leave', () => {
+  assert.ok(screen.includes("{creatorMode ? 'END LIVE' : 'LEAVE'}"));
+  assert.ok(screen.includes("accessibilityLabel={creatorMode ? 'End LIVE broadcast' : 'Leave LIVE stream'}"));
+  assert.ok(screen.includes("Alert.alert('End LIVE broadcast?'"));
+  assert.ok(screen.includes('onEnd={creatorMode ? confirmEnd : leave}'));
+});
