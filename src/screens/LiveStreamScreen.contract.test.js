@@ -563,6 +563,8 @@ test('creator roster distinguishes the host from guest, viewer and moderator rol
 
 test('native and web LIVE stages expose server-derived role hierarchy and labelled premium controls', () => {
   assert.ok(screen.includes('function LiveMenuAction('));
+  assert.ok(screen.includes('const compactRoomHeader = roomViewportWidth < 390;'));
+  assert.ok(screen.includes('useWindowDimensions'));
   assert.ok(screen.includes("label=\"Guest queue\""));
   assert.ok(screen.includes("label=\"Moderation\""));
   assert.ok(screen.includes("label=\"Participants\""));
