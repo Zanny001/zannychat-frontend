@@ -24,3 +24,19 @@ test('action sheet content clears the device bottom safe area', () => {
   assert.ok(source.includes('useSafeAreaInsets'));
   assert.ok(source.includes('paddingBottom: Math.max(28, insets.bottom + 16)'));
 });
+
+
+test('primary app screens use explicit device-safe top and horizontal insets', () => {
+  for (const name of [
+    'ProfileScreen.js',
+    'SettingsScreen.js',
+    'ChatListScreen.js',
+    'ChannelsScreen.js',
+    'StatusUpdatesScreen.js',
+    'CallHistoryScreen.js',
+  ]) {
+    const source = readFileSync(new URL('./' + name, import.meta.url), 'utf8');
+    assert.match(source, /from 'react-native-safe-area-context'/, name + ' must use safe-area-context');
+    assert.match(source, /<SafeAreaView edges=\{\['top', 'left', 'right'\]\}/, name + ' must avoid system-bar overlap without adding duplicate bottom padding');
+  }
+});
