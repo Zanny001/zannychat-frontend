@@ -144,3 +144,20 @@ test('chat Realtime subscriptions are rebound and filtered for the active user',
   assert.match(timeline, /activeUserIdRef\.current !== myUserId/);
   assert.match(timeline, /\}, \[conversationId, myUserId, activeUserIdRef/);
 });
+
+
+test('chat header collapses call and utility actions before participant names are crowded', () => {
+  const header = fs.readFileSync(new URL('../components/Header.js', import.meta.url), 'utf8');
+  assert.match(screen, /const compactHeader = windowWidth < 480/);
+  assert.match(screen, /const ultraCompactHeader = windowWidth < 380/);
+  assert.match(screen, /ultraCompactHeader \? \[/);
+  assert.match(screen, /key: 'audio-call'/);
+  assert.match(screen, /key: 'video-call'/);
+  assert.match(screen, /!ultraCompactHeader && !display\.isGroup/);
+  assert.match(screen, /!compactHeader && <TouchableOpacity/);
+  assert.match(header, /left: \{ flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0/);
+  assert.match(header, /titleContent: \{ flex: 1, minWidth: 0 \}/);
+  assert.match(header, /titleText: \{ flexShrink: 1, minWidth: 0 \}/);
+  assert.match(header, /right: \{ flexDirection: 'row', alignItems: 'center', flexShrink: 0 \}/);
+  assert.match(screen, /headerAction: \{ width: 48, height: 48/);
+});
