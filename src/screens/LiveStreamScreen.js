@@ -162,6 +162,8 @@ function LiveMenuAction({ icon, label, accessibilityLabel, onPress, colors, disa
 
 function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarning, timeoutExpired, onOpenCreatorProfile, onOpenGuestQueue, onOpenModeration, onOpenReports, publisherMode, cameraEnabled, microphoneEnabled, onToggleCamera, onToggleMicrophone, moderatorMode, canManageGuests, canRequestGuest, guestApproved, guestRequestStatus, guestRequests, showGuestRequests, title, experienceMode = 'broadcast', category = 'social', comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, onRealtimeFeedSignal, floatingReactions, onRemoveFloatingReaction, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, onInviteGuest, onMuteGuest, onRemoveGuest, onRemoveParticipant, onSpotlightGuest, onDemoteToViewer, replayEnabled, replayStatus, replayBusy, onStartReplay, onStopReplay, onViewReplay, onRequestGuest, onJoinGuest, onToggleGuestRequests, onReviewGuestRequest, busy }) {
   const { colors, typography } = useTheme();
+  const { width: roomViewportWidth } = useWindowDimensions();
+  const compactRoomHeader = roomViewportWidth < 390;
   const room = useRoomContext();
   const [showOverlayMenu, setShowOverlayMenu] = useState(false);
 
@@ -259,12 +261,12 @@ function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarn
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <View style={{ position: 'absolute', zIndex: 20, top: Platform.OS === 'android' ? 38 : 52, left: 14, right: 14, padding: 10, borderRadius: 22, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.accent, 0.34), shadowColor: colors.primary, shadowOpacity: 0.16, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: compactRoomHeader ? 6 : 10 }}>
             <View style={{ backgroundColor: colors.danger, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.4) }}>
               <Text style={[typography.small, { color: colors.onDanger, fontWeight: '900', letterSpacing: 0.5 }]}>● LIVE</Text>
             </View>
             <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary, flex: 1, minWidth: 0 }]}>{title}</Text>
-            <View style={{ paddingHorizontal: 8, paddingVertical: 5, borderRadius: 9, backgroundColor: hexToRgba(colors.primary, 0.12), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.24) }}><Text style={{ color: colors.primary, fontSize: 9, fontWeight: '900', letterSpacing: 0.45 }}>{creatorMode ? 'HOST' : publisherMode ? 'GUEST' : moderatorMode ? 'MODERATOR' : 'VIEWER'}</Text></View>
+            {!compactRoomHeader ? (<View style={{ paddingHorizontal: 8, paddingVertical: 5, borderRadius: 9, backgroundColor: hexToRgba(colors.primary, 0.12), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.24) }}><Text style={{ color: colors.primary, fontSize: 9, fontWeight: '900', letterSpacing: 0.45 }}>{creatorMode ? 'HOST' : publisherMode ? 'GUEST' : moderatorMode ? 'MODERATOR' : 'VIEWER'}</Text></View>) : null}
             <TouchableOpacity onPress={() => setShowOverlayMenu((value) => !value)} accessibilityRole="button" accessibilityLabel={showOverlayMenu ? 'Close LIVE controls menu' : 'Open LIVE controls menu'} style={{ width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.16), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.3) }}>
               <Ionicons name={showOverlayMenu ? 'close' : 'ellipsis-horizontal'} size={21} color={colors.textPrimary} />
             </TouchableOpacity>
