@@ -37,3 +37,10 @@ test('Creator Studio links to the dedicated analytics route and the route is reg
   assert.ok(navigator.includes('name="LiveAnalytics" component={LiveAnalyticsScreen}'));
   assert.ok(navigator.includes("import LiveAnalyticsScreen from '../screens/LiveAnalyticsScreen'"));
 });
+
+
+test('Creator Analytics uses the shared premium content measure rather than a hard-coded width', () => {
+  assert.ok(analytics.includes('const { colors, spacing, typography, layout } = useTheme()'));
+  assert.ok(analytics.includes('maxWidth: layout.contentMaxWidth'));
+  assert.ok(!analytics.includes('maxWidth: 760'));
+});

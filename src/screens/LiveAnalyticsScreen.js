@@ -41,7 +41,7 @@ function titleCase(value) {
 }
 
 export default function LiveAnalyticsScreen({ navigation }) {
-  const { colors, spacing, typography } = useTheme();
+  const { colors, spacing, typography, layout } = useTheme();
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -118,7 +118,7 @@ export default function LiveAnalyticsScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => refresh(true)} tintColor={colors.primary} />}
         contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, alignItems: 'center' }}
       >
-        <View style={{ width: '100%', maxWidth: 760, gap: spacing.md }}>
+        <View style={{ width: '100%', maxWidth: layout.contentMaxWidth, gap: spacing.md }}>
           <LivePremiumHeader
             navigation={navigation}
             eyebrow="ZANNYCHAT · LIVE INSIGHTS"
