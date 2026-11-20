@@ -49,7 +49,7 @@ export default function SessionsScreen({ navigation }) {
     } catch (error) {
       if (!isActive()) return;
       setSessions([]);
-      setSessionsError(error?.message || 'Your active sessions could not be loaded. Retry in a moment.');
+      setSessionsError('Active sessions could not be loaded. Check your connection and retry. You can still use Sign out everywhere.');
     } finally {
       if (isActive()) setSessionsLoading(false);
     }
