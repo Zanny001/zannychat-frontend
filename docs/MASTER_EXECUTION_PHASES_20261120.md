@@ -10,11 +10,24 @@
 ## 1. Current checkpoint
 
 - Frontend LIVE web-stage crash fix is merged to main in PR #212 (merge commit `1cc99815d1ef82e7b97fcc3d7987d3e095377377`). Its Vercel deployment was reported READY. Creator and viewer access to the existing Gas broadcast still require a real browser/two-account check; media delivery is not certified.
-- Frontend LIVE leaderboard and settings work in PR #196 is merged (merge commit `6a58b158f9802ee11d58a783b3f440187436f28c`). Backend creator-preferences API PR #153 is merged (commit `88413b0e92fa5403016973f089cd49d583a7d1ee`), but its production migration is explicitly not applied. Do not use persisted creator defaults in production until the guarded migration has been separately reviewed, explicitly approved, applied, and smoke-tested.
+- Frontend LIVE leaderboard and settings work in PR #196 is merged (merge commit `6a58b158f9802ee11d58a783b3f440187436f28c`). Backend creator-preferences API PR #153 is merged (commit `88413b0e92fa5403016973f089cd49d583a7d1ee`). A fresh read-only Supabase migration listing on 2026-11-20 shows migration history row `20261119184056` / `live_creator_preferences_20261119180000`; the `public.live_creator_preferences` table exists, has RLS enabled, denies direct `anon` and `authenticated` SELECT, and grants service-role SELECT. This supersedes the older PR description that said the migration was pending. The migration filename timestamp and recorded history version differ; reconcile that provenance against the guarded workflow before any future migration work. The read-only check does not prove the frontend preferences flow works end to end.
 - Backend LIVE reaction authorization/error mapping PR #167 is merged (commit `80099bf82e3ce59c8958cf82db3f38c837c340ae`).
 - Frontend PR #85 is closed unmerged. Do not revive it wholesale. Reconcile its unique Crown Aurora, shared-component, push-preference and responsive-media changes against current main before selectively reapplying anything.
 - The canonical register records 48 application experiences, an additional 18 LIVE experiences, and significant unaccepted runtime/device gates. These counts are different inventories, not interchangeable.
 - Existing project issues still track two-account privacy/LIVE acceptance, physical-device media validation, backup/restore rehearsal, and dependency-advisory monitoring.
+
+### Read-only Supabase security/performance snapshot — 2026-11-20
+
+Project `vithpppgyjmazxvogvno`; read-only catalog queries and Supabase advisors only. No schema, data, Auth settings or Storage objects were changed.
+
+- The inventory tool returned 118 tables across `auth`, `vault`, `storage`, `realtime`, `public` and `supabase_migrations`; 69 are in `public`. All 69 public tables have RLS enabled.
+- 42 public tables have RLS enabled but no policies. A direct privilege check found **zero** of those tables grant `SELECT`, `INSERT`, `UPDATE` or `DELETE` to `anon` or `authenticated`; do not add blanket policies to silence INFO notices.
+- There are 76 public `SECURITY DEFINER` functions; 28 are executable by `authenticated`, none of the audited set are executable by `anon`, and none are missing a configured `search_path`. The 28 authenticated-callable functions still require a function-by-function intent/body/grant review; the advisor warning alone does not prove a vulnerability. Do not blanket-revoke functions used by RLS or application RPCs.
+- Security advisor reports leaked-password protection disabled. This is a plan-gated Auth feature on the current Free plan; no paid upgrade or setting change is authorized.
+- Storage buckets observed: `live-replays`, `chat-media`, `private-avatars` and `status-media` are private; `avatars` is marked public. Storage object policies are present for authenticated owner/member/privacy paths. Public-avatar exposure is a distinct intentional product choice and should remain documented; do not assume a public bucket is private because an object policy exists.
+- Performance advisor reports two unindexed foreign keys: `live_event_invites.invited_by` and `live_event_reminder_deliveries.user_id`. It also reports 66 unused indexes. These are review candidates only; do not add/drop indexes without query-plan and representative workload evidence.
+- Health advisor returned no findings at this snapshot.
+
 
 ## 2. Execution principles
 
