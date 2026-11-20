@@ -41,7 +41,7 @@ test('notification preference storage failures are visible and recoverable', () 
   assert.match(prefs, /getNotificationPrefsPersistenceError/);
   assert.match(prefs, /could not be saved on this device/);
   assert.match(screen, /setPersistenceError\(getNotificationPrefsPersistenceError\(\)\)/);
-  assert.match(screen, /SESSION ONLY/ === false ? /Device storage issue/ : /Device storage issue/);
+  assert.match(screen, /Device storage issue/);
   assert.match(screen, /accessibilityRole="alert"/);
   assert.match(screen, /Try saving again/);
   assert.match(screen, /if \(!saved\) return/);
