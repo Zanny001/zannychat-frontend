@@ -12,7 +12,7 @@ import { SUPABASE_ENABLED } from '../services/supabaseClient';
 import { getSessionSecurityInfo, signOutThisDevice, signOutEverywhere } from '../services/api';
 
 export default function SessionsScreen({ navigation }) {
-  const { colors, spacing, typography, mood } = useTheme();
+  const { colors, spacing, typography, mood, layout } = useTheme();
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -60,7 +60,7 @@ export default function SessionsScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Devices & sessions" onBack={() => navigation.goBack()} />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xl }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xl, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         <View style={[styles.hero, { backgroundColor: colors.surface, borderColor: hexToRgba(colors.textPrimary, 0.1) }]}>
           <View style={[styles.orb, { backgroundColor: hexToRgba(mood.signal, 0.2), top: -65, right: -50 }]} />
           <View style={[styles.iconTile, { backgroundColor: hexToRgba(mood.thread, 0.13), borderColor: hexToRgba(mood.thread, 0.25) }]}>
