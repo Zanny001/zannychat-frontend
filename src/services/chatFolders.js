@@ -16,14 +16,18 @@ export async function loadChatFolders(userId) {
   try {
     const raw = await AsyncStorage.getItem(keyFor(userId));
     const parsed = raw ? JSON.parse(raw) : [];
+    if (parsed !== null && !Array.isArray(parsed)) throw new Error('Saved folder data has an unexpected format.');
     return Array.isArray(parsed) ? parsed.map(normalizeChatFolder).filter(Boolean) : [];
-  } catch (_) { return []; }
+  } catch (error) {
+    throw new Error('Your saved chat folders could not be read from this device. No folder changes were made. Check device storage and retry.');
+  }
 }
 
 export async function saveChatFolder(userId, folder) {
   if (!userId) throw new Error('Sign in to create a chat folder.');
   const normalized = normalizeChatFolder(folder);
   if (!normalized) throw new Error('Enter a folder name.');
+  // Never turn an unreadable store into an empty list and overwrite the user's folders.
   const folders = await loadChatFolders(userId);
   const duplicate = folders.some((item) => item.id !== normalized.id && item.name.toLocaleLowerCase() === normalized.name.toLocaleLowerCase());
   if (duplicate) throw new Error('A folder with that name already exists.');
@@ -35,6 +39,7 @@ export async function saveChatFolder(userId, folder) {
 }
 
 export async function deleteChatFolder(userId, folderId) {
+  // Read must succeed before writing; a storage read failure must never erase all folders.
   const next = (await loadChatFolders(userId)).filter((item) => item.id !== folderId);
   await AsyncStorage.setItem(keyFor(userId), JSON.stringify(next));
   return next;
