@@ -620,7 +620,7 @@ export default function LiveHubScreen({ navigation, route }) {
                   <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>LIVE replays</Text>
                   <View style={{ flex: 1 }} />
                   <Text style={[typography.caption, { color: colors.textSecondary }]}>{replays.length}</Text>
-                  <TouchableOpacity onPress={() => navigation.navigate('LiveReplayLibrary')} accessibilityRole="button" accessibilityLabel="Open full LIVE replay library" style={{ minHeight: 40, paddingHorizontal: spacing.sm, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
+                  <TouchableOpacity onPress={() => navigation.navigate('LiveReplayLibrary')} accessibilityRole="button" accessibilityLabel="Open full LIVE replay library" style={{ minHeight: 44, paddingHorizontal: spacing.sm, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
                     <Text style={[typography.caption, { color: colors.primary, fontWeight: '900' }]}>View library</Text>
                   </TouchableOpacity>
                 </View>
@@ -685,7 +685,7 @@ export default function LiveHubScreen({ navigation, route }) {
                     <View key={creator.creator_id} style={{ minWidth: 150, padding: spacing.sm, borderRadius: radii.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
                       <Text numberOfLines={1} style={[typography.small, { color: colors.textPrimary, fontWeight: '800' }]}>{creator.name}</Text>
                       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.xs }}>
-                        <TouchableOpacity onPress={() => openCreatorProfile(creator)} accessibilityRole="button" accessibilityLabel={`Open LIVE profile for ${creator.name}`} style={{ minHeight: 38, justifyContent: 'center' }}>
+                        <TouchableOpacity onPress={() => openCreatorProfile(creator)} accessibilityRole="button" accessibilityLabel={`Open LIVE profile for ${creator.name}`} style={{ minHeight: 44, justifyContent: 'center' }}>
                           <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>View profile</Text>
                         </TouchableOpacity>
                         <TouchableOpacity disabled={busy} onPress={() => toggleFollow(creator.creator_id)} accessibilityRole="button" accessibilityLabel={`Unfollow ${creator.name}`} accessibilityState={{ disabled: busy, busy }} style={{ minHeight: 38, justifyContent: 'center' }}>
