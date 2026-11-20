@@ -7,7 +7,7 @@ const screen = (name) => readFileSync(new URL(`./${name}`, import.meta.url), 'ut
 test('incoming and outgoing call screens use the active premium typography scale', () => {
   for (const name of ['IncomingCallScreen.js', 'OutgoingCallScreen.js']) {
     const source = screen(name);
-    assert.match(source, /const \{ colors, typography, resolvedMode \} = useTheme\(\)/, name);
+    assert.match(source, /const \{[^}]*\bcolors\b[^}]*\btypography\b[^}]*\bresolvedMode\b[^}]*\} = useTheme\(\)/, name);
     assert.match(source, /typography\.display/, `${name} participant name`);
     assert.match(source, /numberOfLines=\{2\}/, `${name} long participant name wrapping`);
     assert.match(source, /maxWidth: '100%'/, `${name} participant name container`);
@@ -45,7 +45,7 @@ test('outgoing call cancellation remains an accessible, generously sized action'
 test('active call screens share the premium type scale on native and web', () => {
   for (const name of ['CallScreen.js', 'CallScreen.web.js']) {
     const source = screen(name);
-    assert.match(source, /const \{ colors, typography, resolvedMode \} = useTheme\(\)/, name);
+    assert.match(source, /const \{[^}]*\bcolors\b[^}]*\btypography\b[^}]*\bresolvedMode\b[^}]*\} = useTheme\(\)/, name);
     assert.match(source, /typography\.display/, `${name} participant name`);
     assert.match(source, /typography\.body/, `${name} call phase`);
     assert.match(source, /typography\.small/, `${name} status and control labels`);
