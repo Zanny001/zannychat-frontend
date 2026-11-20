@@ -5,7 +5,7 @@ import Header from '../components/Header';
 import GlassCard from '../components/GlassCard';
 import { useTheme } from '../theme/ThemeContext';
 import { CHAT_CANVASES, DEFAULT_CHAT_CANVAS, normalizeChatCanvas, resolveChatCanvas } from '../utils/chatAppearance';
-import { loadChatCanvas, saveChatCanvas } from '../services/chatAppearance';
+import { getChatCanvas, getChatCanvasLoadError, loadChatCanvas, saveChatCanvas } from '../services/chatAppearance';
 
 export default function ChatAppearanceScreen({ navigation }) {
   const { colors, spacing, radii, typography, layout } = useTheme();
@@ -14,14 +14,23 @@ export default function ChatAppearanceScreen({ navigation }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [saveConfirmed, setSaveConfirmed] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     let mounted = true;
     loadChatCanvas().then((value) => {
-      if (mounted) { setSelected(normalizeChatCanvas(value)); setReady(true); }
+      if (mounted) { setSelected(normalizeChatCanvas(value)); setLoadError(getChatCanvasLoadError()); setReady(true); }
     });
     return () => { mounted = false; };
   }, []);
+
+  async function retryLoad() {
+    setReady(false);
+    await loadChatCanvas();
+    setSelected(normalizeChatCanvas(getChatCanvas()));
+    setLoadError(getChatCanvasLoadError());
+    setReady(true);
+  }
 
   async function chooseCanvas(key) {
     if (saving) return;
@@ -31,6 +40,7 @@ export default function ChatAppearanceScreen({ navigation }) {
     setSaving(true);
     try {
       await saveChatCanvas(key);
+      setLoadError('');
       setSaveConfirmed(true);
     } catch (_) {
       setSaveError('This canvas is active for this session, but could not be saved on this device. Check device storage and try again.');
@@ -79,13 +89,19 @@ export default function ChatAppearanceScreen({ navigation }) {
             </TouchableOpacity>
           );
         })}
-        <Text accessibilityRole={saveError ? 'alert' : undefined} style={[typography.caption, { color: saveError ? colors.danger : colors.textSecondary, marginTop: spacing.sm }]}>{saveError || (saving ? 'Saving your appearance…' : !ready ? 'Loading your saved appearance…' : saveConfirmed ? 'Your choice is saved on this device.' : 'Your current appearance is loaded on this device.')} Changes apply to open chats as they are opened again.</Text>
+        <Text accessibilityRole={saveError || loadError ? 'alert' : undefined} style={[typography.caption, { color: saveError || loadError ? colors.danger : colors.textSecondary, marginTop: spacing.sm }]}>{saveError || loadError || (saving ? 'Saving your appearance…' : !ready ? 'Loading your saved appearance…' : saveConfirmed ? 'Your choice is saved on this device.' : 'Your current appearance is loaded on this device.')} Changes apply to open chats as they are opened again.</Text>
+        {loadError ? (
+          <TouchableOpacity onPress={retryLoad} accessibilityRole="button" accessibilityLabel="Retry loading saved chat appearance" style={styles.retryButton}>
+            <Text style={[typography.caption, { color: colors.primary, fontWeight: '700' }]}>Retry loading saved appearance</Text>
+          </TouchableOpacity>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  retryButton: { minHeight: 44, alignSelf: 'flex-start', justifyContent: 'center', marginTop: 5, paddingHorizontal: 8 },
   eyebrow: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 11, paddingVertical: 8, borderRadius: 999, borderWidth: 1 },
   preview: { minHeight: 156, padding: 14, borderWidth: 1, justifyContent: 'center' },
   previewPill: { maxWidth: '85%', borderRadius: 15, paddingHorizontal: 12, paddingVertical: 9 },
