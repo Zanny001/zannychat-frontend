@@ -36,7 +36,7 @@ function replayStatus(status) {
 }
 
 export default function LiveReplayLibraryScreen({ navigation }) {
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, radii, typography, layout } = useTheme();
   const [replays, setReplays] = useState([]);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [filter, setFilter] = useState('all');
@@ -140,7 +140,7 @@ export default function LiveReplayLibraryScreen({ navigation }) {
     const canWatch = item.status === 'ready';
     const canDelete = item.creatorId === currentUserId && !PENDING.has(item.status);
     return (
-      <GlassCard style={{ width: '94%', maxWidth: 760, alignSelf: 'center', marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.md }}>
+      <GlassCard style={{ width: '94%', maxWidth: layout.contentMaxWidth, alignSelf: 'center', marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.md }}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm }}>
           <View style={{ width: 76, height: 76, borderRadius: 19, overflow: 'hidden', backgroundColor: hexToRgba(colors.primary, 0.14), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.28), alignItems: 'center', justifyContent: 'center' }}>
             <View style={{ position: 'absolute', width: 54, height: 54, borderRadius: 27, backgroundColor: hexToRgba(colors.accent, 0.12), top: -20, right: -15 }} />
@@ -187,7 +187,7 @@ export default function LiveReplayLibraryScreen({ navigation }) {
         onRefresh={() => refresh(true)}
         contentContainerStyle={{ paddingTop: spacing.md, paddingBottom: spacing.xxl || 32, flexGrow: 1, alignItems: 'center' }}
         ListHeaderComponent={
-          <View style={{ width: '94%', maxWidth: 760, alignSelf: 'center', paddingBottom: spacing.lg || 24, gap: spacing.md }}>
+          <View style={{ width: '94%', maxWidth: layout.contentMaxWidth, alignSelf: 'center', paddingBottom: spacing.lg || 24, gap: spacing.md }}>
             <LivePremiumHeader
               navigation={navigation}
               eyebrow="ZANNYCHAT · LIVE ARCHIVE"
@@ -238,7 +238,7 @@ export default function LiveReplayLibraryScreen({ navigation }) {
           </View>
         }
         ListEmptyComponent={!loading && !error ? (
-          <GlassCard style={{ width: '94%', maxWidth: 760, alignSelf: 'center' }} contentStyle={{ padding: spacing.lg, alignItems: 'center', gap: spacing.sm }}>
+          <GlassCard style={{ width: '94%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }} contentStyle={{ padding: spacing.lg, alignItems: 'center', gap: spacing.sm }}>
             <View style={{ width: 62, height: 62, borderRadius: 21, backgroundColor: hexToRgba(colors.primary, 0.10), alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="film-outline" size={29} color={colors.primary} />
             </View>
