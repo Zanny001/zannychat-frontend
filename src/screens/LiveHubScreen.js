@@ -688,7 +688,7 @@ export default function LiveHubScreen({ navigation, route }) {
                         <TouchableOpacity onPress={() => openCreatorProfile(creator)} accessibilityRole="button" accessibilityLabel={`Open LIVE profile for ${creator.name}`} style={{ minHeight: 44, justifyContent: 'center' }}>
                           <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>View profile</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity disabled={busy} onPress={() => toggleFollow(creator.creator_id)} accessibilityRole="button" accessibilityLabel={`Unfollow ${creator.name}`} accessibilityState={{ disabled: busy, busy }} style={{ minHeight: 38, justifyContent: 'center' }}>
+                        <TouchableOpacity disabled={busy} onPress={() => toggleFollow(creator.creator_id)} accessibilityRole="button" accessibilityLabel={`Unfollow ${creator.name}`} accessibilityState={{ disabled: busy, busy }} style={{ minHeight: 44, justifyContent: 'center' }}>
                           <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800' }]}>Unfollow</Text>
                         </TouchableOpacity>
                       </View>
@@ -752,11 +752,11 @@ export default function LiveHubScreen({ navigation, route }) {
             </TouchableOpacity>
             {item.creator_id && !item.is_creator ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm }}>
-                <TouchableOpacity onPress={() => openCreatorProfile(item, item.id, item.is_creator)} accessibilityRole="button" accessibilityLabel={`View ${item.creator_name || 'LIVE creator'} profile`} style={{ minHeight: 40, paddingHorizontal: spacing.sm, borderRadius: 13, borderWidth: 1, borderColor: colors.border, justifyContent: 'center' }}>
+                <TouchableOpacity onPress={() => openCreatorProfile(item, item.id, item.is_creator)} accessibilityRole="button" accessibilityLabel={`View ${item.creator_name || 'LIVE creator'} profile`} style={{ minHeight: 44, paddingHorizontal: spacing.sm, borderRadius: 13, borderWidth: 1, borderColor: colors.border, justifyContent: 'center' }}>
                   <Text style={[typography.caption, { color: colors.primary, fontWeight: '900' }]}>Profile</Text>
                 </TouchableOpacity>
                 <View style={{ flex: 1 }} />
-                <TouchableOpacity disabled={busy} onPress={() => toggleFollow(item.creator_id)} accessibilityRole="button" accessibilityLabel={followingIds.includes(item.creator_id) ? `Unfollow ${item.creator_name || item.title || 'LIVE creator'}` : `Follow ${item.creator_name || item.title || 'LIVE creator'}`} accessibilityState={{ disabled: busy, busy }} style={{ minHeight: 40, paddingHorizontal: spacing.md, borderRadius: 13, backgroundColor: followingIds.includes(item.creator_id) ? colors.surface : hexToRgba(colors.primary, 0.13), borderWidth: 1, borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <TouchableOpacity disabled={busy} onPress={() => toggleFollow(item.creator_id)} accessibilityRole="button" accessibilityLabel={followingIds.includes(item.creator_id) ? `Unfollow ${item.creator_name || item.title || 'LIVE creator'}` : `Follow ${item.creator_name || item.title || 'LIVE creator'}`} accessibilityState={{ disabled: busy, busy }} style={{ minHeight: 44, paddingHorizontal: spacing.md, borderRadius: 13, backgroundColor: followingIds.includes(item.creator_id) ? colors.surface : hexToRgba(colors.primary, 0.13), borderWidth: 1, borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <Ionicons name={followingIds.includes(item.creator_id) ? 'checkmark' : 'add'} size={15} color={colors.primary} />
                   <Text style={[typography.caption, { color: colors.primary, fontWeight: '900' }]}>{followingIds.includes(item.creator_id) ? 'Following' : 'Follow creator'}</Text>
                 </TouchableOpacity>
