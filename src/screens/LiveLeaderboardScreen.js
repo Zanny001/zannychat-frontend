@@ -121,6 +121,7 @@ export default function LiveLeaderboardScreen({ navigation }) {
           <LivePremiumHeader
             navigation={navigation}
             eyebrow="ZANNYCHAT · LIVE COMMUNITY"
+            backLabel="Back to LIVE Hub"
             title="Creator leaderboard"
             subtitle="Community impact, ranked fairly"
             icon="trophy-outline"
