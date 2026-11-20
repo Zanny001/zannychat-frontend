@@ -29,6 +29,7 @@ test('secondary LIVE destinations share one consistent premium header', () => {
     'LiveReportsScreen.js',
     'LiveLeaderboardScreen.js',
     'LiveSettingsScreen.js',
+    'LiveReplayScreen.js',
   ];
   for (const name of screens) {
     const source = read(name);
@@ -52,7 +53,7 @@ test('immersive LIVE room and secure replay player remain separate from the seco
   const replay = read('LiveReplayScreen.js');
   assert.equal(nativeStage.includes('<LivePremiumHeader'), false);
   assert.equal(webStage.includes('<LivePremiumHeader'), false);
-  assert.equal(replay.includes('<LivePremiumHeader'), false);
+  assert.ok(replay.includes('<LivePremiumHeader'));
   assert.ok(nativeStage.includes('LiveKitRoom'));
   assert.ok(webStage.includes('new Room('));
   assert.ok(replay.includes('backendFetch'));
