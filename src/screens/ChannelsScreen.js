@@ -26,7 +26,7 @@ function dateLabel(value) {
 }
 
 export default function ChannelsScreen({ navigation }) {
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, radii, typography, layout } = useTheme();
   const [channels, setChannels] = useState([]);
   const [liveStreams, setLiveStreams] = useState([]);
   const [liveLoading, setLiveLoading] = useState(false);
@@ -605,7 +605,7 @@ export default function ChannelsScreen({ navigation }) {
 
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
     <Header title={selected ? "Channel" : "Explore"} subtitle={selected ? selected.title : "LIVE, public channels and communities"} onBack={() => selected ? clearSelectedChannel() : navigation.goBack()} />
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, gap: spacing.md }}>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, gap: spacing.md, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
       <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
           <View style={{ width: 42, height: 42, borderRadius: radii.md, backgroundColor: hexToRgba(colors.danger, 0.12), alignItems: 'center', justifyContent: 'center' }}><Ionicons name="radio" size={21} color={colors.danger} /></View>

@@ -61,7 +61,7 @@ async function saveStatusMedia(uri, kind) {
 }
 
 export default function StatusUpdatesScreen({ navigation, route }) {
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, radii, typography, layout } = useTheme();
   const [text, setText] = useState('');
   const statusTextInputRef = useRef(null);
   const [audience, setAudience] = useState('contacts');
@@ -640,7 +640,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
       initialNumToRender={8}
       maxToRenderPerBatch={8}
       windowSize={7}
-      contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, flexGrow: 1 }}
+      contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, flexGrow: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
       ListHeaderComponent={
         <View>
           {error ? <View style={{ padding: spacing.md, marginBottom: spacing.sm }}><Text style={[typography.body, { color: colors.textSecondary }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh statuses" style={{ minHeight: 48, justifyContent: 'center', paddingVertical: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></View> : null}
