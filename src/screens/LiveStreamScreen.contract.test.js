@@ -324,7 +324,7 @@ test('native LIVE viewers explicitly auto-subscribe to creator and guest media t
 test('native LIVE stage uses a premium horizontally scrollable action rail on compact screens', () => {
   assert.ok(screen.includes('ScrollView, StatusBar'));
   assert.ok(screen.includes('showsHorizontalScrollIndicator={false}'));
-  assert.ok(screen.includes("top: Platform.OS === 'android' ? 38 : 52"));
+  assert.ok(screen.includes("top: Math.max(insets.top + 8, Platform.OS === 'android' ? 38 : 52)"));
   assert.ok(screen.includes('StyleSheet.absoluteFillObject'));
   assert.ok(screen.includes('showOverlayMenu && <ScrollView'));
   assert.ok(screen.includes('width: 48, height: 48'));
