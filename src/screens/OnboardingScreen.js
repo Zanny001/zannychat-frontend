@@ -5,10 +5,11 @@ import { useTheme } from '../theme/ThemeContext';
 import Knot from '../components/Knot';
 
 export default function OnboardingScreen({ navigation }) {
-  const { colors, mood, spacing, typography, radii } = useTheme();
+  const { colors, mood, spacing, typography, radii, layout } = useTheme();
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={{ flex: 1, width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center', justifyContent: 'space-between' }}>
       <View style={styles.hero}>
         <Knot size={132} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={11} animated />
         <Text style={[typography.display, { color: colors.textPrimary, marginTop: spacing.lg, textAlign: 'center' }]}>
@@ -40,6 +41,7 @@ export default function OnboardingScreen({ navigation }) {
             New here? <Text style={{ color: colors.primary, fontFamily: 'Manrope_700Bold' }}>Create an account</Text>
           </Text>
         </TouchableOpacity>
+      </View>
       </View>
     </SafeAreaView>
   );

@@ -12,7 +12,7 @@ function message(title, body) {
 }
 
 export default function VerifyEmailScreen({ navigation, route }) {
-  const { colors, mood, spacing, typography, radii } = useTheme();
+  const { colors, mood, spacing, typography, radii, layout } = useTheme();
   const email = String(route?.params?.email || '').trim().toLowerCase();
   const [token, setToken] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,7 +45,7 @@ export default function VerifyEmailScreen({ navigation, route }) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <View style={{ flex: 1, minWidth: 0, justifyContent: 'center', padding: spacing.lg }}>
+        <View style={{ flex: 1, minWidth: 0, justifyContent: 'center', padding: spacing.lg, width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center' }}>
           <Knot size={40} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={7} />
           <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.md }]}>Verify your email</Text>
           <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.sm, marginBottom: spacing.lg }]}>Enter the 6-digit code sent to {email || 'your email address'}. Make sure your Supabase email template is configured to send the code.</Text>

@@ -18,7 +18,7 @@ function showMessage(title, message) {
 
 
 export default function PasswordRecoveryScreen({ navigation }) {
-  const { colors, mood, spacing, typography, radii } = useTheme();
+  const { colors, mood, spacing, typography, radii, layout } = useTheme();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -64,7 +64,7 @@ export default function PasswordRecoveryScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <View style={{ padding: spacing.lg, flex: 1, minWidth: 0, justifyContent: 'center' }}>
+        <View style={{ padding: spacing.lg, flex: 1, minWidth: 0, justifyContent: 'center', width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center' }}>
           <Knot size={40} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={7} />
           <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.md, marginBottom: spacing.xs }]}>Reset your password</Text>
           <Text style={[typography.body, { color: colors.textSecondary, marginBottom: spacing.lg }]}>Enter the email address associated with your account. We’ll help you get back in.</Text>

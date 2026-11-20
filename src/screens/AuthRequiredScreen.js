@@ -23,7 +23,7 @@ const COPY = {
 };
 
 export default function AuthRequiredScreen({ navigation, route }) {
-  const { colors, typography, spacing, radii } = useTheme();
+  const { colors, typography, spacing, radii, layout } = useTheme();
   const copy = COPY[route?.name] || {
     title: 'Sign in to continue',
     body: 'Authenticate to continue to the ZannyChat link you opened.',
@@ -38,7 +38,7 @@ export default function AuthRequiredScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <View style={[styles.container, { paddingHorizontal: spacing.lg, paddingVertical: spacing.xl || spacing.lg }]}>
+      <View style={[styles.container, { paddingHorizontal: spacing.lg, paddingVertical: spacing.xl || spacing.lg, maxWidth: layout.formMaxWidth } ]}>
         <Text style={[typography.caption, styles.brand, { color: colors.primary }]}>ZANNYCHAT</Text>
         <Text style={[typography.title, styles.title, { color: colors.textPrimary }]}>{validLink ? copy.title : 'This link is incomplete'}</Text>
         <Text style={[typography.body, styles.body, { color: colors.textSecondary }]}>

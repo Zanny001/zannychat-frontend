@@ -31,7 +31,7 @@ function showMessage(title, message) {
 }
 
 export default function SignupScreen({ navigation }) {
-  const { colors, mood, spacing, typography, radii } = useTheme();
+  const { colors, mood, spacing, typography, radii, layout } = useTheme();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -119,6 +119,9 @@ export default function SignupScreen({ navigation }) {
             styles.content,
             {
               padding: spacing.lg,
+              width: '100%',
+              maxWidth: layout.formMaxWidth,
+              alignSelf: 'center',
             },
           ]}
         >

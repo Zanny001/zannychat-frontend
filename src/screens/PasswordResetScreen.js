@@ -24,7 +24,7 @@ function showScreenMessage(title, message, onContinue) {
 }
 
 export default function PasswordResetScreen({ navigation, route }) {
-  const { colors, mood, spacing, typography, radii } = useTheme();
+  const { colors, mood, spacing, typography, radii, layout } = useTheme();
   const initialWebUrl = Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.href : '';
   const [callbackUrl, setCallbackUrl] = useState(route.params?.callbackUrl || initialWebUrl);
   const [password, setPassword] = useState('');
@@ -73,7 +73,7 @@ export default function PasswordResetScreen({ navigation, route }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <View style={{ padding: spacing.lg, flex: 1, minWidth: 0, justifyContent: 'center' }}>
+        <View style={{ padding: spacing.lg, flex: 1, minWidth: 0, justifyContent: 'center', width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center' }}>
           <Knot size={40} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={7} />
           <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.md, marginBottom: spacing.xs }]}>Choose a new password</Text>
           <Text style={[typography.body, { color: colors.textSecondary, marginBottom: spacing.lg }]}>Set a new password for your ZannyChat account.</Text>
