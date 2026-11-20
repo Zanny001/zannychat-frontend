@@ -26,7 +26,7 @@ const ACCOUNT_DELETE_REAUTH_TTL_MS = 4 * 60 * 1000 + 30 * 1000;
 // today — the audit's encryption finding restated where a user can
 // actually read it, instead of only in a markdown file.
 export default function PrivacySecurityScreen({ navigation }) {
-  const { colors, spacing, typography } = useTheme();
+  const { colors, spacing, typography, layout } = useTheme();
   const [blocked, setBlocked] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newPassword, setNewPassword] = useState('');
@@ -300,7 +300,7 @@ export default function PrivacySecurityScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Privacy & security" onBack={() => navigation.goBack()} />
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg }}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         <GlassCard style={{ marginBottom: spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs }}>
             <Ionicons name="shield-checkmark-outline" size={20} color={colors.accent} />
