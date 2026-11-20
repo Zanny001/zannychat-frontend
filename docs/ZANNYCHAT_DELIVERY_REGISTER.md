@@ -868,3 +868,13 @@ These changes preserve full-bleed backgrounds and fluid mobile widths; they are 
 2. Continue with Status Updates and Channels, then Profile/Settings acceptance, then Calls, then the complete LIVE destination set, followed by remaining account/auth and utility screens.
 3. Keep each screen's data, loading, empty, error, offline, permission-denied and accessibility states functional—not just its default visual state.
 4. Keep the existing Gas broadcast browser/device acceptance open until the user confirms creator and viewer can both enter the existing stream after PR #212 deployment.
+
+## 31. Calling architecture: cross-mode active-call invariant gap
+
+A read-only audit of group-call RPC bodies, call-session trigger functions, indexes and current production rows found a latent cross-mode concurrency gap. Direct-call creation prevents two active direct `call_sessions` for the same user, but it does not check active group-call membership. Conversely, `join_group_call_room` and `join_direct_call_room` do not check whether the user is already in another active direct or group call. `create_group_call_room` also does not reject a host already joined elsewhere. There is no cross-room active-participant unique index/constraint.
+
+The read-only production snapshot found no current duplicates or direct/group overlaps, so this is not a confirmed active incident. It is a correctness gap that can allow a user to be joined to two simultaneous calls, causing audio/video routing confusion and unreliable leave/end behavior.
+
+**Proposed fix:** one shared per-user transaction advisory-lock convention, used in the direct-call insert trigger and the group-call create/join/promotion RPCs, followed by cross-mode active-call checks. Add concurrency integration tests and stable HTTP 409 mapping. The full design is in section 10 of the Architecture and Security Snapshot.
+
+**Migration gate:** no migration file or production SQL was created/applied. The local Supabase CLI was unavailable and its install attempt timed out; per the migration-generation workflow, do not invent a timestamp or apply DDL through the MCP tool. Generate the migration with the pinned project CLI, review the SQL/tests, and obtain the user's explicit approval before production application.
