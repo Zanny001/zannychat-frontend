@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, DeviceEventEmitter, FlatList, Platform, SafeAreaView, StatusBar, StyleSheet, Text, Pressable, View } from 'react-native';
+import { ActivityIndicator, Alert, DeviceEventEmitter, FlatList, Platform, StatusBar, StyleSheet, Text, Pressable, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { AudioSession, LiveKitRoom, VideoTrack, isTrackReference, useRoomContext, useTracks, useParticipants } from '@livekit/react-native';
 import { RoomEvent, Track } from 'livekit-client';
@@ -436,7 +437,7 @@ export default function GroupCallScreen({ route, navigation }) {
   }, [callType, conversationId, directCallId, navigation, nativeCallId]);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={[styles.safe, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={resolvedMode === 'light' ? 'dark-content' : 'light-content'} />
       <View style={styles.header}>
         <Text style={[styles.brand, typography.small, { color: colors.primary }]}>ZannyChat</Text>
