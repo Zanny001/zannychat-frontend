@@ -6,6 +6,7 @@ import { backendFetch } from '../services/backendClient';
 import { getCurrentUser } from '../services/api';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
+import LivePremiumHeader from '../components/LivePremiumHeader';
 import { hexToRgba } from '../utils/color';
 import GlassCard from '../components/GlassCard';
 import Avatar from '../components/Avatar';
@@ -156,18 +157,15 @@ export default function LiveCreatorStudioScreen({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, alignItems: 'center' }}>
         <View style={{ width: '100%', maxWidth: 760, alignSelf: 'center', gap: spacing.md }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-          <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Back to LIVE hub" style={{ width: 48, height: 48, minHeight: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
-          </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.6 }]}>ZANNYCHAT · LIVE · CREATOR STUDIO</Text>
-            <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 25 }]}>Creator Studio</Text>
-          </View>
-          <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh Creator Studio" style={{ width: 46, height: 46, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="refresh" size={19} color={colors.textSecondary} />
-          </TouchableOpacity>
-        </View>
+        <LivePremiumHeader
+          navigation={navigation}
+          eyebrow="ZANNYCHAT · LIVE · CREATOR STUDIO"
+          title="Creator Studio"
+          subtitle="Your broadcast workspace and community impact"
+          icon="sparkles-outline"
+          onRefresh={() => refresh()}
+          refreshLabel="Refresh Creator Studio"
+        />
 
         {loading && !summary ? <View style={{ padding: 40, alignItems: 'center' }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary, marginTop: 10 }]}>Preparing your creator studio…</Text></View> : null}
         {!!error ? <GlassCard contentStyle={{ padding: spacing.lg, gap: spacing.md }}><Text style={[typography.body, { color: colors.danger }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading Creator Studio"><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
