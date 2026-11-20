@@ -6,6 +6,7 @@ const wideScreens = [
   'ProfileScreen.js',
   'PeerProfileScreen.js',
   'EditProfileScreen.js',
+  'SettingsScreen.js',
   'PrivacySecurityScreen.js',
   'NotificationsScreen.js',
   'HelpScreen.js',
