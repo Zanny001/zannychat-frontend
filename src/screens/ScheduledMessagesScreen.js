@@ -13,7 +13,7 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
   const initialConversationId = conversation?.id || route.params?.conversationId || null;
   const [selectedConversationId, setSelectedConversationId] = useState(initialConversationId);
   const conversationId = selectedConversationId;
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, radii, typography, layout } = useTheme();
   const [text, setText] = useState('');
   const [scheduledFor, setScheduledFor] = useState(() => localDateTimeInput(new Date(Date.now() + 60 * 60 * 1000)));
   const [items, setItems] = useState([]);
@@ -96,7 +96,7 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
         initialNumToRender={10}
         maxToRenderPerBatch={10}
         windowSize={7}
-        contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, flexGrow: 1 }}
+        contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, flexGrow: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
         ListHeaderComponent={
           <View>
             <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
