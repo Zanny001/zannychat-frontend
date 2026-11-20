@@ -19,6 +19,7 @@ import { useTheme } from '../theme/ThemeContext';
 import LiveCategoryBackdrop from '../components/LiveCategoryBackdrop';
 import { formatLiveBroadcastTimeRemaining, getLiveBroadcastTimeRemaining, LIVE_BROADCAST_WARNING_MS } from '../utils/liveBroadcastTimeout';
 import { getActiveCreatorStreamId } from '../utils/liveCreatorRecovery';
+import { getLiveStageTileFrame } from '../utils/liveStageLayout';
 
 const LIVE_REACTION_EMOJI = Object.freeze({ heart: '❤️', clap: '👏', laugh: '😂', wow: '😮', fire: '🔥', idea: '💡', support: '🙌' });
 const isDocumentVisible = () => typeof document === 'undefined' || document.visibilityState !== 'hidden';
@@ -93,22 +94,16 @@ function FloatingLocalVideoTile({ containerRef, colors, role }) {
     <View {...resize.panHandlers} accessibilityRole="adjustable" accessibilityLabel="Resize your LIVE video frame" style={{ position: 'absolute', right: 0, top: 0, width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderBottomLeftRadius: 12, backgroundColor: 'rgba(0,0,0,0.78)' }}><Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '900' }}>↘</Text></View>
   </View>;
 }
-function RemoteVideoTile({ track, participant, colors, creatorId, spotlight = false, single = false, mainStage = false, floating = false, focused = false, onFocus, floatingIndex = 0 }) {
+function RemoteVideoTile({ track, participant, colors, creatorId, spotlight = false, single = false, mainStage = false, floating = false, focused = false, onFocus, floatingIndex = 0, floatingCount = 1 }) {
   const containerRef = useRef(null);
   const viewport = useWindowDimensions();
   const bounds = { width: Math.max(180, viewport.width - 28), height: Math.max(220, viewport.height - 238) };
-  const [frame, setFrame] = useState(() => ({ x: Math.max(0, viewport.width - 28 - 156), y: Math.min(Math.max(0, bounds.height - 208), floatingIndex * 142), width: 156, height: 208 }));
+  const [frame, setFrame] = useState(() => getLiveStageTileFrame({ index: floatingIndex, count: floatingCount, width: bounds.width, height: bounds.height }));
   const frameRef = useRef(frame); frameRef.current = frame;
   const boundsRef = useRef(bounds); boundsRef.current = bounds;
   useEffect(() => {
-    setFrame((current) => ({
-      ...current,
-      width: Math.min(current.width, bounds.width),
-      height: Math.min(current.height, bounds.height),
-      x: Math.max(0, Math.min(Math.max(0, bounds.width - Math.min(current.width, bounds.width)), current.x)),
-      y: Math.max(0, Math.min(Math.max(0, bounds.height - Math.min(current.height, bounds.height)), current.y)),
-    }));
-  }, [bounds.width, bounds.height]);
+    if (floating) setFrame(getLiveStageTileFrame({ index: floatingIndex, count: floatingCount, width: bounds.width, height: bounds.height }));
+  }, [bounds.width, bounds.height, floating, floatingIndex, floatingCount]);
   const gestureOrigin = useRef(frame); const resizeOrigin = useRef(frame);
   const dragResponder = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => false,
@@ -728,6 +723,11 @@ export default function LiveStreamScreen({ route, navigation }) {
       setError(err?.message || (creatorMode ? 'Could not end the LIVE session.' : 'Could not leave the LIVE session.'));
     }
   };
+  const confirmEnd = () => {
+    if (!creatorMode || endedRef.current || busy) return;
+    const confirmed = typeof window !== 'undefined' && window.confirm('End LIVE broadcast? This will stop the broadcast for everyone.');
+    if (confirmed) leaveRef.current?.();
+  };
   leaveRef.current = leave;
   const toggleCamera = async () => {
     try { const next = !camera; await roomRef.current?.localParticipant.setCameraEnabled(next); setCamera(next); }
@@ -987,6 +987,7 @@ export default function LiveStreamScreen({ route, navigation }) {
             creatorId={stream.creator_id}
             floating
             floatingIndex={floatingIndex}
+            floatingCount={floatingRemoteTracks.length}
             focused={focusedStageIdentity === item.participant.identity}
             spotlight={item.participant.attributes?.zannychat_spotlight === 'true'}
             onFocus={() => setFocusedStageIdentity(item.participant.identity)}
@@ -1013,7 +1014,7 @@ export default function LiveStreamScreen({ route, navigation }) {
         <Text style={{ color: '#D8CBFF', fontSize: 9, fontWeight: '900', letterSpacing: 0.45 }}>{creatorMode ? 'HOST' : publisherMode ? 'GUEST' : moderatorMode ? 'MODERATOR' : 'VIEWER'}</Text>
       </View>) : null}
       <Action colors={colors} label="Tools" accessibilityLabel="Open LIVE controls menu" onPress={() => setShowOverlayMenu((value) => !value)} />
-      <Action colors={colors} label={creatorMode ? 'End' : 'Leave'} danger disabled={busy} onPress={leave} />
+      <Action colors={colors} label={creatorMode ? 'END LIVE' : 'LEAVE'} accessibilityLabel={creatorMode ? 'End LIVE broadcast' : 'Leave LIVE stream'} danger={creatorMode} disabled={busy} onPress={creatorMode ? confirmEnd : leave} />
     </View>
 
     {!!error && <View pointerEvents="box-none" style={{ position: 'absolute', top: 78, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(100,20,35,0.86)' }}><Text accessibilityRole="alert" style={{ color: '#FFFFFF', fontSize: 12 }}>{error}</Text></View>}

@@ -22,6 +22,7 @@ import { hexToRgba } from '../utils/color';
 import LiveCategoryBackdrop from '../components/LiveCategoryBackdrop';
 import { formatLiveBroadcastTimeRemaining, getLiveBroadcastTimeRemaining, LIVE_BROADCAST_WARNING_MS } from '../utils/liveBroadcastTimeout';
 import { getActiveCreatorStreamId } from '../utils/liveCreatorRecovery';
+import { getLiveStageTileFrame } from '../utils/liveStageLayout';
 
 const LIVE_REACTION_EMOJI = Object.freeze({ heart: '❤️', clap: '👏', laugh: '😂', wow: '😮', fire: '🔥', idea: '💡', support: '🙌' });
 const isAppForeground = () => !AppState.currentState || AppState.currentState === 'active';
@@ -97,21 +98,15 @@ function FloatingReaction({ item, index, onComplete }) {
   );
 }
 
-function NativeFloatingGuestTile({ track, colors, focused, spotlighted, onFocus, index = 0, creatorId }) {
+function NativeFloatingGuestTile({ track, colors, focused, spotlighted, onFocus, index = 0, count = 1, creatorId }) {
   const viewport = useWindowDimensions();
   const bounds = { width: Math.max(180, viewport.width - 24), height: Math.max(180, viewport.height - 370) };
-  const [frame, setFrame] = useState(() => ({ x: Math.max(0, bounds.width - 156), y: Math.min(Math.max(0, bounds.height - 208), index * 142), width: 156, height: 208 }));
+  const [frame, setFrame] = useState(() => getLiveStageTileFrame({ index, count, width: bounds.width, height: bounds.height }));
   const frameRef = useRef(frame); frameRef.current = frame;
   const boundsRef = useRef(bounds); boundsRef.current = bounds;
   useEffect(() => {
-    setFrame((current) => ({
-      ...current,
-      width: Math.min(current.width, bounds.width),
-      height: Math.min(current.height, bounds.height),
-      x: Math.max(0, Math.min(Math.max(0, bounds.width - Math.min(current.width, bounds.width)), current.x)),
-      y: Math.max(0, Math.min(Math.max(0, bounds.height - Math.min(current.height, bounds.height)), current.y)),
-    }));
-  }, [bounds.width, bounds.height]);
+    setFrame(getLiveStageTileFrame({ index, count, width: bounds.width, height: bounds.height }));
+  }, [bounds.width, bounds.height, index, count]);
   const dragOrigin = useRef(frame); const resizeOrigin = useRef(frame);
   const drag = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => false,
@@ -271,8 +266,8 @@ function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarn
             <TouchableOpacity onPress={() => setShowOverlayMenu((value) => !value)} accessibilityRole="button" accessibilityLabel={showOverlayMenu ? 'Close LIVE controls menu' : 'Open LIVE controls menu'} style={{ width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.16), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.3) }}>
               <Ionicons name={showOverlayMenu ? 'close' : 'ellipsis-horizontal'} size={21} color={colors.textPrimary} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={onEnd} accessibilityRole="button" accessibilityLabel={creatorMode ? 'End LIVE stream' : 'Leave LIVE stream'} style={{ backgroundColor: hexToRgba(colors.surface, 0.92), borderWidth: 1, borderColor: colors.border, width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 14 }}>
-              <Ionicons name="close" size={20} color={colors.textPrimary} />
+            <TouchableOpacity onPress={onEnd} disabled={busy} accessibilityRole="button" accessibilityLabel={creatorMode ? 'End LIVE broadcast' : 'Leave LIVE stream'} accessibilityState={{ disabled: busy }} style={{ minWidth: creatorMode ? 82 : 70, height: 48, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: creatorMode ? colors.danger : hexToRgba(colors.surface, 0.92), borderWidth: 1, borderColor: creatorMode ? hexToRgba(colors.danger, 0.65) : colors.border, opacity: busy ? 0.55 : 1 }}>
+              <Text style={{ color: creatorMode ? colors.onDanger : colors.textPrimary, fontSize: 11, fontWeight: '900', letterSpacing: 0.35 }}>{creatorMode ? 'END LIVE' : 'LEAVE'}</Text>
             </TouchableOpacity>
           </View>
           {creatorMode && timeoutLabel ? <View accessibilityRole="timer" accessibilityLabel={timeoutExpired ? 'LIVE time limit reached; ending automatically' : timeoutWarning ? 'LIVE ends in less than ten minutes' : 'LIVE time remaining ' + timeoutLabel} style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 8, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, backgroundColor: timeoutWarning ? 'rgba(190,65,78,0.18)' : hexToRgba(colors.accent, 0.12), borderWidth: 1, borderColor: timeoutWarning ? 'rgba(255,125,140,0.55)' : hexToRgba(colors.accent, 0.3) }}><Ionicons name="timer-outline" size={14} color={timeoutWarning ? '#FF9EAB' : colors.accent} /><Text style={{ color: timeoutWarning ? '#FFB2BC' : colors.textPrimary, fontSize: 11, fontWeight: '900', letterSpacing: 0.35 }}>{timeoutExpired ? 'TIME LIMIT REACHED · ENDING' : timeoutWarning ? 'ENDS IN ' + timeoutLabel : 'TIME LEFT ' + timeoutLabel}</Text></View> : null}
@@ -335,7 +330,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarn
             <View pointerEvents="box-none" style={{ position: 'absolute', left: 12, right: 12, top: themedVideoChat ? 174 : 120, bottom: 250 }}>
               {floatingGuestVideos.slice(0, 5).map((item, index) => (
                 <NativeFloatingGuestTile key={item.participant.identity} track={item} colors={colors} creatorId={creatorId}
-                  index={index} focused={focusedStageIdentity === item.participant.identity}
+                  index={index} count={floatingGuestVideos.length} focused={focusedStageIdentity === item.participant.identity}
                   spotlighted={spotlightUserId === item.participant.identity}
                   onFocus={() => setFocusedStageIdentity(item.participant.identity)} />
               ))}
@@ -888,6 +883,13 @@ export default function LiveStreamScreen({ route, navigation }) {
       );
     }
   };
+  const confirmEnd = () => {
+    if (!creatorMode || endedRef.current || busy) return;
+    Alert.alert('End LIVE broadcast?', 'This will stop the broadcast for everyone. Viewers will be disconnected.', [
+      { text: 'Keep broadcasting', style: 'cancel' },
+      { text: 'End LIVE', style: 'destructive', onPress: () => leaveRef.current?.() },
+    ]);
+  };
   leaveRef.current = leave;
 
   const sendComment = async () => {
@@ -1172,7 +1174,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       {stageNotice ? <Text accessibilityRole="status" style={{ position: 'absolute', zIndex: 39, top: Platform.OS === 'android' ? 88 : 104, left: 14, right: 14, color: '#FFFFFF', backgroundColor: 'rgba(20,55,92,0.82)', padding: 9, borderRadius: 12 }}>{stageNotice}</Text> : null}
       {guestApproved && !publisherMode ? <Text accessibilityRole="status" style={{ position: 'absolute', zIndex: 38, top: Platform.OS === 'android' ? 88 : 104, left: 14, right: 14, color: '#FFFFFF', backgroundColor: 'rgba(20,55,92,0.86)', padding: 10, borderRadius: 12 }}>You are invited on stage. Use the join control below when you are ready.</Text> : null}
       <LiveKitRoom key={connection.token} serverUrl={connection.livekitUrl} token={connection.token} connect={true} audio={publisherMode} video={mediaVideoEnabled} options={{ adaptiveStream: true, dynacast: true }} connectOptions={{ autoSubscribe: true }}>
-        <LiveMedia streamId={stream.id} creatorId={stream.creator_id} creatorMode={creatorMode} timeoutLabel={timeoutLabel} timeoutWarning={timeoutWarning} timeoutExpired={timeoutRemainingMs === 0} onOpenCreatorProfile={openCreatorProfile} onOpenGuestQueue={openGuestQueue} onOpenModeration={openModeration} onOpenReports={openReportsWorkspace} publisherMode={publisherMode} experienceMode={stream.experience_mode || 'broadcast'} category={stream.category || 'social'} cameraEnabled={cameraEnabled} microphoneEnabled={microphoneEnabled} onToggleCamera={toggleCamera} onToggleMicrophone={toggleMicrophone} moderatorMode={moderatorMode} canManageGuests={canManageGuests} canRequestGuest={canRequestGuest} guestRequests={guestRequests} showGuestRequests={showGuestRequests} title={stream.title} comments={comments} reports={reports} showReports={showReports} participants={participants} showParticipants={showParticipants} draft={draft} setDraft={setDraft} onComment={sendComment} onReact={react} onRealtimeFeedSignal={refreshComments} floatingReactions={floatingReactions} onRemoveFloatingReaction={removeFloatingReaction} onReport={report} onHide={hideComment} onEnd={leave} onRequestGuest={requestGuest} guestApproved={guestApproved} guestRequestStatus={guestRequestStatus} onJoinGuest={joinAsGuest} onToggleGuestRequests={() => { setShowReports(false); setShowParticipants(false); showGuestRequests ? setShowGuestRequests(false) : loadGuestRequests(); }} onReviewGuestRequest={reviewGuestRequest} onToggleReports={() => { setShowParticipants(false); setShowGuestRequests(false); showReports ? setShowReports(false) : loadReports(); }} onReviewReport={reviewReport} onToggleParticipants={() => { setShowReports(false); setShowGuestRequests(false); showParticipants ? setShowParticipants(false) : loadParticipants(); }} onSetModerator={setModerator} onInviteGuest={inviteGuest} onMuteGuest={muteGuest} onRemoveGuest={removeGuest} onRemoveParticipant={removeParticipant} onSpotlightGuest={spotlightGuest} onDemoteToViewer={handleDemotedToViewer} replayEnabled={replayEnabled} replayStatus={replay?.status || 'none'} replayBusy={replayBusy} onStartReplay={confirmStartReplay} onStopReplay={stopReplay} onViewReplay={viewReplay} busy={busy} />
+        <LiveMedia streamId={stream.id} creatorId={stream.creator_id} creatorMode={creatorMode} timeoutLabel={timeoutLabel} timeoutWarning={timeoutWarning} timeoutExpired={timeoutRemainingMs === 0} onOpenCreatorProfile={openCreatorProfile} onOpenGuestQueue={openGuestQueue} onOpenModeration={openModeration} onOpenReports={openReportsWorkspace} publisherMode={publisherMode} experienceMode={stream.experience_mode || 'broadcast'} category={stream.category || 'social'} cameraEnabled={cameraEnabled} microphoneEnabled={microphoneEnabled} onToggleCamera={toggleCamera} onToggleMicrophone={toggleMicrophone} moderatorMode={moderatorMode} canManageGuests={canManageGuests} canRequestGuest={canRequestGuest} guestRequests={guestRequests} showGuestRequests={showGuestRequests} title={stream.title} comments={comments} reports={reports} showReports={showReports} participants={participants} showParticipants={showParticipants} draft={draft} setDraft={setDraft} onComment={sendComment} onReact={react} onRealtimeFeedSignal={refreshComments} floatingReactions={floatingReactions} onRemoveFloatingReaction={removeFloatingReaction} onReport={report} onHide={hideComment} onEnd={creatorMode ? confirmEnd : leave} onRequestGuest={requestGuest} guestApproved={guestApproved} guestRequestStatus={guestRequestStatus} onJoinGuest={joinAsGuest} onToggleGuestRequests={() => { setShowReports(false); setShowParticipants(false); showGuestRequests ? setShowGuestRequests(false) : loadGuestRequests(); }} onReviewGuestRequest={reviewGuestRequest} onToggleReports={() => { setShowParticipants(false); setShowGuestRequests(false); showReports ? setShowReports(false) : loadReports(); }} onReviewReport={reviewReport} onToggleParticipants={() => { setShowReports(false); setShowGuestRequests(false); showParticipants ? setShowParticipants(false) : loadParticipants(); }} onSetModerator={setModerator} onInviteGuest={inviteGuest} onMuteGuest={muteGuest} onRemoveGuest={removeGuest} onRemoveParticipant={removeParticipant} onSpotlightGuest={spotlightGuest} onDemoteToViewer={handleDemotedToViewer} replayEnabled={replayEnabled} replayStatus={replay?.status || 'none'} replayBusy={replayBusy} onStartReplay={confirmStartReplay} onStopReplay={stopReplay} onViewReplay={viewReplay} busy={busy} />
       </LiveKitRoom>
       {busy && <View style={{ position: 'absolute', top: '50%', alignSelf: 'center' }}><ActivityIndicator color={colors.accent} /></View>}
     </View>

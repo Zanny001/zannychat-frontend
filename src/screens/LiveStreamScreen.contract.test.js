@@ -333,7 +333,7 @@ test('native LIVE stage uses a premium horizontally scrollable action rail on co
   assert.ok(screen.includes('accessibilityState={{ disabled, busy: loading }}'));
   assert.equal(screen.includes('minWidth: 48, height: 44'), false);
   assert.ok(screen.includes("borderColor: hexToRgba(colors.accent, 0.28)"));
-  assert.ok(screen.includes("accessibilityLabel={creatorMode ? 'End LIVE stream' : 'Leave LIVE stream'}"));
+  assert.ok(screen.includes("accessibilityLabel={creatorMode ? 'End LIVE broadcast' : 'Leave LIVE stream'}"));
 });
 
 
@@ -594,4 +594,19 @@ test('creator back navigation requires explicit confirmation before ending a LIV
   assert.ok(screen.includes("Alert.alert('End LIVE broadcast?'"));
   assert.ok(screen.includes("{ text: 'Stay LIVE', style: 'cancel'"));
   assert.ok(webScreen.includes("window.confirm('End LIVE broadcast?"));
+});
+
+
+test('native creator has a visible END LIVE control with confirmation; viewers only leave', () => {
+  assert.ok(screen.includes("{creatorMode ? 'END LIVE' : 'LEAVE'}"));
+  assert.ok(screen.includes("accessibilityLabel={creatorMode ? 'End LIVE broadcast' : 'Leave LIVE stream'}"));
+  assert.ok(screen.includes("Alert.alert('End LIVE broadcast?'"));
+  assert.ok(screen.includes('onEnd={creatorMode ? confirmEnd : leave}'));
+});
+
+
+test('native LIVE guest video tiles use an adaptive non-overlapping stage layout', () => {
+  assert.ok(screen.includes("from '../utils/liveStageLayout'"));
+  assert.ok(screen.includes('count={floatingGuestVideos.length}'));
+  assert.ok(screen.includes('getLiveStageTileFrame({ index, count, width: bounds.width, height: bounds.height })'));
 });
