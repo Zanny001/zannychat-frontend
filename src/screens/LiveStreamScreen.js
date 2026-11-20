@@ -25,6 +25,17 @@ import { formatLiveBroadcastTimeRemaining, getLiveBroadcastTimeRemaining, LIVE_B
 const LIVE_REACTION_EMOJI = Object.freeze({ heart: '❤️', clap: '👏', laugh: '😂', wow: '😮', fire: '🔥', idea: '💡', support: '🙌' });
 const isAppForeground = () => !AppState.currentState || AppState.currentState === 'active';
 
+function isLiveFeedInvalidation(payload, topic) {
+  if (topic !== 'zanny.live.feed.v1' || !payload || payload.length > 512) return false;
+  try {
+    const event = JSON.parse(String.fromCharCode(...Array.from(payload)));
+    return event?.v === 1 && event?.type === 'feed_changed';
+  } catch (_) {
+    return false;
+  }
+}
+
+
 async function chooseNativeAudioOutput() {
   try {
     if (Platform.OS === 'ios') {
@@ -119,10 +130,24 @@ function NativeFloatingGuestTile({ track, colors, focused, spotlighted, onFocus,
     <View {...resize.panHandlers} accessibilityRole="adjustable" accessibilityLabel={'Resize ' + (track.participant.name || track.participant.identity) + ' video frame'} style={{ position: 'absolute', right: 0, top: 0, width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderBottomLeftRadius: 12, backgroundColor: 'rgba(0,0,0,0.78)' }}><Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '900' }}>↘</Text></View>
   </View>;
 }
-function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarning, timeoutExpired, onOpenCreatorProfile, onOpenGuestQueue, onOpenModeration, onOpenReports, publisherMode, cameraEnabled, microphoneEnabled, onToggleCamera, onToggleMicrophone, moderatorMode, canManageGuests, canRequestGuest, guestApproved, guestRequestStatus, guestRequests, showGuestRequests, title, experienceMode = 'broadcast', category = 'social', comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, floatingReactions, onRemoveFloatingReaction, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, onInviteGuest, onMuteGuest, onRemoveGuest, onRemoveParticipant, onSpotlightGuest, onDemoteToViewer, replayEnabled, replayStatus, replayBusy, onStartReplay, onStopReplay, onViewReplay, onRequestGuest, onJoinGuest, onToggleGuestRequests, onReviewGuestRequest, busy }) {
+function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarning, timeoutExpired, onOpenCreatorProfile, onOpenGuestQueue, onOpenModeration, onOpenReports, publisherMode, cameraEnabled, microphoneEnabled, onToggleCamera, onToggleMicrophone, moderatorMode, canManageGuests, canRequestGuest, guestApproved, guestRequestStatus, guestRequests, showGuestRequests, title, experienceMode = 'broadcast', category = 'social', comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, onRealtimeFeedSignal, floatingReactions, onRemoveFloatingReaction, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, onInviteGuest, onMuteGuest, onRemoveGuest, onRemoveParticipant, onSpotlightGuest, onDemoteToViewer, replayEnabled, replayStatus, replayBusy, onStartReplay, onStopReplay, onViewReplay, onRequestGuest, onJoinGuest, onToggleGuestRequests, onReviewGuestRequest, busy }) {
   const { colors, typography } = useTheme();
   const room = useRoomContext();
   const [showOverlayMenu, setShowOverlayMenu] = useState(false);
+
+  useEffect(() => {
+    const onDataReceived = (payload, _participant, _kind, topic) => {
+      if (isLiveFeedInvalidation(payload, topic)) onRealtimeFeedSignal?.();
+    };
+    const onReconnected = () => onRealtimeFeedSignal?.();
+    room.on(RoomEvent.DataReceived, onDataReceived);
+    room.on(RoomEvent.Reconnected, onReconnected);
+    return () => {
+      room.off(RoomEvent.DataReceived, onDataReceived);
+      room.off(RoomEvent.Reconnected, onReconnected);
+    };
+  }, [room, onRealtimeFeedSignal]);
+
   const [showComments, setShowComments] = useState(true);
   const [focusedStageIdentity, setFocusedStageIdentity] = useState(null);
   const connectedViewerCount = participants.filter((item) => item.joined && item.role === 'viewer').length;
@@ -610,7 +635,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   useEffect(() => {
     AudioSession.startAudioSession().catch(() => {});
     refreshComments();
-    const interval = setInterval(refreshComments, 6000);
+    const interval = setInterval(refreshComments, 30_000);
     return () => {
       clearInterval(interval);
       AudioSession.stopAudioSession();
@@ -1071,7 +1096,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       {stageNotice ? <Text accessibilityRole="status" style={{ position: 'absolute', zIndex: 39, top: Platform.OS === 'android' ? 88 : 104, left: 14, right: 14, color: '#FFFFFF', backgroundColor: 'rgba(20,55,92,0.82)', padding: 9, borderRadius: 12 }}>{stageNotice}</Text> : null}
       {guestApproved && !publisherMode ? <Text accessibilityRole="status" style={{ position: 'absolute', zIndex: 38, top: Platform.OS === 'android' ? 88 : 104, left: 14, right: 14, color: '#FFFFFF', backgroundColor: 'rgba(20,55,92,0.86)', padding: 10, borderRadius: 12 }}>You are invited on stage. Use the join control below when you are ready.</Text> : null}
       <LiveKitRoom key={connection.token} serverUrl={connection.livekitUrl} token={connection.token} connect={true} audio={publisherMode} video={mediaVideoEnabled} options={{ adaptiveStream: true, dynacast: true }} connectOptions={{ autoSubscribe: true }}>
-        <LiveMedia streamId={stream.id} creatorId={stream.creator_id} creatorMode={creatorMode} timeoutLabel={timeoutLabel} timeoutWarning={timeoutWarning} timeoutExpired={timeoutRemainingMs === 0} onOpenCreatorProfile={openCreatorProfile} onOpenGuestQueue={openGuestQueue} onOpenModeration={openModeration} onOpenReports={openReportsWorkspace} publisherMode={publisherMode} experienceMode={stream.experience_mode || 'broadcast'} category={stream.category || 'social'} cameraEnabled={cameraEnabled} microphoneEnabled={microphoneEnabled} onToggleCamera={toggleCamera} onToggleMicrophone={toggleMicrophone} moderatorMode={moderatorMode} canManageGuests={canManageGuests} canRequestGuest={canRequestGuest} guestRequests={guestRequests} showGuestRequests={showGuestRequests} title={stream.title} comments={comments} reports={reports} showReports={showReports} participants={participants} showParticipants={showParticipants} draft={draft} setDraft={setDraft} onComment={sendComment} onReact={react} floatingReactions={floatingReactions} onRemoveFloatingReaction={removeFloatingReaction} onReport={report} onHide={hideComment} onEnd={leave} onRequestGuest={requestGuest} guestApproved={guestApproved} guestRequestStatus={guestRequestStatus} onJoinGuest={joinAsGuest} onToggleGuestRequests={() => { setShowReports(false); setShowParticipants(false); showGuestRequests ? setShowGuestRequests(false) : loadGuestRequests(); }} onReviewGuestRequest={reviewGuestRequest} onToggleReports={() => { setShowParticipants(false); setShowGuestRequests(false); showReports ? setShowReports(false) : loadReports(); }} onReviewReport={reviewReport} onToggleParticipants={() => { setShowReports(false); setShowGuestRequests(false); showParticipants ? setShowParticipants(false) : loadParticipants(); }} onSetModerator={setModerator} onInviteGuest={inviteGuest} onMuteGuest={muteGuest} onRemoveGuest={removeGuest} onRemoveParticipant={removeParticipant} onSpotlightGuest={spotlightGuest} onDemoteToViewer={handleDemotedToViewer} replayEnabled={replayEnabled} replayStatus={replay?.status || 'none'} replayBusy={replayBusy} onStartReplay={confirmStartReplay} onStopReplay={stopReplay} onViewReplay={viewReplay} busy={busy} />
+        <LiveMedia streamId={stream.id} creatorId={stream.creator_id} creatorMode={creatorMode} timeoutLabel={timeoutLabel} timeoutWarning={timeoutWarning} timeoutExpired={timeoutRemainingMs === 0} onOpenCreatorProfile={openCreatorProfile} onOpenGuestQueue={openGuestQueue} onOpenModeration={openModeration} onOpenReports={openReportsWorkspace} publisherMode={publisherMode} experienceMode={stream.experience_mode || 'broadcast'} category={stream.category || 'social'} cameraEnabled={cameraEnabled} microphoneEnabled={microphoneEnabled} onToggleCamera={toggleCamera} onToggleMicrophone={toggleMicrophone} moderatorMode={moderatorMode} canManageGuests={canManageGuests} canRequestGuest={canRequestGuest} guestRequests={guestRequests} showGuestRequests={showGuestRequests} title={stream.title} comments={comments} reports={reports} showReports={showReports} participants={participants} showParticipants={showParticipants} draft={draft} setDraft={setDraft} onComment={sendComment} onReact={react} onRealtimeFeedSignal={refreshComments} floatingReactions={floatingReactions} onRemoveFloatingReaction={removeFloatingReaction} onReport={report} onHide={hideComment} onEnd={leave} onRequestGuest={requestGuest} guestApproved={guestApproved} guestRequestStatus={guestRequestStatus} onJoinGuest={joinAsGuest} onToggleGuestRequests={() => { setShowReports(false); setShowParticipants(false); showGuestRequests ? setShowGuestRequests(false) : loadGuestRequests(); }} onReviewGuestRequest={reviewGuestRequest} onToggleReports={() => { setShowParticipants(false); setShowGuestRequests(false); showReports ? setShowReports(false) : loadReports(); }} onReviewReport={reviewReport} onToggleParticipants={() => { setShowReports(false); setShowGuestRequests(false); showParticipants ? setShowParticipants(false) : loadParticipants(); }} onSetModerator={setModerator} onInviteGuest={inviteGuest} onMuteGuest={muteGuest} onRemoveGuest={removeGuest} onRemoveParticipant={removeParticipant} onSpotlightGuest={spotlightGuest} onDemoteToViewer={handleDemotedToViewer} replayEnabled={replayEnabled} replayStatus={replay?.status || 'none'} replayBusy={replayBusy} onStartReplay={confirmStartReplay} onStopReplay={stopReplay} onViewReplay={viewReplay} busy={busy} />
       </LiveKitRoom>
       {busy && <View style={{ position: 'absolute', top: '50%', alignSelf: 'center' }}><ActivityIndicator color={colors.accent} /></View>}
     </View>
