@@ -67,7 +67,7 @@ export default function CreateGroupScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <Header
         title="New group"
         onBack={() => navigation.goBack()}
