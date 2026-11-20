@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, Vibration, View } from 'react-native';
+import { ActivityIndicator, Platform, StatusBar, StyleSheet, Text, TouchableOpacity, Vibration, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Avatar from '../components/Avatar';
 import { useTheme } from '../theme/ThemeContext';
@@ -94,7 +95,7 @@ export default function IncomingCallScreen({ route, navigation }) {
 
   const isVideo = call?.call_type === 'video';
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={[styles.safe, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={resolvedMode === 'light' ? 'dark-content' : 'light-content'} />
       <View style={[styles.glow, { backgroundColor: hexToRgba(colors.primary, 0.14) }]} />
       <View style={styles.top}>
