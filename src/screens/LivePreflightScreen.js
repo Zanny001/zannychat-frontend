@@ -47,7 +47,7 @@ function PermissionRow({ icon, label, detail, state, colors, typography }) {
 }
 
 export default function LivePreflightScreen({ route, navigation }) {
-  const { colors, spacing, typography, resolvedMode } = useTheme();
+  const { colors, spacing, typography, resolvedMode, layout } = useTheme();
   const isFocused = useIsFocused();
   const params = route?.params || {};
   const eventId = typeof params.eventId === 'string' ? params.eventId : null;
@@ -251,7 +251,7 @@ export default function LivePreflightScreen({ route, navigation }) {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingHorizontal: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.xxl || 36, alignItems: 'center' }}
       >
-        <View style={{ width: '100%', maxWidth: 760, gap: spacing.md }}>
+        <View style={{ width: '100%', maxWidth: layout.contentMaxWidth, gap: spacing.md }}>
           <LivePremiumHeader
             navigation={navigation}
             eyebrow="ZANNYCHAT · LIVE STUDIO"
