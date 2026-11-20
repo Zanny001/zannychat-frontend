@@ -203,8 +203,8 @@ export default function LiveModerationScreen({ route, navigation }) {
             const label = guest ? 'STAGE GUEST' : viewer ? 'VIEWER' : item.moderator ? 'MODERATOR' : 'PARTICIPANT';
             return <GlassCard key={item.userId} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                <View style={{ width: 46, height: 46, borderRadius: 15, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name={guest ? 'videocam-outline' : 'person-outline'} size={20} color={colors.primary} />
+                <View style={{ width: 46, height: 46, borderRadius: 15, backgroundColor: item.avatarColor || colors.primary, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text accessibilityLabel={(item.name || 'Participant').trim() + ' avatar'} style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '900' }}>{(item.name || 'P').trim().charAt(0).toUpperCase()}</Text>
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.name || 'ZannyChat participant'}</Text>
