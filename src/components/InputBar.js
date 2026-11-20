@@ -47,6 +47,8 @@ export default function InputBar({
   const [text, setText] = useState('');
   const [draftReady, setDraftReady] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
+  const [draftLoadError, setDraftLoadError] = useState('');
+  const [draftSaveError, setDraftSaveError] = useState('');
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [emojiCategory, setEmojiCategory] = useState(0);
   const userEditedRef = useRef(false);
@@ -64,11 +66,18 @@ export default function InputBar({
     }
     previousDraftKeyRef.current = draftKey || null;
     setDraftReady(false);
+    setDraftLoadError('');
+    setDraftSaveError('');
     if (!draftKey) { setDraftReady(true); return () => { active = false; }; }
     loadDraft(draftKey).then((draft) => {
       if (!active) return;
       if (!userEditedRef.current) setText(draft);
       setDraftReady(true);
+      setDraftLoadError('');
+    }).catch((error) => {
+      if (!active) return;
+      setDraftReady(false);
+      setDraftLoadError(error?.message || 'Your saved draft could not be loaded. Retry before editing.');
     });
     return () => { active = false; };
   }, [draftKey]);
@@ -86,6 +95,11 @@ export default function InputBar({
       loadDraft(draftKey).then((draft) => {
         if (!active) return;
         setText(draft);
+        setDraftLoadError('');
+        restoringDraftRef.current = false;
+      }).catch((error) => {
+        if (!active) return;
+        setDraftLoadError(error?.message || 'Your saved draft could not be restored.');
         restoringDraftRef.current = false;
       });
       return () => { active = false; restoringDraftRef.current = false; };
@@ -98,10 +112,34 @@ export default function InputBar({
     let active = true;
     const timer = setTimeout(async () => {
       const saved = await saveDraft(draftKey, text);
-      if (active && saved && shouldPersistDraft(text)) setDraftSaved(true);
+      if (!active) return;
+      if (saved) {
+        setDraftSaveError('');
+        if (shouldPersistDraft(text)) setDraftSaved(true);
+      } else {
+        setDraftSaveError('Your text is still in this chat, but the draft could not be saved on this device. Keep this conversation open and retry.');
+      }
     }, 450);
     return () => { active = false; clearTimeout(timer); };
   }, [draftReady, draftKey, editing, text]);
+
+  async function retryLoadDraft() {
+    try {
+      const draft = await loadDraft(draftKey);
+      setText(draft);
+      userEditedRef.current = false;
+      setDraftLoadError('');
+      setDraftReady(true);
+    } catch (error) {
+      setDraftLoadError(error?.message || 'Your saved draft could not be loaded. Retry again.');
+    }
+  }
+
+  async function retrySaveDraft() {
+    const saved = await saveDraft(draftKey, text);
+    if (saved) { setDraftSaveError(''); setDraftSaved(shouldPersistDraft(text)); }
+    else setDraftSaveError('Your draft still could not be saved. Check device storage and retry.');
+  }
 
   function handleChange(next) {
     userEditedRef.current = true;
@@ -119,8 +157,10 @@ export default function InputBar({
       if (wasEditing) return; // the draft is restored when edit mode closes
       setText('');
       userEditedRef.current = false;
-      await clearDraft(draftKey);
+      const cleared = await clearDraft(draftKey);
       setDraftSaved(false);
+      if (!cleared) setDraftSaveError('Message sent, but its local draft could not be cleared from this device.');
+      else setDraftSaveError('');
     } catch (_) {
       // The parent normally surfaces send errors. Preserve the composer text.
     }
@@ -128,7 +168,19 @@ export default function InputBar({
 
   return (
     <View style={[styles.wrap, { borderTopColor: hexToRgba(colors.textPrimary, 0.08) }]}>
-      {draftSaved && !editing && !isRecording ? (
+      {draftLoadError && !editing ? (
+        <View accessibilityRole="alert" accessibilityLiveRegion="polite" style={[styles.draftStatus, { paddingHorizontal: spacing.md }]}>
+          <Text style={[typography.caption, { color: colors.danger, flex: 1 }]}>{draftLoadError}</Text>
+          <TouchableOpacity onPress={retryLoadDraft} accessibilityRole="button" accessibilityLabel="Retry loading saved draft" style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 }}><Text style={[typography.caption, { color: colors.primary, fontWeight: '700' }]}>Retry</Text></TouchableOpacity>
+        </View>
+      ) : null}
+      {draftSaveError && !editing ? (
+        <View accessibilityRole="alert" accessibilityLiveRegion="polite" style={[styles.draftStatus, { paddingHorizontal: spacing.md }]}>
+          <Text style={[typography.caption, { color: colors.danger, flex: 1 }]}>{draftSaveError}</Text>
+          <TouchableOpacity onPress={retrySaveDraft} accessibilityRole="button" accessibilityLabel="Retry saving draft" style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 }}><Text style={[typography.caption, { color: colors.primary, fontWeight: '700' }]}>Retry save</Text></TouchableOpacity>
+        </View>
+      ) : null}
+      {draftSaved && !editing && !isRecording && !draftSaveError ? (
         <View style={[styles.draftStatus, { paddingHorizontal: spacing.md }]}>
           <Ionicons name="checkmark-circle-outline" size={13} color={colors.textSecondary} />
           <Text style={[typography.caption, { color: colors.textSecondary, marginLeft: 5 }]}>Draft saved on this device</Text>
@@ -258,7 +310,7 @@ export default function InputBar({
             <TextInput
               value={text}
               onChangeText={handleChange}
-              editable={draftReady || Boolean(editing)}
+              editable={(draftReady && !draftLoadError) || Boolean(editing)}
               placeholder={editing ? 'Edit message' : draftReady && text ? 'Message · draft saved on this device' : 'Message'}
               placeholderTextColor={colors.textSecondary}
               underlineColorAndroid="transparent"
