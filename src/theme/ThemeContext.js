@@ -23,6 +23,7 @@ export function ThemeProvider({ children }) {
   const preferenceRevisionRef = useRef({ mood: 0, customPalette: 0, appearance: 0, accessibility: 0 });
   const persistenceAttemptRef = useRef({ mood: 0, customPalette: 0, appearance: 0, accessibility: 0 });
   const failedPreferencesRef = useRef(new Set());
+  const accessibilityPreferencesRef = useRef({ textScale: 'standard', highContrast: false });
 
   useEffect(() => {
     let active = true;
@@ -47,8 +48,15 @@ export function ThemeProvider({ children }) {
         if (revisionAtStart.accessibility === preferenceRevisionRef.current.accessibility && saved[ACCESSIBILITY_STORAGE_KEY]) {
           try {
             const prefs = JSON.parse(saved[ACCESSIBILITY_STORAGE_KEY]);
-            if (Object.prototype.hasOwnProperty.call(TEXT_SCALES, prefs.textScale)) setTextScale(prefs.textScale);
-            if (typeof prefs.highContrast === 'boolean') setHighContrast(prefs.highContrast);
+            const nextPreferences = {
+              textScale: Object.prototype.hasOwnProperty.call(TEXT_SCALES, prefs.textScale)
+                ? prefs.textScale : accessibilityPreferencesRef.current.textScale,
+              highContrast: typeof prefs.highContrast === 'boolean'
+                ? prefs.highContrast : accessibilityPreferencesRef.current.highContrast,
+            };
+            accessibilityPreferencesRef.current = nextPreferences;
+            setTextScale(nextPreferences.textScale);
+            setHighContrast(nextPreferences.highContrast);
           } catch (_) {}
         }
       })
@@ -119,14 +127,18 @@ export function ThemeProvider({ children }) {
       setTextScale: (scaleKey) => {
         if (Object.prototype.hasOwnProperty.call(TEXT_SCALES, scaleKey)) {
           preferenceRevisionRef.current.accessibility += 1;
+          const nextPreferences = { ...accessibilityPreferencesRef.current, textScale: scaleKey };
+          accessibilityPreferencesRef.current = nextPreferences;
           setTextScale(scaleKey);
-          void persistAccessibility({ textScale: scaleKey, highContrast });
+          void persistAccessibility(nextPreferences);
         }
       },
       setHighContrast: (enabled) => {
         preferenceRevisionRef.current.accessibility += 1;
+        const nextPreferences = { ...accessibilityPreferencesRef.current, highContrast: Boolean(enabled) };
+        accessibilityPreferencesRef.current = nextPreferences;
         setHighContrast(Boolean(enabled));
-        void persistAccessibility({ textScale, highContrast: Boolean(enabled) });
+        void persistAccessibility(nextPreferences);
       },
       setPalette: (key) => {
         if (MOODS[key] || (key === 'custom' && customPalette)) {
