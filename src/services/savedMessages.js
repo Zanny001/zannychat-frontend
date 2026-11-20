@@ -7,13 +7,17 @@ export async function loadSavedMessages(userId) {
   try {
     const raw = await AsyncStorage.getItem(keyFor(userId));
     const parsed = raw ? JSON.parse(raw) : [];
+    if (parsed !== null && !Array.isArray(parsed)) throw new Error('Saved-message data has an unexpected format.');
     return Array.isArray(parsed) ? parsed.filter((item) => item && item.id && item.conversationId && item.messageId) : [];
-  } catch (_) { return []; }
+  } catch {
+    throw new Error('Your saved messages could not be read from this device. No bookmarks were changed. Check device storage and retry.');
+  }
 }
 
 export async function saveMessageLocally(userId, message, conversation) {
   if (!userId) throw new Error('Sign in to save messages on this device.');
   const item = makeSavedMessage(message, conversation);
+  // Never replace an unreadable collection with a new one-item list.
   const existing = await loadSavedMessages(userId);
   const next = [item, ...existing.filter((saved) => saved.id !== item.id)].slice(0, 500);
   await AsyncStorage.setItem(keyFor(userId), JSON.stringify(next));
@@ -25,7 +29,6 @@ export async function removeSavedMessage(userId, savedId) {
   await AsyncStorage.setItem(keyFor(userId), JSON.stringify(next));
   return next;
 }
-
 
 /** Remove only this account's device-local saved-message bookmarks after deletion. */
 export async function clearSavedMessagesForUser(userId) {
