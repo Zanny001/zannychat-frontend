@@ -325,7 +325,7 @@ export default function LiveStreamScreen({ route, navigation }) {
         .catch((recoveryError) => {
           if (active && requestId === connectionRequestRef.current) {
             setError(recoveryError?.message || 'Could not recover your active LIVE broadcast. Return to LIVE Hub and try again.');
-          setStatus('Unable to connect');
+            setStatus('Unable to connect');
           }
         })
         .finally(() => {
