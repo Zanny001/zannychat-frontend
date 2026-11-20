@@ -74,7 +74,7 @@ export function ThemeProvider({ children }) {
     const persist = async (write, key) => {
       const attempt = ++persistenceAttemptRef.current[key];
       try {
-        await write;
+        await write();
         if (attempt === persistenceAttemptRef.current[key]) {
           failedPreferencesRef.current.delete(key);
           if (failedPreferencesRef.current.size === 0) setPersistenceError('');
@@ -88,7 +88,7 @@ export function ThemeProvider({ children }) {
         return false;
       }
     };
-    const persistAccessibility = (next) => persist(AsyncStorage.setItem(ACCESSIBILITY_STORAGE_KEY, JSON.stringify(next)), 'accessibility');
+    const persistAccessibility = (next) => persist(() => AsyncStorage.setItem(ACCESSIBILITY_STORAGE_KEY, JSON.stringify(next)), 'accessibility');
     return {
       colors: resolveMoodColors(mood, resolvedMode, highContrast),
       mood,
@@ -113,7 +113,7 @@ export function ThemeProvider({ children }) {
         if (['system', 'light', 'dark'].includes(mode)) {
           preferenceRevisionRef.current.appearance += 1;
           setAppearance(mode);
-          void persist(AsyncStorage.setItem(APPEARANCE_STORAGE_KEY, mode), 'appearance');
+          void persist(() => AsyncStorage.setItem(APPEARANCE_STORAGE_KEY, mode), 'appearance');
         }
       },
       setTextScale: (scaleKey) => {
@@ -132,7 +132,7 @@ export function ThemeProvider({ children }) {
         if (MOODS[key] || (key === 'custom' && customPalette)) {
           preferenceRevisionRef.current.mood += 1;
           setMoodKey(key);
-          void persist(AsyncStorage.setItem(MOOD_STORAGE_KEY, key), 'mood');
+          void persist(() => AsyncStorage.setItem(MOOD_STORAGE_KEY, key), 'mood');
         }
       },
       setCustomPalette: (nextPalette) => {
@@ -142,7 +142,7 @@ export function ThemeProvider({ children }) {
         preferenceRevisionRef.current.mood += 1;
         setCustomPaletteState(normalized);
         setMoodKey('custom');
-        void persist(AsyncStorage.multiSet([
+        void persist(() => AsyncStorage.multiSet([
           [CUSTOM_PALETTE_STORAGE_KEY, JSON.stringify(normalized)],
           [MOOD_STORAGE_KEY, 'custom'],
         ]), 'customPalette');
