@@ -51,3 +51,10 @@ test('LIVE destinations share the theme content measure without constraining imm
   assert.ok(!nativeStage.includes('layout.contentMaxWidth'));
   assert.ok(!webStage.includes('layout.contentMaxWidth'));
 });
+
+
+test('LIVE post-stream summary uses the shared premium content width', () => {
+  const summary = read('LivePostStreamSummaryScreen.js');
+  assert.ok(summary.includes('layout.contentMaxWidth'));
+  assert.ok(!summary.includes('maxWidth: 680'));
+});
