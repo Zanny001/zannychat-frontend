@@ -261,7 +261,7 @@ test('native LIVE screens expose audio output selection for viewers and creators
 });
 
 test('LIVE navigation serializes only a stable stream ID and fetches a fresh authorized token', () => {
-  assert.ok(screen.includes('const streamId = route.params?.streamId || initialConnection?.stream?.id || null'));
+  assert.ok(screen.includes('const requestedStreamId = typeof route.params?.streamId === \'string\''));
   assert.ok(screen.includes('`/live/${streamId}/join`'));
   assert.equal(screen.includes('navigation.setParams({ connection:'), false);
   const hub = fs.readFileSync(new URL('./LiveHubScreen.js', import.meta.url), 'utf8');
