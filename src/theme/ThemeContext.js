@@ -20,29 +20,30 @@ export function ThemeProvider({ children }) {
   const [textScale, setTextScale] = useState('standard');
   const [highContrast, setHighContrast] = useState(false);
   const [persistenceError, setPersistenceError] = useState('');
-  const preferenceRevisionRef = useRef(0);
+  const preferenceRevisionRef = useRef({ mood: 0, customPalette: 0, appearance: 0, accessibility: 0 });
   const persistenceAttemptRef = useRef(0);
 
   useEffect(() => {
     let active = true;
-    const revisionAtStart = preferenceRevisionRef.current;
+    const revisionAtStart = { ...preferenceRevisionRef.current };
     AsyncStorage.multiGet([MOOD_STORAGE_KEY, APPEARANCE_STORAGE_KEY, ACCESSIBILITY_STORAGE_KEY, CUSTOM_PALETTE_STORAGE_KEY])
       .then((entries) => {
-        if (!active || revisionAtStart !== preferenceRevisionRef.current) return;
+        if (!active) return;
         const saved = Object.fromEntries(entries);
-        if (saved[CUSTOM_PALETTE_STORAGE_KEY]) {
+        let parsedPalette = null;
+        if (saved[CUSTOM_PALETTE_STORAGE_KEY] && revisionAtStart.customPalette === preferenceRevisionRef.current.customPalette) {
           try {
-            const parsedPalette = normalizeCustomPalette(JSON.parse(saved[CUSTOM_PALETTE_STORAGE_KEY]));
+            parsedPalette = normalizeCustomPalette(JSON.parse(saved[CUSTOM_PALETTE_STORAGE_KEY]));
             if (parsedPalette) setCustomPaletteState(parsedPalette);
           } catch (_) {}
         }
-        if (saved[MOOD_STORAGE_KEY] === 'custom' && saved[CUSTOM_PALETTE_STORAGE_KEY]) {
-          try {
-            if (normalizeCustomPalette(JSON.parse(saved[CUSTOM_PALETTE_STORAGE_KEY]))) setMoodKey('custom');
-          } catch (_) {}
-        } else if (saved[MOOD_STORAGE_KEY] && MOODS[saved[MOOD_STORAGE_KEY]]) setMoodKey(saved[MOOD_STORAGE_KEY]);
-        if (['system', 'light', 'dark'].includes(saved[APPEARANCE_STORAGE_KEY])) setAppearance(saved[APPEARANCE_STORAGE_KEY]);
-        if (saved[ACCESSIBILITY_STORAGE_KEY]) {
+        if (revisionAtStart.mood === preferenceRevisionRef.current.mood) {
+          if (saved[MOOD_STORAGE_KEY] === 'custom' && (parsedPalette || customPalette)) setMoodKey('custom');
+          else if (saved[MOOD_STORAGE_KEY] && MOODS[saved[MOOD_STORAGE_KEY]]) setMoodKey(saved[MOOD_STORAGE_KEY]);
+        }
+        if (revisionAtStart.appearance === preferenceRevisionRef.current.appearance
+          && ['system', 'light', 'dark'].includes(saved[APPEARANCE_STORAGE_KEY])) setAppearance(saved[APPEARANCE_STORAGE_KEY]);
+        if (revisionAtStart.accessibility === preferenceRevisionRef.current.accessibility && saved[ACCESSIBILITY_STORAGE_KEY]) {
           try {
             const prefs = JSON.parse(saved[ACCESSIBILITY_STORAGE_KEY]);
             if (Object.prototype.hasOwnProperty.call(TEXT_SCALES, prefs.textScale)) setTextScale(prefs.textScale);
@@ -99,26 +100,26 @@ export function ThemeProvider({ children }) {
       clearPersistenceError: () => setPersistenceError(''),
       setAppearance: (mode) => {
         if (['system', 'light', 'dark'].includes(mode)) {
-          preferenceRevisionRef.current += 1;
+          preferenceRevisionRef.current.appearance += 1;
           setAppearance(mode);
           void persist(AsyncStorage.setItem(APPEARANCE_STORAGE_KEY, mode));
         }
       },
       setTextScale: (scaleKey) => {
         if (Object.prototype.hasOwnProperty.call(TEXT_SCALES, scaleKey)) {
-          preferenceRevisionRef.current += 1;
+          preferenceRevisionRef.current.accessibility += 1;
           setTextScale(scaleKey);
           void persistAccessibility({ textScale: scaleKey, highContrast });
         }
       },
       setHighContrast: (enabled) => {
-        preferenceRevisionRef.current += 1;
+        preferenceRevisionRef.current.accessibility += 1;
         setHighContrast(Boolean(enabled));
         void persistAccessibility({ textScale, highContrast: Boolean(enabled) });
       },
       setPalette: (key) => {
         if (MOODS[key] || (key === 'custom' && customPalette)) {
-          preferenceRevisionRef.current += 1;
+          preferenceRevisionRef.current.mood += 1;
           setMoodKey(key);
           void persist(AsyncStorage.setItem(MOOD_STORAGE_KEY, key));
         }
@@ -126,7 +127,8 @@ export function ThemeProvider({ children }) {
       setCustomPalette: (nextPalette) => {
         const normalized = normalizeCustomPalette(nextPalette);
         if (!normalized) return false;
-        preferenceRevisionRef.current += 1;
+        preferenceRevisionRef.current.customPalette += 1;
+        preferenceRevisionRef.current.mood += 1;
         setCustomPaletteState(normalized);
         setMoodKey('custom');
         void persist(AsyncStorage.multiSet([
