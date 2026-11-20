@@ -844,3 +844,27 @@ No production database, Auth, Storage, deployment or infrastructure mutation was
 A read-only production query inspected the definitions and effective grants of the call-notification, media-cleanup, LIVE-event reminder and LIVE-timeout claim/cleanup RPCs. All inspected functions are SECURITY DEFINER with configured search paths and are executable by `service_role` only—not by `anon` or `authenticated`. Call invitation/end and event-reminder claims use `FOR UPDATE SKIP LOCKED`; stale claim recovery windows observed were five minutes, two minutes and ten minutes respectively. LIVE timeout warning claim/release is an atomic stream-row update. Media/call cleanup RPCs perform guarded state transitions and bounded cleanup. See the companion snapshot for exact scope and limitations.
 
 The production `account_storage_cleanup_jobs` table is service-role-only and its allowed states are `held` and `pending`; no persistent processing lease exists. The worker's in-process guard therefore does not coordinate multiple backend processes. Keep this as a conditional hardening candidate—not a confirmed production incident—until actual deployment topology and job lifecycle are verified. No schema or job change was made.
+
+## 30. Phase 1 security-function review and premium UI progress — 2026-11-20
+
+### Security-function review update
+The four authenticated-executable SECURITY DEFINER functions without direct `auth.uid()` checks have now had their delegated chains reviewed. Both poll compatibility overloads delegate to identity- and conversation-membership-checked implementations. Both visible-avatar/cover path helpers delegate to `can_view_profile_avatar`, which checks authentication, bidirectional blocks, photo/profile visibility and shared conversation. No bypass was found in these delegated paths. The other 24 functions still require complete per-function authorization review and caller-context tests.
+
+A product/privacy semantics item remains open: `get_conversation_profile_directory` returns basic identity fields for existing conversation peers even if profile visibility is set to “Nobody”; avatars and online presence remain separately gated. This may be intentional for message attribution, but must be reconciled with the user's visible privacy wording before privacy can be marked complete. No production changes were made.
+
+### Premium interface implementation checkpoints
+| PR | Scope | Status |
+|---|---|---|
+| #217 | Theme preference writes/reads now report storage failures, retain current-session selection, guard late initial reads per setting, and expose an accessible dismissible warning in Settings | Merged: `a4383eadf5b249c91ca6eceadb7fbed0fb47966d`; unit/contract, native compile/prebuild, web/Android export, release/integrity, dependency and bundle checks passed. Device storage-failure simulation remains open |
+| #218 | Centered 760px content columns for Forward Message, Saved, Drafts, Pinned, Chat Folders, Shared Media and Chat Appearance | Merged: `e276bf6775aedc0a8457086aee3cb6a9e080c2d1`; frontend quality and advanced calling workflows passed |
+| #219 | Centered 760px inbox, New Chat directory, Chat timeline/composer and search panel | Merged: `6905379a3d4f45d43362f26f1ed27856d4678b1d`; frontend quality and advanced calling workflows passed |
+| #220 | Shared 480px form measure for onboarding, login, signup, recovery, verification, reset and auth-required screens | Open; initial unit run caught a test-format assertion mismatch, now corrected; clean rerun pending |
+| #221 | Centered profile, peer profile, edit profile, privacy/security, notifications, help, storage, export, sessions and contact-discovery surfaces; narrower QR contact surface | Open; web/Android preview exports passed; unit/native/bundle checks running |
+
+These changes preserve full-bleed backgrounds and fluid mobile widths; they are source changes, not proof of production deployment or real-device visual acceptance. The Vercel free-team build-rate limit remains the only known blocker to automatic production builds; do not upgrade to a paid plan under the ₦0 constraint.
+
+### Next interface sequence
+1. Finish and merge #220 and #221 only after all required application/native checks pass; address any test failures rather than bypassing them.
+2. Continue with Status Updates and Channels, then Profile/Settings acceptance, then Calls, then the complete LIVE destination set, followed by remaining account/auth and utility screens.
+3. Keep each screen's data, loading, empty, error, offline, permission-denied and accessibility states functional—not just its default visual state.
+4. Keep the existing Gas broadcast browser/device acceptance open until the user confirms creator and viewer can both enter the existing stream after PR #212 deployment.
