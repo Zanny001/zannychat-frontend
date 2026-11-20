@@ -334,7 +334,7 @@ export default function NewChatScreen({ navigation, route }) {
   }
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']}
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']}
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       <Header
