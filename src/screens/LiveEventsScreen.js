@@ -6,6 +6,7 @@ import { backendFetch } from '../services/backendClient';
 import { getCurrentUser } from '../services/api';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
+import LivePremiumHeader from '../components/LivePremiumHeader';
 import { hexToRgba } from '../utils/color';
 import { showAppAlert } from '../utils/appDialogs';
 import { loadLivePreferences, DEFAULT_LIVE_PREFERENCES } from '../services/livePreferences';
@@ -220,18 +221,15 @@ export default function LiveEventsScreen({ navigation }) {
   return (
     <SafeAreaView style={{flex:1,backgroundColor:colors.background}}>
       <ScrollView contentContainerStyle={{padding:spacing.md,paddingBottom:spacing.xl,gap:spacing.md}} keyboardShouldPersistTaps="handled">
-        <View style={{flexDirection:'row',alignItems:'center',gap:spacing.sm}}>
-          <TouchableOpacity onPress={()=>navigation.goBack()} accessibilityRole="button" accessibilityLabel="Go back" style={{width:44,height:44,borderRadius:15,borderWidth:1,borderColor:colors.border,alignItems:'center',justifyContent:'center'}}>
-            <Ionicons name="chevron-back" size={21} color={colors.textPrimary}/>
-          </TouchableOpacity>
-          <View style={{flex:1}}>
-            <Text style={[typography.heading,{color:colors.textPrimary,fontSize:25}]}>LIVE Events</Text>
-            <Text style={[typography.caption,{color:colors.textSecondary}]}>Plan a moment. Bring your people together.</Text>
-          </View>
-          <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh LIVE Events" style={{width:44,height:44,borderRadius:15,borderWidth:1,borderColor:colors.border,alignItems:'center',justifyContent:'center'}}>
-            <Ionicons name="refresh" size={18} color={colors.primary}/>
-          </TouchableOpacity>
-        </View>
+        <LivePremiumHeader
+          navigation={navigation}
+          eyebrow="ZANNYCHAT · LIVE EVENTS"
+          title="LIVE Events"
+          subtitle="Plan a moment. Bring your people together."
+          icon="calendar-outline"
+          onRefresh={() => refresh()}
+          refreshLabel="Refresh LIVE Events"
+        />
 
         <GlassCard glow contentStyle={{padding:spacing.md,gap:spacing.sm}}>
           <View style={{flexDirection:'row',alignItems:'center',gap:spacing.sm}}>
