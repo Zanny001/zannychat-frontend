@@ -52,13 +52,13 @@ Use Crown Aurora: deep void navy, restrained violet/cyan accents and crown-gold 
 - Native and web LIVE derive creator controls from the server-issued `connection.role === 'creator'`; route parameters do not grant creator privileges. Guest publishing requires a server-issued guest role and `canPublish` permission. A demoted guest is returned to viewer mode.
 - Creator Studio and guest-request controls are creator-only. Guest camera/microphone controls are scoped to the guest's own local publisher. Viewer controls remain limited to viewing, reactions, comments, reporting and requesting guest access.
 - Native and web contract tests cover creator/guest role boundaries, track subscription, remote publisher stage layout, guest approval/demotion, moderation, replay controls, participant heartbeat and media lifecycle. These are automated source contracts, not proof of remote RTP delivery.
-- The current production LIVE replay snapshot contains zero replay rows and zero objects in the private replay bucket. A complete Egress-to-storage-to-playback test remains outstanding.
+- The 2026-11-20 read-only production snapshot contains one replay row in `ready` state and a matching private `live-replays` object (`video/mp4`, 3,292,044 bytes; 43 seconds). This confirms a completed recording reached private storage. Signed playback for an eligible second account, denial for an ineligible account, owner deletion and retention cleanup still require end-to-end acceptance.
 - Creator Studio metrics are derived from the authenticated participant list and labelled “Viewers listed”; they are not total audience, reach, watch time, retention or earnings.
 
 
 ## LIVE replay implementation and production security reassessment — 2026-11-17
 
-The earlier production note that there were zero replay rows/objects remains accurate. A fresh backend source review confirms that the Egress-to-private-storage implementation exists; the remaining blocker is runtime/configuration and end-to-end evidence, not an absent code path.
+The earlier zero-row/zero-object snapshot is superseded by the 2026-11-20 read-only production evidence below. A ready replay row now has a matching private MP4 object; the remaining gap is authorization-aware signed playback and lifecycle acceptance, not proof of recording/storage.
 
 ### Implementation confirmed in backend source
 
@@ -74,7 +74,7 @@ The earlier production note that there were zero replay rows/objects remains acc
 - `public.live_stream_replays`: RLS enabled; no policies; no anon or authenticated SELECT/INSERT/UPDATE/DELETE privileges; service-role access only.
 - `reserve_live_replay_quota`, `finalize_live_replay_quota`, and `get_live_replay_storage_bytes`: SECURITY DEFINER with empty pinned search_path; EXECUTE roles are postgres and service_role only.
 - `live-replays` bucket: private, 48,000,000-byte file cap, MIME allowlist `video/mp4`.
-- Current replay rows: 0. Current objects in the bucket: 0 (0 bytes). Quota row: 0 reserved seconds, 2 used seconds, no active replay ID.
+- 2026-11-20: one replay row is `ready`; the matching private object is MP4, 3,292,044 bytes (Storage metadata size agrees), and the row reports 43 seconds. The earlier zero-object snapshot is historical and must not be used as current status. Quota accounting, remaining monthly allowance and current Render feature flags were not re-read in this pass.
 - No production database changes were made during this review.
 
 ### Constraints and open risks
@@ -82,7 +82,7 @@ The earlier production note that there were zero replay rows/objects remains acc
 - Current product limits are five minutes per replay, 50 minutes of aggregate replay allowance per calendar month, one globally active replay reservation at a time, 48 MB per MP4, and seven-day retention. This is a deliberately constrained free-tier design, not unlimited creator replay.
 - The production Render workspace environment flags and actual Egress/webhook runtime logs were not re-verified in this pass. The server requires both `LIVEKIT_REPLAY_ENABLED=true` and `LIVEKIT_REPLAY_BUILD_PLAN_CONFIRMED=true`; missing either keeps replay disabled.
 - Backend PR #134 is merged. The worker now lists completed as well as active Egress records, matches by persisted Egress ID or the exact per-replay output path, and invokes the same shared finalizer used by the signed webhook. This closes the source-level ambiguous-start/lost-webhook recovery gap. Both Backend quality and Advanced calling backend checks passed, including the LIVE/replay test suite.
-- No real creator-to-viewer recording, webhook receipt, Supabase object upload, signed playback, expiry, or cleanup cycle has been accepted on production. Zero rows/objects means there is currently no production replay to play. The previous “LIVE replays unavailable” symptom therefore remains unresolved at runtime even though source implementation and webhook-loss recovery are now present.
+- Production evidence now confirms at least one recording reached `ready` and its MP4 exists in the private bucket. This does not by itself prove the authenticated signed-playback endpoint returns a playable URL to an eligible viewer, nor that an ineligible viewer is denied. Expiry and cleanup acceptance also remain open. The historical “LIVE replays unavailable” report should be retested against the currently stored replay rather than treated as a confirmed present failure.
 - Frontend PR #117 adds explicit replay service error and empty states in LIVE Hub; its native/web CI and preview are still being validated.
 
 Official protocol references reviewed: https://docs.livekit.io/reference/other/egress/api/ and https://docs.livekit.io/intro/basics/rooms-participants-tracks/webhooks-events/
@@ -103,3 +103,16 @@ Frontend PR #120 changes the current polling safeguards:
 - A transient comment-fetch failure remains visible as a recoverable banner and is cleared after a successful refresh; transient guest/replay poll errors preserve last known state rather than interrupting the creator controls.
 
 This is a pragmatic load reduction, not the final realtime architecture. The next scale milestone should replace comment/reaction and guest-request polling with authenticated event delivery (LiveKit data messages or appropriately scoped Supabase Realtime), retaining server-side authorization, moderation, persistence, and reconnect reconciliation. Do not remove persistence or privacy checks merely to reduce latency. Before claiming scale readiness, load-test concurrent viewers, creator stage actions, database query volume, Render request rate and reconnect storms.
+
+
+## Production replay evidence refresh — 20 Nov 2026
+
+A read-only Supabase inspection supersedes the earlier zero-replay snapshots:
+
+- One `live_stream_replays` row is marked `ready`.
+- The row's path resolves to an object in the private `live-replays` bucket.
+- Storage metadata reports `video/mp4` and 3,292,044 bytes; the replay row reports the same byte count and 43 seconds.
+- No storage policy or bucket visibility was changed. The bucket remains private.
+- A separate read-only RPC audit confirmed `record_live_creator_impact(uuid, uuid, text)` has an empty pinned `search_path`, is executable by `service_role`, and is not executable by `authenticated` or `anon`.
+
+This proves recording finalization and private object persistence for at least one replay. It does not prove the signed URL is playable by an eligible viewer, denied to a non-invitee/blocked viewer, or that deletion/retention cleanup work. The previously reported “LIVE replays unavailable” should be retested; do not describe the entire replay feature as fully accepted until those authorization and playback paths pass.
