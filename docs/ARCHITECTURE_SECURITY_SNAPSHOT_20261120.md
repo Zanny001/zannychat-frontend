@@ -263,3 +263,41 @@ Read-only query on 2026-11-20 returned the most recent `Gas` LIVE row as `status
 ## 12. Interface merge checkpoint — 2026-11-20
 
 Frontend PRs #218, #219, #220, #221, #224, #225 and #226 are merged. They establish centered 760px collection/content columns, 480px auth/form columns, a 1280px group-call media-stage cap and responsive mobile fluid widths across the screen groups listed in Delivery Register section 32. PR #215 and #217 improve honest persistence feedback. These are code/CI milestones only: Vercel's free-team build-rate limit remains, and no production deployment or physical-device visual acceptance is inferred from a GitHub merge.
+
+## 13. Privacy preference enforcement and profile-media ownership gaps — 2026-11-20
+
+### Verified enforcement already present
+- `get_conversation_read_state` suppresses read-receipt state when the target user's `show_read_receipts` preference is false.
+- `get_visible_presence` checks shared-conversation membership, blocks and `show_online_status` / `show_last_seen` preferences.
+- `can_view_status` binds viewer identity to `auth.uid()` and checks status expiry, audience, selected recipients and bidirectional blocks.
+- The direct-call `enforce_call_recipient_privacy` trigger checks the callee's `call_permission` before a direct call is created.
+- `private.guard_profile_visibility_changes` prevents direct client changes to profile/photo visibility except through the validated visibility RPC; `private.guard_public_avatar_pointer` prevents a non-public profile from retaining a public avatar pointer.
+- The `status_updates` trigger stamps creation time and makes it immutable on update; expiry is constrained to the supported 6/12/24/48-hour windows and no more than 48 hours after creation.
+- Column-level grants on `conversation_participants` limit client updates to read/favorite/mute/archive fields; clients cannot update conversation_id, user_id or admin role. Message updates are limited to message text/edited_at; sender/conversation identity and delete state are not client-updatable.
+
+### Verified privacy gaps requiring migration
+
+**A. Group invite acceptance does not enforce the recipient's group-invite preference.**
+
+The route `POST /conversations/invites/accept` passes the authenticated user ID to service-role RPC `public.accept_group_invite`. The RPC validates token, expiry, revocation, use limit, group existence and duplicate membership, then inserts the participant and increments use count. It does not check `profile_details.group_invite_permission` or block state. The application utility `evaluateGroupInvitePrivacy` is used when creating a group with initial members, but it is not called by the invite-link acceptance path. Therefore a user who has selected `Nobody` (or `Contacts` with a non-contact inviter) can still accept a forwarded group invite.
+
+**B. Group-call invitations do not enforce the recipient's call preference.**
+
+The direct-call trigger checks `call_permission`, but the service-role group-call RPCs `create_group_call_room`, `invite_group_call_participants`, `promote_direct_call_to_group_room`, `join_group_call_room` and `join_direct_call_room` do not reference `call_permission`. The direct-call-to-group promotion RPC checks `profile_visibility` for invitees instead, which is not the same preference. This means group-call invites can bypass `Nobody` and `Contacts` call settings, while direct calls respect them.
+
+**C. Profile media pointers lack owner-path integrity enforcement.**
+
+Authenticated users can update their own `profile_details.avatar_path` and `cover_path`; the table has visibility/activity triggers but no trigger or check constraint requiring the first storage path segment to equal `user_id` or requiring the referenced object to be owned by that user in `private-avatars`. Likewise, the `profiles.avatar_url` trigger enforces visibility state but does not verify that a non-null URL points to an object in the caller's own `avatars/<user_id>/...` path. The app upload helpers use owner-scoped paths, but direct authenticated table writes can bypass those client helpers. A user could point their profile at another user's avatar object they are already allowed to view, causing identity spoofing; arbitrary public URLs can also cause other clients to fetch an external host.
+
+A read-only data-shape check found no current bad pointers: three non-null public avatar URLs all match their owner's public `avatars/<user_id>/...` path; one non-null private avatar path has the correct owner prefix and an existing private object; zero cover paths are currently populated. This is a latent write-integrity gap, not evidence of current bad production data.
+
+### Required migration/test plan (proposal only; no SQL applied)
+
+1. Harden `accept_group_invite`: lock the invite row; load the recipient's `group_invite_permission`; reject `nobody`; for `contacts`, require a shared conversation with `created_by`; reject a bidirectional block between recipient and inviter; preserve existing token/expiry/revocation/use-limit/duplicate checks and stable error codes.
+2. Enforce `call_permission` in group-call invite creation and direct-call promotion; replace the erroneous `profile_visibility` check with the correct call preference. For `contacts`, require a shared conversation with the inviting caller. Ensure initial group-call invitations skip or reject users with `nobody` according to a documented product rule, and do not send push notifications to them.
+3. Add a per-user advisory transaction lock shared with the single-active-call fix in section 10; check direct and group call memberships atomically before create/join/promotion.
+4. Add a `BEFORE INSERT OR UPDATE OF avatar_path, cover_path` trigger on `profile_details` that requires owner-prefixed paths and verifies the referenced `private-avatars` object is owned by `NEW.user_id`.
+5. Add an ownership/host/path check for non-null `profiles.avatar_url` values. Preserve current owner-scoped public avatar URLs during the staged cutover; reject external or other-user URLs. Confirm custom-domain behavior before enforcing the exact host allowlist.
+6. Add SQL integration tests for each preference (everyone/contacts/nobody), forwarded invites, blocked inviter, group-call invite, direct-call promotion, cross-mode concurrent join, owner path, other-user path, missing object and valid legacy public avatar URL.
+
+These are migration-gated. No migration file was fabricated, no production SQL was applied, and no user data or storage object was changed.
