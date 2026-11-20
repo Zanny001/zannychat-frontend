@@ -160,6 +160,7 @@ export default function LiveCreatorStudioScreen({ navigation }) {
         <LivePremiumHeader
           navigation={navigation}
           eyebrow="ZANNYCHAT · LIVE · CREATOR STUDIO"
+            backLabel="Back to LIVE hub"
           title="Creator Studio"
           subtitle="Your broadcast workspace and community impact"
           icon="sparkles-outline"
