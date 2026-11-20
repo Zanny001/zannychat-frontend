@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Avatar from '../components/Avatar';
 import { useTheme } from '../theme/ThemeContext';
@@ -74,7 +75,7 @@ export default function OutgoingCallScreen({ route, navigation }) {
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={[styles.safe, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={resolvedMode === 'light' ? 'dark-content' : 'light-content'} />
       <View style={[styles.glow, { backgroundColor: hexToRgba(colors.primary, 0.14) }]} />
       <View style={styles.top}>
