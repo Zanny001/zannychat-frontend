@@ -127,6 +127,7 @@ export default function LiveReportsScreen({ route, navigation }) {
           <LivePremiumHeader
             navigation={navigation}
             eyebrow="ZANNYCHAT · LIVE SAFETY"
+            backLabel="Back to LIVE moderation"
             title="Safety reports"
             subtitle={"Review and resolve reports · " + streamTitle}
             icon="shield-checkmark-outline"
