@@ -559,3 +559,17 @@ test('creator roster distinguishes the host from guest, viewer and moderator rol
   const moderation = fs.readFileSync(new URL('./LiveModerationScreen.js', import.meta.url), 'utf8');
   assert.ok(moderation.includes("item.role === 'creator' ? 'HOST'"));
 });
+
+
+test('native and web LIVE stages expose server-derived role hierarchy and labelled premium controls', () => {
+  assert.ok(screen.includes('function LiveMenuAction('));
+  assert.ok(screen.includes("label=\"Guest queue\""));
+  assert.ok(screen.includes("label=\"Moderation\""));
+  assert.ok(screen.includes("label=\"Participants\""));
+  assert.ok(screen.includes("label=\"Audio output\""));
+  assert.ok(screen.includes("label=\"Watch replay\""));
+  assert.ok(screen.includes("creatorMode ? 'HOST' : publisherMode ? 'GUEST' : moderatorMode ? 'MODERATOR' : 'VIEWER'"));
+  assert.ok(screen.includes("color: colors.textPrimary, flex: 1, minWidth: 0"));
+  assert.ok(webScreen.includes("label=\"Tools\""));
+  assert.ok(webScreen.includes("creatorMode ? 'HOST' : publisherMode ? 'GUEST' : moderatorMode ? 'MODERATOR' : 'VIEWER'"));
+});
