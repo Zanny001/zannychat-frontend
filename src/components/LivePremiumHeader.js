@@ -85,10 +85,11 @@ export default function LivePremiumHeader({
           letterSpacing: 1.15,
           fontSize: 10,
         }]}>{eyebrow}</Text>
-        <Text numberOfLines={1} style={[typography.heading, {
+        <Text numberOfLines={2} style={[typography.heading, {
           color: colors.textPrimary,
           fontSize: 23,
           lineHeight: 28,
+          flexShrink: 1,
         }]}>{title}</Text>
         {subtitle ? <Text numberOfLines={2} style={[typography.caption, {
           color: colors.textSecondary,
