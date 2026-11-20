@@ -20,6 +20,7 @@ export default function LivePremiumHeader({
   onRefresh,
   refreshLabel = 'Refresh this screen',
   trailing,
+  badge,
 }) {
   const { colors, spacing, typography } = useTheme();
   const handleBack = onBack || (() => {
@@ -95,6 +96,22 @@ export default function LivePremiumHeader({
         }]}>{subtitle}</Text> : null}
       </View>
 
+      {badge ? (
+        <View style={{
+          paddingHorizontal: 9,
+          paddingVertical: 7,
+          borderRadius: 11,
+          backgroundColor: hexToRgba(colors.gold || colors.accent || colors.primary, 0.12),
+          borderWidth: 1,
+          borderColor: hexToRgba(colors.gold || colors.accent || colors.primary, 0.26),
+        }}>
+          <Text style={[typography.caption, {
+            color: colors.gold || colors.accent || colors.primary,
+            fontWeight: '900',
+            letterSpacing: 0.7,
+          }]}>{badge}</Text>
+        </View>
+      ) : null}
       {trailing || (onRefresh ? (
         <TouchableOpacity
           onPress={onRefresh}
