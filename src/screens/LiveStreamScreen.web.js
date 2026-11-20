@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, PanResponder, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Dimensions, PanResponder, ScrollView, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -143,6 +144,7 @@ function Action({ colors, label, accessibilityLabel, onPress, disabled = false, 
 
 export default function LiveStreamScreen({ route, navigation }) {
   const { colors, typography } = useTheme();
+  const insets = useSafeAreaInsets();
   const { width: roomViewportWidth } = useWindowDimensions();
   const compactRoomHeader = roomViewportWidth < 390;
   const initialConnection = route.params?.connection && typeof route.params.connection === 'object' && !Array.isArray(route.params.connection)
@@ -961,7 +963,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   );
   const floatingRemoteTracks = experienceMode === 'video_chat' ? orderedRemoteTracks : orderedRemoteTracks.filter((item) => item.track.sid !== mainRemoteTrack?.track.sid);
 
-  return <SafeAreaView style={{ flex: 1, minHeight: '100%', backgroundColor: '#05050B', position: 'relative', overflow: 'hidden' }}>
+  return <View style={{ flex: 1, minHeight: '100%', backgroundColor: '#05050B', position: 'relative', overflow: 'hidden' }}>
     <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#05050B' }}>
       {publisherMode && experienceMode !== 'audio_room' ? (
         experienceMode === 'video_chat' ? <><LiveCategoryBackdrop category={category} title={stream.title} mode={experienceMode} /><FloatingLocalVideoTile containerRef={localRef} colors={colors} role={creatorMode ? 'HOST' : 'GUEST'} /></> : <>
@@ -994,7 +996,7 @@ export default function LiveStreamScreen({ route, navigation }) {
           </View>}
         </View>
       )}
-      <View pointerEvents="box-none" style={{ position: 'absolute', top: experienceMode === 'video_chat' ? 174 : 88, left: 14, right: 14, bottom: 150 }}>
+      <View pointerEvents="box-none" style={{ position: 'absolute', top: (experienceMode === 'video_chat' ? 174 : 88) + insets.top, left: 14, right: 14, bottom: 150 + insets.bottom }}>
         {floatingRemoteTracks.slice(0, 5).map((item, floatingIndex) => (
           <RemoteVideoTile
             key={item.track.sid}
@@ -1011,7 +1013,7 @@ export default function LiveStreamScreen({ route, navigation }) {
           />
         ))}
       </View>
-      {audioOnlyParticipants.length > 0 && <View style={{ position: 'absolute', top: 86, left: 16, maxWidth: 230, padding: 10, borderRadius: 13, backgroundColor: 'rgba(5,5,11,0.72)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
+      {audioOnlyParticipants.length > 0 && <View style={{ position: 'absolute', top: 86 + insets.top, left: 16, maxWidth: 230, padding: 10, borderRadius: 13, backgroundColor: 'rgba(5,5,11,0.72)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
         {audioOnlyParticipants.slice(0, 3).map((participant) => <Text key={participant.identity} style={{ color: '#FFFFFF', fontSize: 11, marginVertical: 2 }}>{participant.identity === stream.creator_id ? 'HOST' : 'GUEST'} · {participant.name || participant.identity} · Audio only</Text>)}
       </View>}
       <View ref={remoteAudioRef} collapsable={false} style={{ width: 1, height: 1, opacity: 0 }} />
@@ -1020,8 +1022,8 @@ export default function LiveStreamScreen({ route, navigation }) {
       </View>
     </View>
 
-    <View pointerEvents="box-none" style={{ position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 18, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: 'rgba(5,5,11,0.58)' }}>
-      <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 9, backgroundColor: colors.danger }}><Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '900', letterSpacing: 1 }}>● LIVE</Text></View>
+    <View pointerEvents="box-none" style={{ position: 'absolute', top: insets.top, left: 0, right: 0, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 18, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: 'rgba(5,5,11,0.58)' }}>
+      <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 9, backgroundColor: colors.danger }}><Text style={{ color: colors.onDanger, fontSize: 10, fontWeight: '900', letterSpacing: 1 }}>● LIVE</Text></View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '900' }}>{stream.title}</Text>
         <Text numberOfLines={1} style={{ color: 'rgba(255,255,255,0.68)', fontSize: 11, marginTop: 2 }}>{status}</Text>
@@ -1034,11 +1036,11 @@ export default function LiveStreamScreen({ route, navigation }) {
       <Action colors={colors} label={creatorMode ? 'END LIVE' : 'LEAVE'} accessibilityLabel={creatorMode ? 'End LIVE broadcast' : 'Leave LIVE stream'} danger={creatorMode} disabled={busy} onPress={creatorMode ? confirmEnd : leave} />
     </View>
 
-    {!!error && <View pointerEvents="box-none" style={{ position: 'absolute', top: 78, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(100,20,35,0.86)' }}><Text accessibilityRole="alert" style={{ color: '#FFFFFF', fontSize: 12 }}>{error}</Text></View>}
-    {!!stageNotice && <View pointerEvents="box-none" style={{ position: 'absolute', top: 118, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(30,70,90,0.86)' }}><Text accessibilityRole="status" style={{ color: '#FFFFFF', fontSize: 12 }}>{stageNotice}</Text></View>}
-    {guestApproved && !publisherMode && <View pointerEvents="box-none" style={{ position: 'absolute', top: 82, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(30,70,90,0.88)' }}><Text accessibilityRole="status" style={{ color: '#FFFFFF', fontSize: 12 }}>The creator invited you to the LIVE stage. Use the menu to join.</Text></View>}
+    {!!error && <View pointerEvents="box-none" style={{ position: 'absolute', top: insets.top + 78, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(100,20,35,0.86)' }}><Text accessibilityRole="alert" style={{ color: '#FFFFFF', fontSize: 12 }}>{error}</Text></View>}
+    {!!stageNotice && <View pointerEvents="box-none" style={{ position: 'absolute', top: insets.top + 118, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(30,70,90,0.86)' }}><Text accessibilityRole="status" style={{ color: '#FFFFFF', fontSize: 12 }}>{stageNotice}</Text></View>}
+    {guestApproved && !publisherMode && <View pointerEvents="box-none" style={{ position: 'absolute', top: insets.top + 164, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(30,70,90,0.88)' }}><Text accessibilityRole="status" style={{ color: '#FFFFFF', fontSize: 12 }}>The creator invited you to the LIVE stage. Use the menu to join.</Text></View>}
 
-    <View pointerEvents="box-none" style={{ position: 'absolute', left: 14, bottom: 96, width: 'min(390px, 70%)', maxHeight: '42%', gap: 8 }}>
+    <View pointerEvents="box-none" style={{ position: 'absolute', left: 14, bottom: 96 + insets.bottom, width: 'min(390px, 70%)', maxHeight: '42%', gap: 8 }}>
       {commentsVisible && comments.slice(-4).map((item) => <View key={item.id} style={{ alignSelf: 'flex-start', maxWidth: '100%', flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingHorizontal: 11, paddingVertical: 8, borderRadius: 14, backgroundColor: 'rgba(5,5,11,0.68)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
         <Text style={{ color: '#B9A9FF', fontSize: 11, fontWeight: '900' }}>{item.user_name || 'ZannyChat user'}</Text>
         <Text style={{ color: '#FFFFFF', fontSize: 12, flexShrink: 1 }}>{item.body}</Text>
@@ -1047,18 +1049,18 @@ export default function LiveStreamScreen({ route, navigation }) {
       {!comments.length && commentsVisible && <Text style={{ color: 'rgba(255,255,255,0.68)', fontSize: 12, padding: 8 }}>Be the first to say hello.</Text>}
     </View>
 
-    <View pointerEvents="box-none" style={{ position: 'absolute', left: 14, right: 14, bottom: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+    <View pointerEvents="box-none" style={{ position: 'absolute', left: 14, right: 14, bottom: 12 + insets.bottom, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
       <TextInput value={draft} onChangeText={(v) => setDraft(v.slice(0, 500))} maxLength={500} placeholder="Say something kind…" placeholderTextColor="rgba(255,255,255,0.62)" accessibilityLabel="LIVE chat message" style={{ flex: 1, minWidth: 0, color: '#FFFFFF', backgroundColor: 'rgba(8,8,18,0.78)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', borderRadius: 18, paddingHorizontal: 15, paddingVertical: 12 }} />
       <Action colors={colors} label="Send" disabled={busy || !draft.trim()} onPress={sendComment} />
     </View>
 
-    <View pointerEvents="box-none" style={{ position: 'absolute', right: 14, bottom: 150, gap: 8, alignItems: 'center' }}>
+    <View pointerEvents="box-none" style={{ position: 'absolute', right: 14, bottom: 150 + insets.bottom, gap: 8, alignItems: 'center' }}>
       {Object.entries(LIVE_REACTION_EMOJI).map(([reaction, emoji]) => <Action key={reaction} colors={colors} label={emoji} accessibilityLabel={'Send ' + reaction + ' reaction'} onPress={() => react(reaction)} />)}
     </View>
 
     {audioBlocked && <View style={{ position: 'absolute', top: '45%', alignSelf: 'center' }}><Action colors={colors} label="Enable LIVE audio" onPress={() => roomRef.current?.startAudio().then(() => setAudioBlocked(false)).catch((err) => setError(err?.message || 'Audio playback is blocked.'))} /></View>}
 
-    {showOverlayMenu && <View style={{ position: 'absolute', top: 76, right: 14, width: 230, padding: 10, borderRadius: 18, backgroundColor: 'rgba(12,11,24,0.96)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)', gap: 7, zIndex: 20 }}>
+    {showOverlayMenu && <View style={{ position: 'absolute', top: 76 + insets.top, right: 14, width: 230, padding: 10, borderRadius: 18, backgroundColor: 'rgba(12,11,24,0.96)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)', gap: 7, zIndex: 20 }}>
       <Action colors={colors} label={commentsVisible ? 'Hide comments' : 'Show comments'} onPress={() => { setCommentsVisible((value) => !value); setShowOverlayMenu(false); }} />
       {publisherMode && experienceMode !== 'audio_room' && <Action colors={colors} label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={() => { toggleCamera(); setShowOverlayMenu(false); }} />}
       {publisherMode && <Action colors={colors} label={mic ? 'Mute microphone' : 'Unmute microphone'} onPress={() => { toggleMic(); setShowOverlayMenu(false); }} />}
@@ -1076,7 +1078,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       <Action colors={colors} label="Close menu" onPress={() => setShowOverlayMenu(false)} />
     </View>}
 
-    {!!panel && <View style={{ position: 'absolute', top: 82, right: 14, bottom: 92, width: 360, maxWidth: '92%', padding: 14, borderRadius: 20, backgroundColor: 'rgba(12,11,24,0.97)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', zIndex: 18 }}>
+    {!!panel && <View style={{ position: 'absolute', top: 82 + insets.top, right: 14, bottom: 92 + insets.bottom, width: 360, maxWidth: '92%', padding: 14, borderRadius: 20, backgroundColor: 'rgba(12,11,24,0.97)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', zIndex: 18 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '900' }}>{panel === 'stage' ? 'Creator Studio' : panel === 'guestRequests' ? 'Guest requests' : 'LIVE safety reports'}</Text>
         <Action colors={colors} label="Close" onPress={() => setPanel('')} />
@@ -1118,5 +1120,5 @@ export default function LiveStreamScreen({ route, navigation }) {
       </ScrollView>
     </View>}
     {busy && <View pointerEvents="none" style={{ position: 'absolute', top: '50%', alignSelf: 'center' }}><ActivityIndicator color="#FFFFFF" /></View>}
-  </SafeAreaView>;
+  </View>;
 }
