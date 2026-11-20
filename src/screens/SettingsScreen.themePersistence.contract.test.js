@@ -30,4 +30,7 @@ test('theme preference reads cannot overwrite a newer user selection', () => {
   assert.match(theme, /revisionAtStart\.appearance === preferenceRevisionRef\.current\.appearance/);
   assert.match(theme, /revisionAtStart\.accessibility === preferenceRevisionRef\.current\.accessibility/);
   assert.match(theme, /preferenceRevisionRef\.current\.customPalette \+= 1/);
+  assert.match(theme, /const accessibilityPreferencesRef = useRef\(\{ textScale: 'standard', highContrast: false \}\)/);
+  assert.match(theme, /const nextPreferences = \{ \.\.\.accessibilityPreferencesRef\.current, textScale: scaleKey \}/);
+  assert.match(theme, /const nextPreferences = \{ \.\.\.accessibilityPreferencesRef\.current, highContrast: Boolean\(enabled\) \}/);
 });
