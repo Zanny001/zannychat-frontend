@@ -399,11 +399,12 @@ test('web Creator Studio can appoint and remove moderators with creator-only sta
 
 test('LIVE polling pauses in the background, avoids overlapping reads and uses gentler intervals', () => {
   assert.ok(screen.includes('const isAppForeground = () => !AppState.currentState || AppState.currentState === \'active\''));
-  assert.ok(screen.includes('if (!stream?.id || !isAppForeground() || commentsRefreshInFlight.current) return;'));
+  assert.ok(screen.includes('if (!stream?.id || !isAppForeground()) return;'));
+  assert.ok(screen.includes('if (commentsRefreshInFlight.current) { commentsRefreshQueued.current = true; return; }'));
   assert.ok(screen.includes('if (!active || !isAppForeground() || guestStatusRefreshInFlight.current) return;'));
   assert.ok(screen.includes('if (!active || !isAppForeground() || guestRequestsRefreshInFlight.current) return;'));
   assert.ok(screen.includes('if (!active || !isAppForeground() || studioParticipantsRefreshInFlight.current) return;'));
-  assert.ok(screen.includes('setInterval(refreshComments, 6000)'));
+  assert.ok(screen.includes('setInterval(refreshComments, 30_000)'));
   assert.ok(screen.includes('setInterval(checkApproval, 6000)'));
   assert.ok(screen.includes('setInterval(refreshGuestRequests, 5000)'));
   assert.ok(screen.includes('if (!active || !isAppForeground() || room.state !== \'connected\' || !streamId) return;'));
@@ -413,11 +414,12 @@ test('LIVE polling pauses in the background, avoids overlapping reads and uses g
 test('web LIVE polling pauses in hidden tabs and prevents overlapping reads', () => {
   const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.ok(web.includes("const isDocumentVisible = () => typeof document === 'undefined' || document.visibilityState !== 'hidden'"));
-  assert.ok(web.includes('!isDocumentVisible() || commentsRefreshInFlight.current'));
+  assert.ok(web.includes('if (!stream?.id || !isDocumentVisible()) return;'));
+  assert.ok(web.includes('if (commentsRefreshInFlight.current) { commentsRefreshQueued.current = true; return; }'));
   assert.ok(web.includes('!isDocumentVisible() || guestStatusRefreshInFlight.current'));
   assert.ok(web.includes('!isDocumentVisible() || guestRequestsRefreshInFlight.current'));
   assert.ok(web.includes('!isDocumentVisible() || studioParticipantsRefreshInFlight.current'));
-  assert.ok(web.includes('setInterval(refreshComments, 6000)'));
+  assert.ok(web.includes('setInterval(refreshComments, 30_000)'));
   assert.ok(web.includes('setInterval(check, 6000)'));
   assert.ok(web.includes('setInterval(refreshGuestRequests, 5000)'));
   assert.ok(web.includes('if (!active || !isDocumentVisible() || roomRef.current?.state !== \'connected\') return;'));
