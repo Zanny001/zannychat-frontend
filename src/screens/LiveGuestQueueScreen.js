@@ -169,8 +169,8 @@ export default function LiveGuestQueueScreen({ route, navigation }) {
             const busy = busyUserId === item.user_id;
             return <GlassCard key={item.user_id} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                <View style={{ width: 44, height: 44, borderRadius: 15, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="person-outline" size={20} color={colors.primary} />
+                <View style={{ width: 44, height: 44, borderRadius: 15, backgroundColor: item.avatarColor || colors.primary, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text accessibilityLabel={(item.name || 'Guest').trim() + ' avatar'} style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '900' }}>{(item.name || 'G').trim().charAt(0).toUpperCase()}</Text>
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.name || 'ZannyChat viewer'}</Text>

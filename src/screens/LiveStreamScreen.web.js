@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, PanResponder, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, PanResponder, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -83,22 +83,32 @@ function FloatingLocalVideoTile({ containerRef, colors, role }) {
 }
 function RemoteVideoTile({ track, participant, colors, creatorId, spotlight = false, single = false, mainStage = false, floating = false, focused = false, onFocus, floatingIndex = 0 }) {
   const containerRef = useRef(null);
-  const viewport = Dimensions.get('window');
+  const viewport = useWindowDimensions();
   const bounds = { width: Math.max(180, viewport.width - 28), height: Math.max(220, viewport.height - 238) };
   const [frame, setFrame] = useState(() => ({ x: Math.max(0, viewport.width - 28 - 156), y: Math.min(Math.max(0, bounds.height - 208), floatingIndex * 142), width: 156, height: 208 }));
   const frameRef = useRef(frame); frameRef.current = frame;
+  const boundsRef = useRef(bounds); boundsRef.current = bounds;
+  useEffect(() => {
+    setFrame((current) => ({
+      ...current,
+      width: Math.min(current.width, bounds.width),
+      height: Math.min(current.height, bounds.height),
+      x: Math.max(0, Math.min(Math.max(0, bounds.width - Math.min(current.width, bounds.width)), current.x)),
+      y: Math.max(0, Math.min(Math.max(0, bounds.height - Math.min(current.height, bounds.height)), current.y)),
+    }));
+  }, [bounds.width, bounds.height]);
   const gestureOrigin = useRef(frame); const resizeOrigin = useRef(frame);
   const dragResponder = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => false,
     onMoveShouldSetPanResponder: (_event, gesture) => floating && (Math.abs(gesture.dx) > 4 || Math.abs(gesture.dy) > 4),
     onPanResponderGrant: () => { gestureOrigin.current = frameRef.current; },
-    onPanResponderMove: (_event, gesture) => { const origin = gestureOrigin.current; setFrame((current) => ({ ...current, x: Math.max(0, Math.min(bounds.width - current.width, origin.x + gesture.dx)), y: Math.max(0, Math.min(bounds.height - current.height, origin.y + gesture.dy)) })); },
+    onPanResponderMove: (_event, gesture) => { const origin = gestureOrigin.current; setFrame((current) => ({ ...current, x: Math.max(0, Math.min(boundsRef.current.width - current.width, origin.x + gesture.dx)), y: Math.max(0, Math.min(boundsRef.current.height - current.height, origin.y + gesture.dy)) })); },
   })).current;
   const resizeResponder = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => floating,
     onMoveShouldSetPanResponder: () => floating,
     onPanResponderGrant: () => { resizeOrigin.current = frameRef.current; },
-    onPanResponderMove: (_event, gesture) => { const origin = resizeOrigin.current; setFrame((current) => ({ ...current, width: Math.max(116, Math.min(360, Math.min(bounds.width - current.x, origin.width + gesture.dx))), height: Math.max(154, Math.min(480, Math.min(bounds.height - current.y, origin.height + gesture.dy))) })); },
+    onPanResponderMove: (_event, gesture) => { const origin = resizeOrigin.current; setFrame((current) => ({ ...current, width: Math.max(116, Math.min(360, Math.min(boundsRef.current.width - current.x, origin.width + gesture.dx))), height: Math.max(154, Math.min(480, Math.min(boundsRef.current.height - current.y, origin.height + gesture.dy))) })); },
   })).current;
   useEffect(() => {
     const element = track.attach(); element.autoplay = true; element.playsInline = true; element.style.width = '100%'; element.style.height = '100%'; element.style.objectFit = 'cover';
@@ -899,6 +909,7 @@ export default function LiveStreamScreen({ route, navigation }) {
           {experienceMode === 'audio_room' && <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 9, marginTop: 16, maxWidth: 350 }}>
             {localAudioOnly && <View style={{ minWidth: 112, alignItems: 'center', padding: 12, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.28)' }}><Text style={{ fontSize: 34 }}>💺</Text><Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '900', marginTop: 5 }}>YOU · {creatorMode ? 'HOST' : 'GUEST'}</Text></View>}
             {audioOnlyParticipants.map((person) => <View key={person.identity} style={{ minWidth: 112, alignItems: 'center', padding: 12, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' }}><Text style={{ fontSize: 34 }}>💺</Text><Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '900', marginTop: 5, maxWidth: 120 }}>{person.name || person.identity}</Text><Text style={{ color: '#B9C5FF', fontSize: 9, marginTop: 3 }}>{person.identity === stream.creator_id ? 'HOST' : 'GUEST'}</Text></View>)}
+            {Array.from({ length: Math.max(0, 6 - audioOnlyParticipants.length - (localAudioOnly ? 1 : 0)) }, (_, index) => <View key={'open-seat-' + index} accessibilityLabel={'Available LIVE seat ' + (index + 1)} style={{ minWidth: 112, alignItems: 'center', padding: 12, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.035)', borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.30)' }}><Text style={{ fontSize: 34, opacity: 0.65 }}>🪑</Text><Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '900', marginTop: 5 }}>OPEN SEAT</Text><Text style={{ color: 'rgba(255,255,255,0.62)', fontSize: 9, marginTop: 3 }}>Available</Text></View>)}
           </View>}
         </View>
       )}
@@ -992,19 +1003,19 @@ export default function LiveStreamScreen({ route, navigation }) {
             <View style={{ flex: 1, padding: 10, borderRadius: 12, backgroundColor: colors.surfaceAlt }}><Text style={{ color: colors.textPrimary, fontWeight: '900', fontSize: 20 }}>{Math.max(0, 5 - participants.filter((item) => item.joined && item.role === 'guest').length)}</Text><Text style={{ color: colors.textSecondary, fontSize: 11 }}>Open slots</Text></View>
           </View>
           {participants.map((item) => <View key={item.userId} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 7, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border }}>
-            <Text style={{ color: colors.textPrimary, flex: 1, minWidth: 100 }}>{item.name}{item.stage ? ' · On stage' : !item.joined ? ' · offline' : ''}</Text>
+            <View style={{ width: 34, height: 34, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: item.avatarColor || colors.primary }}><Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{(item.name || 'P').trim().charAt(0).toUpperCase()}</Text></View><View style={{ flex: 1, minWidth: 100 }}><Text style={{ color: colors.textPrimary, fontWeight: '800' }}>{item.name}{item.role === 'creator' ? ' · Host' : item.stage ? ' · On stage' : !item.joined ? ' · offline' : ' · Viewer'}</Text><Text style={{ color: colors.textSecondary, fontSize: 10, marginTop: 2 }}>{item.connectionStatus === 'connected' ? 'Connected' : 'Not connected'}{item.microphoneMuted === true ? ' · Mic muted' : item.microphoneMuted === false ? ' · Mic on' : ''}{item.cameraEnabled === true ? ' · Camera on' : item.cameraEnabled === false ? ' · Camera off' : ''}</Text></View>
             {stream.allow_guests && item.joined && item.role === 'viewer' && <Action colors={colors} label={item.guestInvited ? 'Invited' : 'Invite'} disabled={busy || item.guestInvited} onPress={() => inviteGuest(item.userId)} />}
             {item.stage && <Action colors={colors} label={item.microphoneMuted ? 'Unmute' : 'Mute'} onPress={() => muteGuest(item.userId, !item.microphoneMuted)} />}
             {item.stage && <Action colors={colors} label={item.spotlighted ? 'Unspotlight' : 'Spotlight'} onPress={() => spotlightGuest(item.userId, !item.spotlighted)} />}
             {item.stage && <Action colors={colors} label="Move to audience" onPress={() => removeGuest(item.userId)} />}
-            {item.joined && <Action colors={colors} label="Remove from LIVE" danger onPress={() => removeParticipant(item.userId)} />}
-            {(item.moderator || item.joined) && <Action colors={colors} label={item.moderator ? 'Remove moderator' : 'Make moderator'} danger={item.moderator} onPress={() => setModerator(item.userId, !item.moderator)} />}
+            {item.joined && item.role !== 'creator' && <Action colors={colors} label="Remove from LIVE" danger onPress={() => removeParticipant(item.userId)} />}
+            {item.role !== 'creator' && (item.moderator || item.joined) && <Action colors={colors} label={item.moderator ? 'Remove moderator' : 'Make moderator'} danger={item.moderator} onPress={() => setModerator(item.userId, !item.moderator)} />}
           </View>)}
           {!participants.length && <Text style={{ color: colors.textSecondary }}>No connected viewers or guests yet.</Text>}
         </>}
         {panel === 'guestRequests' && creatorMode && <>
           {guestRequests.map((item) => <View key={item.user_id} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border }}>
-            <View style={{ flex: 1, minWidth: 100 }}><Text style={{ color: colors.textPrimary, fontWeight: '800' }}>{item.name || item.user_id}</Text><Text style={{ color: colors.textSecondary, fontSize: 10, marginTop: 2 }}>Requested to join your stage</Text></View>
+            <View style={{ width: 36, height: 36, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: item.avatarColor || colors.primary }}><Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{(item.name || 'G').trim().charAt(0).toUpperCase()}</Text></View><View style={{ flex: 1, minWidth: 100 }}><Text style={{ color: colors.textPrimary, fontWeight: '800' }}>{item.name || item.user_id}</Text><Text style={{ color: colors.textSecondary, fontSize: 10, marginTop: 2 }}>Requested to join your stage</Text></View>
             <Action colors={colors} label="Approve" onPress={() => reviewGuestRequest(item.user_id, 'accepted')} />
             <Action colors={colors} label="Decline" danger onPress={() => reviewGuestRequest(item.user_id, 'declined')} />
           </View>)}

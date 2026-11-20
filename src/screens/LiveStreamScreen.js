@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, AppState, Dimensions, FlatList, KeyboardAvoidingView, PanResponder, Platform, SafeAreaView, StyleSheet, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, FlatList, KeyboardAvoidingView, PanResponder, Platform, SafeAreaView, StyleSheet, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -86,22 +86,32 @@ function FloatingReaction({ item, index, onComplete }) {
 }
 
 function NativeFloatingGuestTile({ track, colors, focused, spotlighted, onFocus, index = 0, creatorId }) {
-  const viewport = Dimensions.get('window');
+  const viewport = useWindowDimensions();
   const bounds = { width: Math.max(180, viewport.width - 24), height: Math.max(180, viewport.height - 370) };
   const [frame, setFrame] = useState(() => ({ x: Math.max(0, bounds.width - 156), y: Math.min(Math.max(0, bounds.height - 208), index * 142), width: 156, height: 208 }));
   const frameRef = useRef(frame); frameRef.current = frame;
+  const boundsRef = useRef(bounds); boundsRef.current = bounds;
+  useEffect(() => {
+    setFrame((current) => ({
+      ...current,
+      width: Math.min(current.width, bounds.width),
+      height: Math.min(current.height, bounds.height),
+      x: Math.max(0, Math.min(Math.max(0, bounds.width - Math.min(current.width, bounds.width)), current.x)),
+      y: Math.max(0, Math.min(Math.max(0, bounds.height - Math.min(current.height, bounds.height)), current.y)),
+    }));
+  }, [bounds.width, bounds.height]);
   const dragOrigin = useRef(frame); const resizeOrigin = useRef(frame);
   const drag = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => false,
     onMoveShouldSetPanResponder: (_event, gesture) => Math.abs(gesture.dx) > 4 || Math.abs(gesture.dy) > 4,
     onPanResponderGrant: () => { dragOrigin.current = frameRef.current; },
-    onPanResponderMove: (_event, gesture) => { const origin = dragOrigin.current; setFrame((current) => ({ ...current, x: Math.max(0, Math.min(bounds.width - current.width, origin.x + gesture.dx)), y: Math.max(0, Math.min(bounds.height - current.height, origin.y + gesture.dy)) })); },
+    onPanResponderMove: (_event, gesture) => { const origin = dragOrigin.current; setFrame((current) => ({ ...current, x: Math.max(0, Math.min(boundsRef.current.width - current.width, origin.x + gesture.dx)), y: Math.max(0, Math.min(boundsRef.current.height - current.height, origin.y + gesture.dy)) })); },
   })).current;
   const resize = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
     onPanResponderGrant: () => { resizeOrigin.current = frameRef.current; },
-    onPanResponderMove: (_event, gesture) => { const origin = resizeOrigin.current; setFrame((current) => ({ ...current, width: Math.max(116, Math.min(360, Math.min(bounds.width - current.x, origin.width + gesture.dx))), height: Math.max(154, Math.min(480, Math.min(bounds.height - current.y, origin.height + gesture.dy))) })); },
+    onPanResponderMove: (_event, gesture) => { const origin = resizeOrigin.current; setFrame((current) => ({ ...current, width: Math.max(116, Math.min(360, Math.min(boundsRef.current.width - current.x, origin.width + gesture.dx))), height: Math.max(154, Math.min(480, Math.min(boundsRef.current.height - current.y, origin.height + gesture.dy))) })); },
   })).current;
   return <View {...drag.panHandlers} style={{ position: 'absolute', left: frame.x, top: frame.y, width: frame.width, height: frame.height, borderRadius: 18, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1.5, borderColor: focused || spotlighted ? colors.accent : 'rgba(255,255,255,0.82)', shadowColor: '#000000', shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 9 }}>
     <VideoTrack trackRef={track} objectFit="cover" style={{ width: '100%', height: '100%' }} />
@@ -248,6 +258,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarn
               {audioRoom && <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 9, marginTop: 18, maxWidth: 340 }}>
                 {hasLocalAudioOnly && <View style={{ minWidth: 112, alignItems: 'center', padding: 12, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: hexToRgba(colors.accent, 0.55) }}><Text style={{ fontSize: 34 }}>💺</Text><Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '900', marginTop: 5 }}>YOU · {creatorMode ? 'HOST' : 'GUEST'}</Text><Text style={{ color: colors.accent, fontSize: 9, marginTop: 3 }}>Speaking seat</Text></View>}
                 {audioOnlyParticipants.map((track) => <View key={track.participant.identity} style={{ minWidth: 112, alignItems: 'center', padding: 12, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.20)' }}><Text style={{ fontSize: 34 }}>💺</Text><Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '900', marginTop: 5, maxWidth: 125 }}>{track.participant.name || track.participant.identity}</Text><Text style={{ color: colors.accent, fontSize: 9, marginTop: 3 }}>{track.participant.identity === creatorId ? 'HOST' : 'GUEST'} · AUDIO</Text></View>)}
+                {Array.from({ length: Math.max(0, 6 - audioOnlyParticipants.length - (hasLocalAudioOnly ? 1 : 0)) }, (_, index) => <View key={'open-seat-' + index} accessibilityLabel={'Available LIVE seat ' + (index + 1)} style={{ minWidth: 112, alignItems: 'center', padding: 12, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.035)', borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.30)' }}><Text style={{ fontSize: 34, opacity: 0.65 }}>🪑</Text><Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '900', marginTop: 5 }}>OPEN SEAT</Text><Text style={{ color: 'rgba(255,255,255,0.62)', fontSize: 9, marginTop: 3 }}>Available</Text></View>)}
               </View>}
               {audioOnlyParticipants.map((track) => (
                 <View key={track.participant.identity} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 13, backgroundColor: hexToRgba(colors.surface, 0.9), borderWidth: 1, borderColor: colors.border }}>
@@ -355,6 +366,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarn
             <Text style={{ color: colors.textPrimary, fontWeight: '900', marginBottom: 6 }}>Guest requests ({guestRequests.length})</Text>
             <FlatList keyboardShouldPersistTaps="handled" data={guestRequests} keyExtractor={(item) => item.user_id} renderItem={({ item }) => (
               <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 7, borderTopWidth: 1, borderTopColor: colors.border }}>
+                <View style={{ width: 32, height: 32, borderRadius: 11, alignItems: 'center', justifyContent: 'center', marginRight: 8, backgroundColor: item.avatarColor || colors.primary }}><Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '900' }}>{(item.name || 'G').trim().charAt(0).toUpperCase()}</Text></View>
                 <View style={{ flex: 1, minWidth: 0 }}><Text numberOfLines={1} style={{ color: colors.textPrimary, fontSize: 12, fontWeight: '800' }}>{item.name || item.user_id}</Text><Text style={{ color: colors.textSecondary, fontSize: 10, marginTop: 2 }}>Requested to join your stage</Text></View>
                 <TouchableOpacity onPress={() => onReviewGuestRequest(item.user_id, 'accepted')} accessibilityRole="button" accessibilityLabel={`Approve LIVE guest request from ${item.name}`}><Text style={{ color: colors.success, fontWeight: '800', fontSize: 11, marginRight: 10 }}>Approve</Text></TouchableOpacity>
                 <TouchableOpacity onPress={() => onReviewGuestRequest(item.user_id, 'declined')} accessibilityRole="button" accessibilityLabel={`Decline LIVE guest request from ${item.name}`}><Text style={{ color: colors.danger, fontWeight: '800', fontSize: 11 }}>Decline</Text></TouchableOpacity>
