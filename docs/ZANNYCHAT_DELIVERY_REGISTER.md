@@ -907,3 +907,14 @@ PR #215 separately corrected Chat Appearance save feedback; PR #217 corrected Th
 
 ### Blocking backend correctness item
 The cross-mode single-active-call invariant gap is documented in section 10 of the Architecture and Security Snapshot and PR #229. No duplicate rows were found at audit time, but the atomic fix needs a migration. The migration file has not been generated because the pinned Supabase CLI was unavailable in this execution environment. Do not fabricate a timestamp or apply production DDL without the user's explicit approval.
+
+## 33. Privacy enforcement audit: newly verified migration-gated gaps
+
+A deeper read-only audit verified that read receipts, online/last-seen visibility, status audiences, direct-call recipient preferences, profile visibility guards and status expiry immutability have server/database enforcement. Column-level grants also prevent clients from changing conversation membership identity/admin fields or message sender/conversation/delete identity.
+
+Three additional gaps are now documented in section 13 of the Architecture and Security Snapshot:
+1. `accept_group_invite` does not enforce `group_invite_permission` or the inviter block check, so forwarded invite links can bypass `Nobody` / `Contacts` preferences.
+2. Group-call invite/create/promotion RPCs do not enforce `call_permission`; one promotion path checks `profile_visibility` instead. Direct calls do enforce `call_permission`, making behavior inconsistent.
+3. Owner updates to `profile_details.avatar_path/cover_path` and `profiles.avatar_url` are not guarded by owner-path/object integrity checks. Current production values are clean (three owner-matching public URLs, one owner-matching private avatar object, no cover paths), but a malicious direct table write can spoof another user's image or cause arbitrary external image fetches.
+
+These join the cross-mode active-call invariant gap in section 31. The remediation spans SECURITY DEFINER functions, trigger functions and table constraints and must be one reviewed migration set with SQL integration tests. No production changes were made. The explicit migration-approval gate remains in force.
