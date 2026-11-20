@@ -195,6 +195,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [replayEnabled, setReplayEnabled] = useState(false);
+  const [replayAvailability, setReplayAvailability] = useState('checking');
   const [replay, setReplay] = useState(null);
   const [replayBusy, setReplayBusy] = useState(false);
   const [camera, setCamera] = useState(mediaVideoEnabled);
@@ -283,12 +284,14 @@ export default function LiveStreamScreen({ route, navigation }) {
   useEffect(() => {
     if (!creatorMode) {
       setReplayEnabled(false);
+      setReplayAvailability('hidden');
       return undefined;
     }
     let active = true;
+    setReplayAvailability('checking');
     backendFetch('/live/replays/config')
-      .then((result) => { if (active) setReplayEnabled(Boolean(result?.enabled)); })
-      .catch(() => { if (active) setReplayEnabled(false); });
+      .then((result) => { if (active) { const enabled = Boolean(result?.enabled); setReplayEnabled(enabled); setReplayAvailability(enabled ? 'enabled' : 'disabled'); } })
+      .catch(() => { if (active) { setReplayEnabled(false); setReplayAvailability('unavailable'); } });
     return () => { active = false; };
   }, [creatorMode]);
 
@@ -1052,6 +1055,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       {moderatorMode && <Action colors={colors} label="Open safety reports workspace" onPress={() => { navigation.navigate('LiveReports', { streamId: stream.id, title: stream.title || 'LIVE stage', canManageParticipants: creatorMode }); setShowOverlayMenu(false); }} />}
       {creatorMode && stream.allow_guests && <Action colors={colors} label={`Guest requests (${guestRequests.length})`} onPress={() => { setPanel(panel === 'guestRequests' ? '' : 'guestRequests'); setShowOverlayMenu(false); }} />}
       {creatorMode && replayEnabled && <Action colors={colors} label={replayBusy ? 'Updating replay…' : replay?.status === 'ready' ? 'Watch saved LIVE replay' : replay?.status === 'recording' ? 'Stop replay' : replay?.status === 'processing' || replay?.status === 'starting' ? 'Preparing replay…' : 'Start replay'} disabled={replayBusy || ['starting', 'processing'].includes(replay?.status)} onPress={() => { replay?.status === 'ready' ? viewReplay() : replay?.status === 'recording' ? stopReplay() : confirmStartReplay(); setShowOverlayMenu(false); }} />}
+      {creatorMode && !replayEnabled && <View accessibilityRole="summary" style={{ paddingHorizontal: 12, paddingVertical: 9, borderRadius: 12, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border }}><Text style={{ color: colors.textPrimary, fontSize: 11, fontWeight: '800' }}>{replayAvailability === 'checking' ? 'Checking replay setup…' : replayAvailability === 'unavailable' ? 'Replay setup could not be checked' : 'Replay recording unavailable'}</Text><Text style={{ color: colors.textSecondary, fontSize: 10, maxWidth: 220 }}>{replayAvailability === 'unavailable' ? 'Try again later. Your LIVE broadcast is unaffected.' : replayAvailability === 'checking' ? 'Please wait' : 'Replay recording is not enabled for this server.'}</Text></View>}
       {moderatorMode && <Action colors={colors} label="Safety reports" onPress={() => { loadReports(); setShowOverlayMenu(false); }} />}
       {!publisherMode && stream.allow_guests && <Action colors={colors} label={guestApproved ? 'Join the stage' : guestStatus === 'requested' ? 'Request pending' : 'Request to join'} disabled={guestStatus === 'requested'} onPress={() => { guestApproved ? joinGuest() : requestGuest(); setShowOverlayMenu(false); }} />}
       {!creatorMode && <Action colors={colors} label="Report LIVE" onPress={() => { report(); setShowOverlayMenu(false); }} />}
