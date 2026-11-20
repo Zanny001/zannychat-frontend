@@ -839,3 +839,8 @@ No worker was manually invoked and no production job, media room, storage object
 5. Continue Phase 2 across the entire app; LIVE PRs #203 and #205–#208 improve the LIVE design language but do not constitute full-app visual acceptance.
 
 No production database, Auth, Storage, deployment or infrastructure mutation was performed by this review.
+
+### Production worker-RPC grant verification
+A read-only production query inspected the definitions and effective grants of the call-notification, media-cleanup, LIVE-event reminder and LIVE-timeout claim/cleanup RPCs. All inspected functions are SECURITY DEFINER with configured search paths and are executable by `service_role` only—not by `anon` or `authenticated`. Call invitation/end and event-reminder claims use `FOR UPDATE SKIP LOCKED`; stale claim recovery windows observed were five minutes, two minutes and ten minutes respectively. LIVE timeout warning claim/release is an atomic stream-row update. Media/call cleanup RPCs perform guarded state transitions and bounded cleanup. See the companion snapshot for exact scope and limitations.
+
+The production `account_storage_cleanup_jobs` table is service-role-only and its allowed states are `held` and `pending`; no persistent processing lease exists. The worker's in-process guard therefore does not coordinate multiple backend processes. Keep this as a conditional hardening candidate—not a confirmed production incident—until actual deployment topology and job lifecycle are verified. No schema or job change was made.
