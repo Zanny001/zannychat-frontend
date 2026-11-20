@@ -113,7 +113,8 @@ export default function LivePremiumHeader({
           }]}>{badge}</Text>
         </View>
       ) : null}
-      {trailing || (onRefresh ? (
+      {trailing}
+      {onRefresh ? (
         <TouchableOpacity
           onPress={onRefresh}
           accessibilityRole="button"
@@ -131,7 +132,7 @@ export default function LivePremiumHeader({
         >
           <Ionicons name="refresh" size={18} color={colors.textSecondary} />
         </TouchableOpacity>
-      ) : null)}
+      ) : null}
     </View>
   );
 }
