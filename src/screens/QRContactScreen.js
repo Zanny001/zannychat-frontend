@@ -12,7 +12,7 @@ import { SUPABASE_ENABLED } from '../services/supabaseClient';
 import { buildContactQr, parseContactQr } from '../utils/contactQr';
 
 export default function QRContactScreen({ navigation, route }) {
-  const { colors, spacing, typography, radii } = useTheme();
+  const { colors, spacing, typography, radii, layout } = useTheme();
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [scanning, setScanning] = useState(false);
@@ -87,7 +87,7 @@ export default function QRContactScreen({ navigation, route }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Connect by QR" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, alignItems: 'center' }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, alignItems: 'center', width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center' }}>
         <Text style={[typography.heading, { color: colors.textPrimary, alignSelf: 'flex-start', marginBottom: spacing.xs }]}>Your contact QR</Text>
         <Text style={[typography.caption, { color: colors.textSecondary, alignSelf: 'flex-start', marginBottom: spacing.md, lineHeight: 20 }]}>Let someone scan this code to start a chat. Only your public profile ID is encoded; never share a recovery link or session token.</Text>
         <GlassCard style={{ width: '100%', alignItems: 'center', marginBottom: spacing.lg }}>
