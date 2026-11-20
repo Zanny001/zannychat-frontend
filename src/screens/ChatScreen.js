@@ -18,6 +18,7 @@ import {
   Linking,
   useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
@@ -127,6 +128,7 @@ export default function ChatScreen({ route, navigation }) {
   const { conversation } = route.params;
   const targetMessageId = route.params?.targetMessageId ? String(route.params.targetMessageId) : null;
   const { colors, spacing, radii, typography, layout } = useTheme();
+  const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const compactHeader = windowWidth < 480;
   const ultraCompactHeader = windowWidth < 380;
@@ -1217,7 +1219,7 @@ export default function ChatScreen({ route, navigation }) {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: resolveChatCanvas(chatCanvasKey, colors.background) }}>
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: resolveChatCanvas(chatCanvasKey, colors.background) }}>
       <Header
         title={display.participant?.name || '…'}
         subtitle={subtitle}
@@ -1697,7 +1699,7 @@ Choose whether to remove this message only from your chat or retract it
       </Modal>
 
       <Modal visible={Boolean(mediaDraft)} animationType="slide" onRequestClose={() => setMediaDraft(null)}>
-        <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: Platform.OS === 'ios' ? 52 : 24, paddingHorizontal: spacing.md, paddingBottom: spacing.lg }}>
+        <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: Math.max(insets.top + spacing.xs, Platform.OS === 'ios' ? 52 : 24), paddingHorizontal: spacing.md, paddingBottom: Math.max(insets.bottom, spacing.lg) }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md }}>
             <TouchableOpacity onPress={() => { setMediaDraft(null); setMediaCaption(''); }} accessibilityRole="button" accessibilityLabel="Discard media draft" style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close" size={26} color={colors.textPrimary} /></TouchableOpacity>
             <Text style={[typography.title, { color: colors.textPrimary }]}>Edit before sending</Text>
@@ -1721,7 +1723,7 @@ Choose whether to remove this message only from your chat or retract it
       <Modal visible={Boolean(fullscreenImage)} transparent animationType="fade" onRequestClose={() => setFullscreenImage(null)}>
         <View style={styles.lightbox}>
           <TouchableOpacity
-            style={[styles.lightboxClose, { right: 60 }]}
+            style={[styles.lightboxClose, { top: Math.max(insets.top + spacing.xs, 56), right: 60 }]}
             onPress={() => handleSaveMedia(fullscreenImage, 'image')}
             hitSlop={16}
             accessibilityLabel="Save image to device"
@@ -1730,7 +1732,7 @@ Choose whether to remove this message only from your chat or retract it
             <Ionicons name="download-outline" size={25} color={colors.onPrimary} />
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.lightboxClose}
+            style={[styles.lightboxClose, { top: Math.max(insets.top + spacing.xs, 56) }]}
             onPress={() => setFullscreenImage(null)}
             hitSlop={16}
             accessibilityLabel="Close fullscreen image"
@@ -1748,7 +1750,7 @@ Choose whether to remove this message only from your chat or retract it
           )}
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
