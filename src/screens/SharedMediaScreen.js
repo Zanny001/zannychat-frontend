@@ -22,7 +22,7 @@ function readableDate(value) {
 
 export default function SharedMediaScreen({ route, navigation }) {
   const { conversation } = route.params;
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, radii, typography, layout } = useTheme();
   const [tab, setTab] = useState('photos');
   const [searchQuery, setSearchQuery] = useState('');
   const [messages, setMessages] = useState([]);
@@ -144,7 +144,7 @@ export default function SharedMediaScreen({ route, navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Shared media" subtitle={conversation.participant?.name || 'Conversation'} onBack={() => navigation.goBack()} />
-      <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md }}>
+      <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         <View style={[styles.tabRail, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.lg }]} accessibilityRole="tablist">
           {TABS.map((item) => {
             const active = tab === item.key;
@@ -188,7 +188,7 @@ export default function SharedMediaScreen({ route, navigation }) {
           maxToRenderPerBatch={12}
           windowSize={7}
           extraData={failedPhotoIds}
-          contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, flexGrow: 1 }}
+          contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, flexGrow: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
           ListHeaderComponent={error ? <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.sm }]}>{error}</Text> : null}
           renderItem={({ item, index }) => {
             if (tab === 'photos') {
