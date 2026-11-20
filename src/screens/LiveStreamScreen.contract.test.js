@@ -551,3 +551,9 @@ test('native in-stage guest approval cards include requester avatar and display 
   assert.ok(screen.includes("(item.name || 'G').trim().charAt(0).toUpperCase()"));
   assert.ok(screen.includes('Requested to join your stage'));
 });
+
+
+test('creator roster distinguishes the host from guest, viewer and moderator roles', () => {
+  const moderation = fs.readFileSync(new URL('./LiveModerationScreen.js', import.meta.url), 'utf8');
+  assert.ok(moderation.includes("item.role === 'creator' ? 'HOST'"));
+});
