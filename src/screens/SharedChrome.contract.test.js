@@ -41,6 +41,6 @@ test('secondary app screens use explicit device-safe top and horizontal insets',
   ]) {
     const source = readFileSync(new URL('./' + name, import.meta.url), 'utf8');
     assert.match(source, /from 'react-native-safe-area-context'/, name + ' must use safe-area-context');
-    assert.match(source, /<SafeAreaView edges=\{\['top', 'left', 'right'\]\}/, name + ' must preserve existing bottom content spacing');
+    assert.match(source, /<SafeAreaView edges=\{\['top', 'left', 'right', 'bottom'\]\}/, name + ' must preserve existing bottom content spacing');
   }
 });
