@@ -508,3 +508,27 @@ test('web LIVE stage exposes creator profile and returns to the profile after Wa
   assert.ok(webScreen.includes('route.params?.returnToCreatorProfile && navigation.canGoBack()'));
   assert.ok(webScreen.includes('returnFromLive();'));
 });
+
+
+test('native and web Audio LIVE Rooms render occupied chairs and explicit available seats', () => {
+  assert.ok(screen.includes("Array.from({ length: Math.max(0, 6 - audioOnlyParticipants.length - (hasLocalAudioOnly ? 1 : 0)) }"));
+  assert.ok(screen.includes('OPEN SEAT'));
+  assert.ok(webScreen.includes("Array.from({ length: Math.max(0, 6 - audioOnlyParticipants.length - (localAudioOnly ? 1 : 0)) }"));
+  assert.ok(webScreen.includes('OPEN SEAT'));
+});
+
+test('LIVE guest request and moderation surfaces render profile identity and media connection state', () => {
+  const guestQueue = fs.readFileSync(new URL('./LiveGuestQueueScreen.js', import.meta.url), 'utf8');
+  const moderation = fs.readFileSync(new URL('./LiveModerationScreen.js', import.meta.url), 'utf8');
+  assert.ok(guestQueue.includes('item.avatarColor || colors.primary'));
+  assert.ok(guestQueue.includes("item.name || 'G'"));
+  assert.ok(moderation.includes('item.avatarColor || colors.primary'));
+  assert.ok(moderation.includes('item.cameraEnabled === true ?'));
+  assert.ok(moderation.includes("item.connectionStatus === 'connected'"));
+  assert.ok(webScreen.includes('item.avatarColor || colors.primary'));
+});
+
+test('LIVE web creator roster cannot remove or appoint the host as a participant', () => {
+  assert.ok(webScreen.includes("item.joined && item.role !== 'creator'"));
+  assert.ok(webScreen.includes("item.role !== 'creator' && (item.moderator || item.joined)"));
+});
