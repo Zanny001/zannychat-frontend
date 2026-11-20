@@ -327,3 +327,34 @@ All nine recurring loops started by `src/index.js` were inspected with their job
 - Workers start only in the `require.main === module` path. Deployment must execute `node src/index.js` (or explicitly start workers from its entrypoint); source inspection alone does not prove the production process is running all nine loops. Render was not inspected per the user's instruction.
 
 No worker was manually invoked and no queue, stream, call, replay, storage job or production state was modified during this review.
+
+
+## 15. Reconciliation against backend privacy/replay fixes — 2026-11-20
+
+The original privacy-gap list in section 13 was written before backend PRs #169–#172 merged. The following status supersedes the affected statements; it does not close the remaining database-boundary or production acceptance work.
+
+### Group invite acceptance — application-layer enforcement added
+
+Backend PR #169 (merged) now resolves the invite token to its creator, checks expiry/revocation/use count, verifies whether the recipient is already a member, and—before calling the service-role `accept_group_invite` RPC—loads the recipient's `group_invite_permission`, shared-conversation membership and bidirectional block rows. The existing `evaluateGroupInvitePrivacy` utility enforces `everyone` / `contacts` / `nobody` and rejects blocks. Backend PR #171 (merged) makes unknown preference values fail closed. Tests cover default, each preference, shared/non-shared contacts, both block directions and invalid preference values.
+
+This is now verified in the trusted backend route, not atomically inside the SQL RPC. A narrow time-of-check/time-of-use interval remains between the route's privacy reads and the RPC's membership insert (for example, a block or preference could change between those operations). A future migration can move the check under the invite-row transaction lock, but is not required to describe the already-merged route fix. No migration was executed for PRs #169/#171.
+
+### Group-call invitation privacy — application-layer enforcement added
+
+Backend PR #170 (merged) adds a shared `evaluateCallInvitePrivacy` helper and checks `call_permission`, shared conversations and bidirectional blocks for direct-call-to-group upgrades, initial group-call invitations, and subsequent group-call invites. Unknown values fail closed. Tests cover `everyone` / `contacts` / `nobody`, shared/non-shared contacts, blocks and invalid values. This supersedes the section 13 statement that all group-call invitation routes omit preference checks.
+
+The checks run in the trusted backend route before service-role RPC calls; they are not yet a single database transaction with the corresponding invite insertion. The cross-mode active-call concurrency gap in section 10 remains separate and unresolved.
+
+### LIVE replay-ready notification deduplication — process-local improvement added
+
+Backend PR #172 (merged) adds a process-local in-flight set and re-reads `notification_sent_at` before sending a replay-ready push, preventing concurrent webhook/recovery finalizers in one Node process from sending duplicate pushes. It also skips notifications when the replay row has disappeared. This improves the section 14 review, but the in-flight set is not a distributed claim: two backend processes can still race between the database read, push send and marker update. Add a durable claim/lease before horizontally scaling the replay worker; no migration was applied by PR #172.
+
+### Still-open privacy and lifecycle items
+
+- Profile avatar/cover storage-path ownership is still not enforced at the database boundary; section 13C remains open.
+- Cross-mode single-active-call enforcement remains a migration-gated design in section 10.
+- Group invite and group-call preference checks are route-enforced but not atomic with the membership/invitation write.
+- Production worker liveness, multi-instance topology and operational alert delivery remain unverified; source logs and GitHub CI do not prove the production process is healthy.
+- The Gas LIVE production incident still requires creator/viewer acceptance after the deployed frontend fix; the stream row checkpoint in section 11 is historical evidence only.
+
+No production migration, SQL, data, storage, auth, infrastructure or cleanup job was changed while reconciling these merged backend fixes.
