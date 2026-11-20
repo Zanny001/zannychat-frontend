@@ -35,3 +35,14 @@ test('notification settings distinguish preference state from confirmed device r
   assert.match(screen, /device is not registered yet/);
   assert.match(screen, /pushActionBusy/);
 });
+
+test('notification preference storage failures are visible and recoverable', () => {
+  const prefs = readFileSync(new URL('../services/notificationPrefs.js', import.meta.url), 'utf8');
+  assert.match(prefs, /getNotificationPrefsPersistenceError/);
+  assert.match(prefs, /could not be saved on this device/);
+  assert.match(screen, /setPersistenceError\(getNotificationPrefsPersistenceError\(\)\)/);
+  assert.match(screen, /SESSION ONLY/ === false ? /Device storage issue/ : /Device storage issue/);
+  assert.match(screen, /accessibilityRole="alert"/);
+  assert.match(screen, /Try saving again/);
+  assert.match(screen, /if \(!saved\) return/);
+});
