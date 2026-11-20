@@ -232,3 +232,26 @@ No identity bypass was found in those four delegated paths. Additional direct-bo
 `get_conversation_profile_directory(uuid[])` requires an authenticated viewer, caps the requested list at 500, and returns only users sharing a conversation with the viewer. It gates avatar URLs through `can_view_profile_avatar` and suppresses online state for blocked pairs or hidden presence. However, unlike `get_contact_directory` and public-profile lookup, it does not filter rows when `profile_visibility = 'nobody'`; it still returns basic conversation identity fields (name, username, avatar color, status). This may be intentional so existing conversation members can identify message participants, but the product meaning of the Edit Profile choice “Who can view your profile: Nobody” must be confirmed against this behavior before calling profile privacy fully certified. No policy, function or data change was made.
 
 The full SECURITY DEFINER audit is not closed: the remaining 24 direct-identity functions still need a complete per-function argument/ownership/membership review and caller-context tests, not merely the direct `auth.uid()` presence check.
+
+## 10. Cross-mode single-active-call invariant — verified gap, 2026-11-20
+
+Read-only source and production schema review found that the single-active-call invariant is enforced for direct-call creation only against other direct `call_sessions`, not against active group-call memberships:
+
+- The `validate_call_session_write` INSERT trigger acquires deterministic per-participant advisory transaction locks and rejects overlapping active/ringing `call_sessions`, but it does not inspect `group_call_participants` joined to active `group_call_rooms`.
+- `join_group_call_room` and `join_direct_call_room` validate room state, invitation/membership, blocks, capacity and rejoin state, but do not reject a user with another active direct call or a joined participant row in another active group-call room.
+- `create_group_call_room` checks group membership, host/invitee blocks, capacity and stale rooms, but does not check whether the host already belongs to another active call. The invite RPC checks invitees for other active calls, but that does not cover the host or join-time races.
+- The schema has a unique active-room-per-conversation index and a unique (room_id,user_id) participant index, but no cross-room active-participant constraint. Direct-call indexes likewise do not enforce a group-call overlap constraint.
+- A read-only production query at audit time found **no current duplicate active group-room memberships, no duplicate active direct call sessions, and no direct-call/group-call overlaps**. This is a latent invariant gap, not evidence of an active production incident.
+
+### Required atomic fix (proposal only; no migration executed)
+
+Use one shared per-user `pg_advisory_xact_lock(hashtextextended(user_id::text, 0))` convention, acquired in sorted UUID order when locking multiple participants. Apply it consistently in:
+
+1. `validate_call_session_write` for direct-call creation, adding an active-group-membership check after locking caller/callee.
+2. `create_group_call_room` for the host's initial joined membership.
+3. `join_group_call_room` and `join_direct_call_room` before transitioning a participant to joined; reject any other non-ended direct call or joined participant row in a different active group room.
+4. `promote_direct_call_to_group_room` for both existing call participants, rejecting any other active group-room membership before the conversion.
+
+Keep current-call exceptions explicit: direct-call promotion may end its own source session, and a direct-call room's own `source_call_id` must not be mistaken for a conflicting active call after promotion. Reuse existing error codes so the backend maps conflicts to a stable HTTP 409 response. Add concurrent integration tests proving two competing joins/starts cannot both succeed for the same user, plus tests for legitimate promotion, leave-then-rejoin, stale-call cleanup and different users joining separate rooms.
+
+This requires a reviewed database migration because the invariant spans multiple SECURITY DEFINER functions and a trigger. Do not apply it to production without the user's explicit migration approval. The local Supabase CLI was not available in the current execution environment, so no migration filename was fabricated; the migration must be generated with the repository's pinned CLI workflow before a PR is opened.
