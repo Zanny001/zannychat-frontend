@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Device from 'expo-device';
@@ -101,7 +102,7 @@ export default function SessionsScreen({ navigation }) {
   const platform = [Device.osName, Device.osVersion].filter(Boolean).join(' ');
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Devices & sessions" onBack={() => navigation.goBack()} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xl, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         <View style={[styles.hero, { backgroundColor: colors.surface, borderColor: hexToRgba(colors.textPrimary, 0.1) }]}>
