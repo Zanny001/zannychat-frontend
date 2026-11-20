@@ -44,8 +44,8 @@ export default function LivePremiumHeader({
         accessibilityRole="button"
         accessibilityLabel={backLabel}
         style={{
-          width: 46,
-          height: 46,
+          width: 48,
+          height: 48,
           borderRadius: 15,
           borderWidth: 1,
           borderColor: colors.border,
