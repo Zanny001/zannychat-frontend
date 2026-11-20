@@ -37,7 +37,8 @@ test('chat retry path preserves failed uploads and cleans the recovery copy afte
   const { readFile } = await import('node:fs/promises');
   const source = await readFile(new URL('../screens/ChatScreen.js', import.meta.url), 'utf8');
   assert.match(source, /preserveAttachmentForRetry\(FileSystem, item, myUserId, conversation\.id\)/);
-  assert.match(source, /if \(!saved && recovery\.preserved\) await removePreservedAttachment\(FileSystem, queuedItem\)/);
+  assert.match(source, /Keep the recovery copy and the in-memory retry item/);
+  assert.doesNotMatch(source, /if \(!saved && recovery\.preserved\) await removePreservedAttachment\(FileSystem, queuedItem\)/);
   assert.match(source, /await removePreservedAttachment\(FileSystem, item\)/);
   assert.match(source, /expo-file-system\/legacy/);
 });

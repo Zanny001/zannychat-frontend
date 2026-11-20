@@ -136,6 +136,7 @@ export default function ChatScreen({ route, navigation }) {
   const [suggestions, setSuggestions] = useState([]);
   const [sendError, setSendError] = useState('');
   const [pendingAttachments, setPendingAttachments] = useState([]);
+  const [pendingAttachmentsError, setPendingAttachmentsError] = useState('');
   const [retryingAttachments, setRetryingAttachments] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -157,14 +158,15 @@ export default function ChatScreen({ route, navigation }) {
     let active = true;
     if (!myUserId) {
       setPendingAttachments([]);
+      setPendingAttachmentsError('');
       return () => { active = false; };
     }
     loadPendingAttachments(myUserId, conversation?.id)
       .then((attachments) => {
-        if (active && activeUserIdRef.current === myUserId) setPendingAttachments(attachments);
+        if (active && activeUserIdRef.current === myUserId) { setPendingAttachments(attachments); setPendingAttachmentsError(''); }
       })
-      .catch(() => {
-        if (active && activeUserIdRef.current === myUserId) setPendingAttachments([]);
+      .catch((error) => {
+        if (active && activeUserIdRef.current === myUserId) setPendingAttachmentsError(error?.message || 'Pending attachment uploads could not be loaded. Retry before changing the queue.');
       });
     return () => { active = false; };
   }, [myUserId, conversation?.id]);
@@ -202,7 +204,7 @@ export default function ChatScreen({ route, navigation }) {
     stickToBottom,
   });
   const {
-    pendingOutbox, retryingOutbox, queuePendingMessage, removeQueuedMessage,
+    pendingOutbox, outboxLoadError, reloadOutbox, retryingOutbox, queuePendingMessage, removeQueuedMessage,
     retryPendingMessages, resetOutbox,
   } = useMessageOutbox({
     conversationId: conversation.id,
@@ -212,6 +214,20 @@ export default function ChatScreen({ route, navigation }) {
     setSendError,
     stickToBottom,
   });
+
+  async function reloadPendingAttachments() {
+    if (!myUserId || !conversation?.id || activeUserIdRef.current !== myUserId) return false;
+    try {
+      const attachments = await loadPendingAttachments(myUserId, conversation.id);
+      if (activeUserIdRef.current !== myUserId) return false;
+      setPendingAttachments(attachments);
+      setPendingAttachmentsError('');
+      return true;
+    } catch (error) {
+      if (activeUserIdRef.current === myUserId) setPendingAttachmentsError(error?.message || 'Pending attachment uploads could not be loaded. Check device storage and retry.');
+      return false;
+    }
+  }
   const resolvedConversationRequestRef = useRef(0);
   const pinnedLoadRequestRef = useRef(0);
 
@@ -240,6 +256,7 @@ export default function ChatScreen({ route, navigation }) {
       setEditing(null);
       resetOutbox();
       setPendingAttachments([]);
+      setPendingAttachmentsError('');
       setRetryingAttachments(false);
       setPinnedMessages([]);
       setSuggestions([]);
@@ -601,12 +618,23 @@ export default function ChatScreen({ route, navigation }) {
     }
     const recovery = await preserveAttachmentForRetry(FileSystem, item, myUserId, conversation.id);
     const queuedItem = recovery.item;
-    const saved = await savePendingAttachment(myUserId, conversation.id, queuedItem);
-    if (!saved && recovery.preserved) await removePreservedAttachment(FileSystem, queuedItem);
-    if (saved) setPendingAttachments((items) => [...items.filter((entry) => entry.id !== queuedItem.id), queuedItem].slice(-20));
+    let saved = false;
+    let storageError = '';
+    try { saved = await savePendingAttachment(myUserId, conversation.id, queuedItem); }
+    catch (saveError) { storageError = saveError?.message || 'The existing attachment queue could not be read safely.'; }
+    if (saved) {
+      setPendingAttachments((items) => [...items.filter((entry) => entry.id !== queuedItem.id), queuedItem].slice(-20));
+      setPendingAttachmentsError('');
+    } else {
+      // Keep the recovery copy and the in-memory retry item. Deleting the only
+      // preserved copy after a failed queue write would turn a storage outage
+      // into irreversible attachment loss.
+      setPendingAttachments((items) => [...items.filter((entry) => entry.id !== queuedItem.id), queuedItem].slice(-20));
+      setPendingAttachmentsError(storageError || 'This attachment is available only for this session because its retry record could not be saved. Keep the chat open and retry device storage.');
+    }
     Alert.alert(
       saved ? 'Attachment waiting to retry' : 'Could not save retry',
-      saved ? `The ${item.kind} upload failed. ${recovery.preserved ? 'A recovery copy was saved in app storage for retries after restarting the app.' : 'The original file must remain available on this device; a durable recovery copy could not be created.'} ${error?.message || ''}`.trim() : 'The upload failed and this device could not save a retry record. Please select the attachment again.'
+      saved ? `The ${item.kind} upload failed. ${recovery.preserved ? 'A recovery copy was saved in app storage for retries after restarting the app.' : 'The original file must remain available on this device; a durable recovery copy could not be created.'} ${error?.message || ''}`.trim() : `The upload failed. ${recovery.preserved ? 'The recovery copy was kept on this device for this session.' : 'Keep the original file available.'} ${storageError || 'Device storage could not save the retry record.'}`.trim()
     );
   }
 
@@ -1437,6 +1465,12 @@ export default function ChatScreen({ route, navigation }) {
           </ScrollView>
         )}
 
+        {pendingAttachmentsError ? (
+          <View accessibilityRole="alert" style={{ marginHorizontal: spacing.md, marginBottom: 8, padding: 10, borderRadius: 12, borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.35), backgroundColor: hexToRgba(colors.danger, 0.08), gap: 6 }}>
+            <Text style={{ color: colors.danger, fontSize: 12 }}>{pendingAttachmentsError}</Text>
+            <TouchableOpacity onPress={reloadPendingAttachments} accessibilityRole="button" accessibilityLabel="Retry loading pending attachments" style={{ alignSelf: 'flex-end', minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 }}><Text style={{ color: colors.primary, fontWeight: '700' }}>Retry loading uploads</Text></TouchableOpacity>
+          </View>
+        ) : null}
         {pendingAttachments.length > 0 ? (
           <View style={{ marginHorizontal: spacing.md, marginBottom: 8, padding: 10, borderRadius: 8, backgroundColor: hexToRgba(colors.accent, 0.10), gap: 8 }}>
             <Text style={{ color: colors.text, fontSize: 13 }}>{pendingAttachments.length} attachment upload{pendingAttachments.length === 1 ? '' : 's'} waiting. Preserved recovery copies are used when available.</Text>
@@ -1460,6 +1494,12 @@ export default function ChatScreen({ route, navigation }) {
           </View>
         ) : null}
 
+        {outboxLoadError ? (
+          <View accessibilityRole="alert" style={{ marginHorizontal: spacing.md, marginBottom: 8, padding: 10, borderRadius: 12, borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.35), backgroundColor: hexToRgba(colors.danger, 0.08), gap: 6 }}>
+            <Text style={{ color: colors.danger, fontSize: 12 }}>{outboxLoadError}</Text>
+            <TouchableOpacity onPress={reloadOutbox} accessibilityRole="button" accessibilityLabel="Retry loading pending messages" style={{ alignSelf: 'flex-end', minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 }}><Text style={{ color: colors.primary, fontWeight: '700' }}>Retry loading messages</Text></TouchableOpacity>
+          </View>
+        ) : null}
         {pendingOutbox.length > 0 ? (
           <View style={{ marginHorizontal: spacing.md, marginBottom: 8, padding: 10, borderRadius: 8, backgroundColor: hexToRgba(colors.accent, 0.10) }}>
             <Text style={{ color: colors.text, fontSize: 13 }}>{pendingOutbox.length} message{pendingOutbox.length === 1 ? '' : 's'} waiting to send. They are saved on this device.</Text>

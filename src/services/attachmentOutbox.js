@@ -14,8 +14,11 @@ export async function loadPendingAttachments(userId, conversationId) {
     if (!key) return [];
     const raw = await AsyncStorage.getItem(key);
     const parsed = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) throw new Error('Saved attachment queue has an unexpected format.');
     return normalizePendingAttachments(parsed);
-  } catch (_) { return []; }
+  } catch (error) {
+    throw new Error('Your pending attachment uploads could not be read from this device. No queued uploads were changed. Check device storage and retry.');
+  }
 }
 
 export async function savePendingAttachment(userId, conversationId, attachment) {
@@ -25,9 +28,9 @@ export async function savePendingAttachment(userId, conversationId, attachment) 
     try {
       const current = await loadPendingAttachments(userId, conversationId);
       const next = normalizePendingAttachments([...current.filter((item) => item.id !== attachment.id), { ...attachment, createdAt: attachment.createdAt || new Date().toISOString() }]);
-      await AsyncStorage.setItem(key, JSON.stringify(next));
-      return true;
-    } catch (_) { return false; }
+      try { await AsyncStorage.setItem(key, JSON.stringify(next)); return true; }
+      catch (_) { return false; }
+    } catch (error) { throw error; }
   });
 }
 
