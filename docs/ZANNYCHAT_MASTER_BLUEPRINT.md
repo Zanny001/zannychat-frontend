@@ -3,7 +3,9 @@
 **Status:** Living source of truth  
 **Owner:** ZannyChat product and engineering  
 **Canonical companion:** [Delivery Register](./ZANNYCHAT_DELIVERY_REGISTER.md)  
-**Last reconciled:** 2026-11-19  
+**Execution sequence:** [Master Execution Phases](./MASTER_EXECUTION_PHASES_20261120.md)  
+**Architecture evidence:** [Architecture and Security Snapshot](./ARCHITECTURE_SECURITY_SNAPSHOT_20261120.md)  
+**Last reconciled:** 2026-11-20  
 **Repositories:** `Zanny001/zannychat-frontend`, `Zanny001/zannychat-backend`
 
 > This document is the durable project charter. Update it when scope, architecture, decisions, or acceptance criteria change. The companion register records execution status and evidence. Neither document may be marked complete from route presence, mockups, static code, or an unverified deployment alone.
@@ -320,3 +322,14 @@ This programme must remain coherent even when a chat session ends, context is sh
 8. Keep one explicit **next action** and one **blocked/pending acceptance** list in the Delivery Register. Resume from those entries and preserve the original screen sequence.
 
 This protocol is mandatory until all in-scope requirements are either accepted in production or explicitly deferred with the user's approval.
+
+
+## 12. Current execution and architecture reconciliation — 2026-11-20
+
+The Master Delivery Register remains the sole status/evidence ledger. The Master Execution Phases document sequences the remaining work; the Architecture and Security Snapshot records the read-only source/production inventory. These documents supplement this Blueprint and do not create competing product scope.
+
+The full-product programme is active again. The earlier LIVE-first pause is superseded by the user’s 2026-11-20 direction to continue all remaining phases. Phase 0 still prioritizes validating the deployed web LIVE crash fix on the existing broadcast; later phases proceed in the dependency order recorded in the execution plan.
+
+The current source parse of `AppNavigator.js` reports 56 unique imported screen modules, 57 stack declarations, 53 unique stack route names and six primary tabs. The canonical 48-experience list remains a product-journey scope inventory, not a module count; reconcile it against current source before changing or accepting coverage.
+
+The 2026-11-20 read-only Supabase inventory reports 69 public tables with RLS enabled, 42 RLS/no-policy tables without direct anon/authenticated table privileges, 76 public SECURITY DEFINER functions (28 authenticated-executable, none anon-executable in the audited set), and 110 applied migration-history rows. See the Architecture and Security Snapshot for details and explicit limitations. No database or infrastructure mutation was performed for this reconciliation.
