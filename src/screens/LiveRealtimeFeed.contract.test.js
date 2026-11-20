@@ -1,10 +1,9 @@
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
-const native = fs.readFileSync(path.join(__dirname, 'LiveStreamScreen.js'), 'utf8');
-const web = fs.readFileSync(path.join(__dirname, 'LiveStreamScreen.web.js'), 'utf8');
+const native = fs.readFileSync(new URL('./LiveStreamScreen.js', import.meta.url), 'utf8');
+const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
 
 test('native and web LIVE clients consume only versioned feed invalidation packets', () => {
   for (const source of [native, web]) {
