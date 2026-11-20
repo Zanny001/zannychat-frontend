@@ -1,5 +1,166 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, AppState, FlatList, KeyboardAvoidingView, PanResponder, Platform, SafeAreaView, StyleSheet, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, FlatList, KeyboardAvoidingView, PanResponder, Platform, StyleSheet, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  interpolate,
+  ReduceMotion,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
+import { Ionicons } from '@expo/vector-icons';
+import { AudioSession, LiveKitRoom, VideoTrack, isTrackReference, useRoomContext, useTracks } from '@livekit/react-native';
+import { RoomEvent, Track } from 'livekit-client';
+import { backendFetch } from '../services/backendClient';
+import { getCurrentUser } from '../services/api';
+import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
+import { useTheme } from '../theme/ThemeContext';
+import { hexToRgba } from '../utils/color';
+import LiveCategoryBackdrop from '../components/LiveCategoryBackdrop';
+import { formatLiveBroadcastTimeRemaining, getLiveBroadcastTimeRemaining, LIVE_BROADCAST_WARNING_MS } from '../utils/liveBroadcastTimeout';
+import { getActiveCreatorStreamId, hasLiveConnectionCredentials } from '../utils/liveCreatorRecovery';
+import { getLiveStageTileFrame } from '../utils/liveStageLayout';
+
+const LIVE_REACTION_EMOJI = Object.freeze({ heart: '❤️', clap: '👏', laugh: '😂', wow: '😮', fire: '🔥', idea: '💡', support: '🙌' });
+const isAppForeground = () => !AppState.currentState || AppState.currentState === 'active';
+
+function isLiveFeedInvalidation(payload, topic) {
+  if (topic !== 'zanny.live.feed.v1' || !payload || payload.length > 512) return false;
+  try {
+    const event = JSON.parse(String.fromCharCode(...Array.from(payload)));
+    return event?.v === 1 && event?.type === 'feed_changed';
+  } catch (_) {
+    return false;
+  }
+}
+
+
+async function chooseNativeAudioOutput() {
+  try {
+    if (Platform.OS === 'ios') {
+      await AudioSession.showAudioRoutePicker();
+      return;
+    }
+    const outputs = await AudioSession.getAudioOutputs();
+    const choices = ['speaker', 'earpiece'].filter((output) => outputs.includes(output));
+    if (!choices.length) {
+      Alert.alert('Audio output', 'No alternate audio output is currently available.');
+      return;
+    }
+    Alert.alert('Audio output', 'Choose where LIVE audio should play.', [
+      ...choices.map((output) => ({
+        text: output === 'speaker' ? 'Speaker' : 'Phone earpiece',
+        onPress: () => AudioSession.selectAudioOutput(output).catch(() => {
+          Alert.alert('Audio output unavailable', 'The selected audio output could not be activated.');
+        }),
+      })),
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  } catch (_) {
+    Alert.alert('Audio output unavailable', 'Could not load available audio outputs.');
+  }
+}
+
+
+function FloatingReaction({ item, index, onComplete }) {
+  const progress = useSharedValue(0);
+  const reducedMotion = useReducedMotion();
+
+  useEffect(() => {
+    progress.set(withTiming(1, {
+      duration: reducedMotion ? 250 : 1800,
+      easing: Easing.linear,
+      reduceMotion: ReduceMotion.System,
+    }, (finished) => {
+      if (finished) scheduleOnRN(onComplete, item.id);
+    }));
+    return () => cancelAnimation(progress);
+  }, [item.id, onComplete, progress, reducedMotion]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    const value = progress.get();
+    return {
+      opacity: interpolate(value, [0, 0.15, 0.8, 1], [0, 1, 1, 0]),
+      transform: [
+        { translateY: interpolate(value, [0, 1], [0, reducedMotion ? 0 : -210]) },
+        { scale: interpolate(value, [0, 0.2, 1], [reducedMotion ? 0.96 : 0.65, 1.2, 1]) },
+      ],
+    };
+  });
+
+  return (
+    <Animated.Text pointerEvents="none" style={[{ position: 'absolute', bottom: 26, left: (15 + (index * 17) % 70) + '%', fontSize: 32 }, animatedStyle]}>
+      {LIVE_REACTION_EMOJI[item.reaction] || LIVE_REACTION_EMOJI.heart}
+    </Animated.Text>
+  );
+}
+
+function NativeFloatingGuestTile({ track, colors, focused, spotlighted, onFocus, index = 0, count = 1, creatorId }) {
+  const viewport = useWindowDimensions();
+  const bounds = { width: Math.max(180, viewport.width - 24), height: Math.max(180, viewport.height - 370) };
+  const [frame, setFrame] = useState(() => getLiveStageTileFrame({ index, count, width: bounds.width, height: bounds.height }));
+  const frameRef = useRef(frame); frameRef.current = frame;
+  const boundsRef = useRef(bounds); boundsRef.current = bounds;
+  useEffect(() => {
+    setFrame(getLiveStageTileFrame({ index, count, width: bounds.width, height: bounds.height }));
+  }, [bounds.width, bounds.height, index, count]);
+  const dragOrigin = useRef(frame); const resizeOrigin = useRef(frame);
+  const drag = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onMoveShouldSetPanResponder: (_event, gesture) => Math.abs(gesture.dx) > 4 || Math.abs(gesture.dy) > 4,
+    onPanResponderGrant: () => { dragOrigin.current = frameRef.current; },
+    onPanResponderMove: (_event, gesture) => { const origin = dragOrigin.current; setFrame((current) => ({ ...current, x: Math.max(0, Math.min(boundsRef.current.width - current.width, origin.x + gesture.dx)), y: Math.max(0, Math.min(boundsRef.current.height - current.height, origin.y + gesture.dy)) })); },
+  })).current;
+  const resize = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderGrant: () => { resizeOrigin.current = frameRef.current; },
+    onPanResponderMove: (_event, gesture) => { const origin = resizeOrigin.current; setFrame((current) => ({ ...current, width: Math.max(116, Math.min(360, Math.min(boundsRef.current.width - current.x, origin.width + gesture.dx))), height: Math.max(154, Math.min(480, Math.min(boundsRef.current.height - current.y, origin.height + gesture.dy))) })); },
+  })).current;
+  return <View {...drag.panHandlers} style={{ position: 'absolute', left: frame.x, top: frame.y, width: frame.width, height: frame.height, borderRadius: 18, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1.5, borderColor: focused || spotlighted ? colors.accent : 'rgba(255,255,255,0.82)', shadowColor: '#000000', shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 9 }}>
+    <VideoTrack trackRef={track} objectFit="cover" style={{ width: '100%', height: '100%' }} />
+    <TouchableOpacity onPress={onFocus} accessibilityRole="button" accessibilityLabel={'Focus LIVE video for ' + (track.participant.name || track.participant.identity)} style={{ position: 'absolute', left: 5, right: 5, bottom: 5, paddingHorizontal: 7, paddingVertical: 6, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.76)' }}><Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800' }}>{track.participant.name || track.participant.identity}</Text><Text style={{ color: '#D9D9E8', fontSize: 8, fontWeight: '800', marginTop: 1 }}>{track.participant.identity === creatorId ? 'HOST' : spotlighted ? '✦ SPOTLIGHT' : 'GUEST'} · DRAG TO MOVE</Text></TouchableOpacity>
+    <View {...resize.panHandlers} accessibilityRole="adjustable" accessibilityLabel={'Resize ' + (track.participant.name || track.participant.identity) + ' video frame'} style={{ position: 'absolute', right: 0, top: 0, width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderBottomLeftRadius: 12, backgroundColor: 'rgba(0,0,0,0.78)' }}><Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '900' }}>↘</Text></View>
+  </View>;
+}
+function LiveMenuAction({ icon, label, accessibilityLabel, onPress, colors, disabled = false, danger = false, loading = false }) {
+  const tint = danger ? colors.danger : colors.primary;
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel || label}
+      accessibilityState={{ disabled, busy: loading }}
+      style={{
+        width: 88,
+        minHeight: 68,
+        paddingHorizontal: 7,
+        paddingVertical: 8,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: danger ? hexToRgba(colors.danger, 0.32) : colors.border,
+        backgroundColor: hexToRgba(colors.surface, 0.94),
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 5,
+        opacity: disabled ? 0.55 : 1,
+      }}
+    >
+      {loading ? <ActivityIndicator size="small" color={tint} /> : <Ionicons name={icon} size={19} color={tint} />}
+      <Text numberOfLines={1} style={{ color: colors.textPrimary, fontSize: 10, fontWeight: '800', textAlign: 'center' }}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarning, timeoutExpired, onOpenCreatorProfile, onOpenGuestQueue, onOpenModeration, onOpenReports, publisherMode, cameraEnabled, microphoneEnabled, onToggleCamera, onToggleMicrophone, moderatorMode, canManageGuests, canRequestGuest, guestApproved, guestRequestStatus, guestRequests, showGuestRequests, title, experienceMode = 'broadcast', category = 'social', comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, onRealtimeFeedSignal, floatingReactions, onRemoveFloatingReaction, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, onInviteGuest, onMuteGuest, onRemoveGuest, onRemoveParticipant, onSpotlightGuest, onDemoteToViewer, replayEnabled, replayAvailability, replayStatus, replayBusy, onStartReplay, onStopReplay, onViewReplay, onRequestGuest, onJoinGuest, onToggleGuestRequests, onReviewGuestRequest, busy }) {
+  import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, AppState, FlatList, KeyboardAvoidingView, PanResponder, Platform, StyleSheet, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -158,6 +319,7 @@ function LiveMenuAction({ icon, label, accessibilityLabel, onPress, colors, disa
 
 function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarning, timeoutExpired, onOpenCreatorProfile, onOpenGuestQueue, onOpenModeration, onOpenReports, publisherMode, cameraEnabled, microphoneEnabled, onToggleCamera, onToggleMicrophone, moderatorMode, canManageGuests, canRequestGuest, guestApproved, guestRequestStatus, guestRequests, showGuestRequests, title, experienceMode = 'broadcast', category = 'social', comments, reports, showReports, participants, showParticipants, draft, setDraft, onComment, onReact, onRealtimeFeedSignal, floatingReactions, onRemoveFloatingReaction, onReport, onHide, onEnd, onToggleReports, onReviewReport, onToggleParticipants, onSetModerator, onInviteGuest, onMuteGuest, onRemoveGuest, onRemoveParticipant, onSpotlightGuest, onDemoteToViewer, replayEnabled, replayAvailability, replayStatus, replayBusy, onStartReplay, onStopReplay, onViewReplay, onRequestGuest, onJoinGuest, onToggleGuestRequests, onReviewGuestRequest, busy }) {
   const { colors, typography } = useTheme();
+  const insets = useSafeAreaInsets();
   const { width: roomViewportWidth } = useWindowDimensions();
   const compactRoomHeader = roomViewportWidth < 390;
   const room = useRoomContext();
@@ -256,7 +418,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarn
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={{ flex: 1, backgroundColor: colors.background }}>
-        <View style={{ position: 'absolute', zIndex: 20, top: Platform.OS === 'android' ? 38 : 52, left: 14, right: 14, padding: 10, borderRadius: 22, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.accent, 0.34), shadowColor: colors.primary, shadowOpacity: 0.16, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 8 }}>
+        <View style={{ position: 'absolute', zIndex: 20, top: Math.max(insets.top + 8, Platform.OS === 'android' ? 38 : 52), left: 14, right: 14, padding: 10, borderRadius: 22, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.accent, 0.34), shadowColor: colors.primary, shadowOpacity: 0.16, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: compactRoomHeader ? 6 : 10 }}>
             <View style={{ backgroundColor: colors.danger, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.4) }}>
               <Text style={[typography.small, { color: colors.onDanger, fontWeight: '900', letterSpacing: 0.5 }]}>● LIVE</Text>
@@ -349,7 +511,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarn
           </View>
         </View>
         {publisherMode && (
-          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, position: 'absolute', left: 14, right: 14, bottom: Platform.OS === 'ios' ? 88 : 92, zIndex: 18, marginHorizontal: 0, marginTop: 0, paddingHorizontal: 10, paddingVertical: 9, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.94), borderWidth: 1, borderColor: colors.border }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, position: 'absolute', left: 14, right: 14, bottom: Math.max(insets.bottom + 54, Platform.OS === 'ios' ? 88 : 92), zIndex: 18, marginHorizontal: 0, marginTop: 0, paddingHorizontal: 10, paddingVertical: 9, borderRadius: 20, backgroundColor: hexToRgba(colors.surface, 0.94), borderWidth: 1, borderColor: colors.border }}>
             {experienceMode !== 'audio_room' && <TouchableOpacity onPress={handleToggleCamera} accessibilityRole="button" accessibilityLabel={cameraEnabled ? 'Turn camera off and keep audio live' : 'Turn camera on'} style={{ minHeight: 48, minWidth: 132, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 12, borderRadius: 14, backgroundColor: cameraEnabled ? hexToRgba(colors.accent, 0.2) : hexToRgba(colors.surface, 0.9), borderWidth: 1, borderColor: colors.border }}>
               <Ionicons name={cameraEnabled ? 'videocam' : 'videocam-off'} size={18} color={colors.textPrimary} />
               <Text style={[typography.small, { color: colors.textPrimary }]}>{cameraEnabled ? 'Camera on' : 'Camera off'}</Text>
@@ -360,7 +522,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarn
             </TouchableOpacity>
           </View>
         )}
-        {showComments && <View style={{ position: 'absolute', left: 14, right: 126, bottom: Platform.OS === 'ios' ? 220 : 224, zIndex: 17, maxHeight: 72, marginHorizontal: 0, marginTop: 0, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 17, backgroundColor: 'rgba(8,9,18,0.52)', borderWidth: 1, borderColor: colors.border }}>
+        {showComments && <View style={{ position: 'absolute', left: 14, right: 126, bottom: Math.max(insets.bottom + 186, Platform.OS === 'ios' ? 220 : 224), zIndex: 17, maxHeight: 72, marginHorizontal: 0, marginTop: 0, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 17, backgroundColor: 'rgba(8,9,18,0.52)', borderWidth: 1, borderColor: colors.border }}>
           <FlatList keyboardShouldPersistTaps="handled" data={comments.slice(-2)} keyExtractor={(item) => item.id} renderItem={({ item }) => (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 }}>
               <Text numberOfLines={1} style={[typography.small, { color: colors.accent, flexShrink: 1, maxWidth: '38%' }]}>{item.user_name || 'ZannyChat user'}</Text>
@@ -370,7 +532,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarn
           )} ListEmptyComponent={<Text style={{ color: colors.textSecondary, paddingVertical: 8 }}>Be the first to say hello.</Text>} />
         </View>}
         {showParticipants && creatorMode && (
-          <View style={{ position: 'absolute', left: 14, right: 14, top: Platform.OS === 'android' ? 100 : 114, zIndex: 30, maxHeight: 280, padding: 15, borderRadius: 21, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.accent, 0.28) }}>
+          <View style={{ position: 'absolute', left: 14, right: 14, top: Math.max(insets.top + 76, Platform.OS === 'android' ? 100 : 114), zIndex: 30, maxHeight: 280, padding: 15, borderRadius: 21, backgroundColor: hexToRgba(colors.surface, 0.97), borderWidth: 1, borderColor: hexToRgba(colors.accent, 0.28) }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <View>
                 <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 17 }]}>Creator Studio</Text>
@@ -448,14 +610,14 @@ function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarn
             )} ListEmptyComponent={<Text style={{ color: colors.textSecondary, fontSize: 12 }}>No reports have been submitted.</Text>} />
           </View>
         )}
-        {showComments && <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 2 }} style={{ position: 'absolute', left: 12, right: 120, bottom: Platform.OS === 'ios' ? 157 : 161, zIndex: 18, paddingHorizontal: 0, paddingTop: 0 }}>
+        {showComments && <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 2 }} style={{ position: 'absolute', left: 12, right: 120, bottom: Math.max(insets.bottom + 123, Platform.OS === 'ios' ? 157 : 161), zIndex: 18, paddingHorizontal: 0, paddingTop: 0 }}>
           {Object.entries(LIVE_REACTION_EMOJI).map(([reaction, emoji]) => (
             <TouchableOpacity key={reaction} disabled={busy} onPress={() => onReact(reaction)} accessibilityRole="button" accessibilityLabel={'Send ' + reaction + ' reaction'} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.surface, 0.92), borderWidth: 1, borderColor: colors.border, paddingHorizontal: 7, borderRadius: 16 }}>
               <Text style={{ fontSize: 20 }}>{emoji}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, position: 'absolute', left: 12, right: 12, bottom: Platform.OS === 'ios' ? 24 : 28, zIndex: 19, marginHorizontal: 0, marginTop: 0, marginBottom: 0, padding: 8, paddingBottom: 8, borderRadius: 20, backgroundColor: 'rgba(8,9,18,0.88)', borderWidth: 1, borderColor: colors.border }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, position: 'absolute', left: 12, right: 12, bottom: Math.max(insets.bottom + 12, Platform.OS === 'ios' ? 24 : 28), zIndex: 19, marginHorizontal: 0, marginTop: 0, marginBottom: 0, padding: 8, paddingBottom: 8, borderRadius: 20, backgroundColor: 'rgba(8,9,18,0.88)', borderWidth: 1, borderColor: colors.border }}>
           <TextInput value={draft} onChangeText={(v) => setDraft(v.slice(0, 500))} maxLength={500} placeholder="Say something kind…" placeholderTextColor={colors.textSecondary} style={{ flex: 1, minWidth: 0, backgroundColor: colors.surfaceAlt, color: colors.textPrimary, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 11 }} />
           <TouchableOpacity disabled={busy || !draft.trim()} onPress={onComment} accessibilityRole="button" accessibilityLabel="Send LIVE comment" style={{ backgroundColor: colors.primary, padding: 12, borderRadius: 14 }}><Ionicons name="send" size={19} color={colors.onPrimary} /></TouchableOpacity>
 
@@ -469,6 +631,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarn
 
 export default function LiveStreamScreen({ route, navigation }) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const initialConnection = route.params?.connection && typeof route.params.connection === 'object' && !Array.isArray(route.params.connection)
     ? route.params.connection
     : null;
@@ -1180,7 +1343,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   return (
     <View style={{ flex: 1, backgroundColor: '#05050A' }}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      {error ? <Text accessibilityRole="alert" style={{ position: 'absolute', zIndex: 40, top: Platform.OS === 'android' ? 88 : 104, left: 14, right: 14, color: '#FFFFFF', backgroundColor: 'rgba(110,18,34,0.82)', padding: 9, borderRadius: 12 }}>{error}</Text> : null}
+      {error ? <Text accessibilityRole="alert" style={{ position: 'absolute', zIndex: 40, top: Math.max(insets.top + 72, Platform.OS === 'android' ? 88 : 104), left: 14, right: 14, color: '#FFFFFF', backgroundColor: 'rgba(110,18,34,0.82)', padding: 9, borderRadius: 12 }}>{error}</Text> : null}
       {stageNotice ? <Text accessibilityRole="status" style={{ position: 'absolute', zIndex: 39, top: Platform.OS === 'android' ? 88 : 104, left: 14, right: 14, color: '#FFFFFF', backgroundColor: 'rgba(20,55,92,0.82)', padding: 9, borderRadius: 12 }}>{stageNotice}</Text> : null}
       {guestApproved && !publisherMode ? <Text accessibilityRole="status" style={{ position: 'absolute', zIndex: 38, top: Platform.OS === 'android' ? 88 : 104, left: 14, right: 14, color: '#FFFFFF', backgroundColor: 'rgba(20,55,92,0.86)', padding: 10, borderRadius: 12 }}>You are invited on stage. Use the join control below when you are ready.</Text> : null}
       <LiveKitRoom key={connection.token} serverUrl={connection.livekitUrl} token={connection.token} connect={true} audio={publisherMode} video={mediaVideoEnabled} options={{ adaptiveStream: true, dynacast: true }} connectOptions={{ autoSubscribe: true }}>
