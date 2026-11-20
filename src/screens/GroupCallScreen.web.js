@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Room, RoomEvent, Track } from 'livekit-client';
 import { backendFetch } from '../services/backendClient';
@@ -320,7 +321,7 @@ export default function GroupCallScreenWeb({ route, navigation }) {
   const remoteVideoTracksView = remoteVideoTracks;
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerCopy}>
           <Text style={[typography.title, { color: colors.textPrimary }]}>{conversationName || 'Group call'}</Text>
