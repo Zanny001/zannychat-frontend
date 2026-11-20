@@ -126,7 +126,7 @@ function dayLabel(isoDay) {
 export default function ChatScreen({ route, navigation }) {
   const { conversation } = route.params;
   const targetMessageId = route.params?.targetMessageId ? String(route.params.targetMessageId) : null;
-  const { colors, spacing, radii, typography } = useTheme();
+  const { colors, spacing, radii, typography, layout } = useTheme();
   const { width: windowWidth } = useWindowDimensions();
   const compactHeader = windowWidth < 480;
   const ultraCompactHeader = windowWidth < 380;
@@ -1270,7 +1270,7 @@ export default function ChatScreen({ route, navigation }) {
       />
 
       {searchOpen && (
-        <View style={[styles.searchPanel, { backgroundColor: colors.background, borderBottomColor: colors.border, paddingHorizontal: spacing.md, paddingVertical: spacing.sm }]}>
+        <View style={[styles.searchPanel, { backgroundColor: colors.background, borderBottomColor: colors.border, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }]}>
           <View style={[styles.searchField, { backgroundColor: hexToRgba(colors.surface, 0.72), borderColor: colors.border, borderRadius: radii.md }]}>
             <Ionicons name="search-outline" size={17} color={colors.textSecondary} />
             <TextInput
@@ -1307,7 +1307,7 @@ export default function ChatScreen({ route, navigation }) {
       )}
 
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={{ flex: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={90}
       >
