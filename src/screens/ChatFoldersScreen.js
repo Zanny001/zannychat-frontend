@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { SafeAreaView, FlatList, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { FlatList, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
@@ -88,7 +89,7 @@ export default function ChatFoldersScreen({ navigation }) {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Chat folders" subtitle="Build your own chat filters" onBack={() => navigation.goBack()} />
       <FlatList
         data={folders}
