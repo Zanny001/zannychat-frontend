@@ -119,6 +119,7 @@ export default function LiveSettingsScreen({ navigation }) {
           <LivePremiumHeader
             navigation={navigation}
             eyebrow="ZANNYCHAT · LIVE PREFERENCES"
+            backLabel="Back to LIVE Hub"
             title="LIVE settings"
             subtitle="Set defaults for your next broadcast"
             icon="options-outline"
