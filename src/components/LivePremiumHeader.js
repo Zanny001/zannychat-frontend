@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
@@ -23,6 +23,8 @@ export default function LivePremiumHeader({
   badge,
 }) {
   const { colors, spacing, typography } = useTheme();
+  const { width: viewportWidth } = useWindowDimensions();
+  const compact = viewportWidth < 380;
   const handleBack = onBack || (() => {
     if (navigation?.canGoBack?.()) navigation.goBack();
     else navigation?.navigate?.('Main', { screen: 'LIVE' });
@@ -55,7 +57,7 @@ export default function LivePremiumHeader({
         <Ionicons name="chevron-back" size={21} color={colors.textPrimary} />
       </TouchableOpacity>
 
-      <View style={{
+      {!compact ? <View style={{
         width: 48,
         height: 48,
         borderRadius: 16,
@@ -76,7 +78,7 @@ export default function LivePremiumHeader({
           backgroundColor: hexToRgba(colors.accent || colors.primary, 0.22),
         }} />
         <Ionicons name={icon} size={21} color={colors.primary} />
-      </View>
+      </View> : null}
 
       <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
         <Text numberOfLines={1} style={[typography.caption, {
@@ -87,7 +89,7 @@ export default function LivePremiumHeader({
         }]}>{eyebrow}</Text>
         <Text numberOfLines={2} style={[typography.heading, {
           color: colors.textPrimary,
-          fontSize: 23,
+          fontSize: compact ? 21 : 23,
           lineHeight: 28,
           flexShrink: 1,
         }]}>{title}</Text>
@@ -97,7 +99,7 @@ export default function LivePremiumHeader({
         }]}>{subtitle}</Text> : null}
       </View>
 
-      {badge ? (
+      {badge && !compact ? (
         <View style={{
           paddingHorizontal: 9,
           paddingVertical: 7,
