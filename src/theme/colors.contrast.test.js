@@ -37,10 +37,12 @@ for (const mode of ['dark', 'light']) {
         }
         assert.ok(contrast(colors.textPrimary, colors.background) >= minimum, label + ' primary text');
         assert.ok(contrast(colors.textSecondary, colors.background) >= minimum, label + ' secondary text');
-        assert.ok(contrast(colors.onPrimary, colors.primary) >= 4.5, label + ' onPrimary');
-        assert.ok(contrast(colors.onAccent, colors.accent) >= 4.5, label + ' onAccent');
-        assert.ok(contrast(colors.onDanger, colors.danger) >= 4.5, label + ' onDanger');
-        assert.ok(contrast(colors.bubbleMineText, colors.bubbleMine) >= 4.5, label + ' own message text');
+        assert.ok(contrast(colors.textPrimary, surface) >= minimum, label + ' primary text on raised surface');
+        assert.ok(contrast(colors.textSecondary, surface) >= minimum, label + ' secondary text on raised surface');
+        assert.ok(contrast(colors.onPrimary, colors.primary) >= minimum, label + ' onPrimary');
+        assert.ok(contrast(colors.onAccent, colors.accent) >= minimum, label + ' onAccent');
+        assert.ok(contrast(colors.onDanger, colors.danger) >= minimum, label + ' onDanger');
+        assert.ok(contrast(colors.bubbleMineText, colors.bubbleMine) >= minimum, label + ' own message text');
       }
     });
   }
