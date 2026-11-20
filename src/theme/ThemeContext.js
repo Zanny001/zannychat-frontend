@@ -28,6 +28,11 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     let active = true;
     const revisionAtStart = { ...preferenceRevisionRef.current };
+    const reportPreferenceLoadIssue = () => {
+      if (!active) return;
+      failedPreferencesRef.current.add('load');
+      setPersistenceError('Some saved appearance preferences could not be read from this device. Your current session remains usable; choose your preferences again.');
+    };
     AsyncStorage.multiGet([MOOD_STORAGE_KEY, APPEARANCE_STORAGE_KEY, ACCESSIBILITY_STORAGE_KEY, CUSTOM_PALETTE_STORAGE_KEY])
       .then((entries) => {
         if (!active) return;
@@ -37,7 +42,8 @@ export function ThemeProvider({ children }) {
           try {
             parsedPalette = normalizeCustomPalette(JSON.parse(saved[CUSTOM_PALETTE_STORAGE_KEY]));
             if (parsedPalette) setCustomPaletteState(parsedPalette);
-          } catch (_) {}
+            else reportPreferenceLoadIssue();
+          } catch (_) { reportPreferenceLoadIssue(); }
         }
         if (revisionAtStart.mood === preferenceRevisionRef.current.mood) {
           if (saved[MOOD_STORAGE_KEY] === 'custom' && (parsedPalette || customPalette)) setMoodKey('custom');
@@ -57,7 +63,7 @@ export function ThemeProvider({ children }) {
             accessibilityPreferencesRef.current = nextPreferences;
             setTextScale(nextPreferences.textScale);
             setHighContrast(nextPreferences.highContrast);
-          } catch (_) {}
+          } catch (_) { reportPreferenceLoadIssue(); }
         }
       })
       .catch(() => {
