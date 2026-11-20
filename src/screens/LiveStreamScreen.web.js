@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, PanResponder, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, PanResponder, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -83,22 +83,32 @@ function FloatingLocalVideoTile({ containerRef, colors, role }) {
 }
 function RemoteVideoTile({ track, participant, colors, creatorId, spotlight = false, single = false, mainStage = false, floating = false, focused = false, onFocus, floatingIndex = 0 }) {
   const containerRef = useRef(null);
-  const viewport = Dimensions.get('window');
+  const viewport = useWindowDimensions();
   const bounds = { width: Math.max(180, viewport.width - 28), height: Math.max(220, viewport.height - 238) };
   const [frame, setFrame] = useState(() => ({ x: Math.max(0, viewport.width - 28 - 156), y: Math.min(Math.max(0, bounds.height - 208), floatingIndex * 142), width: 156, height: 208 }));
   const frameRef = useRef(frame); frameRef.current = frame;
+  const boundsRef = useRef(bounds); boundsRef.current = bounds;
+  useEffect(() => {
+    setFrame((current) => ({
+      ...current,
+      width: Math.min(current.width, bounds.width),
+      height: Math.min(current.height, bounds.height),
+      x: Math.max(0, Math.min(Math.max(0, bounds.width - Math.min(current.width, bounds.width)), current.x)),
+      y: Math.max(0, Math.min(Math.max(0, bounds.height - Math.min(current.height, bounds.height)), current.y)),
+    }));
+  }, [bounds.width, bounds.height]);
   const gestureOrigin = useRef(frame); const resizeOrigin = useRef(frame);
   const dragResponder = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => false,
     onMoveShouldSetPanResponder: (_event, gesture) => floating && (Math.abs(gesture.dx) > 4 || Math.abs(gesture.dy) > 4),
     onPanResponderGrant: () => { gestureOrigin.current = frameRef.current; },
-    onPanResponderMove: (_event, gesture) => { const origin = gestureOrigin.current; setFrame((current) => ({ ...current, x: Math.max(0, Math.min(bounds.width - current.width, origin.x + gesture.dx)), y: Math.max(0, Math.min(bounds.height - current.height, origin.y + gesture.dy)) })); },
+    onPanResponderMove: (_event, gesture) => { const origin = gestureOrigin.current; setFrame((current) => ({ ...current, x: Math.max(0, Math.min(boundsRef.current.width - current.width, origin.x + gesture.dx)), y: Math.max(0, Math.min(boundsRef.current.height - current.height, origin.y + gesture.dy)) })); },
   })).current;
   const resizeResponder = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => floating,
     onMoveShouldSetPanResponder: () => floating,
     onPanResponderGrant: () => { resizeOrigin.current = frameRef.current; },
-    onPanResponderMove: (_event, gesture) => { const origin = resizeOrigin.current; setFrame((current) => ({ ...current, width: Math.max(116, Math.min(360, Math.min(bounds.width - current.x, origin.width + gesture.dx))), height: Math.max(154, Math.min(480, Math.min(bounds.height - current.y, origin.height + gesture.dy))) })); },
+    onPanResponderMove: (_event, gesture) => { const origin = resizeOrigin.current; setFrame((current) => ({ ...current, width: Math.max(116, Math.min(360, Math.min(boundsRef.current.width - current.x, origin.width + gesture.dx))), height: Math.max(154, Math.min(480, Math.min(boundsRef.current.height - current.y, origin.height + gesture.dy))) })); },
   })).current;
   useEffect(() => {
     const element = track.attach(); element.autoplay = true; element.playsInline = true; element.style.width = '100%'; element.style.height = '100%'; element.style.objectFit = 'cover';
