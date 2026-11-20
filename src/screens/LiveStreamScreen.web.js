@@ -998,8 +998,8 @@ export default function LiveStreamScreen({ route, navigation }) {
             {item.stage && <Action colors={colors} label={item.microphoneMuted ? 'Unmute' : 'Mute'} onPress={() => muteGuest(item.userId, !item.microphoneMuted)} />}
             {item.stage && <Action colors={colors} label={item.spotlighted ? 'Unspotlight' : 'Spotlight'} onPress={() => spotlightGuest(item.userId, !item.spotlighted)} />}
             {item.stage && <Action colors={colors} label="Move to audience" onPress={() => removeGuest(item.userId)} />}
-            {item.joined && <Action colors={colors} label="Remove from LIVE" danger onPress={() => removeParticipant(item.userId)} />}
-            {(item.moderator || item.joined) && <Action colors={colors} label={item.moderator ? 'Remove moderator' : 'Make moderator'} danger={item.moderator} onPress={() => setModerator(item.userId, !item.moderator)} />}
+            {item.joined && item.role !== 'creator' && <Action colors={colors} label="Remove from LIVE" danger onPress={() => removeParticipant(item.userId)} />}
+            {item.role !== 'creator' && (item.moderator || item.joined) && <Action colors={colors} label={item.moderator ? 'Remove moderator' : 'Make moderator'} danger={item.moderator} onPress={() => setModerator(item.userId, !item.moderator)} />}
           </View>)}
           {!participants.length && <Text style={{ color: colors.textSecondary }}>No connected viewers or guests yet.</Text>}
         </>}
