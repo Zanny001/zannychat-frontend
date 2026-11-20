@@ -14,7 +14,7 @@ export async function loadPendingAttachments(userId, conversationId) {
     if (!key) return [];
     const raw = await AsyncStorage.getItem(key);
     const parsed = raw ? JSON.parse(raw) : [];
-    if (parsed !== null && !Array.isArray(parsed)) throw new Error('Saved attachment queue has an unexpected format.');
+    if (!Array.isArray(parsed)) throw new Error('Saved attachment queue has an unexpected format.');
     return normalizePendingAttachments(parsed);
   } catch (error) {
     throw new Error('Your pending attachment uploads could not be read from this device. No queued uploads were changed. Check device storage and retry.');
