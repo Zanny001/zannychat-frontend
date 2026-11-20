@@ -2,7 +2,7 @@
 
 **Last audited:** 2026-11-16  
 **Budget constraint:** ₦0; no paid Egress, storage, or hosting is approved.  
-**Production result:** The replay backend, quota ledger, private bucket, creator controls and player exist in source and the database migration is applied. However, the production database and Storage bucket contained **zero replay rows and zero replay objects** at the latest read-only audit. A successful end-to-end recording/playback has therefore not been demonstrated.
+**Production result (refreshed 2026-11-20):** A read-only production query found one replay row in `ready` state and a matching MP4 object in the private `live-replays` bucket. The object is 3,292,044 bytes and the replay duration is 43 seconds. This confirms recording finalization and private storage for at least one replay. Authenticated signed playback, denial for unauthorized viewers, owner deletion and retention cleanup still require end-to-end acceptance.
 
 ## 1. Verified free-tier limits
 
@@ -75,12 +75,13 @@ The backend must fail closed: no public-bucket fallback, no client-side S3 crede
 
 ## 5. Production evidence and unresolved gates
 
-Latest read-only production inspection found:
-- `live_stream_replays`: zero rows.
-- `live-replays` Storage bucket: private, zero objects.
-- The database migration and quota ledger are present.
+Read-only production inspection on 2026-11-20 found:
+- One `live_stream_replays` row with `status='ready'` and `duration_seconds=43`.
+- A matching object exists in the private `live-replays` bucket.
+- Storage metadata reports `video/mp4` and 3,292,044 bytes; the row's `file_size_bytes` matches.
+- The replay migration and quota ledger are present.
 
-This proves the private bucket and replay metadata structure exist; it does **not** prove that Egress can start, the webhook can validate, an MP4 can upload, the row can reach `ready`, or an eligible viewer can play it.
+This proves at least one recording reached ready state and private MP4 storage. It does **not** yet prove the signed URL is playable for an eligible viewer or denied to an ineligible viewer, nor does it prove deletion/retention cleanup. The earlier zero-row/zero-object snapshots are historical and superseded.
 
 Required acceptance sequence:
 
@@ -101,3 +102,10 @@ No paid service or extra infrastructure is required by the design. Do not increa
 
 ---
 **Status:** Implementation exists; production Egress-to-playback acceptance is still open. No claim of successful production replay is made.
+
+
+## Production evidence refresh — 2026-11-20
+
+The latest read-only snapshot also found one active public `video_chat` stream with its creator recorded as joined. The global LIVE snapshot had one active stream and one joined participant. The reaction RPC audit found `record_live_creator_impact(uuid, uuid, text)` installed with a pinned empty `search_path`, service-role-only EXECUTE grants, and no EXECUTE grant to `authenticated` or `anon`. Its migration (`20261114224335`) is present in production history. There were 18 persisted LIVE reactions across the preceding 24 hours, although none belonged to the currently active stream at the time of the focused query.
+
+No production migrations, storage policy changes, or data writes were performed for this evidence refresh. Recheck remaining quota and the existing account's actual plan before additional recording tests; do not enable paid overage or raise the existing application limits.
