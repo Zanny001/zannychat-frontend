@@ -19,7 +19,7 @@ import { parseClockTime } from '../utils/quietHours';
 //     chat's ⋮ menu, and is enforced server-side (a muted conversation
 //     never triggers a push to you at all).
 export default function NotificationsScreen({ navigation }) {
-  const { colors, spacing, typography } = useTheme();
+  const { colors, spacing, typography, layout } = useTheme();
   const [prefs, setPrefs] = useState(getNotificationPrefs());
   const [quietStartDraft, setQuietStartDraft] = useState(getNotificationPrefs().quietHoursStart || '22:00');
   const [quietEndDraft, setQuietEndDraft] = useState(getNotificationPrefs().quietHoursEnd || '08:00');
@@ -128,7 +128,7 @@ export default function NotificationsScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Notifications" onBack={() => navigation.goBack()} />
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg }}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         <GlassCard style={{ marginBottom: spacing.md }}>
           <PrefRow
             icon="notifications-outline"
