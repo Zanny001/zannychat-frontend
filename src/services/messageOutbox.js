@@ -6,13 +6,19 @@ import { getSafeRetryError, normalizeSafeRetryError } from '../utils/safeRetryEr
 
 const keyFor = getMessageOutboxStorageKey;
 
+async function readQueue(key) {
+  const raw = await AsyncStorage.getItem(key);
+  const parsed = raw ? JSON.parse(raw) : [];
+  if (parsed !== null && !Array.isArray(parsed)) throw new Error('Saved message queue has an unexpected format.');
+  return normalizePendingMessages(parsed);
+}
+
 export async function savePendingMessage(userId, conversationId, message) {
   if (!conversationId || !message?.requestId || !String(message.text || '').trim()) return false;
   const key = keyFor(userId, conversationId);
   return serializeByKey(key, async () => {
     try {
-      const current = await AsyncStorage.getItem(key);
-      const queue = normalizePendingMessages(current ? JSON.parse(current) : []);
+      const queue = await readQueue(key);
       const alreadyQueued = queue.some((item) => item.requestId === message.requestId);
       const next = queue.filter((item) => item.requestId !== message.requestId);
       // Never report a successful save if the bounded queue cannot retain this new message.
@@ -27,10 +33,10 @@ export async function savePendingMessage(userId, conversationId, message) {
 export async function loadPendingMessages(userId, conversationId) {
   if (!conversationId) return [];
   try {
-    const raw = await AsyncStorage.getItem(keyFor(userId, conversationId));
-    const parsed = raw ? JSON.parse(raw) : [];
-    return normalizePendingMessages(parsed);
-  } catch (_) { return []; }
+    return await readQueue(keyFor(userId, conversationId));
+  } catch (error) {
+    throw new Error('Your pending messages could not be read from this device. No queued messages were changed. Check device storage and retry.');
+  }
 }
 
 export async function removePendingMessage(userId, conversationId, requestId) {
@@ -38,10 +44,7 @@ export async function removePendingMessage(userId, conversationId, requestId) {
   const key = keyFor(userId, conversationId);
   return serializeByKey(key, async () => {
     try {
-      const raw = await AsyncStorage.getItem(key);
-      const parsed = raw ? JSON.parse(raw) : [];
-      // Normalize legacy/corrupt storage on every mutation, not only on load.
-      const next = normalizePendingMessages(parsed).filter((item) => item.requestId !== requestId);
+      const next = (await readQueue(key)).filter((item) => item.requestId !== requestId);
       if (next.length) await AsyncStorage.setItem(key, JSON.stringify(next));
       else await AsyncStorage.removeItem(key);
       return true;
@@ -54,10 +57,7 @@ export async function recordMessageRetryFailure(userId, conversationId, requestI
   const key = keyFor(userId, conversationId);
   return serializeByKey(key, async () => {
     try {
-      const raw = await AsyncStorage.getItem(key);
-      const parsed = raw ? JSON.parse(raw) : [];
-      // Retry diagnostics must never re-persist malformed or duplicate records.
-      const normalized = normalizePendingMessages(parsed);
+      const normalized = await readQueue(key);
       let found = false;
       const next = normalized.map((item) => {
         if (item.requestId !== requestId) return item;
