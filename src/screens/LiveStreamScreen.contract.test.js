@@ -328,7 +328,9 @@ test('native LIVE stage uses a premium horizontally scrollable action rail on co
   assert.ok(screen.includes('StyleSheet.absoluteFillObject'));
   assert.ok(screen.includes('showOverlayMenu && <ScrollView'));
   assert.ok(screen.includes('width: 48, height: 48'));
-  assert.ok(screen.includes('minWidth: 48, minHeight: 48'));
+  assert.ok(screen.includes('width: 88,\n        minHeight: 68'));
+  assert.ok(screen.includes('accessibilityRole="button"'));
+  assert.ok(screen.includes('accessibilityState={{ disabled, busy: loading }}'));
   assert.equal(screen.includes('minWidth: 48, height: 44'), false);
   assert.ok(screen.includes("borderColor: hexToRgba(colors.accent, 0.28)"));
   assert.ok(screen.includes("accessibilityLabel={creatorMode ? 'End LIVE stream' : 'Leave LIVE stream'}"));
@@ -558,4 +560,22 @@ test('native in-stage guest approval cards include requester avatar and display 
 test('creator roster distinguishes the host from guest, viewer and moderator roles', () => {
   const moderation = fs.readFileSync(new URL('./LiveModerationScreen.js', import.meta.url), 'utf8');
   assert.ok(moderation.includes("item.role === 'creator' ? 'HOST'"));
+});
+
+
+test('native and web LIVE stages expose server-derived role hierarchy and labelled premium controls', () => {
+  assert.ok(screen.includes('function LiveMenuAction('));
+  assert.ok(screen.includes('const compactRoomHeader = roomViewportWidth < 390;'));
+  assert.ok(screen.includes('useWindowDimensions'));
+  assert.ok(screen.includes("label=\"Guest queue\""));
+  assert.ok(screen.includes("label=\"Moderation\""));
+  assert.ok(screen.includes("label=\"Participants\""));
+  assert.ok(screen.includes("label=\"Audio output\""));
+  assert.ok(screen.includes("label={replayStatus === 'ready' ? 'Watch replay'"));
+  assert.ok(screen.includes("creatorMode ? 'HOST' : publisherMode ? 'GUEST' : moderatorMode ? 'MODERATOR' : 'VIEWER'"));
+  assert.ok(screen.includes("color: colors.textPrimary, flex: 1, minWidth: 0"));
+  assert.ok(webScreen.includes("label=\"Tools\""));
+  assert.ok(webScreen.includes('const compactRoomHeader = roomViewportWidth < 390;'));
+  assert.ok(webScreen.includes('useWindowDimensions'));
+  assert.ok(webScreen.includes("creatorMode ? 'HOST' : publisherMode ? 'GUEST' : moderatorMode ? 'MODERATOR' : 'VIEWER'"));
 });
