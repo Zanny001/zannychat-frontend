@@ -332,35 +332,77 @@ export default function LiveEventsScreen({ navigation }) {
             <Text style={[typography.bodyStrong,{color:colors.textPrimary}]}>No upcoming Events yet</Text>
             <Text style={[typography.caption,{color:colors.textSecondary,textAlign:'center'}]}>Schedule a LIVE Event or follow creators to discover their next gathering.</Text>
           </GlassCard>}
-          {events.map((event)=><GlassCard key={event.id} contentStyle={{padding:spacing.md,gap:spacing.sm}}>
-            <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:spacing.sm}}>
-              <Text style={[typography.caption,{color:colors.primary,fontWeight:'900',letterSpacing:0.8}]}>{event.category.toUpperCase()} · {event.visibility.toUpperCase()}</Text>
-              <Text style={[typography.caption,{color:colors.textSecondary}]}>{event.attendeeCount}/{event.maxAttendees} going</Text>
-            </View>
-            <Text style={[typography.bodyStrong,{color:colors.textPrimary,fontSize:17}]}>{event.title}</Text>
-            {!!event.description&&<Text style={[typography.caption,{color:colors.textSecondary,lineHeight:19}]}>{event.description}</Text>}
-            <View style={{flexDirection:'row',alignItems:'center',gap:7}}>
-              <Ionicons name="time-outline" size={16} color={colors.primary}/>
-              <Text style={[typography.caption,{color:colors.textSecondary}]}>{formatDate(event.startsAt)} · {event.durationMinutes} min</Text>
-            </View>
-            <Text style={[typography.caption,{color:colors.textSecondary}]}>Hosted by {event.creator?.name||'LIVE Creator'}</Text>
-            {event.creatorId===currentUserId
-              ? <View style={{gap:spacing.xs}}>
-                  <TouchableOpacity disabled={busy} onPress={()=>beginEdit(event)} accessibilityRole="button" accessibilityLabel={'Edit LIVE Event '+event.title} style={{minHeight:42,borderWidth:1,borderColor:colors.border,borderRadius:13,alignItems:'center',justifyContent:'center'}}>
-                    <Text style={[typography.caption,{color:colors.primary,fontWeight:'900'}]}>Edit Event</Text>
-                  </TouchableOpacity>
-                  {canStartEvent(event)&&<TouchableOpacity disabled={busy} onPress={()=>startEvent(event)} accessibilityRole="button" accessibilityLabel={'Start LIVE for '+event.title} style={{minHeight:46,borderRadius:14,backgroundColor:colors.primary,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:8}}>
-                    <Ionicons name="radio" size={17} color={colors.onPrimary}/>
-                    <Text style={[typography.caption,{color:colors.onPrimary,fontWeight:'900'}]}>Start LIVE from Event</Text>
-                  </TouchableOpacity>}
-                  <TouchableOpacity disabled={busy} onPress={()=>cancelEvent(event)} accessibilityRole="button" accessibilityLabel={'Cancel LIVE Event '+event.title} style={{minHeight:42,borderWidth:1,borderColor:colors.danger,borderRadius:13,alignItems:'center',justifyContent:'center'}}>
-                    <Text style={[typography.caption,{color:colors.danger,fontWeight:'900'}]}>Cancel Event</Text>
-                  </TouchableOpacity>
+          {events.map((event) => {
+            const startsAt = new Date(event.startsAt);
+            const validStart = Number.isFinite(startsAt.getTime());
+            const attendeeCount = Math.max(0, Number(event.attendeeCount) || 0);
+            const maxAttendees = Math.max(1, Number(event.maxAttendees) || 1);
+            const capacityPercent = Math.min(100, Math.round((attendeeCount / maxAttendees) * 100));
+            const visibilityLabel = event.visibility === 'private' ? 'INVITE ONLY' : event.visibility === 'followers' ? 'FOLLOWERS' : 'PUBLIC';
+            return (
+              <GlassCard key={event.id} contentStyle={{padding:spacing.md,gap:spacing.md}}>
+                <View style={{flexDirection:'row',alignItems:'flex-start',gap:spacing.md}}>
+                  <View style={{width:66,minHeight:82,borderRadius:17,borderWidth:1,borderColor:hexToRgba(colors.primary,0.3),backgroundColor:hexToRgba(colors.primary,0.10),alignItems:'center',justifyContent:'center',paddingVertical:spacing.xs}}>
+                    <Text style={[typography.caption,{color:colors.primary,fontWeight:'900',fontSize:9,letterSpacing:0.8}]}>{validStart?startsAt.toLocaleString(undefined,{month:'short'}).toUpperCase():'DATE'}</Text>
+                    <Text style={[typography.heading,{color:colors.textPrimary,fontSize:27,lineHeight:31}]}>{validStart?startsAt.getDate():'—'}</Text>
+                    <Text style={[typography.caption,{color:colors.textSecondary,fontWeight:'800',fontSize:9}]}>{validStart?startsAt.toLocaleString(undefined,{weekday:'short'}).toUpperCase():'TBD'}</Text>
+                  </View>
+                  <View style={{flex:1,minWidth:0,gap:spacing.xs}}>
+                    <View style={{flexDirection:'row',flexWrap:'wrap',alignItems:'center',gap:6}}>
+                      <View style={{paddingHorizontal:8,paddingVertical:5,borderRadius:9,backgroundColor:hexToRgba(colors.primary,0.12)}}>
+                        <Text style={[typography.caption,{color:colors.primary,fontWeight:'900',fontSize:9,letterSpacing:0.55}]}>{(event.category||'social').toUpperCase()}</Text>
+                      </View>
+                      <View style={{paddingHorizontal:8,paddingVertical:5,borderRadius:9,borderWidth:1,borderColor:colors.border}}>
+                        <Text style={[typography.caption,{color:colors.textSecondary,fontWeight:'800',fontSize:9,letterSpacing:0.4}]}>{visibilityLabel}</Text>
+                      </View>
+                    </View>
+                    <Text style={[typography.bodyStrong,{color:colors.textPrimary,fontSize:18,lineHeight:24}]}>{event.title}</Text>
+                    {!!event.description&&<Text style={[typography.caption,{color:colors.textSecondary,lineHeight:19}]}>{event.description}</Text>}
+                  </View>
                 </View>
-              : <TouchableOpacity disabled={busy||(event.rsvpStatus!=='going'&&event.attendeeCount>=event.maxAttendees)} onPress={()=>toggleRsvp(event)} accessibilityRole="button" accessibilityLabel={event.rsvpStatus==='going'?'Cancel RSVP for '+event.title:'Reserve a place at '+event.title} accessibilityState={{disabled:busy||event.rsvpStatus==='going'||event.attendeeCount>=event.maxAttendees}} style={{minHeight:44,borderRadius:13,backgroundColor:event.rsvpStatus==='going'?colors.surface:colors.primary,borderWidth:event.rsvpStatus==='going'?1:0,borderColor:colors.border,alignItems:'center',justifyContent:'center'}}>
-                  <Text style={[typography.caption,{color:event.rsvpStatus==='going'?colors.textSecondary:colors.onPrimary,fontWeight:'900'}]}>{event.rsvpStatus==='going'?'Cancel my RSVP':event.attendeeCount>=event.maxAttendees?'Event full':'Reserve my place'}</Text>
-                </TouchableOpacity>}
-          </GlassCard>)}
+                <View style={{flexDirection:'row',alignItems:'center',gap:7,paddingTop:spacing.xs,borderTopWidth:1,borderTopColor:colors.border}}>
+                  <Ionicons name="time-outline" size={16} color={colors.primary}/>
+                  <Text style={[typography.caption,{color:colors.textSecondary,flex:1}]}>{formatDate(event.startsAt)} · {event.durationMinutes} min</Text>
+                </View>
+                <View style={{gap:7}}>
+                  <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:spacing.sm}}>
+                    <View style={{flexDirection:'row',alignItems:'center',gap:7,flex:1,minWidth:0}}>
+                      <View style={{width:28,height:28,borderRadius:10,backgroundColor:hexToRgba(colors.accent||colors.primary,0.12),alignItems:'center',justifyContent:'center'}}>
+                        <Ionicons name="person-outline" size={14} color={colors.primary}/>
+                      </View>
+                      <Text numberOfLines={1} style={[typography.caption,{color:colors.textSecondary,flex:1}]}>Hosted by {event.creator?.name||'LIVE Creator'}</Text>
+                    </View>
+                    <Text style={[typography.caption,{color:colors.textPrimary,fontWeight:'900'}]}>{attendeeCount}/{maxAttendees}</Text>
+                  </View>
+                  <View accessibilityRole="progressbar" accessibilityLabel="Event attendance capacity" accessibilityValue={{min:0,max:100,now:capacityPercent}} style={{height:5,borderRadius:4,backgroundColor:colors.border,overflow:'hidden'}}>
+                    <View style={{height:5,width:capacityPercent+'%',borderRadius:4,backgroundColor:capacityPercent>=100?colors.warning:colors.primary}}/>
+                  </View>
+                  <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+                    <Text style={[typography.caption,{color:colors.textSecondary}]}>{attendeeCount} {attendeeCount===1?'person':'people'} going</Text>
+                    <Text style={[typography.caption,{color:capacityPercent>=100?colors.warning:colors.textSecondary,fontWeight:'800'}]}>{capacityPercent>=100?'FULL':capacityPercent+'% RESERVED'}</Text>
+                  </View>
+                </View>
+                {event.creatorId===currentUserId
+                  ? <View style={{gap:spacing.xs}}>
+                      <View style={{flexDirection:'row',gap:spacing.xs}}>
+                        <TouchableOpacity disabled={busy} onPress={()=>beginEdit(event)} accessibilityRole="button" accessibilityLabel={'Edit LIVE Event '+event.title} style={{flex:1,minHeight:46,borderWidth:1,borderColor:colors.border,borderRadius:13,alignItems:'center',justifyContent:'center'}}>
+                          <Text style={[typography.caption,{color:colors.primary,fontWeight:'900'}]}>Edit Event</Text>
+                        </TouchableOpacity>
+                        {canStartEvent(event)&&<TouchableOpacity disabled={busy} onPress={()=>startEvent(event)} accessibilityRole="button" accessibilityLabel={'Start LIVE for '+event.title} style={{flex:1,minHeight:46,borderRadius:14,backgroundColor:colors.primary,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:8}}>
+                          <Ionicons name="radio" size={17} color={colors.onPrimary}/>
+                          <Text style={[typography.caption,{color:colors.onPrimary,fontWeight:'900'}]}>Start LIVE</Text>
+                        </TouchableOpacity>}
+                      </View>
+                      <TouchableOpacity disabled={busy} onPress={()=>cancelEvent(event)} accessibilityRole="button" accessibilityLabel={'Cancel LIVE Event '+event.title} style={{minHeight:42,borderWidth:1,borderColor:hexToRgba(colors.danger,0.4),borderRadius:13,alignItems:'center',justifyContent:'center'}}>
+                        <Text style={[typography.caption,{color:colors.danger,fontWeight:'900'}]}>Cancel Event</Text>
+                      </TouchableOpacity>
+                    </View>
+                  : <TouchableOpacity disabled={busy||(event.rsvpStatus!=='going'&&attendeeCount>=maxAttendees)} onPress={()=>toggleRsvp(event)} accessibilityRole="button" accessibilityLabel={event.rsvpStatus==='going'?'Cancel RSVP for '+event.title:'Reserve a place at '+event.title} accessibilityState={{disabled:busy||(event.rsvpStatus!=='going'&&attendeeCount>=maxAttendees)}} style={{minHeight:48,borderRadius:14,backgroundColor:event.rsvpStatus==='going'?colors.surface:colors.primary,borderWidth:event.rsvpStatus==='going'?1:0,borderColor:colors.border,alignItems:'center',justifyContent:'center'}}>
+                      <Text style={[typography.caption,{color:event.rsvpStatus==='going'?colors.textSecondary:colors.onPrimary,fontWeight:'900'}]}>{event.rsvpStatus==='going'?'Cancel my RSVP':attendeeCount>=maxAttendees?'Event full':'Reserve my place'}</Text>
+                    </TouchableOpacity>}
+              </GlassCard>
+            );
+          })}
         </View>
         </View>
       </ScrollView>
