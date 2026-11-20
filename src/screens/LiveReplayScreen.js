@@ -6,6 +6,7 @@ import { backendFetch } from '../services/backendClient';
 import { getCurrentUser } from '../services/api';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
+import LivePremiumHeader from '../components/LivePremiumHeader';
 import { hexToRgba } from '../utils/color';
 import { confirmAction, showAppAlert } from '../utils/appDialogs';
 
@@ -103,15 +104,16 @@ export default function LiveReplayScreen({ route, navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar barStyle={resolvedMode === 'dark' ? 'light-content' : 'dark-content'} />
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Go back from LIVE replay" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
-          <Ionicons name="arrow-back" size={21} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.2 }]}>ZANNYCHAT · LIVE ARCHIVE</Text>
-          <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 16, marginTop: 2 }]}>{replay?.streamTitle || 'LIVE replay'}</Text>
-        </View>
-        {replay?.creatorId && replay.creatorId === currentUserId ? (
+      <LivePremiumHeader
+        navigation={navigation}
+        eyebrow="ZANNYCHAT · LIVE ARCHIVE"
+        backLabel="Go back from LIVE replay"
+        title={replay?.streamTitle || 'LIVE replay'}
+        subtitle="Secure creator recording · seven-day expiry"
+        icon="play-circle-outline"
+        onRefresh={() => setAttempt((value) => value + 1)}
+        refreshLabel="Refresh LIVE replay link"
+        trailing={replay?.creatorId && replay.creatorId === currentUserId ? (
           <TouchableOpacity onPress={async () => {
             const confirmed = await confirmAction({ title: 'Delete LIVE replay?', message: 'This permanently deletes the saved video.', confirmText: 'Delete' });
             if (!confirmed) return;
@@ -121,14 +123,11 @@ export default function LiveReplayScreen({ route, navigation }) {
             } catch (e) {
               showAppAlert('Could not delete replay', e?.message || 'Please try again.');
             }
-          }} accessibilityRole="button" accessibilityLabel="Delete this LIVE replay" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.danger + '55' }}>
+          }} accessibilityRole="button" accessibilityLabel="Delete this LIVE replay" style={{ width: 46, height: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.danger + '55' }}>
             <Ionicons name="trash-outline" size={19} color={colors.danger} />
           </TouchableOpacity>
         ) : null}
-        <TouchableOpacity onPress={() => setAttempt((value) => value + 1)} accessibilityRole="button" accessibilityLabel="Refresh LIVE replay link" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
-          <Ionicons name="refresh-outline" size={20} color={colors.accent} />
-        </TouchableOpacity>
-      </View>
+/>
 
       <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 22, gap: 18 }}>
         {playbackUrl && !error ? (
