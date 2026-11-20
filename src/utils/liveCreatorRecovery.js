@@ -4,3 +4,8 @@ export function getActiveCreatorStreamId(profile) {
     && typeof stream.id === 'string' && stream.id.trim().length > 0);
   return active ? active.id : null;
 }
+
+
+export function hasLiveConnectionCredentials(connection) {
+  return Boolean(connection?.stream?.id && connection?.token && connection?.livekitUrl);
+}
