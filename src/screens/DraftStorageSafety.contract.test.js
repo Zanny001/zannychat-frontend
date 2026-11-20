@@ -26,3 +26,9 @@ test('drafts library screen can display storage failures and retry without showi
   assert.match(screen, /Your drafts could not be loaded/);
   assert.match(screen, /Retry loading drafts/);
 });
+
+
+test('draft library clears stale in-memory rows when the device storage read fails', () => {
+  const screen = read('./DraftsScreen.js');
+  assert.match(screen, /catch \(_\) \{\s*setDrafts\(\[\]\);\s*setConversations\(\[\]\);\s*setError\('Your drafts could not be loaded/);
+});
