@@ -44,8 +44,8 @@ test('message outbox serializes per-conversation read-modify-write operations', 
 
 test('message outbox normalizes persisted data during removal and retry-failure writes', async () => {
   const source = await readFile(new URL('../services/messageOutbox.js', import.meta.url), 'utf8');
-  assert.match(source, /const next = normalizePendingMessages\(parsed\)\.filter/);
-  assert.match(source, /const normalized = normalizePendingMessages\(parsed\)/);
+  assert.match(source, /const next = \(await readQueue\(key\)\)\.filter/);
+  assert.match(source, /const normalized = await readQueue\(key\)/);
   assert.match(source, /const safeNext = normalizePendingMessages\(next\)/);
   assert.match(source, /else await AsyncStorage\.removeItem\(key\)/);
 });
