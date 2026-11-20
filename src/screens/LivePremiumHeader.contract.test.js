@@ -14,7 +14,9 @@ test('shared LIVE header follows Crown Aurora theme tokens and accessible naviga
   assert.ok(header.includes('accessibilityLabel={backLabel}'));
   assert.ok(header.includes('accessibilityLabel={refreshLabel}'));
   assert.ok(header.includes("navigation?.navigate?.('Main', { screen: 'LIVE' })"));
-  assert.ok(header.includes('badge ?'));
+  assert.ok(header.includes('badge && !compact ?'));
+  assert.ok(header.includes('useWindowDimensions'));
+  assert.ok(header.includes('const compact = viewportWidth < 380;'));
 });
 
 test('secondary LIVE destinations share one consistent premium header', () => {
