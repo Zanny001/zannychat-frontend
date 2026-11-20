@@ -255,3 +255,11 @@ Use one shared per-user `pg_advisory_xact_lock(hashtextextended(user_id::text, 0
 Keep current-call exceptions explicit: direct-call promotion may end its own source session, and a direct-call room's own `source_call_id` must not be mistaken for a conflicting active call after promotion. Reuse existing error codes so the backend maps conflicts to a stable HTTP 409 response. Add concurrent integration tests proving two competing joins/starts cannot both succeed for the same user, plus tests for legitimate promotion, leave-then-rejoin, stale-call cleanup and different users joining separate rooms.
 
 This requires a reviewed database migration because the invariant spans multiple SECURITY DEFINER functions and a trigger. Do not apply it to production without the user's explicit migration approval. The local Supabase CLI was not available in the current execution environment, so no migration filename was fabricated; the migration must be generated with the repository's pinned CLI workflow before a PR is opened.
+
+## 11. LIVE production row checkpoint — Gas
+
+Read-only query on 2026-11-20 returned the most recent `Gas` LIVE row as `status='ended'`, started at `2026-11-20 08:46:34.564304+00` and ended at `2026-11-20 11:09:07.279059+00`. The table has no `ended_reason`/actor column, so the cause cannot be inferred from this row. The audit did not create, stop, update or otherwise mutate the stream. The user has not confirmed creator/viewer acceptance after the PR #212 deployment, so Phase 0 remains open.
+
+## 12. Interface merge checkpoint — 2026-11-20
+
+Frontend PRs #218, #219, #220, #221, #224, #225 and #226 are merged. They establish centered 760px collection/content columns, 480px auth/form columns, a 1280px group-call media-stage cap and responsive mobile fluid widths across the screen groups listed in Delivery Register section 32. PR #215 and #217 improve honest persistence feedback. These are code/CI milestones only: Vercel's free-team build-rate limit remains, and no production deployment or physical-device visual acceptance is inferred from a GitHub merge.

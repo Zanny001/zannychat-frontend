@@ -878,3 +878,32 @@ The read-only production snapshot found no current duplicates or direct/group ov
 **Proposed fix:** one shared per-user transaction advisory-lock convention, used in the direct-call insert trigger and the group-call create/join/promotion RPCs, followed by cross-mode active-call checks. Add concurrency integration tests and stable HTTP 409 mapping. The full design is in section 10 of the Architecture and Security Snapshot.
 
 **Migration gate:** no migration file or production SQL was created/applied. The local Supabase CLI was unavailable and its install attempt timed out; per the migration-generation workflow, do not invent a timestamp or apply DDL through the MCP tool. Generate the migration with the pinned project CLI, review the SQL/tests, and obtain the user's explicit approval before production application.
+
+## 32. Full-product interface and LIVE checkpoint — 2026-11-20
+
+### Merged premium interface work
+| PR | Interface scope | Merge SHA | Automated acceptance |
+|---|---|---|---|
+| #218 | Forward Message, Saved Messages, Drafts, Pinned Messages, Chat Folders, Shared Media, Chat Appearance centered collection columns | `e276bf6775aedc0a8457086aee3cb6a9e080c2d1` | Frontend quality and advanced calling checks passed |
+| #219 | Chats inbox, New Chat directory, Chat timeline/composer/search centered column | `6905379a3d4f45d43362f26f1ed27856d4678b1d` | Frontend quality and advanced calling checks passed |
+| #220 | Onboarding, Login, Signup, Recovery, Email Verification, Reset and Auth Required shared 480px form measure | `c30099c4fe0d4c172ae8012747b29c8c4a506461` | Frontend quality, Android compile, iOS prebuild and web/Android exports passed |
+| #221 | Profile, Peer Profile, Edit Profile, Privacy/Security, Notifications, Help, Data Storage, Export, Sessions, Contact Discovery and QR Contact content measures | `878644571df2241eaf2f83d0a811439dc3609d58` | Frontend quality, Android compile, iOS prebuild and web/Android exports passed |
+| #224 | Status Updates and Channels centered content | `d8acae31ada9110b2daea5304f69fc3ac0af7442` | Frontend quality and advanced calling checks passed |
+| #225 | Direct/incoming/outgoing call identity/control sizing, call history, group-call media-stage measure | `16dace1e65f645193f46c88f74fa02dcf6954afb` | Frontend quality and advanced calling checks passed after updating a brittle existing contract assertion |
+| #226 | Create Group, Polls, Events, Group Management, Join Group and Scheduled Messages content measures | `127e2bbd372cee059b701f7aa0d160101b43b1e6` | Frontend quality and advanced calling checks passed |
+
+PR #215 separately corrected Chat Appearance save feedback; PR #217 corrected ThemeContext preference persistence feedback and initial-load races. Earlier LIVE-specific design slices #203 and #205–#208 remain merged. The 56-module navigation inventory remains the scope baseline; these PRs do not by themselves certify every screen state or complete the visual acceptance pass.
+
+### Deployment and runtime limits
+- The frontend changes above are merged into GitHub main. They are **not confirmed deployed**: the Vercel team continues to report the free-team `upgradeToPro=build-rate-limit` failure. Do not purchase an upgrade or switch to a paid plan under the ₦0 constraint.
+- The existing PR #212 deployment was previously reported READY on the production domain, but the user has not confirmed the current Gas creator and viewer experience.
+- A read-only production query now shows the Gas stream row as `ended`, with `started_at=2026-11-20 08:46:34 UTC` and `ended_at=2026-11-20 11:09:07 UTC`. The `live_streams` table has no end-reason field, so the cause is unknown. No stream was started, stopped or modified by this audit.
+
+### Remaining Phase 2/3 interface sequence
+1. Verify all screen states and layout behavior on phone, tablet and web; current PRs establish content measures but are not screenshot/device acceptance.
+2. Continue full LIVE stage and creator workflow acceptance: creator recovery, viewer entry, guest lifecycle, moderation, comments/reactions, replay availability, end/leave semantics and reconnect.
+3. Complete the remaining account/auth/settings and utility screens in the 56-module inventory, including error, empty, loading, offline and permission-denied states.
+4. Keep the Crown Aurora theme coherent across all destinations, with restrained effects and accessible contrast; no screen may use fake data or inert controls.
+
+### Blocking backend correctness item
+The cross-mode single-active-call invariant gap is documented in section 10 of the Architecture and Security Snapshot and PR #229. No duplicate rows were found at audit time, but the atomic fix needs a migration. The migration file has not been generated because the pinned Supabase CLI was unavailable in this execution environment. Do not fabricate a timestamp or apply production DDL without the user's explicit approval.
