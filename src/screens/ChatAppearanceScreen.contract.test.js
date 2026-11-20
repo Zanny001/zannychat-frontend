@@ -14,7 +14,7 @@ test('chat canvas persistence failures are propagated instead of reported as sav
 test('chat appearance disables competing selections while saving and exposes an accessible error', () => {
   assert.match(screen, /disabled=\{saving\}/);
   assert.ok(screen.includes('accessibilityState={{ checked: active, disabled: saving }}'));
-  assert.match(screen, /accessibilityRole=\{saveError \? 'alert' : undefined\}/);
+  assert.match(screen, /accessibilityRole=\{saveError \|\| loadError \? 'alert' : undefined\}/);
   assert.ok(screen.includes('active for this session, but could not be saved on this device'));
 });
 
