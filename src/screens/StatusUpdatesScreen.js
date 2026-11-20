@@ -3,7 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as MediaLibrary from 'expo-media-library/legacy';
 import * as FileSystem from 'expo-file-system/legacy';
 import { saveMediaToLibrary } from '../services/saveMediaToLibrary';
-import { ActivityIndicator, Alert, AppState, Image, Modal, Platform, SafeAreaView, ScrollView, FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, Image, Modal, Platform, ScrollView, FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useFocusEffect } from '@react-navigation/native';
@@ -629,7 +630,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
     { text: 'Delete', style: 'destructive', onPress: async () => { try { await deleteStatus(item.id); setStatuses((old) => old.filter((s) => s.id !== item.id)); } catch (e) { Alert.alert('Could not delete status', e?.message || 'Please try again.'); } } },
   ]);
 
-  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+  return <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
     <Header title="Stories" subtitle="Share a moment with your people" onBack={() => navigation.goBack()} />
     <FlatList
       style={{ flex: 1 }}
