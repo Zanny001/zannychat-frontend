@@ -6,6 +6,7 @@ import GlassCard from '../components/GlassCard';
 import { backendFetch } from '../services/backendClient';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
+import LivePremiumHeader from '../components/LivePremiumHeader';
 import { showAppAlert } from '../utils/appDialogs';
 
 const FILTERS = [
@@ -123,18 +124,15 @@ export default function LiveReportsScreen({ route, navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => refresh(true)} tintColor={colors.primary} />} contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, alignItems: 'center' }}>
         <View style={{ width: '100%', maxWidth: 760, gap: spacing.md }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-            <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Back to LIVE moderation" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
-            </TouchableOpacity>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.4 }]}>ZANNYCHAT · LIVE SAFETY</Text>
-              <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 23 }]}>Safety reports</Text>
-            </View>
-            <TouchableOpacity onPress={() => refresh(true)} accessibilityRole="button" accessibilityLabel="Refresh LIVE reports" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="refresh" size={19} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+          <LivePremiumHeader
+            navigation={navigation}
+            eyebrow="ZANNYCHAT · LIVE SAFETY"
+            title="Safety reports"
+            subtitle={"Review and resolve reports · " + streamTitle}
+            icon="shield-checkmark-outline"
+            onRefresh={() => refresh(true)}
+            refreshLabel="Refresh LIVE reports"
+          />
 
           <GlassCard contentStyle={{ padding: spacing.lg, gap: spacing.sm }}>
             <Text style={[typography.caption, { color: colors.textSecondary }]}>REPORT QUEUE · {streamTitle}</Text>
