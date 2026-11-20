@@ -6,9 +6,12 @@ const theme = readFileSync(new URL('../theme/ThemeContext.js', import.meta.url),
 const settings = readFileSync(new URL('./SettingsScreen.js', import.meta.url), 'utf8');
 
 test('theme preference storage failures are surfaced instead of silently swallowed', () => {
-  assert.match(theme, /const persist = async \(write\) =>/);
+  assert.match(theme, /const persist = async \(write, key\) =>/);
+  assert.match(theme, /failedPreferencesRef\.current\.add\(key\)/);
+  assert.match(theme, /failedPreferencesRef\.current\.delete\(key\)/);
   assert.match(theme, /Your preferences are active for this session, but could not be saved on this device/);
-  assert.match(theme, /void persist\(AsyncStorage\.setItem\(MOOD_STORAGE_KEY, key\)\)/);
+  assert.match(theme, /void persist\(AsyncStorage\.setItem\(MOOD_STORAGE_KEY, key\), 'mood'\)/);
+  assert.match(theme, /void persist\(AsyncStorage\.setItem\(APPEARANCE_STORAGE_KEY, mode\), 'appearance'\)/);
   assert.match(theme, /void persist\(AsyncStorage\.multiSet\(/);
   assert.match(theme, /\.catch\(\(\) => \{\s*if \(active\) setPersistenceError/);
 });
