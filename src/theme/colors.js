@@ -226,6 +226,7 @@ export const layout = {
   headerHeight: 60,
   contentMaxWidth: 760,
   formMaxWidth: 480,
+  mediaStageMaxWidth: 1280,
   screenGutter: 16,
   sectionGap: 24,
 };
