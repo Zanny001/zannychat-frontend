@@ -1,17 +1,8 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  Alert,
-  ActivityIndicator,
-  TextInput,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, TextInput } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import Header from '../components/Header';
@@ -343,7 +334,7 @@ export default function NewChatScreen({ navigation, route }) {
   }
 
   return (
-    <SafeAreaView
+    <SafeAreaView edges={['top', 'left', 'right']}
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       <Header
