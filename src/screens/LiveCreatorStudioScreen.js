@@ -257,6 +257,37 @@ export default function LiveCreatorStudioScreen({ navigation }) {
             </View>
           )) : <Text style={[typography.caption, { color: colors.textSecondary }]}>Your saved replay collection will appear here.</Text>}
         </GlassCard>
+
+        <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+          <View style={{ gap: 3 }}>
+            <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 17 }]}>Creator tools</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>Manage your upcoming broadcasts and community presence</Text>
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+            {[
+              { route: 'LiveEvents', icon: 'calendar-outline', title: 'Events', detail: 'Schedule & RSVP' },
+              { route: 'LiveSettings', icon: 'options-outline', title: 'Preferences', detail: 'Audience & format' },
+              { route: 'LiveLeaderboard', icon: 'trophy-outline', title: 'Rankings', detail: 'Creator community' },
+            ].map((item) => (
+              <TouchableOpacity
+                key={item.route}
+                onPress={() => navigation.navigate(item.route)}
+                accessibilityRole="button"
+                accessibilityLabel={'Open LIVE ' + item.title}
+                style={{ flexGrow: 1, flexBasis: '30%', minWidth: 132, minHeight: 88, padding: spacing.sm, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}
+              >
+                <View style={{ width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.12) }}>
+                  <Ionicons name={item.icon} size={18} color={colors.primary} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+                  <Text numberOfLines={1} style={[typography.caption, { color: colors.textPrimary, fontWeight: '900' }]}>{item.title}</Text>
+                  <Text numberOfLines={2} style={[typography.caption, { color: colors.textSecondary, fontSize: 10, lineHeight: 14 }]}>{item.detail}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={15} color={colors.textSecondary} />
+              </TouchableOpacity>
+            ))}
+          </View>
+        </GlassCard>
         </View>
       </ScrollView>
     </SafeAreaView>

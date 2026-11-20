@@ -39,3 +39,13 @@ test('owner dashboard is consistently presented as Creator Studio', () => {
   assert.ok(source.includes('Your LIVE Creator Studio is temporarily unavailable.'));
   assert.ok(source.includes('Refresh Creator Studio'));
 });
+
+
+test('Creator Studio exposes responsive shortcuts to Events, LIVE preferences and rankings',()=>{
+  assert.ok(source.includes("route: 'LiveEvents'"));
+  assert.ok(source.includes("route: 'LiveSettings'"));
+  assert.ok(source.includes("route: 'LiveLeaderboard'"));
+  assert.ok(source.includes("accessibilityLabel={'Open LIVE ' + item.title}"));
+  assert.ok(source.includes("flexBasis: '30%'"));
+  assert.ok(source.includes('Creator tools'));
+});
