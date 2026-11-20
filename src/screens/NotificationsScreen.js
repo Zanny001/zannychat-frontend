@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import Header from '../components/Header';
 import GlassCard from '../components/GlassCard';
-import { getNotificationPrefs, loadNotificationPrefs, setNotificationPrefs } from '../services/notificationPrefs';
+import { getNotificationPrefs, getNotificationPrefsPersistenceError, loadNotificationPrefs, setNotificationPrefs } from '../services/notificationPrefs';
 import { registerForPushNotifications, unregisterPushNotifications } from '../services/notifications';
 import { SUPABASE_ENABLED } from '../services/supabaseClient';
 import { parseClockTime } from '../utils/quietHours';
@@ -26,18 +26,23 @@ export default function NotificationsScreen({ navigation }) {
   const [browserCallPermission, setBrowserCallPermission] = useState(() => Platform.OS === 'web' && typeof Notification !== 'undefined' ? Notification.permission : 'unsupported');
   const [pushRegistrationState, setPushRegistrationState] = useState('unknown');
   const [pushActionBusy, setPushActionBusy] = useState(false);
+  const [persistenceError, setPersistenceError] = useState(getNotificationPrefsPersistenceError());
 
   useEffect(() => {
     loadNotificationPrefs().then((loaded) => {
       setPrefs(loaded);
       setQuietStartDraft(loaded.quietHoursStart || '22:00');
       setQuietEndDraft(loaded.quietHoursEnd || '08:00');
+      setPersistenceError(getNotificationPrefsPersistenceError());
     });
   }, []);
 
   async function update(patch) {
     const next = await setNotificationPrefs(patch);
     setPrefs({ ...next });
+    const storageError = getNotificationPrefsPersistenceError();
+    setPersistenceError(storageError);
+    return !storageError;
   }
 
   async function saveQuietTime(field, value) {
@@ -62,7 +67,8 @@ export default function NotificationsScreen({ navigation }) {
     setPushActionBusy(true);
     try {
       if (value) {
-        await update({ pushEnabled: true });
+        const saved = await update({ pushEnabled: true });
+        if (!saved) return;
         const token = await registerForPushNotifications();
         setPushRegistrationState(token ? 'registered' : 'not_registered');
         if (!token) {
@@ -129,6 +135,18 @@ export default function NotificationsScreen({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Notifications" onBack={() => navigation.goBack()} />
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
+        {persistenceError ? (
+          <View accessibilityRole="alert" accessibilityLiveRegion="polite" style={[styles.persistenceWarning, { backgroundColor: colors.surface, borderColor: colors.warning, marginBottom: spacing.md }]}>
+            <Ionicons name="alert-circle-outline" size={20} color={colors.warning} />
+            <View style={{ flex: 1, minWidth: 0, marginHorizontal: spacing.sm }}>
+              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Device storage issue</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 19, marginTop: 3 }]}>{persistenceError}</Text>
+              <TouchableOpacity onPress={() => update({})} accessibilityRole="button" accessibilityLabel="Try saving notification preferences again" style={styles.retryButton}>
+                <Text style={[typography.caption, { color: colors.primary, fontWeight: '700' }]}>Try saving again</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : null}
         <GlassCard style={{ marginBottom: spacing.md }}>
           <PrefRow
             icon="notifications-outline"
@@ -256,5 +274,7 @@ function PrefRow({ icon, label, detail, value, onValueChange, disabled, last }) 
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
+  persistenceWarning: { borderWidth: 1, borderRadius: 16, padding: 14, flexDirection: 'row', alignItems: 'flex-start' },
+  retryButton: { minHeight: 44, alignSelf: 'flex-start', justifyContent: 'center', marginTop: 5, paddingRight: 12 },
   timeInput: { minHeight: 48, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 },
 });
