@@ -158,6 +158,7 @@ export default function ChatScreen({ route, navigation }) {
     let active = true;
     if (!myUserId) {
       setPendingAttachments([]);
+      setPendingAttachmentsError('');
       return () => { active = false; };
     }
     loadPendingAttachments(myUserId, conversation?.id)
@@ -255,6 +256,7 @@ export default function ChatScreen({ route, navigation }) {
       setEditing(null);
       resetOutbox();
       setPendingAttachments([]);
+      setPendingAttachmentsError('');
       setRetryingAttachments(false);
       setPinnedMessages([]);
       setSuggestions([]);
