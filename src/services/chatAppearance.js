@@ -21,8 +21,10 @@ export async function saveChatCanvas(value) {
   cachedCanvas = normalizeChatCanvas(value);
   try {
     await AsyncStorage.setItem(STORAGE_KEY, cachedCanvas);
-  } catch (_) {
-    // The in-memory selection remains valid for the current session.
+  } catch (error) {
+    // Keep the in-memory selection for this session, but let the screen
+    // distinguish it from a value that was actually persisted.
+    throw error;
   }
   return cachedCanvas;
 }

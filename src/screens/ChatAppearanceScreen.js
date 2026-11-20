@@ -11,6 +11,9 @@ export default function ChatAppearanceScreen({ navigation }) {
   const { colors, spacing, radii, typography } = useTheme();
   const [selected, setSelected] = useState(DEFAULT_CHAT_CANVAS);
   const [ready, setReady] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [saveConfirmed, setSaveConfirmed] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -21,8 +24,19 @@ export default function ChatAppearanceScreen({ navigation }) {
   }, []);
 
   async function chooseCanvas(key) {
+    if (saving) return;
     setSelected(key);
-    await saveChatCanvas(key);
+    setSaveError('');
+    setSaveConfirmed(false);
+    setSaving(true);
+    try {
+      await saveChatCanvas(key);
+      setSaveConfirmed(true);
+    } catch (_) {
+      setSaveError('This canvas is active for this session, but could not be saved on this device. Check device storage and try again.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -50,7 +64,7 @@ export default function ChatAppearanceScreen({ navigation }) {
           const active = selected === canvas.key;
           const background = resolveChatCanvas(canvas.key, colors.background);
           return (
-            <TouchableOpacity key={canvas.key} onPress={() => chooseCanvas(canvas.key)} activeOpacity={0.82} accessibilityRole="radio" accessibilityState={{ checked: active }} accessibilityLabel={`${canvas.label}. ${canvas.description}`} style={{ marginBottom: spacing.sm }}>
+            <TouchableOpacity key={canvas.key} onPress={() => chooseCanvas(canvas.key)} disabled={saving} activeOpacity={0.82} accessibilityRole="radio" accessibilityState={{ checked: active, disabled: saving }} accessibilityLabel={`${canvas.label}. ${canvas.description}`} style={{ marginBottom: spacing.sm, opacity: saving ? 0.72 : 1 }}>
               <GlassCard style={[styles.option, { borderColor: active ? colors.primary : colors.border, borderWidth: active ? 1.5 : 1 }]} contentStyle={styles.optionContent}>
                 <View style={[styles.swatch, { backgroundColor: background, borderColor: colors.border }]}>
                   <View style={[styles.swatchBubble, { backgroundColor: colors.primary }]} />
@@ -65,7 +79,7 @@ export default function ChatAppearanceScreen({ navigation }) {
             </TouchableOpacity>
           );
         })}
-        <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>{ready ? 'Your choice is saved on this device.' : 'Loading your saved appearance…'} Changes apply to open chats as they are opened again.</Text>
+        <Text accessibilityRole={saveError ? 'alert' : undefined} style={[typography.caption, { color: saveError ? colors.danger : colors.textSecondary, marginTop: spacing.sm }]}>{saveError || (saving ? 'Saving your appearance…' : !ready ? 'Loading your saved appearance…' : saveConfirmed ? 'Your choice is saved on this device.' : 'Your current appearance is loaded on this device.')} Changes apply to open chats as they are opened again.</Text>
       </ScrollView>
     </SafeAreaView>
   );
