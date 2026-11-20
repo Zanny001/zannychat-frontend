@@ -12,7 +12,7 @@ import { endNativeCall } from '../services/nativeCallSystem';
 
 export default function OutgoingCallScreen({ route, navigation }) {
   const { call: initialCall, callType = 'audio', participantName = 'ZannyChat contact', avatarColor: avatarColorParam } = route.params || {};
-  const { colors, typography, resolvedMode } = useTheme();
+  const { colors, typography, resolvedMode, layout } = useTheme();
   const avatarColor = avatarColorParam || colors.primary;
   const [call, setCall] = useState(initialCall);
   const [remaining, setRemaining] = useState(() => Math.max(0, Math.ceil((new Date(initialCall?.expires_at || Date.now()).getTime() - Date.now()) / 1000)));
@@ -82,7 +82,7 @@ export default function OutgoingCallScreen({ route, navigation }) {
         <Text style={[typography.heading, styles.brand, { color: colors.textPrimary }]}>ZannyChat</Text>
         <View style={styles.secure}><Ionicons name="lock-closed" size={12} color={colors.accent} /><Text style={[typography.caption, styles.secureText, { color: colors.textSecondary }]}>Encrypted media transport</Text></View>
       </View>
-      <View style={styles.person}>
+      <View style={[styles.person, { width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center' }]}>
         <View style={[styles.avatarRing, { borderColor: hexToRgba(colors.primary, 0.42), backgroundColor: hexToRgba(colors.surface, 0.55), shadowColor: colors.primary }]}><Avatar name={participantName} color={avatarColor} size={112} /></View>
         <Text numberOfLines={2} style={[typography.display, styles.name, { color: colors.textPrimary, maxWidth: '100%', paddingHorizontal: 8 }]}>{participantName}</Text>
         <Text style={[typography.body, styles.kind, { color: colors.textSecondary }]}>{callType === 'video' ? 'Video call' : 'Audio call'}</Text>
@@ -90,7 +90,7 @@ export default function OutgoingCallScreen({ route, navigation }) {
         <Text style={[typography.bodyStrong, styles.status, { color: colors.textPrimary }]}>{statusText}</Text>
         <Text style={[typography.small, styles.countdown, { color: colors.textSecondary }]}>{remaining > 0 ? `Invitation expires in ${remaining}s` : 'Invitation expired'}</Text>
       </View>
-      <View style={styles.actions}>
+      <View style={[styles.actions, { width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center' }]}>
         <TouchableOpacity onPress={cancel} disabled={busy} accessibilityRole="button" accessibilityLabel="Cancel outgoing call" style={[styles.cancelButton, { backgroundColor: colors.danger, shadowColor: colors.danger }]}>
           {busy ? <ActivityIndicator color={colors.onDanger} /> : <Ionicons name="call" size={27} color={colors.onDanger} style={{ transform: [{ rotate: '135deg' }] }} />}
         </TouchableOpacity>
