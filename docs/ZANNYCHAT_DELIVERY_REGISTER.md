@@ -887,8 +887,8 @@ The read-only production snapshot found no current duplicates or direct/group ov
 | #218 | Forward Message, Saved Messages, Drafts, Pinned Messages, Chat Folders, Shared Media, Chat Appearance centered collection columns | `e276bf6775aedc0a8457086aee3cb6a9e080c2d1` | Frontend quality and advanced calling checks passed |
 | #219 | Chats inbox, New Chat directory, Chat timeline/composer/search centered column | `6905379a3d4f45d43362f26f1ed27856d4678b1d` | Frontend quality and advanced calling checks passed |
 | #220 | Onboarding, Login, Signup, Recovery, Email Verification, Reset and Auth Required shared 480px form measure | `c30099c4fe0d4c172ae8012747b29c8c4a506461` | Frontend quality, Android compile, iOS prebuild and web/Android exports passed |
-| #221 | Profile, Peer Profile, Edit Profile, Privacy/Security, Notifications, Help, Data Storage, Export, Sessions, Contact Discovery and QR Contact content measures | `878644a1d93a9fd4f0f4c96ec3f2dbafc4e7e7e4` | Frontend quality, Android compile, iOS prebuild and web/Android exports passed |
-| #224 | Status Updates and Channels centered content | `4e2e2f2d8e2d0e9e9e4c6a4db1c2b2a2c3a4d5e6` | Frontend quality and advanced calling checks passed |
+| #221 | Profile, Peer Profile, Edit Profile, Privacy/Security, Notifications, Help, Data Storage, Export, Sessions, Contact Discovery and QR Contact content measures | `878644571df2241eaf2f83d0a811439dc3609d58` | Frontend quality, Android compile, iOS prebuild and web/Android exports passed |
+| #224 | Status Updates and Channels centered content | `d8acae31ada9110b2daea5304f69fc3ac0af7442` | Frontend quality and advanced calling checks passed |
 | #225 | Direct/incoming/outgoing call identity/control sizing, call history, group-call media-stage measure | `16dace1e65f645193f46c88f74fa02dcf6954afb` | Frontend quality and advanced calling checks passed after updating a brittle existing contract assertion |
 | #226 | Create Group, Polls, Events, Group Management, Join Group and Scheduled Messages content measures | `127e2bbd372cee059b701f7aa0d160101b43b1e6` | Frontend quality and advanced calling checks passed |
 
