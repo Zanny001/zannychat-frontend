@@ -45,6 +45,8 @@ export default function DraftsScreen({ navigation }) {
         setConversations([]);
       }
     } catch (_) {
+      setDrafts([]);
+      setConversations([]);
       setError('Your drafts could not be loaded. Please try again.');
     } finally {
       setLoading(false);
