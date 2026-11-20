@@ -573,5 +573,7 @@ test('native and web LIVE stages expose server-derived role hierarchy and labell
   assert.ok(screen.includes("creatorMode ? 'HOST' : publisherMode ? 'GUEST' : moderatorMode ? 'MODERATOR' : 'VIEWER'"));
   assert.ok(screen.includes("color: colors.textPrimary, flex: 1, minWidth: 0"));
   assert.ok(webScreen.includes("label=\"Tools\""));
+  assert.ok(webScreen.includes('const compactRoomHeader = roomViewportWidth < 390;'));
+  assert.ok(webScreen.includes('useWindowDimensions'));
   assert.ok(webScreen.includes("creatorMode ? 'HOST' : publisherMode ? 'GUEST' : moderatorMode ? 'MODERATOR' : 'VIEWER'"));
 });
