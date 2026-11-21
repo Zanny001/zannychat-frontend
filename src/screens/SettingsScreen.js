@@ -61,7 +61,7 @@ export default function SettingsScreen({ navigation }) {
           <View style={[styles.persistenceWarning, { backgroundColor: colors.surface, borderColor: colors.warning, borderRadius: radii.md, marginBottom: spacing.md }]}>
             <Ionicons name="alert-circle-outline" size={19} color={colors.warning} />
             <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={[typography.caption, { color: colors.textPrimary, flex: 1, minWidth: 0, marginHorizontal: spacing.sm }]}>{persistenceError}</Text>
-            <TouchableOpacity onPress={clearPersistenceError} accessibilityRole="button" accessibilityLabel="Dismiss preference storage warning" style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}>
+            <TouchableOpacity onPress={clearPersistenceError} accessibilityRole="button" accessibilityLabel="Dismiss preference storage warning" style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="close" size={18} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
