@@ -167,7 +167,7 @@ export default function LiveSettingsScreen({ navigation }) {
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
                 {CATEGORIES.map(([value, label]) => {
                   const selected = preferences.category === value;
-                  return <TouchableOpacity key={value} onPress={() => update('category', value)} accessibilityRole="radio" accessibilityState={{ checked: selected }} accessibilityLabel={label + ' category'} style={[{ minHeight: 44, paddingHorizontal: spacing.md, borderWidth: 1, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }, radio(selected)]}>
+                  return <TouchableOpacity key={value} onPress={() => update('category', value)} accessibilityRole="radio" accessibilityState={{ checked: selected }} accessibilityLabel={label + ' category'} style={[{ minHeight: 48, paddingHorizontal: spacing.md, borderWidth: 1, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }, radio(selected)]}>
                     <Text style={[typography.caption, { color: selected ? colors.primary : colors.textPrimary, fontWeight: '800' }]}>{label}</Text>
                   </TouchableOpacity>;
                 })}
