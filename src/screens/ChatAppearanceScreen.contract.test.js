@@ -30,3 +30,8 @@ test('chat canvas load failures are visible and offer a retry path', () => {
   assert.match(screen, /Retry loading saved appearance/);
   assert.match(screen, /onPress=\{retryLoad\}/);
 });
+
+
+test('chat appearance retry action meets the shared 48-point mobile target', () => {
+  assert.match(screen, /retryButton: \{ minHeight: 48/);
+});
