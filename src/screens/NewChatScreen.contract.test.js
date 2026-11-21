@@ -66,3 +66,8 @@ test('New Chat contact directory uses a bounded virtualized render window', () =
   assert.match(screen, /updateCellsBatchingPeriod=\{50\}/);
   assert.match(screen, /windowSize=\{7\}/);
 });
+
+
+test('New Chat contact recovery retry action meets the shared 48-point mobile target', () => {
+  assert.match(screen, /accessibilityLabel="Retry loading contacts"[\s\S]*?style=\{\{ minHeight: 48/);
+});
