@@ -208,7 +208,7 @@ function MainTabNavigator() {
 // initialRouteName is resolved once in App.js from whether a Supabase
 // session already exists, so a returning, signed-in user lands
 // straight in Main instead of seeing Onboarding again every launch.
-export default function withCallRouteBoundary(Screen, routeName) {
+function withCallRouteBoundary(Screen, routeName) {
   function IsolatedCallRoute(props) {
     return (
       <CallRouteErrorBoundary navigation={props.navigation} routeName={routeName}>
@@ -225,7 +225,7 @@ const OutgoingCallRoute = withCallRouteBoundary(OutgoingCallScreen, 'OutgoingCal
 const DirectCallRoute = withCallRouteBoundary(CallScreen, 'Call');
 const GroupCallRoute = withCallRouteBoundary(GroupCallScreen, 'GroupCall');
 
-function AppNavigator({ initialRouteName = 'Onboarding', isAuthenticated = false }) {
+export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthenticated = false }) {
   const { colors } = useTheme();
   // In a configured production build, register private app routes only after a
   // Supabase session exists. Demo mode intentionally keeps its local preview.
