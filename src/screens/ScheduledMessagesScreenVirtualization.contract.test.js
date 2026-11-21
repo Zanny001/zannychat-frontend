@@ -24,3 +24,9 @@ test('scheduled-message picker fetches at most 100 conversations and skips looku
   assert.ok(source.includes('initialConversationId ? Promise.resolve({ conversations: [] })'));
   assert.ok(!source.includes('limit: 1000'));
 });
+
+test('scheduled message refresh, retry and cancel actions meet 48-point mobile touch targets', () => {
+  assert.ok(source.includes('accessibilityLabel="Refresh scheduled messages" style={{ width: 48, height: 48'));
+  assert.ok(source.includes('accessibilityLabel="Refresh scheduled messages" style={{ minHeight: 48'));
+  assert.ok(source.includes('style={{ width: 48, height: 48, alignItems: \'center\', justifyContent: \'center\' }}'));
+});
