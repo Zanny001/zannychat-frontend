@@ -11,6 +11,7 @@ import { hexToRgba } from '../utils/color';
 import { confirmAction, showAppAlert } from '../utils/appDialogs';
 import GlassCard from '../components/GlassCard';
 import { filterLiveStreams } from '../utils/liveDiscovery';
+import { getActiveCreatorStreamId } from '../utils/liveCreatorRecovery';
 import { loadLivePreferences } from '../services/livePreferences';
 
 const VISIBILITIES = [
@@ -74,6 +75,7 @@ export default function LiveHubScreen({ navigation, route }) {
   const [selectedInvitees, setSelectedInvitees] = useState([]);
   const [loadingCandidates, setLoadingCandidates] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [activeCreatorStreamId, setActiveCreatorStreamId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
@@ -133,6 +135,7 @@ export default function LiveHubScreen({ navigation, route }) {
         setStreams([]);
         setInvitations([]);
         setReplays([]);
+        setActiveCreatorStreamId(null);
         setReplayLoaded(false);
         setReplayError('');
         setFollowingCreators([]);
@@ -142,12 +145,15 @@ export default function LiveHubScreen({ navigation, route }) {
         setCurrentUserId(expectedUserId);
       }
 
-      const [publicResult, followedResult, followResult, inviteResult, replayResult] = await Promise.all([
+      const [publicResult, followedResult, followResult, inviteResult, replayResult, creatorProfileResult] = await Promise.all([
         backendFetch('/live').then((result) => ({ result, error: null })).catch((error) => ({ result: { streams: [] }, error })),
         backendFetch('/live/following/streams').catch(() => ({ streams: [] })),
         backendFetch('/live/following').catch(() => ({ following: [] })),
         backendFetch('/live/invitations').catch(() => ({ invitations: [] })),
         backendFetch('/live/replays').then((result) => ({ result, error: null })).catch((error) => ({ result: { replays: [] }, error })),
+        expectedUserId
+          ? backendFetch('/live/creators/me/profile').then((result) => ({ result, error: null })).catch((error) => ({ result: null, error }))
+          : Promise.resolve({ result: null, error: null }),
       ]);
       const latestUser = await getCurrentUser().catch(() => null);
       if (requestId !== refreshRequestRef.current || latestUser?.id !== expectedUserId) return;
@@ -158,6 +164,7 @@ export default function LiveHubScreen({ navigation, route }) {
       setFollowingIds((followResult?.following || []).map((item) => item.creator_id));
       setInvitations((inviteResult?.invitations || []).filter((item) => item.stream));
       setReplays(Array.isArray(replayResult?.result?.replays) ? replayResult.result.replays : []);
+      setActiveCreatorStreamId(getActiveCreatorStreamId(creatorProfileResult?.result));
       setReplayLoaded(!replayResult?.error);
       setReplayError(replayResult?.error ? 'LIVE replays are temporarily unavailable. Please try again.' : '');
       setCurrentUserId(expectedUserId);
@@ -186,6 +193,7 @@ export default function LiveHubScreen({ navigation, route }) {
       setStreams([]);
       setInvitations([]);
       setReplays([]);
+      setActiveCreatorStreamId(null);
       setReplayLoaded(false);
       setReplayError('');
       setFollowingCreators([]);
@@ -298,6 +306,10 @@ export default function LiveHubScreen({ navigation, route }) {
   };
 
   const startLive = () => {
+    if (activeCreatorStreamId) {
+      navigation.navigate('LiveStream', { streamId: activeCreatorStreamId, creatorMode: true });
+      return;
+    }
     if (!title.trim()) return Alert.alert('Add a title', 'Give your LIVE stream a short title first.');
     const invitees = [...new Set(selectedInvitees)];
     if (visibility === 'private' && invitees.length === 0) {
@@ -453,9 +465,9 @@ export default function LiveHubScreen({ navigation, route }) {
                 <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 30, lineHeight: 36, letterSpacing: -0.7 }]}>Your stage.{"\n"}Your people.</Text>
                 <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.sm, lineHeight: 22, maxWidth: 330 }]}>Share a moment, bring your community together, and invite trusted guests on stage.</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.md }}>
-                  <TouchableOpacity onPress={() => setShowComposer((value) => !value)} accessibilityRole="button" accessibilityLabel="Set up a LIVE broadcast" accessibilityState={{ expanded: showComposer }} style={{ flex: 1, minHeight: 50, borderRadius: 16, backgroundColor: colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                    <Ionicons name="radio" size={18} color={colors.onPrimary} />
-                    <Text style={[typography.small, { color: colors.onPrimary, fontWeight: '900' }]}>{showComposer ? 'Broadcast setup open' : 'Create a LIVE'}</Text>
+                  <TouchableOpacity onPress={() => activeCreatorStreamId ? navigation.navigate('LiveStream', { streamId: activeCreatorStreamId, creatorMode: true }) : setShowComposer((value) => !value)} accessibilityRole="button" accessibilityLabel={activeCreatorStreamId ? 'Rejoin active LIVE broadcast' : 'Set up a LIVE broadcast'} accessibilityState={{ expanded: showComposer }} style={{ flex: 1, minHeight: 50, borderRadius: 16, backgroundColor: colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    <Ionicons name={activeCreatorStreamId ? 'play-circle' : 'radio'} size={18} color={colors.onPrimary} />
+                    <Text style={[typography.small, { color: colors.onPrimary, fontWeight: '900' }]}>{activeCreatorStreamId ? 'Rejoin LIVE' : showComposer ? 'Broadcast setup open' : 'Create a LIVE'}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => navigation.navigate('LiveReplayLibrary')} accessibilityRole="button" accessibilityLabel="Open LIVE replay library" style={{ width: 50, height: 50, borderRadius: 16, borderWidth: 1, borderColor: colors.border, backgroundColor: hexToRgba(colors.primary, 0.08), alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name="play-circle-outline" size={21} color={colors.primary} />
@@ -580,9 +592,9 @@ export default function LiveHubScreen({ navigation, route }) {
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity disabled={busy} onPress={startLive} accessibilityRole="button" accessibilityLabel="Go LIVE" accessibilityState={{ disabled: busy, busy }} style={{ backgroundColor: busy ? colors.border : colors.primary, borderRadius: radii.md, minHeight: 52, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.sm }}>
-                {busy ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name="radio" size={20} color={colors.onPrimary} />}
-                <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>{busy ? 'Connecting…' : 'Go LIVE'}</Text>
+              <TouchableOpacity disabled={busy} onPress={startLive} accessibilityRole="button" accessibilityLabel={activeCreatorStreamId ? 'Rejoin active LIVE broadcast' : 'Go LIVE'} accessibilityState={{ disabled: busy, busy }} style={{ backgroundColor: busy ? colors.border : colors.primary, borderRadius: radii.md, minHeight: 52, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.sm }}>
+                {busy ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name={activeCreatorStreamId ? 'play-circle' : 'radio'} size={20} color={colors.onPrimary} />}
+                <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>{busy ? 'Connecting…' : activeCreatorStreamId ? 'Rejoin LIVE' : 'Go LIVE'}</Text>
               </TouchableOpacity>
               </>}
             </GlassCard>

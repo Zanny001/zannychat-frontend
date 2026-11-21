@@ -189,7 +189,7 @@ test('native LIVE moderation, discovery and call recovery actions have explicit 
   assert.match(hub, /accessibilityLabel="Load contacts to invite to private LIVE"/);
   assert.ok(hub.includes('accessibilityLabel={\`Invite \${person.name} to this LIVE stream\`}'));
   assert.match(hub, /accessibilityLabel=\{experienceMode === 'audio_room'/);
-  assert.match(hub, /accessibilityLabel="Go LIVE"/);
+  assert.ok(hub.includes("accessibilityLabel={activeCreatorStreamId ? 'Rejoin active LIVE broadcast' : 'Go LIVE'}"));
   assert.ok(hub.includes('accessibilityLabel={item.invitation_type === \'guest\' ? \`Join the LIVE stage in \${item.stream.title}\` : \`Accept invitation to \${item.stream.title}\`}'));
   assert.match(hub, /Show \${filter.label} LIVE streams/);
 

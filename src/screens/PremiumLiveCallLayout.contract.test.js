@@ -11,7 +11,7 @@ test('LIVE hub primary controls keep consistent 48-point targets', () => {
   assert.match(source, /minHeight: 48, paddingHorizontal: spacing\.md, borderRadius: 18/);
   assert.match(source, /minHeight: 52/);
   assert.match(source, /borderRadius: radii\.md/);
-  assert.match(source, /accessibilityLabel="Go LIVE"/);
+  assert.ok(source.includes("accessibilityLabel={activeCreatorStreamId ? 'Rejoin active LIVE broadcast' : 'Go LIVE'}"));
 });
 
 test('Native LIVE stage uses immersive full-screen video with floating guests and accessible controls', () => {
