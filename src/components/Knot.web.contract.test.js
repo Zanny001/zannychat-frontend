@@ -10,7 +10,7 @@ test('web Knot renders the same static SVG mark without Reanimated host componen
   assert.match(webKnot, /<Path/);
   assert.match(webKnot, /openRingPath\(78\)/);
   assert.match(webKnot, /openRingPath\(102\)/);
-  assert.match(webKnot, /A \\${RADIUS} \\${RADIUS} 0 1 1/);
+  assert.ok(webKnot.includes('A ${RADIUS} ${RADIUS} 0 1 1'));
   assert.match(webKnot, /rotation=\{-35\}/);
   assert.match(webKnot, /rotation=\{145\}/);
   assert.doesNotMatch(webKnot, /react-native-reanimated|createAnimatedComponent|useAnimatedProps/);
