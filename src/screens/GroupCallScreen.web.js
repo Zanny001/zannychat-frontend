@@ -272,23 +272,30 @@ export default function GroupCallScreenWeb({ route, navigation }) {
     } catch (_) { setAudioBlocked(true); }
   }, []);
 
-  const endCall = useCallback(async () => {
+  const endCall = useCallback(() => {
     if (endedRef.current) return;
     endedRef.current = true;
+    const activeRoom = roomRef.current;
+    // Disconnect and stop local capture, then leave immediately. Server state
+    // is updated asynchronously so an offline API cannot trap the user in-call.
+    try { activeRoom?.disconnect(); } catch (_) {}
     try {
-      if (directCallId) {
-        await updateCallStatus(directCallId, 'ended');
-      } else {
-        const activeRoomId = connection?.roomId || joinedRoomIdRef.current || roomId;
-        if (!activeRoomId) { navigation.goBack(); return; }
-        await backendFetch(`/group-calls/${activeRoomId}/${canEnd ? 'end' : 'leave'}`, { method: 'POST' });
+      for (const publication of activeRoom?.localParticipant?.trackPublications?.values?.() || []) {
+        publication.track?.stop?.();
       }
-      roomRef.current?.disconnect();
-      navigation.goBack();
-    } catch (error) {
-      endedRef.current = false;
-      setErrorText(error?.message || 'Could not leave this call.');
-    }
+    } catch (_) {}
+    const activeRoomId = connection?.roomId || joinedRoomIdRef.current || roomId;
+    navigation.goBack();
+    const persistLeave = directCallId
+      ? updateCallStatus(directCallId, 'ended')
+      : activeRoomId
+        ? backendFetch(`/group-calls/${activeRoomId}/${canEnd ? 'end' : 'leave'}`, { method: 'POST' })
+        : Promise.resolve();
+    Promise.resolve(persistLeave).catch((error) => {
+      // Heartbeats stop on unmount; backend stale-session cleanup is the
+      // fallback if the best-effort leave request cannot reach the server.
+      console.warn('[calls] local room disconnected; server leave update failed:', error?.message || error);
+    });
   }, [canEnd, connection?.roomId, directCallId, navigation, roomId]);
 
   const invitePerson = useCallback(async (person) => {
