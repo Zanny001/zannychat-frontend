@@ -13,6 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { Room, RoomEvent, Track } from 'livekit-client';
+import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
 import { hexToRgba } from '../utils/color';
 import { getCurrentUser } from '../services/api';

@@ -227,3 +227,8 @@ test('web LIVE imports the color helper used by the room header and replay contr
   assert.ok(web.includes("import { hexToRgba } from '../utils/color';"));
   assert.ok(web.includes('hexToRgba(colors.onDanger, 0.35)'));
 });
+
+test('web LIVE imports the Ionicons component used by the replay header control', () => {
+  assert.ok(web.includes("import { Ionicons } from '@expo/vector-icons';"));
+  assert.ok(web.includes('<Ionicons name={replay?.status'));
+});
