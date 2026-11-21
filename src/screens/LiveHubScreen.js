@@ -758,7 +758,7 @@ export default function LiveHubScreen({ navigation, route }) {
                   <Text numberOfLines={1} style={[typography.caption, { color: colors.textSecondary, marginTop: 4 }]}>{item.creator_name || 'ZannyChat creator'}</Text>
                 </View>
                 <View style={{ width: 40, height: 40, borderRadius: 14, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="arrow-up-right" size={19} color={colors.onPrimary} />
+                  <Ionicons name="arrow-forward" size={19} color={colors.onPrimary} />
                 </View>
               </View>
               {!!item.description && <Text numberOfLines={2} style={[typography.caption, { color: colors.textSecondary, lineHeight: 19 }]}>{item.description}</Text>}
