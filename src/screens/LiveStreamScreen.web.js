@@ -14,6 +14,7 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import { Room, RoomEvent, Track } from 'livekit-client';
 import { backendFetch } from '../services/backendClient';
+import { hexToRgba } from '../utils/color';
 import { getCurrentUser } from '../services/api';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
