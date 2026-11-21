@@ -25,7 +25,7 @@ test('session inventory does not display IP addresses or expose individual token
   assert.doesNotMatch(screen, /revoke_my_auth_session/);
 });
 
-test('session inventory refresh and retry actions meet the 44pt touch target', () => {
+test('session inventory refresh and retry actions meet the 48pt touch target', () => {
   assert.match(screen, /minHeight: 48, minWidth: 72/);
   assert.match(screen, /minHeight: 48, alignSelf: 'flex-start'/);
 });
