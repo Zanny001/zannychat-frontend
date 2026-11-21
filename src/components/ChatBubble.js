@@ -35,6 +35,8 @@ function VoiceBubbleContent({ message, isMine, captionColor }) {
   const { colors, spacing, typography } = useTheme();
   const player = useAudioPlayer(message.mediaUrl);
   const status = useAudioPlayerStatus(player);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [trackWidth, setTrackWidth] = useState(0);
 
   function togglePlayback() {
     if (status.playing) {
@@ -44,35 +46,78 @@ function VoiceBubbleContent({ message, isMine, captionColor }) {
     }
   }
 
+  function changePlaybackRate() {
+    const rates = [1, 1.25, 1.5, 2];
+    const nextRate = rates[(rates.indexOf(playbackRate) + 1) % rates.length];
+    try {
+      player.setPlaybackRate(nextRate);
+      setPlaybackRate(nextRate);
+    } catch (_) {
+      // Keep the current rate visible if the platform cannot change playback speed.
+    }
+  }
+
+  function seekPlayback(event) {
+    if (!trackWidth || !duration) return;
+    const fraction = Math.max(0, Math.min(1, event.nativeEvent.locationX / trackWidth));
+    try {
+      player.seekTo(fraction * duration).catch(() => {});
+    } catch (_) {
+      // Seeking is best-effort on platforms that do not expose it for this source.
+    }
+  }
+
   const duration = status.duration || message.mediaDuration || 0;
-  const progress = duration > 0 ? Math.min(1, (status.currentTime || 0) / duration) : 0;
+  const currentTime = Math.min(duration || Infinity, Math.max(0, status.currentTime || 0));
+  const progress = duration > 0 ? Math.min(1, currentTime / duration) : 0;
 
   return (
-    <TouchableOpacity
-      onPress={togglePlayback}
-      activeOpacity={0.85}
-      style={styles.voiceRow}
-      accessibilityRole="button"
-      accessibilityLabel={status.playing ? 'Pause voice message' : 'Play voice message'}
-      accessibilityHint="Plays or pauses this voice message"
-    >
-      <View style={[styles.playButton, { backgroundColor: isMine ? 'rgba(255,255,255,0.22)' : colors.surface }]}>
+    <View style={styles.voiceRow}>
+      <TouchableOpacity
+        onPress={togglePlayback}
+        activeOpacity={0.82}
+        style={[styles.playButton, { backgroundColor: isMine ? 'rgba(255,255,255,0.22)' : colors.surface }]}
+        accessibilityRole="button"
+        accessibilityLabel={status.playing ? 'Pause voice message' : 'Play voice message'}
+        accessibilityHint="Plays or pauses this voice message"
+      >
         <Ionicons name={status.playing ? 'pause' : 'play'} size={16} color={captionColor} />
-      </View>
+      </TouchableOpacity>
       <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm }}>
-        <View style={[styles.waveTrack, { backgroundColor: isMine ? hexToRgba(colors.bubbleMineMeta, 0.32) : colors.border }]}>
-          <View
-            style={[
-              styles.waveFill,
-              { width: `${progress * 100}%`, backgroundColor: isMine ? colors.bubbleMineMeta : colors.primary },
-            ]}
-          />
-        </View>
-        <Text style={[typography.small, { color: isMine ? colors.bubbleMineMeta : colors.textSecondary, marginTop: 4 }]}>
-          {formatDuration(status.playing || status.currentTime > 0 ? status.currentTime : duration)}
+        <TouchableOpacity
+          onPress={seekPlayback}
+          onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)}
+          activeOpacity={0.9}
+          style={styles.waveSeekTarget}
+          accessibilityRole="adjustable"
+          accessibilityLabel="Voice message playback position"
+          accessibilityHint="Tap along the progress track to seek"
+          accessibilityValue={{ min: 0, max: Math.round(duration), now: Math.round(currentTime), text: formatDuration(currentTime) }}
+        >
+          <View style={[styles.waveTrack, { backgroundColor: isMine ? hexToRgba(colors.bubbleMineMeta, 0.32) : colors.border }]}>
+            <View
+              style={[
+                styles.waveFill,
+                { width: `${progress * 100}%`, backgroundColor: isMine ? colors.bubbleMineMeta : colors.primary },
+              ]}
+            />
+          </View>
+        </TouchableOpacity>
+        <Text style={[typography.small, { color: isMine ? colors.bubbleMineMeta : colors.textSecondary, marginTop: 2 }]}>
+          {formatDuration(currentTime)} / {formatDuration(duration)}
         </Text>
       </View>
-    </TouchableOpacity>
+      <TouchableOpacity
+        onPress={changePlaybackRate}
+        activeOpacity={0.75}
+        style={styles.playbackRateButton}
+        accessibilityRole="button"
+        accessibilityLabel={`Playback speed ${playbackRate} times. Change speed`}
+        accessibilityHint="Cycles through normal, 1.25, 1.5 and 2 times speed"
+      >
+        <Text style={[typography.small, { color: captionColor }]}>{playbackRate}×</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -497,6 +542,8 @@ const styles = StyleSheet.create({
   fileIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   voiceRow: { flexDirection: 'row', alignItems: 'center', minWidth: 0, maxWidth: '100%', paddingVertical: 4 },
   playButton: { width: 48, height: 48, minWidth: 48, minHeight: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  waveTrack: { height: 4, borderRadius: 2, overflow: 'hidden' },
-  waveFill: { height: 4, borderRadius: 2 },
+  waveSeekTarget: { minHeight: 36, justifyContent: 'center' },
+  waveTrack: { height: 5, borderRadius: 3, overflow: 'hidden' },
+  waveFill: { height: 5, borderRadius: 3 },
+  playbackRateButton: { minWidth: 44, minHeight: 44, paddingHorizontal: 6, marginLeft: 2, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
 });
