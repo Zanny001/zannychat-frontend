@@ -36,3 +36,8 @@ test('theme preference reads cannot overwrite a newer user selection', () => {
   assert.match(theme, /const nextPreferences = \{ \.\.\.accessibilityPreferencesRef\.current, textScale: scaleKey \}/);
   assert.match(theme, /const nextPreferences = \{ \.\.\.accessibilityPreferencesRef\.current, highContrast: Boolean\(enabled\) \}/);
 });
+
+
+test('settings preference-warning dismiss control meets the shared 48-point target', () => {
+  assert.match(settings, /minWidth: 48, minHeight: 48/);
+});
