@@ -36,7 +36,7 @@ test('Post-LIVE summary reports duration and recording status without inventing 
 });
 
 test('Post-LIVE summary route is registered and all navigation actions are accessible', () => {
-  assert.ok(navigator.includes('name="LivePostStreamSummary" component={LivePostStreamSummaryScreen}'));
+  assert.ok(navigator.includes('name="LivePostStreamSummary" component={LivePostStreamSummaryRoute}'));
   assert.ok(navigator.includes("import LivePostStreamSummaryScreen from '../screens/LivePostStreamSummaryScreen'"));
   const controlCount = (summary.match(/<TouchableOpacity/g) || []).length;
   const roleCount = (summary.match(/accessibilityRole=/g) || []).length;
