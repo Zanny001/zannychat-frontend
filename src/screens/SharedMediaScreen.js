@@ -299,6 +299,6 @@ const styles = StyleSheet.create({
   emptyIcon: { width: 58, height: 58, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   loadMore: { minHeight: 48, borderWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 10, paddingHorizontal: 12 },
   lightbox: { ...StyleSheet.absoluteFillObject, zIndex: 50, backgroundColor: 'rgba(0,0,0,0.96)', alignItems: 'center', justifyContent: 'center' },
-  lightboxClose: { position: 'absolute', top: 44, right: 20, zIndex: 2, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  lightboxClose: { position: 'absolute', top: 44, right: 20, zIndex: 2, width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   fullscreenPhoto: { width: '100%', height: '100%' },
 });
