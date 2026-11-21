@@ -336,3 +336,56 @@ test('every interactive control in every screen file has an explicit accessible 
   assert.ok(totalControls >= 300, 'Expected to audit at least 300 interactive controls, found ' + totalControls);
   assert.deepEqual(violations, [], 'Interactive controls missing an accessibility label or role:\n' + violations.join('\n'));
 });
+
+
+test('custom palette semantic foregrounds stay readable across light, dark and high-contrast modes', () => {
+  const customMoods = [
+    { ...MOODS.royalNeon, signal: '#FFFFFF', thread: '#000000', danger: '#FFFFFF' },
+    { ...MOODS.royalNeon, signal: '#000000', thread: '#FFFFFF', danger: '#000000' },
+    { ...MOODS.royalNeon, signal: '#808080', thread: '#777777', danger: '#999999' },
+    { ...MOODS.royalNeon, signal: '#FF00FF', thread: '#00FFFF', danger: '#FFFF00' },
+  ];
+
+  for (const mood of customMoods) {
+    for (const mode of ['light', 'dark']) {
+      for (const highContrast of [false, true]) {
+        const colors = resolveMoodColors(mood, mode, highContrast);
+        const minimum = highContrast ? 7 : 4.5;
+        assert.ok(contrastRatio(colors.primary, colors.surfaceAlt) >= minimum, mood.key + ' primary ' + mode);
+        assert.ok(contrastRatio(colors.accent, colors.surfaceAlt) >= minimum, mood.key + ' accent ' + mode);
+        assert.ok(contrastRatio(colors.onPrimary, colors.primary) >= minimum, mood.key + ' onPrimary ' + mode);
+        assert.ok(contrastRatio(colors.onAccent, colors.accent) >= minimum, mood.key + ' onAccent ' + mode);
+        assert.ok(contrastRatio(colors.onDanger, colors.danger) >= minimum, mood.key + ' onDanger ' + mode);
+        assert.ok(contrastRatio(colors.bubbleMineText, colors.bubbleMine) >= minimum, mood.key + ' bubble text ' + mode);
+        assert.ok(contrastRatio(colors.bubbleMineMeta, colors.bubbleMine) >= minimum, mood.key + ' bubble metadata ' + mode);
+      }
+    }
+  }
+});
+
+test('LIVE and call action surfaces use semantic contrast foregrounds', () => {
+  const screens = [
+    'LiveStreamScreen.js',
+    'LiveStreamScreen.web.js',
+    'CallScreen.js',
+    'CallScreen.web.js',
+    'GroupCallScreen.js',
+    'GroupCallScreen.web.js',
+    'IncomingCallScreen.js',
+    'OutgoingCallScreen.js',
+  ];
+  for (const name of screens) {
+    const source = readFileSync(new URL('./' + name, import.meta.url), 'utf8');
+    assert.ok(source.includes('colors.onPrimary') || source.includes('colors.onAccent'), name + ' must use a semantic foreground for primary actions');
+    assert.match(source, /colors\.onDanger/, name + ' must use onDanger for destructive actions');
+  }
+  const liveNative = readFileSync(new URL('./LiveStreamScreen.js', import.meta.url), 'utf8');
+  const liveWeb = readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.match(liveNative, /backgroundColor: colors\.primary[\s\S]{0,240}color: colors\.onPrimary/, 'Native LIVE role badges must use onPrimary on primary fill');
+  assert.match(liveNative, /backgroundColor: colors\.accent[\s\S]{0,240}color: colors\.onAccent/, 'Native LIVE audio seats must use onAccent on accent fill');
+  assert.match(liveNative, /timeoutWarning \? colors\.danger[\s\S]{0,240}timeoutWarning \? colors\.onDanger/, 'Native LIVE warning timer must use onDanger on danger fill');
+  assert.match(liveWeb, /backgroundColor: colors\.primary[\s\S]{0,240}color: colors\.onPrimary/, 'Web LIVE role badges must use onPrimary on primary fill');
+  assert.match(liveWeb, /backgroundColor: colors\.accent[\s\S]{0,240}color: colors\.onAccent/, 'Web LIVE audio seats must use onAccent on accent fill');
+  assert.match(liveWeb, /timeoutWarning \? colors\.onDanger[\s\S]{0,160}backgroundColor: timeoutWarning \? colors\.danger/, 'Web LIVE warning timer must use onDanger on danger fill');
+  assert.match(liveWeb, /colors\.onAccent/, 'LIVE spotlight overlays must use onAccent');
+});
