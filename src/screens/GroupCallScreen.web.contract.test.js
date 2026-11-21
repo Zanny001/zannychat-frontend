@@ -54,3 +54,11 @@ test('web group calls preserve audio and render a camera-off tile when a remote 
   assert.match(source, /camera is off/);
   assert.match(source, /remoteAudioRef/);
 });
+
+test('call presence heartbeat contains synchronous throws and Supabase RPC error results', () => {
+  assert.match(source, /const heartbeat = async \(\) => \{/);
+  assert.match(source, /await supabase\.rpc\('heartbeat_call_session'/);
+  assert.match(source, /if \(result\?\.error\) throw result\.error/);
+  assert.match(source, /catch \(error\) \{\s*if \(active\) console\.warn\('\[calls\] presence heartbeat failed:/);
+  assert.match(source, /return null/);
+});
