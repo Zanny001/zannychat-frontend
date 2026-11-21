@@ -276,7 +276,7 @@ export default function LiveEventsScreen({ navigation }) {
             </TouchableOpacity>
             <View style={{maxHeight:160}}>
               <ScrollView nestedScrollEnabled>
-                {candidates.map((person)=><TouchableOpacity key={person.id} onPress={()=>toggleInvitee(person.id)} accessibilityRole="checkbox" accessibilityLabel={'Invite '+(person.name||'ZannyChat user')} accessibilityState={{checked:selectedInvitees.includes(person.id)}} style={{minHeight:44,flexDirection:'row',alignItems:'center',gap:8,borderBottomWidth:1,borderBottomColor:colors.border}}>
+                {candidates.map((person)=><TouchableOpacity key={person.id} onPress={()=>toggleInvitee(person.id)} accessibilityRole="checkbox" accessibilityLabel={'Invite '+(person.name||'ZannyChat user')} accessibilityState={{checked:selectedInvitees.includes(person.id)}} style={{minHeight:48,flexDirection:'row',alignItems:'center',gap:8,borderBottomWidth:1,borderBottomColor:colors.border}}>
                   <Ionicons name={selectedInvitees.includes(person.id)?'checkbox':'square-outline'} size={19} color={colors.primary}/>
                   <Text numberOfLines={1} style={[typography.body,{color:colors.textPrimary,flex:1}]}>{person.name||'ZannyChat user'}</Text>
                 </TouchableOpacity>)}
@@ -311,10 +311,10 @@ export default function LiveEventsScreen({ navigation }) {
             <Text style={[typography.bodyStrong,{color:colors.textPrimary}]}>{event.title}</Text>
             <Text style={[typography.caption,{color:colors.textSecondary}]}>{formatDate(event.startsAt)}</Text>
             <View style={{flexDirection:'row',gap:spacing.xs}}>
-              <TouchableOpacity disabled={busy} onPress={()=>respondInvitation(event.id,'accepted')} accessibilityRole="button" accessibilityLabel={'Accept invitation to '+event.title} style={{flex:1,minHeight:44,borderRadius:13,backgroundColor:colors.primary,alignItems:'center',justifyContent:'center'}}>
+              <TouchableOpacity disabled={busy} onPress={()=>respondInvitation(event.id,'accepted')} accessibilityRole="button" accessibilityLabel={'Accept invitation to '+event.title} style={{flex:1,minHeight:48,borderRadius:13,backgroundColor:colors.primary,alignItems:'center',justifyContent:'center'}}>
                 <Text style={[typography.caption,{color:colors.onPrimary,fontWeight:'900'}]}>Accept</Text>
               </TouchableOpacity>
-              <TouchableOpacity disabled={busy} onPress={()=>respondInvitation(event.id,'declined')} accessibilityRole="button" accessibilityLabel={'Decline invitation to '+event.title} style={{flex:1,minHeight:44,borderRadius:13,borderWidth:1,borderColor:colors.border,alignItems:'center',justifyContent:'center'}}>
+              <TouchableOpacity disabled={busy} onPress={()=>respondInvitation(event.id,'declined')} accessibilityRole="button" accessibilityLabel={'Decline invitation to '+event.title} style={{flex:1,minHeight:48,borderRadius:13,borderWidth:1,borderColor:colors.border,alignItems:'center',justifyContent:'center'}}>
                 <Text style={[typography.caption,{color:colors.textSecondary,fontWeight:'900'}]}>Decline</Text>
               </TouchableOpacity>
             </View>
