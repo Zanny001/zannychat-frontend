@@ -140,6 +140,7 @@ test('LIVE hub invalidates account-scoped responses and clears private data on a
   assert.ok(screen.includes('if (activeUserIdRef.current !== expectedUserId)'));
   assert.ok(screen.includes('setInvitations([])'));
   assert.ok(screen.includes('setReplays([])'));
+  assert.ok(screen.includes('setActiveCreatorStreamId(null)'));
   assert.ok(screen.includes('setFollowingIds([])'));
   assert.ok(screen.includes('setSelectedInvitees([])'));
   assert.ok(screen.includes('const latestUser = await getCurrentUser().catch(() => null)'));
