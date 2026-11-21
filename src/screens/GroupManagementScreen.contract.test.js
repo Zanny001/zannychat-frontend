@@ -28,3 +28,8 @@ test('group admin, invite and leave actions remain present in virtualized rows a
   assert.ok(source.includes('Member changes require a working backend session'));
   assert.ok(!source.includes('{footer.'));
 });
+
+
+test('group member recovery retry action meets the 48-point mobile touch target', () => {
+  assert.match(source, /accessibilityLabel="Retry loading group members" style=\{\{ minHeight: 48/);
+});
