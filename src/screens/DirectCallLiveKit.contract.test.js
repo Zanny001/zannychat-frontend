@@ -72,8 +72,13 @@ test('late LiveKit token responses cannot resurrect a call after the user ends o
     const end = source.slice(source.indexOf('const endCall'), source.indexOf('useEffect', source.indexOf('const endCall')));
     assert.match(end, /if \(endingRef\.current\) return/);
     assert.match(end, /endingRef\.current = true/);
-    assert.match(end, /if \(!endStatePersisted\) endingRef\.current = false/);
   }
+  const nativeEnd = nativeCall.slice(nativeCall.indexOf('const endCall'), nativeCall.indexOf('useEffect', nativeCall.indexOf('const endCall')));
+  assert.match(nativeEnd, /if \(!endStatePersisted\) endingRef\.current = false/);
+  const webEnd = webCall.slice(webCall.indexOf('const endCall'), webCall.indexOf('useEffect', webCall.indexOf('const endCall')));
+  assert.doesNotMatch(webEnd, /if \(!endStatePersisted\) endingRef\.current = false/);
+  assert.match(webEnd, /pcRef\.current\?\.close\(\)/);
+  assert.match(webEnd, /navigation\.goBack\(\)/);
 });
 
 
