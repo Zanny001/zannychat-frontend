@@ -44,7 +44,7 @@ function QuickAction({ icon, label, onPress, primary = false, disabled = false }
 }
 
 export default function PeerProfileScreen({ route, navigation }) {
-  const { colors, spacing, radii, typography, mood } = useTheme();
+  const { colors, spacing, radii, typography, mood, layout } = useTheme();
   const participant = route.params?.participant || {};
   const fromLive = route.params?.fromLive === true;
   const creatorId = participant.id || participant.user_id;
