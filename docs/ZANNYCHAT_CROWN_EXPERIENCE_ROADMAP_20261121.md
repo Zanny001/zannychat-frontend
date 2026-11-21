@@ -193,3 +193,12 @@ Every feature release must include:
 - The production Vercel deployment for `f8d3606` was observed in BUILDING state at the time of this update. It must be rechecked before marking deployed; physical-device playback/seek acceptance remains open.
 - PR #293 (browser LiveKit remote-audio recovery) remains open. Its base is behind current main and GitHub currently reports it non-mergeable; it still requires branch synchronization, fresh CI and two-participant browser/device acceptance. Do not mark browser calling fixed based on source changes alone.
 - Next feature work must continue only after reconciling these P0 acceptance gates and auditing existing main code to avoid duplicating already-merged capabilities.
+
+
+## 9. Execution update — 2026-11-22 (P0 reliability)
+
+- **Voice notes:** PR #295 is merged as `f8d36066b9d52a028cfc3f65531cbb7c256f13e1`. Production Vercel deployment was rechecked and is READY on main commit `66e4b9d086fa7fafae99fb446d8fc0671521c273`; the production alias resolves to `https://zannychat.vercel.app`. Physical-device playback/speed/seek acceptance remains pending.
+- **Browser group-call remote audio:** PR #297 is open on current main; all frontend, dependency, Android Kotlin compile, iOS prebuild, web/Android export, call-recovery, native receiver, release/integrity and bundle-exposure checks passed. Its Vercel preview is READY at `https://zannychat-7nmsv3j1o-zanny-chat.vercel.app`. Keep it out of production until a two-participant browser/device test confirms two-way audio and autoplay-unlock recovery.
+- **LIVE teardown polling:** PR #298 adds ended-state guards to native/web comments, guest-status and guest-request pollers, ignores in-flight responses after teardown, and prevents queued comment refreshes restarting after end. Motivation is observed guest-request 404 traffic during teardown. Fresh frontend/client/bundle CI is running; Vercel preview is QUEUED. No merge/deployment acceptance yet.
+- **Current release baseline:** production main deployment for commit `66e4b9d` is READY. Do not mistake PR previews for production.
+- **Manual P0 gates still required:** (1) two participants test browser call audio on PR #297 preview; (2) a creator/viewer LIVE session confirms reactions, guest approval, and that guest-request polling stops after ending/leaving; (3) test voice-note playback, speed and seek on production Android. Automated CI and READY deployments are not substitutes for these device checks.
