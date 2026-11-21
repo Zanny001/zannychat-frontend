@@ -152,10 +152,28 @@ export default function GroupCallScreenWeb({ route, navigation }) {
       refreshParticipants();
       setAudioBlocked(!room.canPlaybackAudio);
       setStatus('Connected');
-    })().catch((error) => {
+    })().catch(async (error) => {
       if (!active) return;
+      // A failed browser media startup must not leave an accepted direct call
+      // appearing active after the caller has lost its media connection.
+      const activeRoomId = joinedRoomIdRef.current;
+      if (directCallId && activeRoomId) {
+        await updateCallStatus(directCallId, 'ended').catch(() => {});
+      } else if (activeRoomId) {
+        await backendFetch(`/group-calls/${activeRoomId}/leave`, { method: 'POST' }).catch(() => {});
+      }
+      try { room.disconnect(); } catch (_) {}
+      const permissionMessage = error?.name === 'NotAllowedError'
+        ? 'Chrome blocked microphone or camera access. Allow ZannyChat to use your microphone and camera in site settings, then start a new call.'
+        : error?.name === 'NotFoundError'
+          ? 'No usable microphone or camera was found on this device.'
+          : error?.name === 'NotReadableError'
+            ? 'Your microphone or camera is busy in another app. Close other apps using it and try again.'
+            : error?.name === 'OverconstrainedError'
+              ? 'This device cannot provide the requested call quality. Try again with another camera or microphone.'
+              : error?.message || 'Could not connect to this call. Check your connection and try again.';
       setStatus('Unavailable');
-      setErrorText(error?.message || 'Could not connect to this call.');
+      setErrorText(permissionMessage);
     });
 
     return () => {
