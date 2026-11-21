@@ -49,7 +49,9 @@ export async function backendFetch(path, options = {}) {
     });
 
     if (!response.ok) {
-      throw new Error(body.error || `Request failed with status ${response.status}`);
+      const requestError = new Error(body.error || `Request failed with status ${response.status}`);
+      requestError.status = response.status;
+      throw requestError;
     }
     return body;
   } catch (error) {
