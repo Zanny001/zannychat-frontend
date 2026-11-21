@@ -136,21 +136,23 @@ export default function CallScreenWeb({ route, navigation }) {
   const endCall = useCallback(async (reason = 'ended') => {
     if (endingRef.current) return;
     endingRef.current = true;
-    let endStatePersisted = false;
+    // Stop local capture before waiting for the network. A slow or offline
+    // status write must never leave the browser camera/microphone running.
+    try { pcRef.current?.close(); } catch (_) {}
+    try { localStreamRef.current?.getTracks?.().forEach((track) => track.stop()); } catch (_) {}
+    try { remoteStreamRef.current?.getTracks?.().forEach((track) => track.stop()); } catch (_) {}
     const current = callRef.current || call;
     if (current?.id && ['ringing', 'accepted'].includes(current.status)) {
       const nextStatus = getCallEndStatus({ reason, isCaller, status: current.status });
       try {
         const updated = await updateCallStatus(current.id, nextStatus);
         callRef.current = { ...current, ...updated };
-        endStatePersisted = true;
-      } catch (_) {
-        // Re-enable the beforeRemove fallback below if this first write fails.
+      } catch (error) {
+        console.warn('[calls] local media stopped; call-end status will be reconciled after network recovery:', error?.message || error);
       }
-    } else {
-      endStatePersisted = true;
     }
-    if (!endStatePersisted) endingRef.current = false;
+    // Keep endingRef set so beforeRemove cannot block navigation and retry a
+    // second network write after the user has already ended the call.
     navigation.goBack();
   }, [call, isCaller, navigation]);
 
