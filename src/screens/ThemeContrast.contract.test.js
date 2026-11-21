@@ -375,12 +375,12 @@ test('LIVE and call action surfaces use semantic contrast foregrounds', () => {
     'OutgoingCallScreen.js',
   ];
   for (const name of screens) {
-    const source = fs.readFileSync(new URL('./' + name, import.meta.url), 'utf8');
+    const source = readFileSync(new URL('./' + name, import.meta.url), 'utf8');
     assert.ok(source.includes('colors.onPrimary') || source.includes('colors.onAccent'), name + ' must use a semantic foreground for primary actions');
     assert.match(source, /colors\.onDanger/, name + ' must use onDanger for destructive actions');
   }
-  const liveNative = fs.readFileSync(new URL('./LiveStreamScreen.js', import.meta.url), 'utf8');
-  const liveWeb = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  const liveNative = readFileSync(new URL('./LiveStreamScreen.js', import.meta.url), 'utf8');
+  const liveWeb = readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.match(liveNative, /backgroundColor: colors\.primary[\s\S]{0,240}color: colors\.onPrimary/, 'Native LIVE role badges must use onPrimary on primary fill');
   assert.match(liveNative, /backgroundColor: colors\.accent[\s\S]{0,240}color: colors\.onAccent/, 'Native LIVE audio seats must use onAccent on accent fill');
   assert.match(liveNative, /timeoutWarning \? colors\.danger[\s\S]{0,240}timeoutWarning \? colors\.onDanger/, 'Native LIVE warning timer must use onDanger on danger fill');
