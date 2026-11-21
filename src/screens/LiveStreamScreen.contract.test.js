@@ -571,7 +571,10 @@ test('native and web LIVE stages expose server-derived role hierarchy and labell
   assert.ok(screen.includes("label=\"Moderation\""));
   assert.ok(screen.includes("label=\"Participants\""));
   assert.ok(screen.includes("label=\"Audio output\""));
-  assert.ok(screen.includes("label={replayStatus === 'ready' ? 'Watch replay'"));
+  assert.ok(screen.includes('creatorMode && replayEnabled ? <TouchableOpacity'));
+  assert.ok(screen.includes("accessibilityLabel={replayStatus === 'ready' ? 'Watch saved LIVE replay'"));
+  assert.ok(webScreen.includes('creatorMode && replayEnabled ? <TouchableOpacity'));
+  assert.ok(webScreen.includes("accessibilityLabel={replay?.status === 'ready' ? 'Watch saved LIVE replay'"));
   assert.ok(screen.includes("creatorMode ? 'HOST' : publisherMode ? 'GUEST' : moderatorMode ? 'MODERATOR' : 'VIEWER'"));
   assert.ok(screen.includes("color: colors.textPrimary, flex: 1, minWidth: 0"));
   assert.ok(webScreen.includes("label=\"Tools\""));
