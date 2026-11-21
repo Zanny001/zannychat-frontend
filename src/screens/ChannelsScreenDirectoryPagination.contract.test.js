@@ -17,3 +17,8 @@ test('directory paging resets after search, refresh and filter changes', () => {
   assert.ok(source.includes('setDirectoryFilter(item.key); setDirectoryLimit(40);'));
   assert.ok(source.includes('setDirectoryFilter(\'all\'); setDirectoryLimit(40);'));
 });
+
+test('channel directory refresh and clear-search icon controls meet 48-point mobile targets', () => {
+  assert.ok(source.includes('accessibilityLabel="Refresh channels" style={{ width: 48, height: 48'));
+  assert.ok(source.includes('accessibilityLabel="Clear channel search" style={{ width: 48, height: 48'));
+});
