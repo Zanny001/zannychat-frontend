@@ -61,7 +61,7 @@ function VoiceBubbleContent({ message, isMine, captionColor }) {
     if (!trackWidth || !duration) return;
     const fraction = Math.max(0, Math.min(1, event.nativeEvent.locationX / trackWidth));
     try {
-      player.seekTo(fraction * duration);
+      player.seekTo(fraction * duration).catch(() => {});
     } catch (_) {
       // Seeking is best-effort on platforms that do not expose it for this source.
     }
