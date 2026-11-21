@@ -239,10 +239,22 @@ export default function GroupCallScreenWeb({ route, navigation }) {
   useEffect(() => {
     if (!connection?.roomId || status !== 'Connected') return undefined;
     let active = true;
-    const heartbeat = () => (directCallId
-      ? supabase.rpc('heartbeat_call_session', { p_call_id: directCallId })
-      : backendFetch(`/group-calls/${connection.roomId}/heartbeat`, { method: 'POST' }))
-      .catch((error) => { if (active) console.warn('[calls] presence heartbeat failed:', error?.message || error); });
+    const heartbeat = async () => {
+      try {
+        let result;
+        if (directCallId) {
+          if (!supabase) throw new Error('Supabase is unavailable for call presence.');
+          result = await supabase.rpc('heartbeat_call_session', { p_call_id: directCallId });
+          if (result?.error) throw result.error;
+        } else {
+          result = await backendFetch(`/group-calls/${connection.roomId}/heartbeat`, { method: 'POST' });
+        }
+        return result;
+      } catch (error) {
+        if (active) console.warn('[calls] presence heartbeat failed:', error?.message || error);
+        return null;
+      }
+    };
     heartbeat();
     const interval = setInterval(heartbeat, 30_000);
     return () => { active = false; clearInterval(interval); };
