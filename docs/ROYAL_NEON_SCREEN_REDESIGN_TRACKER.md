@@ -23,7 +23,7 @@ Source of truth: the current `src/navigation/AppNavigator.js` route declarations
 - [x] Run frontend unit tests and release audits on the validated feature-branch head (13 Nov 2026).
 - [x] Verify custom-palette contrast on LIVE video overlays and call controls (PR #261; four extreme custom palettes across light/dark and high-contrast modes, plus semantic LIVE/call foreground contracts).
 - [ ] Verify Android 10 / lower-powered device performance.
-- [ ] Approve and merge the design foundation.
+- [~] Design foundation is present in main: Crown Aurora default palette, Signal & Thread semantic colors, GlassCard/GlassInput, custom palettes and contrast-aware text; final visual approval remains pending screen-by-screen and device QA.
 
 ## Screen-by-screen implementation order
 
