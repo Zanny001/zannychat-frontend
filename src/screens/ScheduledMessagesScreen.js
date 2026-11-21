@@ -145,10 +145,10 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
 
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm }}>
           <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Pending messages</Text>
-          <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh scheduled messages" style={{ padding: spacing.xs }}><Ionicons name="refresh-outline" size={19} color={colors.primary} /></TouchableOpacity>
+          <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh scheduled messages" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="refresh-outline" size={19} color={colors.primary} /></TouchableOpacity>
         </View>
             {loading && items.length ? <ActivityIndicator color={colors.primary} style={{ padding: spacing.md }} /> : null}
-            {error && items.length ? <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text accessibilityRole="alert" style={[typography.body, { color: colors.textSecondary }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh scheduled messages"><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
+            {error && items.length ? <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text accessibilityRole="alert" style={[typography.body, { color: colors.textSecondary }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh scheduled messages" style={{ minHeight: 48, justifyContent: 'center', alignSelf: 'flex-start' }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
           </View>
         }
         renderItem={({ item }) => (
@@ -159,7 +159,7 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
                 <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{conversationName(item.conversation_id)}</Text>
                 <Text style={[typography.caption, { color: colors.textSecondary }]}>{item.scheduled_for ? new Date(item.scheduled_for).toLocaleString() : 'Time unavailable'}</Text>
               </View>
-              <TouchableOpacity onPress={() => cancel(item)} disabled={busyId === item.id} accessibilityRole="button" accessibilityLabel={`Cancel scheduled message to ${conversationName(item.conversation_id)}`} style={{ padding: spacing.xs }}>
+              <TouchableOpacity onPress={() => cancel(item)} disabled={busyId === item.id} accessibilityRole="button" accessibilityLabel={`Cancel scheduled message to ${conversationName(item.conversation_id)}`} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}>
                 {busyId === item.id ? <ActivityIndicator color={colors.primary} /> : <Ionicons name="close-circle-outline" size={22} color={colors.textSecondary} />}
               </TouchableOpacity>
             </View>
