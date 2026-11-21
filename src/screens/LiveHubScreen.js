@@ -135,6 +135,7 @@ export default function LiveHubScreen({ navigation, route }) {
         setStreams([]);
         setInvitations([]);
         setReplays([]);
+        setActiveCreatorStreamId(null);
         setReplayLoaded(false);
         setReplayError('');
         setFollowingCreators([]);
