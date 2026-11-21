@@ -26,3 +26,12 @@ test('web group call disconnects and stops published local tracks before immedia
   assert.ok(handler.indexOf('navigation.goBack();') < handler.indexOf('const persistLeave'));
   assert.match(handler, /Promise.resolve(persistLeave).catch/);
 });
+
+test('web video-call camera startup failure falls back to microphone-only calling', () => {
+  assert.match(direct, /recoverableCameraErrors = \['NotAllowedError', 'NotFoundError', 'NotReadableError', 'OverconstrainedError', 'AbortError'\]/);
+  assert.match(direct, /getUserMedia\(\{ audio: true, video: false \}\)/);
+  assert.match(direct, /setCameraOff\(true\)/);
+  assert.match(direct, /setActiveCallType\('audio'\)/);
+  assert.match(direct, /call continues with audio/);
+  assert.match(direct, /setMediaNotice\(''\)/);
+});
