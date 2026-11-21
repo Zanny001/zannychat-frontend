@@ -273,3 +273,5 @@ The connected account is confirmed as an `OWNER` of the `ZannyChat` Hobby team, 
 
 - 21 Nov 2026 Account utility recovery controls in Settings, Notifications, Data & Storage and Sessions were normalized to 48 points in PR #265 (`fd322b0d2ebb03b8ab834588c9970fd2dce1fdeb`); per-screen regression contracts passed all five frontend checks.
 - 21 Nov 2026 LIVE Hub and Creator Studio primary actions were raised to 48 points in PR #266 (`31a83fbb33745c64f54562a33ddb7678c128eb5c`). The compact 44-point overlay/reaction/resize controls were intentionally retained. All four frontend quality checks passed.
+
+- 21 Nov 2026 LIVE operations touch-target pass merged in PR #267 (`3c0370f8feba8c50128d78542f0d3baecdeb1aef`): replay library, settings, guest queue, moderation, reports, Events and Preflight primary/recovery actions now meet 48 points. The regression contract also locks the creator action to explicit readable `END LIVE` text on native and web; compact resize/overlay controls remain unchanged. All four frontend checks passed.
