@@ -21,3 +21,8 @@ test('Data & storage exposes session-only state and a retry action after persist
   assert.match(screen, /Try saving again/);
   assert.match(screen, /maxWidth: layout\.contentMaxWidth/);
 });
+
+
+test('Data & storage retry control meets the shared 48-point mobile target', () => {
+  assert.match(read('./DataStorageScreen.js'), /retryButton: \{ minHeight: 48/);
+});

@@ -144,14 +144,14 @@ export default function SessionsScreen({ navigation }) {
         <GlassCard style={{ marginBottom: spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm }}>
             <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{otherSessions.length} other {otherSessions.length === 1 ? 'device' : 'devices'}</Text>
-            <TouchableOpacity onPress={() => loadSessions()} disabled={sessionsLoading} accessibilityRole="button" accessibilityLabel="Refresh active sessions" accessibilityState={{ disabled: sessionsLoading, busy: sessionsLoading }} style={{ minHeight: 44, minWidth: 72, paddingHorizontal: 10, justifyContent: 'center', alignItems: 'center', opacity: sessionsLoading ? 0.55 : 1 }}>
+            <TouchableOpacity onPress={() => loadSessions()} disabled={sessionsLoading} accessibilityRole="button" accessibilityLabel="Refresh active sessions" accessibilityState={{ disabled: sessionsLoading, busy: sessionsLoading }} style={{ minHeight: 48, minWidth: 72, paddingHorizontal: 10, justifyContent: 'center', alignItems: 'center', opacity: sessionsLoading ? 0.55 : 1 }}>
               <Text style={[typography.caption, { color: colors.primary, fontWeight: '700' }]}>{sessionsLoading ? 'Refreshing…' : 'Refresh'}</Text>
             </TouchableOpacity>
           </View>
           {sessionsLoading ? <ActivityIndicator color={mood.signal} /> : sessionsError ? (
             <View accessibilityRole="alert">
               <Text style={[typography.caption, { color: colors.danger, lineHeight: 20 }]}>{sessionsError}</Text>
-              <TouchableOpacity onPress={() => loadSessions()} accessibilityRole="button" accessibilityLabel="Retry loading active sessions" style={{ minHeight: 44, alignSelf: 'flex-start', justifyContent: 'center', paddingHorizontal: 8 }}>
+              <TouchableOpacity onPress={() => loadSessions()} accessibilityRole="button" accessibilityLabel="Retry loading active sessions" style={{ minHeight: 48, alignSelf: 'flex-start', justifyContent: 'center', paddingHorizontal: 8 }}>
                 <Text style={[typography.caption, { color: colors.primary, fontWeight: '700' }]}>Retry loading sessions</Text>
               </TouchableOpacity>
             </View>
