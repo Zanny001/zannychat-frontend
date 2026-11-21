@@ -29,8 +29,8 @@ test('call route render failures are logged without user or session payloads', (
 
 test('call route fallback returns to the existing app instead of reloading the whole page', () => {
   assert.match(boundary, /navigation\?\.canGoBack\?\.\(\)/);
-  assert.match(boundary, /navigation\?\.canGoBack\?\.\(\)/);
-  assert.match(boundary, /navigation\?\.canGoBack\?\.\(\)/);
+  assert.match(boundary, /navigation\.goBack\(\)/);
+  assert.match(boundary, /navigation\?\.navigate\?\.\('Main'\)/);
   assert.match(boundary, /Your chat is still available/);
   assert.doesNotMatch(boundary, /window\.location\.reload/);
-});
+});;
