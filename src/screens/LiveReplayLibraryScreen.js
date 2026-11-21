@@ -166,7 +166,7 @@ export default function LiveReplayLibraryScreen({ navigation }) {
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm }}>
           <Text style={[typography.caption, { color: colors.textSecondary }]}>{item.durationSeconds ? Math.round(item.durationSeconds / 60) + ' min' : 'Duration pending'}{item.fileSizeBytes ? ' · ' + (item.fileSizeBytes / 1048576).toFixed(1) + ' MB' : ''}</Text>
           {canWatch ? (
-            <TouchableOpacity onPress={() => navigation.navigate('LiveReplay', { replay: item })} accessibilityRole="button" accessibilityLabel={'Watch replay: ' + (item.streamTitle || 'LIVE replay')} style={{ minHeight: 44, paddingHorizontal: spacing.md, borderRadius: radii.md, backgroundColor: colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+            <TouchableOpacity onPress={() => navigation.navigate('LiveReplay', { replay: item })} accessibilityRole="button" accessibilityLabel={'Watch replay: ' + (item.streamTitle || 'LIVE replay')} style={{ minHeight: 48, paddingHorizontal: spacing.md, borderRadius: radii.md, backgroundColor: colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
               <Ionicons name="play" size={16} color={colors.onPrimary} />
               <Text style={[typography.small, { color: colors.onPrimary, fontWeight: '900' }]}>Watch replay</Text>
             </TouchableOpacity>
@@ -228,14 +228,14 @@ export default function LiveReplayLibraryScreen({ navigation }) {
               {FILTERS.map((option) => {
                 const selected = filter === option.value;
                 return (
-                  <TouchableOpacity key={option.value} onPress={() => setFilter(option.value)} accessibilityRole="radio" accessibilityLabel={'Show ' + option.label + ' replays'} accessibilityState={{ checked: selected }} style={{ minHeight: 44, paddingHorizontal: spacing.md, borderRadius: 16, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                  <TouchableOpacity key={option.value} onPress={() => setFilter(option.value)} accessibilityRole="radio" accessibilityLabel={'Show ' + option.label + ' replays'} accessibilityState={{ checked: selected }} style={{ minHeight: 48, paddingHorizontal: spacing.md, borderRadius: 16, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                     <Text style={[typography.caption, { color: selected ? colors.onPrimary : colors.textSecondary, fontWeight: '800' }]}>{option.label}</Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
             {loading && <View style={{ alignItems: 'center', paddingVertical: spacing.md }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.xs }]}>Loading your replay library…</Text></View>}
-            {!!error && <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger }]}>{error}</Text><TouchableOpacity onPress={() => refresh()} accessibilityRole="button" accessibilityLabel="Retry loading replay library" style={{ minHeight: 44, justifyContent: 'center' }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard>}
+            {!!error && <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger }]}>{error}</Text><TouchableOpacity onPress={() => refresh()} accessibilityRole="button" accessibilityLabel="Retry loading replay library" style={{ minHeight: 48, justifyContent: 'center' }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard>}
           </View>
         }
         ListEmptyComponent={!loading && !error ? (

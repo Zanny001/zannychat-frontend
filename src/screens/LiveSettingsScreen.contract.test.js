@@ -70,3 +70,8 @@ test('LIVE Hub applies saved creator defaults to the next broadcast setup only',
   assert.ok(hub.includes('setAllowGuests(preferences.allowGuests)'));
   assert.equal(hub.includes("if (mode.value !== 'broadcast') setAllowGuests(true)"), false);
 });
+
+
+test('LIVE settings category options meet the 48-point mobile target', () => {
+  assert.match(screen, /minHeight: 48, paddingHorizontal: spacing\.md/);
+});

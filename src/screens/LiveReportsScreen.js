@@ -155,14 +155,14 @@ export default function LiveReportsScreen({ route, navigation }) {
           <View style={{ flexDirection: 'row', gap: spacing.xs, flexWrap: 'wrap' }}>
             {FILTERS.map((item) => {
               const selected = filter === item.value;
-              return <TouchableOpacity key={item.value} onPress={() => setFilter(item.value)} accessibilityRole="radio" accessibilityLabel={'Filter LIVE reports: ' + item.label} accessibilityState={{ checked: selected }} style={{ minHeight: 44, paddingHorizontal: spacing.md, borderRadius: 14, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary : colors.surface, justifyContent: 'center' }}>
+              return <TouchableOpacity key={item.value} onPress={() => setFilter(item.value)} accessibilityRole="radio" accessibilityLabel={'Filter LIVE reports: ' + item.label} accessibilityState={{ checked: selected }} style={{ minHeight: 48, paddingHorizontal: spacing.md, borderRadius: 14, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary : colors.surface, justifyContent: 'center' }}>
                 <Text style={[typography.caption, { color: selected ? colors.onPrimary : colors.textSecondary, fontWeight: '800' }]}>{item.label}</Text>
               </TouchableOpacity>;
             })}
           </View>
 
           {loading && !reports.length ? <View style={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary }]}>Loading safety reports…</Text></View> : null}
-          {!!error ? <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text accessibilityRole="alert" style={[typography.body, { color: colors.danger }]}>{error}</Text><TouchableOpacity onPress={() => refresh()} accessibilityRole="button" accessibilityLabel="Retry loading LIVE reports" style={{ minHeight: 44, justifyContent: 'center' }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
+          {!!error ? <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text accessibilityRole="alert" style={[typography.body, { color: colors.danger }]}>{error}</Text><TouchableOpacity onPress={() => refresh()} accessibilityRole="button" accessibilityLabel="Retry loading LIVE reports" style={{ minHeight: 48, justifyContent: 'center' }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
           {!loading && !error && visibleReports.length === 0 ? <GlassCard contentStyle={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}>
             <Ionicons name="shield-checkmark-outline" size={30} color={colors.textSecondary} />
             <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>No reports in this view</Text>

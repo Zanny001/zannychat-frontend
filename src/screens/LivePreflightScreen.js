@@ -294,7 +294,7 @@ export default function LivePreflightScreen({ route, navigation }) {
                     onPress={() => { setError(''); setCameraReady(false); setCameraFacing((current) => current === 'front' ? 'back' : 'front'); }}
                     accessibilityRole="button"
                     accessibilityLabel="Switch camera"
-                    style={{ minWidth: 48, minHeight: 44, borderRadius: 13, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 }}
+                    style={{ minWidth: 48, minHeight: 48, borderRadius: 13, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 }}
                   >
                     <Ionicons name="camera-reverse-outline" size={19} color={colors.textPrimary} />
                   </TouchableOpacity>
@@ -344,7 +344,7 @@ export default function LivePreflightScreen({ route, navigation }) {
               <Text style={[typography.bodyStrong, { color: mediaPermissionsGranted ? colors.success : colors.primary }]}>{permissionBusy ? 'Checking permissions…' : mediaPermissionsGranted ? 'Permissions granted' : 'Allow device access'}</Text>
             </TouchableOpacity>
             {((activeCameraPermission && !activeCameraPermission.granted && activeCameraPermission.canAskAgain === false) || (activeMicrophonePermission && !activeMicrophonePermission.granted && activeMicrophonePermission.canAskAgain === false)) && (
-              <TouchableOpacity onPress={openPermissionSettings} accessibilityRole="button" accessibilityLabel="Open device settings for LIVE permissions" style={{ minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 5 }}>
+              <TouchableOpacity onPress={openPermissionSettings} accessibilityRole="button" accessibilityLabel="Open device settings for LIVE permissions" style={{ minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: 5 }}>
                 <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>{Platform.OS === 'web' ? 'How to allow browser access' : 'Open device settings'}</Text>
               </TouchableOpacity>
             )}
