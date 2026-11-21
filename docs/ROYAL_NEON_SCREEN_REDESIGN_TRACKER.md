@@ -269,3 +269,6 @@ The connected account is confirmed as an `OWNER` of the `ZannyChat` Hobby team, 
 - A full public-schema scan found no authenticated-writable timestamp/date columns on tables lacking a BEFORE INSERT/UPDATE trigger.
 - The Vercel team is correctly identified as `team_P8IYvDiidDlhUHaQBe1RN1Wg` (ZannyChat, Hobby). Project creation through the connected API still returns 403. A one-time team authorization link was generated; owner approval must be completed before retrying. No Vercel project/deployment is claimed.
 - The next visual pass remains messaging-first. All 48 navigation experiences stay [~] until screen-level visual, keyboard, responsive, accessibility and supported-device checks are complete.
+
+- 21 Nov 2026 Account utility recovery controls in Settings, Notifications, Data & Storage and Sessions were normalized to 48 points in PR #265 (`fd322b0d2ebb03b8ab834588c9970fd2dce1fdeb`); per-screen regression contracts passed all five frontend checks.
+- 21 Nov 2026 LIVE Hub and Creator Studio primary actions were raised to 48 points in PR #266 (`31a83fbb33745c64f54562a33ddb7678c128eb5c`). The compact 44-point overlay/reaction/resize controls were intentionally retained. All four frontend quality checks passed.
