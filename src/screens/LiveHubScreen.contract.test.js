@@ -111,7 +111,7 @@ test('replay-ready notifications open the private in-app player', () => {
 test('Go LIVE primary button uses its semantic foreground color for all palette themes', () => {
   assert.ok(screen.includes('<ActivityIndicator color={colors.onPrimary} />'));
   assert.ok(screen.includes('name="radio" size={20} color={colors.onPrimary}'));
-  assert.ok(screen.includes("{ color: colors.onPrimary }]}>{busy ? 'Connecting…' : 'Go LIVE'}"));
+  assert.ok(screen.includes("{ color: colors.onPrimary }]}>{busy ? 'Connecting…' : activeCreatorStreamId ? 'Rejoin LIVE' : 'Go LIVE'}"));
 });
 
 
@@ -194,4 +194,14 @@ test('LIVE room navigation passes only stable IDs and safe creator display hints
   assert.ok(screen.includes('streamId: stream.id'));
   assert.ok(screen.includes('creatorName: stream.creator_name || stream.name || null'));
   assert.ok(screen.includes('creatorAvatarColor: stream.avatarColor || stream.avatar_color || null'));
+});
+
+
+test('LIVE hub detects an existing creator stream and offers direct re-entry instead of duplicate creation', () => {
+  assert.ok(screen.includes("import { getActiveCreatorStreamId } from '../utils/liveCreatorRecovery'"));
+  assert.ok(screen.includes("backendFetch('/live/creators/me/profile')"));
+  assert.ok(screen.includes('setActiveCreatorStreamId(getActiveCreatorStreamId(creatorProfileResult?.result))'));
+  assert.ok(screen.includes("navigation.navigate('LiveStream', { streamId: activeCreatorStreamId, creatorMode: true })"));
+  assert.ok(screen.includes("activeCreatorStreamId ? 'Rejoin LIVE' : 'Go LIVE'"));
+  assert.ok(screen.includes("activeCreatorStreamId ? 'Rejoin active LIVE broadcast' : 'Go LIVE'"));
 });
