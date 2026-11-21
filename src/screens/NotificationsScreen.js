@@ -276,6 +276,6 @@ function PrefRow({ icon, label, detail, value, onValueChange, disabled, last }) 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   persistenceWarning: { borderWidth: 1, borderRadius: 16, padding: 14, flexDirection: 'row', alignItems: 'flex-start' },
-  retryButton: { minHeight: 44, alignSelf: 'flex-start', justifyContent: 'center', marginTop: 5, paddingRight: 12 },
+  retryButton: { minHeight: 48, alignSelf: 'flex-start', justifyContent: 'center', marginTop: 5, paddingRight: 12 },
   timeInput: { minHeight: 48, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 },
 });
