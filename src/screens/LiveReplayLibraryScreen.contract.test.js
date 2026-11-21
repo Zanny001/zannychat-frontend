@@ -59,7 +59,7 @@ test('creator studio replay deletion is owner-only in both UI and handler', () =
 
 
 test('LIVE replay library watch, filter and recovery controls meet the 48-point mobile target', () => {
-  assert.ok(screen.includes('accessibilityLabel="Watch replay:'));
+  assert.ok(screen.includes("accessibilityLabel={'Watch replay: '"));
   assert.ok(screen.includes('accessibilityLabel="Retry loading replay library" style={{ minHeight: 48'));
   assert.ok(screen.includes('style={{ minHeight: 48, paddingHorizontal: spacing.md'));
 });
