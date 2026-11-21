@@ -8,11 +8,11 @@ const nativeKnot = fs.readFileSync(new URL('./Knot.js', import.meta.url), 'utf8'
 test('web Knot renders the same static SVG mark without Reanimated host components', () => {
   assert.match(webKnot, /from 'react-native-svg'/);
   assert.match(webKnot, /<Path/);
-  assert.match(webKnot, /openRingPath\(78\)/);
-  assert.match(webKnot, /openRingPath\(102\)/);
+  assert.match(webKnot, /openRingPath\(78, -35\)/);
+  assert.match(webKnot, /openRingPath\(102, 145\)/);
   assert.ok(webKnot.includes('A ${RADIUS} ${RADIUS} 0 1 1'));
-  assert.match(webKnot, /rotation=\{-35\}/);
-  assert.match(webKnot, /rotation=\{145\}/);
+  assert.match(webKnot, /function rotatePoint/);
+  assert.doesNotMatch(webKnot, /rotation=|origin=/);
   assert.doesNotMatch(webKnot, /react-native-reanimated|createAnimatedComponent|useAnimatedProps/);
   assert.match(nativeKnot, /useAnimatedProps/);
 });
