@@ -231,7 +231,7 @@ export function resolveMoodColors(mood, mode = 'dark', highContrast = false) {
     // Bright signal surfaces need a foreground that contrasts with the
     // actual resolved bubble fill, including high-contrast mode.
     bubbleMineText: light ? '#171925' : contrastRatio(mood.ink, bubbleMine) >= minimumTextContrast ? mood.ink : accessibleForeground(bubbleMine),
-    bubbleMineMeta: light ? '#414658' : contrastRatio(mood.inkRaised, bubbleMine) >= minimumTextContrast ? mood.inkRaised : accessibleForeground(bubbleMine),
+    bubbleMineMeta: light ? '#414658' : contrastRatio(mood.inkRaised, bubbleMine) >= minimumTextContrast ? mood.inkRaised : contrastRatio(mood.ink, bubbleMine) >= minimumTextContrast ? mood.ink : accessibleForeground(bubbleMine),
     bubbleTheirs: light ? '#E9EDF5' : mood.inkRaisedAlt,
     danger,
     onDanger: light ? contrastRatio('#FFFFFF', danger) >= minimumTextContrast ? '#FFFFFF' : accessibleForeground(danger) : contrastRatio(mood.ink, danger) >= minimumTextContrast ? mood.ink : accessibleForeground(danger),
