@@ -54,8 +54,8 @@ test('pre-flight camera preview is scoped to the focused screen and has accessib
 
 test('pre-flight is registered as a modal route without changing primary navigation', () => {
   assert.ok(navigator.includes("import LivePreflightScreen from '../screens/LivePreflightScreen'"));
-  assert.ok(navigator.includes('name="LivePreflight" component={LivePreflightScreen}'));
-  assert.ok(navigator.includes('name="LIVE" component={LiveHubScreen}'));
+  assert.ok(navigator.includes('name="LivePreflight" component={LivePreflightRoute}'));
+  assert.ok(navigator.includes('name="LIVE" component={LiveHubRoute}'));
 });
 
 test('native permission prompts explicitly cover LIVE camera and microphone use', () => {
