@@ -17,3 +17,14 @@ test('directory paging resets after search, refresh and filter changes', () => {
   assert.ok(source.includes('setDirectoryFilter(item.key); setDirectoryLimit(40);'));
   assert.ok(source.includes('setDirectoryFilter(\'all\'); setDirectoryLimit(40);'));
 });
+
+
+test('channel discovery and moderation secondary actions meet the 48-point touch baseline', () => {
+  assert.match(source, /accessibilityLabel="Refresh channels" style=\{\{ minWidth: 48, minHeight: 48/);
+  assert.match(source, /accessibilityLabel="Clear channel search" style=\{\{ minWidth: 48, minHeight: 48/);
+  assert.match(source, /accessibilityLabel="Report channel post" style=\{\{ alignSelf: 'flex-start', minHeight: 48/);
+  assert.match(source, /comments for post\`} style=\{\{ alignSelf: 'flex-start', minHeight: 48/);
+  assert.match(source, /accessibilityLabel="Load older channel comments" style=\{\{ alignSelf: 'flex-start', minHeight: 48/);
+  assert.match(source, /accessibilityLabel="Cancel comment edit" style=\{\{ minHeight: 48/);
+  assert.ok((source.match(/minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', padding: spacing\.xs/g) || []).length >= 2);
+});
