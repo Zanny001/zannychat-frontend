@@ -205,3 +205,9 @@ test('LIVE hub detects an existing creator stream and offers direct re-entry ins
   assert.ok(screen.includes("activeCreatorStreamId ? 'Rejoin LIVE' : 'Go LIVE'"));
   assert.ok(screen.includes("activeCreatorStreamId ? 'Rejoin active LIVE broadcast' : 'Go LIVE'"));
 });
+
+
+test('LIVE hero CTA prioritizes rejoining an active creator broadcast', () => {
+  assert.ok(screen.includes("activeCreatorStreamId ? 'Rejoin active LIVE broadcast' : 'Set up a LIVE broadcast'"));
+  assert.ok(screen.includes("activeCreatorStreamId ? 'Rejoin LIVE' : showComposer ? 'Broadcast setup open' : 'Create a LIVE'"));
+});
