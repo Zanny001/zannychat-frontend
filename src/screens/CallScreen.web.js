@@ -151,8 +151,7 @@ export default function CallScreenWeb({ route, navigation }) {
         console.warn('[calls] local media stopped; call-end status will be reconciled after network recovery:', error?.message || error);
       }
     }
-    // Keep endingRef set so beforeRemove cannot block navigation and retry a
-    // second network write after the user has already ended the call.
+    // Keep endingRef set so beforeRemove cannot block navigation with another write.
     navigation.goBack();
   }, [call, isCaller, navigation]);
 
