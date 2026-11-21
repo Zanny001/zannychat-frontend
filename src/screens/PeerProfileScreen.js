@@ -36,7 +36,7 @@ function SectionHeading({ title, detail }) {
 }
 
 function QuickAction({ icon, label, onPress, primary = false, disabled = false }) {
-  const { colors, spacing, radii, typography, mood, layout } = useTheme();
+  const { colors, spacing, radii, typography, mood } = useTheme();
   return <TouchableOpacity onPress={onPress} disabled={disabled} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled }} style={[styles.quickAction, { opacity: disabled ? 0.62 : 1 }, { borderRadius: radii.lg, backgroundColor: primary ? colors.primary : hexToRgba(mood.signal, 0.11), borderColor: primary ? colors.primary : hexToRgba(mood.signal, 0.23), marginHorizontal: spacing.xs }]}>
     <Ionicons name={icon} size={21} color={primary ? colors.onPrimary : colors.textPrimary} />
     <Text style={[typography.caption, { color: primary ? colors.onPrimary : colors.textPrimary, fontWeight: '700', marginTop: 7 }]}>{label}</Text>
@@ -44,7 +44,7 @@ function QuickAction({ icon, label, onPress, primary = false, disabled = false }
 }
 
 export default function PeerProfileScreen({ route, navigation }) {
-  const { colors, spacing, radii, typography, mood } = useTheme();
+  const { colors, spacing, radii, typography, mood, layout } = useTheme();
   const participant = route.params?.participant || {};
   const fromLive = route.params?.fromLive === true;
   const creatorId = participant.id || participant.user_id;
