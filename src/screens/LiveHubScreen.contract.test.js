@@ -215,6 +215,6 @@ test('LIVE hero CTA prioritizes rejoining an active creator broadcast', () => {
 
 
 test('LIVE discovery cards use supported Ionicons glyph names', () => {
-  assert.ok(!web.includes('arrow-up-right'));
-  assert.ok(web.includes('arrow-forward'));
+  assert.ok(!screen.includes('arrow-up-right'));
+  assert.ok(screen.includes('arrow-forward'));
 });
