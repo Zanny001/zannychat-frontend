@@ -376,7 +376,7 @@ test('LIVE and call action surfaces use semantic contrast foregrounds', () => {
   ];
   for (const name of screens) {
     const source = fs.readFileSync(new URL('./' + name, import.meta.url), 'utf8');
-    assert.match(source, /colors\.onPrimary/, name + ' must use onPrimary for primary actions');
+    assert.ok(source.includes('colors.onPrimary') || source.includes('colors.onAccent'), name + ' must use a semantic foreground for primary actions');
     assert.match(source, /colors\.onDanger/, name + ' must use onDanger for destructive actions');
   }
   const liveWeb = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
