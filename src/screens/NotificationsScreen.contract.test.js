@@ -46,3 +46,8 @@ test('notification preference storage failures are visible and recoverable', () 
   assert.match(screen, /Try saving again/);
   assert.match(screen, /if \(!saved\) return/);
 });
+
+
+test('notification settings retry control meets the shared 48-point mobile target', () => {
+  assert.match(screen, /retryButton: \{ minHeight: 48/);
+});
