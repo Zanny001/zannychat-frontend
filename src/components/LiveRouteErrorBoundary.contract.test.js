@@ -34,4 +34,5 @@ test('root, call and LIVE render boundaries report safe diagnostics without bloc
   assert.match(reporter, /backendFetch\('\/diagnostics\/client-error'/);
   assert.match(reporter, /Best-effort, authenticated diagnostics/);
   assert.doesNotMatch(reporter, /access_token|refresh_token|conversationId|messageContent/);
+  assert.doesNotMatch(reporter, /message,/);
 });
