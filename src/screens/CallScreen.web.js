@@ -36,6 +36,7 @@ export default function CallScreenWeb({ route, navigation }) {
   const remoteStreamRef = useRef(null);
   const localVideoRef = useRef(null);
   const pcRef = useRef(null);
+  const cameraSenderRef = useRef(null);
   const cameraSwitchInProgressRef = useRef(false);
   const localStreamRef = useRef(null);
   const callRef = useRef(initial);
@@ -272,7 +273,10 @@ export default function CallScreenWeb({ route, navigation }) {
 
       pc = new window.RTCPeerConnection({ iceServers, iceCandidatePoolSize: 4 });
       pcRef.current = pc;
-      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+      stream.getTracks().forEach((track) => {
+        const sender = pc.addTrack(track, stream);
+        if (track.kind === 'video') cameraSenderRef.current = sender;
+      });
       pc.ontrack = (event) => {
         let nextStream = event.streams?.[0];
         if (nextStream) remoteStreamRef.current = nextStream;
@@ -508,13 +512,20 @@ export default function CallScreenWeb({ route, navigation }) {
     cameraSwitchInProgressRef.current = true;
     const previousRemoteDescriptionReady = remoteDescriptionReady.current;
     const previousTrack = stream.getVideoTracks?.()[0] || null;
+    const existingSender = cameraSenderRef.current || pc.getSenders().find((item) => item.track?.kind === 'video') || null;
     let removedTrack = null;
     let addedTrack = null;
+    let senderCreated = false;
+    let requiresRenegotiation = false;
     try {
       if (next && previousTrack) {
         removedTrack = previousTrack;
-        const sender = pc.getSenders().find((item) => item.track?.id === previousTrack.id);
-        if (sender) pc.removeTrack(sender);
+        if (existingSender) await existingSender.replaceTrack(null);
+        else {
+          const sender = pc.getSenders().find((item) => item.track?.id === previousTrack.id);
+          if (sender) pc.removeTrack(sender);
+          requiresRenegotiation = true;
+        }
         stream.removeTrack(previousTrack);
       } else if (!next && !previousTrack) {
         const cameraStream = await navigator.mediaDevices.getUserMedia({
@@ -524,16 +535,25 @@ export default function CallScreenWeb({ route, navigation }) {
         addedTrack = cameraStream.getVideoTracks?.()[0];
         if (!addedTrack) throw new Error('No camera track was provided by this device.');
         stream.addTrack(addedTrack);
-        pc.addTrack(addedTrack, stream);
+        if (existingSender) {
+          await existingSender.replaceTrack(addedTrack);
+          cameraSenderRef.current = existingSender;
+        } else {
+          cameraSenderRef.current = pc.addTrack(addedTrack, stream);
+          senderCreated = true;
+          requiresRenegotiation = true;
+        }
       } else if (!next && previousTrack) {
         previousTrack.enabled = true;
       }
 
-      if (pc.signalingState !== 'stable') throw new Error('The call is already updating. Please try the camera switch again.');
-      remoteDescriptionReady.current = false;
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      await sendCallSignal({ call: callRef.current, type: 'offer', payload: { type: offer.type, sdp: offer.sdp } });
+      if (requiresRenegotiation) {
+        if (pc.signalingState !== 'stable') throw new Error('The call is already updating. Please try the camera switch again.');
+        remoteDescriptionReady.current = false;
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        await sendCallSignal({ call: callRef.current, type: 'offer', payload: { type: offer.type, sdp: offer.sdp } });
+      }
 
       if (removedTrack) removedTrack.stop();
       setLocalStream(stream);
@@ -545,14 +565,19 @@ export default function CallScreenWeb({ route, navigation }) {
         await pc.setLocalDescription({ type: 'rollback' }).catch(() => {});
       }
       if (addedTrack) {
-        const sender = pc.getSenders().find((item) => item.track?.id === addedTrack.id);
-        if (sender) pc.removeTrack(sender);
+        if (cameraSenderRef.current) await cameraSenderRef.current.replaceTrack(null).catch(() => {});
+        if (senderCreated) {
+          const sender = pc.getSenders().find((item) => item.track?.id === addedTrack.id);
+          if (sender) pc.removeTrack(sender);
+          cameraSenderRef.current = null;
+        }
         stream.removeTrack(addedTrack);
         addedTrack.stop();
       }
       if (removedTrack && removedTrack.readyState !== 'ended') {
         stream.addTrack(removedTrack);
-        pc.addTrack(removedTrack, stream);
+        if (existingSender) await existingSender.replaceTrack(removedTrack).catch(() => {});
+        else cameraSenderRef.current = pc.addTrack(removedTrack, stream);
       }
       remoteDescriptionReady.current = Boolean(pc.remoteDescription) || previousRemoteDescriptionReady;
       setLocalStream(stream);
