@@ -626,3 +626,12 @@ test('native and web creator recovery keeps the loading state until the recovere
     assert.equal(recovery.includes('!recoveredStreamId'), false);
   }
 });
+
+
+test('creator end action keeps an explicit readable END LIVE label on native and web', () => {
+  assert.ok(screen.includes("{creatorMode ? 'END LIVE' : 'LEAVE'}"));
+  assert.ok(screen.includes("accessibilityLabel={creatorMode ? 'End LIVE broadcast' : 'Leave LIVE stream'}"));
+  const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
+  assert.ok(web.includes("label={creatorMode ? 'END LIVE' : 'LEAVE'}"));
+  assert.ok(web.includes("accessibilityLabel={creatorMode ? 'End LIVE broadcast' : 'Leave LIVE stream'}"));
+});
