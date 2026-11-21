@@ -200,7 +200,7 @@ export default function LiveCreatorStudioScreen({ navigation }) {
               <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 18 }]}>Creator impact</Text>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>Your community's reactions and daily support score</Text>
             </View>
-            <TouchableOpacity onPress={() => navigation.navigate('LiveAnalytics')} accessibilityRole="button" accessibilityLabel="Open Creator Analytics" style={{ minHeight: 44, paddingHorizontal: 12, borderRadius: 13, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <TouchableOpacity onPress={() => navigation.navigate('LiveAnalytics')} accessibilityRole="button" accessibilityLabel="Open Creator Analytics" style={{ minHeight: 48, paddingHorizontal: 12, borderRadius: 13, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
               <Ionicons name="analytics-outline" size={16} color={colors.primary} />
               <Text style={[typography.caption, { color: colors.primary, fontWeight: '900' }]}>Insights</Text>
             </TouchableOpacity>
@@ -231,7 +231,7 @@ export default function LiveCreatorStudioScreen({ navigation }) {
             <View key={item.id} style={{ paddingVertical: 9, borderTopWidth: 1, borderTopColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
               <Ionicons name={item.status === 'live' ? 'radio' : 'videocam-outline'} size={18} color={item.status === 'live' ? colors.danger : colors.primary} />
               <View style={{ flex: 1 }}><Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.title || 'LIVE broadcast'}</Text><Text style={[typography.caption, { color: colors.textSecondary }]}>{item.status === 'live' ? 'Currently live' : item.status}</Text></View>
-              {item.status === 'live' ? <TouchableOpacity onPress={() => navigation.navigate('LiveModeration', { streamId: item.id, title: item.title || 'LIVE stage' })} accessibilityRole="button" accessibilityLabel={'Manage LIVE participants for ' + (item.title || 'broadcast')} style={{ minHeight: 44, paddingHorizontal: 10, borderRadius: 12, borderWidth: 1, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}><Text style={[typography.caption, { color: colors.primary, fontWeight: '900' }]}>Manage</Text></TouchableOpacity> : null}
+              {item.status === 'live' ? <TouchableOpacity onPress={() => navigation.navigate('LiveModeration', { streamId: item.id, title: item.title || 'LIVE stage' })} accessibilityRole="button" accessibilityLabel={'Manage LIVE participants for ' + (item.title || 'broadcast')} style={{ minHeight: 48, paddingHorizontal: 10, borderRadius: 12, borderWidth: 1, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}><Text style={[typography.caption, { color: colors.primary, fontWeight: '900' }]}>Manage</Text></TouchableOpacity> : null}
               {item.status === 'ended' ? <TouchableOpacity onPress={() => deleteBroadcast(item)} accessibilityRole="button" accessibilityLabel={'Delete past broadcast ' + (item.title || '')} style={{ width: 44, height: 44, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.danger + '18' }}><Ionicons name="trash-outline" size={17} color={colors.danger} /></TouchableOpacity> : null}
             </View>
           )) : <Text style={[typography.caption, { color: colors.textSecondary }]}>Your broadcasts will appear here after your first LIVE session.</Text>}
@@ -242,7 +242,7 @@ export default function LiveCreatorStudioScreen({ navigation }) {
             <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Replay collection</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>{replays.total || 0} total</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('LiveReplayLibrary')} accessibilityRole="button" accessibilityLabel="Open full LIVE replay library" style={{ minHeight: 44, paddingHorizontal: spacing.sm, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
+              <TouchableOpacity onPress={() => navigation.navigate('LiveReplayLibrary')} accessibilityRole="button" accessibilityLabel="Open full LIVE replay library" style={{ minHeight: 48, paddingHorizontal: spacing.sm, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={[typography.caption, { color: colors.primary, fontWeight: '900' }]}>View all</Text>
               </TouchableOpacity>
             </View>
