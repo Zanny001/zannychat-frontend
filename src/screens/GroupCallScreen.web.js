@@ -272,12 +272,12 @@ export default function GroupCallScreenWeb({ route, navigation }) {
     } catch (_) { setAudioBlocked(true); }
   }, []);
 
-  const endCall = useCallback(async () => {
+  const endCall = useCallback(() => {
     if (endedRef.current) return;
     endedRef.current = true;
     const activeRoom = roomRef.current;
-    // Disconnect and stop local capture immediately. Never keep a camera or
-    // microphone live while waiting for a slow call-end API request.
+    // Disconnect and stop local capture, then leave immediately. Server state
+    // is updated asynchronously so an offline API cannot trap the user in-call.
     try { activeRoom?.disconnect(); } catch (_) {}
     try {
       for (const publication of activeRoom?.localParticipant?.trackPublications?.values?.() || []) {
@@ -285,19 +285,17 @@ export default function GroupCallScreenWeb({ route, navigation }) {
       }
     } catch (_) {}
     const activeRoomId = connection?.roomId || joinedRoomIdRef.current || roomId;
-    try {
-      if (directCallId) {
-        await updateCallStatus(directCallId, 'ended');
-      } else if (activeRoomId) {
-        await backendFetch(`/group-calls/${activeRoomId}/${canEnd ? 'end' : 'leave'}`, { method: 'POST' });
-      }
-    } catch (error) {
-      // Local media is already shut down. Heartbeats stop on unmount and server
-      // stale-session cleanup remains the fallback for an offline exit.
+    navigation.goBack();
+    const persistLeave = directCallId
+      ? updateCallStatus(directCallId, 'ended')
+      : activeRoomId
+        ? backendFetch(`/group-calls/${activeRoomId}/${canEnd ? 'end' : 'leave'}`, { method: 'POST' })
+        : Promise.resolve();
+    Promise.resolve(persistLeave).catch((error) => {
+      // Heartbeats stop on unmount; backend stale-session cleanup is the
+      // fallback if the best-effort leave request cannot reach the server.
       console.warn('[calls] local room disconnected; server leave update failed:', error?.message || error);
-    } finally {
-      navigation.goBack();
-    }
+    });
   }, [canEnd, connection?.roomId, directCallId, navigation, roomId]);
 
   const invitePerson = useCallback(async (person) => {
