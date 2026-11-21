@@ -247,6 +247,7 @@ export default function LivePreflightScreen({ route, navigation }) {
     cameraPreviewReady,
     category,
     description,
+    eventId,
     experienceMode,
     inviteeIds,
     mediaPermissionsGranted,
