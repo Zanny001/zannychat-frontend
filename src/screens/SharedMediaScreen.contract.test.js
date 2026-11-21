@@ -10,13 +10,13 @@ test('Shared Media lightbox close action meets the 48-point mobile touch target'
 });
 
 test('Shared Media initial-load failure exposes a retry action instead of an empty result', () => {
-  assert.match(screen, /error && messages\\.length === 0/);
+  assert.ok(screen.includes('error && messages.length === 0'));
   assert.match(screen, /Retry loading shared media/);
-  assert.match(screen, /onPress=\\{loadInitial\\}/);
+  assert.ok(screen.includes('onPress={loadInitial}'));
 });
 
 test('Shared Media tab controls expose selected state and accessible labels', () => {
   assert.match(screen, /accessibilityRole="tab"/);
-  assert.match(screen, /accessibilityState=\\{\\{ selected: active \\}\\}/);
+  assert.ok(screen.includes('accessibilityState={{ selected: active }}'));
   assert.match(screen, /accessibilityLabel=/);
 });
