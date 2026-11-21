@@ -1,6 +1,6 @@
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
 const native = fs.readFileSync(new URL('./LiveStreamScreen.js', import.meta.url), 'utf8');
 const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
