@@ -217,7 +217,7 @@ export default function LiveEventsScreen({ navigation }) {
 
   const fieldStyle={minHeight:48,borderWidth:1,borderColor:colors.border,borderRadius:radii.md,paddingHorizontal:spacing.md,color:colors.textPrimary,backgroundColor:colors.surface};
   const sectionLabel={...typography.caption,color:colors.textSecondary,fontWeight:'900',letterSpacing:1};
-  const chip=(selected)=>({minHeight:42,paddingHorizontal:spacing.md,borderRadius:14,borderWidth:1,borderColor:selected?colors.primary:colors.border,backgroundColor:selected?hexToRgba(colors.primary,0.13):colors.surface,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6});
+  const chip=(selected)=>({minHeight:48,paddingHorizontal:spacing.md,borderRadius:14,borderWidth:1,borderColor:selected?colors.primary:colors.border,backgroundColor:selected?hexToRgba(colors.primary,0.13):colors.surface,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6});
 
   return (
     <SafeAreaView style={{flex:1,backgroundColor:colors.background}}>
@@ -394,7 +394,7 @@ export default function LiveEventsScreen({ navigation }) {
                           <Text style={[typography.caption,{color:colors.onPrimary,fontWeight:'900'}]}>Start LIVE</Text>
                         </TouchableOpacity>}
                       </View>
-                      <TouchableOpacity disabled={busy} onPress={()=>cancelEvent(event)} accessibilityRole="button" accessibilityLabel={'Cancel LIVE Event '+event.title} style={{minHeight:42,borderWidth:1,borderColor:hexToRgba(colors.danger,0.4),borderRadius:13,alignItems:'center',justifyContent:'center'}}>
+                      <TouchableOpacity disabled={busy} onPress={()=>cancelEvent(event)} accessibilityRole="button" accessibilityLabel={'Cancel LIVE Event '+event.title} style={{minHeight:48,borderWidth:1,borderColor:hexToRgba(colors.danger,0.4),borderRadius:13,alignItems:'center',justifyContent:'center'}}>
                         <Text style={[typography.caption,{color:colors.danger,fontWeight:'900'}]}>Cancel Event</Text>
                       </TouchableOpacity>
                     </View>
