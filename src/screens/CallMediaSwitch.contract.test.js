@@ -64,8 +64,8 @@ test('LIVE Creator Studio is separate from the public Creator Profile route', ()
   assert.match(creatorStudio, /Creator Studio/);
   assert.match(creatorStudio, /Creator impact/);
   assert.match(creatorStudio, /Replay collection/);
-  assert.match(navigator, /name="LiveCreatorStudio" component=\{LiveCreatorStudioScreen\}/);
-  assert.match(navigator, /name="LiveCreatorProfile" component=\{PeerProfileScreen\}/);
+  assert.match(navigator, /name="LiveCreatorStudio" component=\{LiveCreatorStudioRoute\}/);
+  assert.match(navigator, /name="LiveCreatorProfile" component=\{LiveCreatorProfileRoute\}/);
   assert.match(hub, /navigation\.navigate\('LiveCreatorStudio'\)/);
   assert.doesNotMatch(creatorProfile, /\/live\/creators\/me\/profile/);
 });
