@@ -31,3 +31,16 @@ test('web group calls support inviting, mute, camera, and end/leave actions', ()
   assert.match(source, /setCameraEnabled\(!next\)/);
   assert.match(source, /canEnd \? 'end' : 'leave'/);
 });
+
+test('failed browser media startup closes stale direct calls or leaves failed group joins', () => {
+  assert.match(source, /if \(directCallId && activeRoomId\) \{\s*await updateCallStatus\(directCallId, 'ended'\)/);
+  assert.match(source, /else if \(activeRoomId\) \{\s*await backendFetch\(\`\/group-calls\/\$\{activeRoomId\}\/leave\`/);
+  assert.match(source, /room\.disconnect\(\)/);
+});
+
+test('Chrome media permission failures give actionable browser-specific guidance', () => {
+  assert.match(source, /error\?\.name === 'NotAllowedError'/);
+  assert.match(source, /Allow ZannyChat to use your microphone and camera in site settings/);
+  assert.match(source, /error\?\.name === 'NotFoundError'/);
+  assert.match(source, /error\?\.name === 'NotReadableError'/);
+});
