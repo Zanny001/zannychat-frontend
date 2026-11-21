@@ -2,6 +2,14 @@
 
 Source of truth: the current `src/navigation/AppNavigator.js` route declarations. The root stack contains 43 routes; the Main tab navigator contains six tab destinations. `Channels` is shared between navigators, giving 48 unique navigation experiences.
 
+## Current deployment status — 21 Nov 2026
+
+- Vercel project `zannychat` is now connected to `Zanny001/zannychat-frontend`; verified production alias: `https://zannychat.vercel.app`.
+- Production deployment `dpl_DJBy9kHXe288sUfgUKGE4oDWRhyk` is **READY** for runtime-code commit `9e7b904c02fdb0e66160773add28e70b3910104d`. It includes the safe-area work through PR #259. The later `5f0e5c69` main commit is documentation-only.
+- Vercel's last-30-minute runtime error aggregation returned no errors. The runtime-log API rejected a one-hour query because the Hobby plan's retention window is one hour; the 30-minute error/fatal query returned no records.
+- The external web viewer could not fetch the app URL, so a real browser route smoke test is not claimed. Alias assignment and deployment readiness are verified by Vercel.
+- The 16 Nov notes below about an empty Vercel project list, HTTP 403 project creation, build-rate limits and no confirmed production deployment are historical snapshots and are superseded by this 21 Nov deployment record.
+
 ## Current foundation
 
 - [x] Theme provider extended with custom user palettes.
