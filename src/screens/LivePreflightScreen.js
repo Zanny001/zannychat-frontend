@@ -16,6 +16,7 @@ import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
+import { getActiveCreatorStreamId } from '../utils/liveCreatorRecovery';
 import { useTheme } from '../theme/ThemeContext';
 import LivePremiumHeader from '../components/LivePremiumHeader';
 import { hexToRgba } from '../utils/color';
@@ -220,6 +221,22 @@ export default function LivePreflightScreen({ route, navigation }) {
         eventId,
       });
     } catch (startError) {
+      if (startError?.status === 409 && /already have an active LIVE stream/i.test(startError?.message || '')) {
+        try {
+          const profile = await backendFetch('/live/creators/me/profile');
+          const activeStreamId = getActiveCreatorStreamId(profile);
+          if (activeStreamId) {
+            navigation.replace('LiveStream', { streamId: activeStreamId, creatorMode: true });
+            Alert.alert('Rejoining your LIVE', 'Your existing broadcast is still active. Reconnecting you now.');
+            return;
+          }
+          setError('An active LIVE broadcast already exists, but it could not be located in your creator profile. Return to LIVE Hub, refresh, and try rejoining.');
+          return;
+        } catch (recoveryError) {
+          setError(recoveryError?.message || startError?.message || 'Your existing LIVE broadcast could not be recovered. Refresh LIVE Hub and try again.');
+          return;
+        }
+      }
       setError(startError?.message || 'Could not start LIVE. Check your connection and try again.');
     } finally {
       startRequestRef.current = false;
