@@ -81,11 +81,25 @@ export default function GroupCallScreenWeb({ route, navigation }) {
         remoteAudioRef.current?.appendChild(element);
       } else if (track.kind === Track.Kind.Video) {
         setRemoteVideoTracks((current) => current.some((entry) => entry.track.sid === track.sid)
-          ? current : [...current, { track, participant }]);
+          ? current.map((entry) => entry.track.sid === track.sid
+            ? { ...entry, track, participant, isMuted: Boolean(track.isMuted) }
+            : entry)
+          : [...current, { track, participant, isMuted: Boolean(track.isMuted) }]);
       }
       refreshParticipants();
       setAudioBlocked(!room.canPlaybackAudio);
     };
+    const updateRemoteVideoMuteState = (publication, participant, isMuted) => {
+      const trackSid = publication?.trackSid || publication?.sid || publication?.track?.sid;
+      if (!trackSid || publication?.kind !== Track.Kind.Video) return;
+      setRemoteVideoTracks((current) => current.map((entry) => (
+        entry.track.sid === trackSid || (participant?.identity && entry.participant?.identity === participant.identity)
+          ? { ...entry, isMuted }
+          : entry
+      )));
+    };
+    const onTrackMuted = (publication, participant) => updateRemoteVideoMuteState(publication, participant, true);
+    const onTrackUnmuted = (publication, participant) => updateRemoteVideoMuteState(publication, participant, false);
     const onTrackUnsubscribed = (track) => {
       const detached = track.detach();
       (Array.isArray(detached) ? detached : [detached]).filter(Boolean).forEach((element) => element.remove?.());
@@ -93,6 +107,8 @@ export default function GroupCallScreenWeb({ route, navigation }) {
       refreshParticipants();
     };
     room.on(RoomEvent.TrackSubscribed, onTrackSubscribed);
+    room.on(RoomEvent.TrackMuted, onTrackMuted);
+    room.on(RoomEvent.TrackUnmuted, onTrackUnmuted);
     room.on(RoomEvent.TrackUnsubscribed, onTrackUnsubscribed);
     room.on(RoomEvent.ParticipantConnected, refreshParticipants);
     room.on(RoomEvent.ParticipantDisconnected, refreshParticipants);
@@ -354,7 +370,11 @@ export default function GroupCallScreenWeb({ route, navigation }) {
           {localCameraTrack && !cameraOff
             ? <MediaTile track={localCameraTrack} name="You" local colors={colors} />
             : <View style={[styles.placeholderTile, { backgroundColor: colors.surface, borderColor: colors.border }]}><Ionicons name="videocam-off" size={28} color={colors.textSecondary} /><Text style={[typography.small, { color: colors.textSecondary }]}>Your camera is off</Text></View>}
-          {remoteVideoTracksView.map(({ track, participant }) => <MediaTile key={track.sid} track={track} name={participant?.name || participant?.identity || 'Participant'} colors={colors} />)}
+          {remoteVideoTracksView.map(({ track, participant, isMuted }) => (
+            isMuted
+              ? <View key={track.sid} style={[styles.placeholderTile, { backgroundColor: colors.surface, borderColor: colors.border }]}><Ionicons name="videocam-off" size={28} color={colors.textSecondary} /><Text style={[typography.small, { color: colors.textSecondary }]}>{participant?.name || participant?.identity || 'Participant'} camera is off</Text></View>
+              : <MediaTile key={track.sid} track={track} name={participant?.name || participant?.identity || 'Participant'} colors={colors} />
+          ))}
           {!remoteVideoTracksView.length ? <View style={[styles.placeholderTile, { backgroundColor: colors.surface, borderColor: colors.border }]}><Ionicons name="people" size={28} color={colors.textSecondary} /><Text style={[typography.small, { color: colors.textSecondary }]}>Waiting for other cameras…</Text></View> : null}
         </ScrollView>
       ) : (
