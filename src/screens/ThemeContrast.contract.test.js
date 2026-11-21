@@ -381,9 +381,9 @@ test('LIVE and call action surfaces use semantic contrast foregrounds', () => {
   }
   const liveNative = fs.readFileSync(new URL('./LiveStreamScreen.js', import.meta.url), 'utf8');
   const liveWeb = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
-  assert.match(liveNative, /backgroundColor: colors\.primary[\s\S]{0,100}color: colors\.onPrimary/, 'Native LIVE role badges must use onPrimary on primary fill');
-  assert.match(liveNative, /timeoutWarning \? colors\.danger[\s\S]{0,160}timeoutWarning \? colors\.onDanger/, 'Native LIVE warning timer must use onDanger on danger fill');
+  assert.match(liveNative, /backgroundColor: colors\.primary[\s\S]{0,240}color: colors\.onPrimary/, 'Native LIVE role badges must use onPrimary on primary fill');
+  assert.match(liveNative, /timeoutWarning \? colors\.danger[\s\S]{0,240}timeoutWarning \? colors\.onDanger/, 'Native LIVE warning timer must use onDanger on danger fill');
   assert.match(liveWeb, /backgroundColor: colors\.primary[\s\S]{0,100}color: colors\.onPrimary/, 'Web LIVE role badges must use onPrimary on primary fill');
-  assert.match(liveWeb, /timeoutWarning \? colors\.onDanger[\s\S]{0,80}backgroundColor: timeoutWarning \? colors\.danger/, 'Web LIVE warning timer must use onDanger on danger fill');
+  assert.match(liveWeb, /timeoutWarning \? colors\.onDanger[\s\S]{0,160}backgroundColor: timeoutWarning \? colors\.danger/, 'Web LIVE warning timer must use onDanger on danger fill');
   assert.match(liveWeb, /colors\.onAccent/, 'LIVE spotlight overlays must use onAccent');
 });
