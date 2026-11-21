@@ -284,6 +284,8 @@ The connected account is confirmed as an `OWNER` of the `ZannyChat` Hobby team, 
 
 
 
+
+- 21 Nov 2026 New Chat contact recovery retry merged in PR #276 (`ea7027510e9513d51318ff6da1455441ce5955f7`): the contact-directory retry action now has a 48-point minimum height and a regression contract. All four frontend checks passed.
 - 21 Nov 2026 Drafts partial-failure recovery merged in PR #274 (`b0cc17c66fda6659aa6f9a7288521f94eca1f135`): when device-local drafts load but the conversation directory fails, the screen now preserves the draft list and exposes an accessible retry for conversation lookup. Frontend quality, client quality, dependency and bundle-exposure checks passed.
 - 21 Nov 2026 Chat outbox recovery controls merged in PR #275 (`f469558242033ddd128e254c74687d7aed872e5e`): pending attachment and pending message recovery retries now meet the 48-point mobile target. All four frontend checks passed.
 - 21 Nov 2026 Status Updates privacy actions in PR #273 (`72c2c131985242bf6a63318099a142b60c5c4837`) now provide 48-point touch targets for media removal, muted-account unmute and excluded-contact allow actions. All four frontend quality checks passed.
