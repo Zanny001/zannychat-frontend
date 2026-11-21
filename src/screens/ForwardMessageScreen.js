@@ -14,18 +14,27 @@ export default function ForwardMessageScreen({ navigation, route }) {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sendingId, setSendingId] = useState(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     let mounted = true;
+    setLoading(true);
+    setLoadFailed(false);
     fetchConversations()
       .then((result) => {
         const rows = Array.isArray(result) ? result : result?.conversations || [];
         if (mounted) setConversations(rows.filter((item) => item.id !== sourceConversationId && !item.isArchived));
       })
-      .catch((error) => Alert.alert("Couldn't load chats", error.message || 'Please try again.'))
+      .catch(() => {
+        if (mounted) {
+          setConversations([]);
+          setLoadFailed(true);
+        }
+      })
       .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
-  }, [sourceConversationId]);
+  }, [sourceConversationId, retryCount]);
 
   async function forwardTo(conversation) {
     if (typeof messageText !== 'string' || !messageText.trim()) {
@@ -58,7 +67,21 @@ export default function ForwardMessageScreen({ navigation, route }) {
         <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.sm }]}>Choose a chat</Text>
       </View>
       {loading ? (
-        <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl }}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.md }]}>Loading your chats…</Text>
+        </View>
+      ) : loadFailed ? (
+        <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: spacing.md, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
+          <GlassCard glow style={{ alignItems: 'center', padding: spacing.lg }}>
+            <Ionicons name="cloud-offline-outline" size={30} color={colors.accent} />
+            <Text style={[typography.heading, { color: colors.textPrimary, marginTop: spacing.md, textAlign: 'center' }]}>Couldn't load chats</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.xs, textAlign: 'center' }]}>Check your connection, then try again.</Text>
+            <TouchableOpacity onPress={() => setRetryCount((count) => count + 1)} style={{ minHeight: 48, minWidth: 132, marginTop: spacing.lg, paddingHorizontal: spacing.lg, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary }} accessibilityRole="button" accessibilityLabel="Retry loading chats">
+              <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Try again</Text>
+            </TouchableOpacity>
+          </GlassCard>
+        </View>
       ) : (
         <FlatList
           data={conversations}
@@ -69,7 +92,16 @@ export default function ForwardMessageScreen({ navigation, route }) {
           maxToRenderPerBatch={10}
           windowSize={7}
           contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.lg, flexGrow: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
-          ListEmptyComponent={<Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl }]}>No other chats available to forward to.</Text>}
+          ListEmptyComponent={(
+            <GlassCard glow style={{ alignItems: 'center', padding: spacing.lg, marginTop: spacing.xl }}>
+              <Ionicons name="chatbubbles-outline" size={28} color={colors.accent} />
+              <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginTop: spacing.md }]}>No other chats yet</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.xs, textAlign: 'center' }]}>Start a conversation before forwarding this message.</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('NewChat')} style={{ minHeight: 48, minWidth: 132, marginTop: spacing.md, paddingHorizontal: spacing.lg, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary }} accessibilityRole="button" accessibilityLabel="Start a new chat to forward this message">
+                <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>Start a chat</Text>
+              </TouchableOpacity>
+            </GlassCard>
+          )}
           renderItem={({ item }) => (
             <TouchableOpacity onPress={() => forwardTo(item)} disabled={Boolean(sendingId)} style={{ minHeight: 64 }} accessibilityRole="button" accessibilityLabel={`Forward message to ${item.participant?.name || item.name || 'group chat'}`} accessibilityState={{ disabled: Boolean(sendingId), busy: sendingId === item.id }} activeOpacity={0.8}>
               <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={{ minHeight: 64, flexDirection: 'row', alignItems: 'center' }}>
