@@ -151,7 +151,7 @@ export default function SessionsScreen({ navigation }) {
           {sessionsLoading ? <ActivityIndicator color={mood.signal} /> : sessionsError ? (
             <View accessibilityRole="alert">
               <Text style={[typography.caption, { color: colors.danger, lineHeight: 20 }]}>{sessionsError}</Text>
-              <TouchableOpacity onPress={() => loadSessions()} accessibilityRole="button" accessibilityLabel="Retry loading active sessions" style={{ minHeight: 44, alignSelf: 'flex-start', justifyContent: 'center', paddingHorizontal: 8 }}>
+              <TouchableOpacity onPress={() => loadSessions()} accessibilityRole="button" accessibilityLabel="Retry loading active sessions" style={{ minHeight: 48, alignSelf: 'flex-start', justifyContent: 'center', paddingHorizontal: 8 }}>
                 <Text style={[typography.caption, { color: colors.primary, fontWeight: '700' }]}>Retry loading sessions</Text>
               </TouchableOpacity>
             </View>
