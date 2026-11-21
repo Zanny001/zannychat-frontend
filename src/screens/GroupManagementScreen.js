@@ -120,7 +120,7 @@ ${invite.token}` });
     <Header title="Group members" subtitle={`${groupMetadata.name || conversation?.participant?.name || 'Group'} · ${members.length} members`} onBack={() => navigation.goBack()} />
     {loading ? <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} /> : error ? <View style={{ padding: spacing.lg }}>
       <Text style={[typography.body, { color: colors.textSecondary }]}>{error}</Text>
-      <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading group members" style={{ paddingVertical: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity>
+      <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading group members" style={{ minHeight: 48, alignSelf: 'flex-start', justifyContent: 'center', paddingHorizontal: spacing.sm }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity>
     </View> : <FlatList
       data={visibleMembers}
       keyExtractor={(member) => String(member.id)}
