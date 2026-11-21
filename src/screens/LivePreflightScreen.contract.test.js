@@ -110,3 +110,8 @@ test('duplicate creator stream conflicts recover the existing active broadcast i
   assert.ok(preflight.includes('Rejoining your LIVE'));
   assert.ok(preflight.includes('could not be located in your creator profile'));
 });
+
+
+test('pre-flight start callback tracks the scheduled Event identity', () => {
+  assert.ok(preflight.includes('    eventId,\n    experienceMode,'));
+});
