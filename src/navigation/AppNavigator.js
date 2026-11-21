@@ -70,6 +70,7 @@ import { getCallParticipantName, getCallSessionById, subscribeToIncomingCalls, u
 import { clearNativeCallMapping, getNativeCallMapping, initializeNativeCallSystem, reportIncomingCallIfNeeded, reportNativeCallEnded } from '../services/nativeCallSystem';
 import { completeGoogleOAuthCallback } from '../services/googleAuth';
 import { takePendingAuthRoute } from './pendingAuthRoute';
+import CallRouteErrorBoundary from '../components/CallRouteErrorBoundary';
 
 // Lets code outside the component tree (the push-notification tap
 // handler in App.js) trigger navigation — the standard React
@@ -207,7 +208,24 @@ function MainTabNavigator() {
 // initialRouteName is resolved once in App.js from whether a Supabase
 // session already exists, so a returning, signed-in user lands
 // straight in Main instead of seeing Onboarding again every launch.
-export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthenticated = false }) {
+export default function withCallRouteBoundary(Screen, routeName) {
+  function IsolatedCallRoute(props) {
+    return (
+      <CallRouteErrorBoundary navigation={props.navigation} routeName={routeName}>
+        <Screen {...props} />
+      </CallRouteErrorBoundary>
+    );
+  }
+  IsolatedCallRoute.displayName = `Isolated${routeName}Route`;
+  return IsolatedCallRoute;
+}
+
+const IncomingCallRoute = withCallRouteBoundary(IncomingCallScreen, 'IncomingCall');
+const OutgoingCallRoute = withCallRouteBoundary(OutgoingCallScreen, 'OutgoingCall');
+const DirectCallRoute = withCallRouteBoundary(CallScreen, 'Call');
+const GroupCallRoute = withCallRouteBoundary(GroupCallScreen, 'GroupCall');
+
+function AppNavigator({ initialRouteName = 'Onboarding', isAuthenticated = false }) {
   const { colors } = useTheme();
   // In a configured production build, register private app routes only after a
   // Supabase session exists. Demo mode intentionally keeps its local preview.
@@ -463,10 +481,10 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
         {canAccessApp && <RootStack.Group navigationKey={isAuthenticated ? 'authenticated' : 'demo'}>
           <RootStack.Screen name="Main" component={MainTabNavigator} />
           <RootStack.Screen name="Chat" component={ChatScreen} />
-          <RootStack.Screen name="IncomingCall" component={IncomingCallScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
-          <RootStack.Screen name="OutgoingCall" component={OutgoingCallScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
-          <RootStack.Screen name="Call" component={CallScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
-          <RootStack.Screen name="GroupCall" component={GroupCallScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
+          <RootStack.Screen name="IncomingCall" component={IncomingCallRoute} options={{ gestureEnabled: false, animation: 'fade' }} />
+          <RootStack.Screen name="OutgoingCall" component={OutgoingCallRoute} options={{ gestureEnabled: false, animation: 'fade' }} />
+          <RootStack.Screen name="Call" component={DirectCallRoute} options={{ gestureEnabled: false, animation: 'fade' }} />
+          <RootStack.Screen name="GroupCall" component={GroupCallRoute} options={{ gestureEnabled: false, animation: 'fade' }} />
           {/* LIVE EXPERIENCE: one canonical Hub entry in MainTabs; all supporting routes live in this group. */}
           <RootStack.Group>
             <RootStack.Screen name="LivePreflight" component={LivePreflightScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
