@@ -102,7 +102,7 @@ export default function ChatAppearanceScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  retryButton: { minHeight: 44, alignSelf: 'flex-start', justifyContent: 'center', marginTop: 5, paddingHorizontal: 8 },
+  retryButton: { minHeight: 48, alignSelf: 'flex-start', justifyContent: 'center', marginTop: 5, paddingHorizontal: 8 },
   eyebrow: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 11, paddingVertical: 8, borderRadius: 999, borderWidth: 1 },
   preview: { minHeight: 156, padding: 14, borderWidth: 1, justifyContent: 'center' },
   previewPill: { maxWidth: '85%', borderRadius: 15, paddingHorizontal: 12, paddingVertical: 9 },
