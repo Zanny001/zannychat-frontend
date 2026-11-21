@@ -1470,7 +1470,7 @@ export default function ChatScreen({ route, navigation }) {
         {pendingAttachmentsError ? (
           <View accessibilityRole="alert" style={{ marginHorizontal: spacing.md, marginBottom: 8, padding: 10, borderRadius: 12, borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.35), backgroundColor: hexToRgba(colors.danger, 0.08), gap: 6 }}>
             <Text style={{ color: colors.danger, fontSize: 12 }}>{pendingAttachmentsError}</Text>
-            <TouchableOpacity onPress={reloadPendingAttachments} accessibilityRole="button" accessibilityLabel="Retry loading pending attachments" style={{ alignSelf: 'flex-end', minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 }}><Text style={{ color: colors.primary, fontWeight: '700' }}>Retry loading uploads</Text></TouchableOpacity>
+            <TouchableOpacity onPress={reloadPendingAttachments} accessibilityRole="button" accessibilityLabel="Retry loading pending attachments" style={{ alignSelf: 'flex-end', minHeight: 48, justifyContent: 'center', paddingHorizontal: 8 }}><Text style={{ color: colors.primary, fontWeight: '700' }}>Retry loading uploads</Text></TouchableOpacity>
           </View>
         ) : null}
         {pendingAttachments.length > 0 ? (
@@ -1499,7 +1499,7 @@ export default function ChatScreen({ route, navigation }) {
         {outboxLoadError ? (
           <View accessibilityRole="alert" style={{ marginHorizontal: spacing.md, marginBottom: 8, padding: 10, borderRadius: 12, borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.35), backgroundColor: hexToRgba(colors.danger, 0.08), gap: 6 }}>
             <Text style={{ color: colors.danger, fontSize: 12 }}>{outboxLoadError}</Text>
-            <TouchableOpacity onPress={reloadOutbox} accessibilityRole="button" accessibilityLabel="Retry loading pending messages" style={{ alignSelf: 'flex-end', minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 }}><Text style={{ color: colors.primary, fontWeight: '700' }}>Retry loading messages</Text></TouchableOpacity>
+            <TouchableOpacity onPress={reloadOutbox} accessibilityRole="button" accessibilityLabel="Retry loading pending messages" style={{ alignSelf: 'flex-end', minHeight: 48, justifyContent: 'center', paddingHorizontal: 8 }}><Text style={{ color: colors.primary, fontWeight: '700' }}>Retry loading messages</Text></TouchableOpacity>
           </View>
         ) : null}
         {pendingOutbox.length > 0 ? (
