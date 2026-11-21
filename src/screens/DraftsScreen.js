@@ -111,7 +111,16 @@ export default function DraftsScreen({ navigation }) {
                   </View>
                 </View>
               </GlassCard>
-              {error ? <Text accessibilityRole="alert" style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.sm }]}>{error}</Text> : null}
+              {error ? (
+                <View accessibilityRole="alert" style={{ marginBottom: spacing.sm }}>
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>{error}</Text>
+                  {drafts.length > 0 ? (
+                    <TouchableOpacity onPress={load} accessibilityRole="button" accessibilityLabel="Retry loading draft conversations" style={{ minHeight: 48, alignSelf: 'flex-start', justifyContent: 'center', paddingHorizontal: spacing.sm }}>
+                      <Text style={[typography.caption, { color: colors.primary, fontWeight: '700' }]}>Retry conversation lookup</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              ) : null}
             </View>
           }
           ListEmptyComponent={
