@@ -9,8 +9,8 @@ test('web Knot renders the same static SVG mark without Reanimated host componen
   assert.match(webKnot, /from 'react-native-svg'/);
   assert.match(webKnot, /<Circle/);
   assert.match(webKnot, /strokeDashoffset={dashOffset}/);
-  assert.match(webKnot, /rotation={-35}/);
-  assert.match(webKnot, /rotation={145}/);
+  assert.match(webKnot, /rotation=\{-35\}/);
+  assert.match(webKnot, /rotation=\{145\}/);
   assert.doesNotMatch(webKnot, /react-native-reanimated|createAnimatedComponent|useAnimatedProps/);
   assert.match(nativeKnot, /useAnimatedProps/);
 });
