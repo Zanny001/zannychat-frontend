@@ -34,7 +34,7 @@ test('Creator Analytics does not fabricate time-series values that the current A
 
 test('Creator Studio links to the dedicated analytics route and the route is registered', () => {
   assert.ok(studio.includes("navigation.navigate('LiveAnalytics')"));
-  assert.ok(navigator.includes('name="LiveAnalytics" component={LiveAnalyticsScreen}'));
+  assert.ok(navigator.includes('name="LiveAnalytics" component={LiveAnalyticsRoute}'));
   assert.ok(navigator.includes("import LiveAnalyticsScreen from '../screens/LiveAnalyticsScreen'"));
 });
 
