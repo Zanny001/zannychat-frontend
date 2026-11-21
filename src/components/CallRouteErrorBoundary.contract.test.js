@@ -6,6 +6,7 @@ const navigation = fs.readFileSync(new URL('../navigation/AppNavigator.js', impo
 const boundary = fs.readFileSync(new URL('./CallRouteErrorBoundary.js', import.meta.url), 'utf8');
 
 test('all browser and native call routes are isolated from the authenticated chat tree', () => {
+  assert.match(navigation, /export default function AppNavigator/);
   for (const [route, wrapper] of [
     ['IncomingCall', 'IncomingCallRoute'],
     ['OutgoingCall', 'OutgoingCallRoute'],
