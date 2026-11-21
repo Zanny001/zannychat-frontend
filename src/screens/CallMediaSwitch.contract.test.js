@@ -20,9 +20,12 @@ test('native and web 1:1 calls can acquire and publish camera media after an aud
     assert.ok(source.includes('createOffer()'));
     assert.ok(source.includes('setLocalDescription(offer)'));
     assert.ok(source.includes("type: 'offer'"));
-    assert.ok(source.includes('removeTrack('));
     assert.ok(source.includes("setLocalDescription({ type: 'rollback' })"));
   }
+  assert.ok(native.includes('removeTrack('));
+  assert.ok(web.includes('cameraSenderRef'));
+  assert.ok(web.includes('replaceTrack(null)'));
+  assert.ok(web.includes('replaceTrack(addedTrack)'));
 });
 
 test('native and web remote video tracks activate and release the video stage', () => {
