@@ -8,7 +8,7 @@ const endX = (centerX) => centerX + RADIUS * Math.cos(ARC_END_ANGLE);
 const endY = 90 + RADIUS * Math.sin(ARC_END_ANGLE);
 
 function openRingPath(centerX) {
-  return `M ${centerX + RADIUS} 90 A ${RADIUS} ${RADIUS} 0 1 1 ${endX(centerX)} ${endY()}`;
+  return `M ${centerX + RADIUS} 90 A ${RADIUS} ${RADIUS} 0 1 1 ${endX(centerX)} ${endY}`;
 }
 
 // Use explicit SVG arc paths on web rather than Circle stroke-dash rendering.
