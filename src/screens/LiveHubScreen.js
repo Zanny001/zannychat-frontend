@@ -464,9 +464,9 @@ export default function LiveHubScreen({ navigation, route }) {
                 <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 30, lineHeight: 36, letterSpacing: -0.7 }]}>Your stage.{"\n"}Your people.</Text>
                 <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.sm, lineHeight: 22, maxWidth: 330 }]}>Share a moment, bring your community together, and invite trusted guests on stage.</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.md }}>
-                  <TouchableOpacity onPress={() => setShowComposer((value) => !value)} accessibilityRole="button" accessibilityLabel="Set up a LIVE broadcast" accessibilityState={{ expanded: showComposer }} style={{ flex: 1, minHeight: 50, borderRadius: 16, backgroundColor: colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                    <Ionicons name="radio" size={18} color={colors.onPrimary} />
-                    <Text style={[typography.small, { color: colors.onPrimary, fontWeight: '900' }]}>{showComposer ? 'Broadcast setup open' : 'Create a LIVE'}</Text>
+                  <TouchableOpacity onPress={() => activeCreatorStreamId ? navigation.navigate('LiveStream', { streamId: activeCreatorStreamId, creatorMode: true }) : setShowComposer((value) => !value)} accessibilityRole="button" accessibilityLabel={activeCreatorStreamId ? 'Rejoin active LIVE broadcast' : 'Set up a LIVE broadcast'} accessibilityState={{ expanded: showComposer }} style={{ flex: 1, minHeight: 50, borderRadius: 16, backgroundColor: colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    <Ionicons name={activeCreatorStreamId ? 'play-circle' : 'radio'} size={18} color={colors.onPrimary} />
+                    <Text style={[typography.small, { color: colors.onPrimary, fontWeight: '900' }]}>{activeCreatorStreamId ? 'Rejoin LIVE' : showComposer ? 'Broadcast setup open' : 'Create a LIVE'}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => navigation.navigate('LiveReplayLibrary')} accessibilityRole="button" accessibilityLabel="Open LIVE replay library" style={{ width: 50, height: 50, borderRadius: 16, borderWidth: 1, borderColor: colors.border, backgroundColor: hexToRgba(colors.primary, 0.08), alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name="play-circle-outline" size={21} color={colors.primary} />
