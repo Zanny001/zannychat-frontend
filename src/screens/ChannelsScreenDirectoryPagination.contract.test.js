@@ -22,3 +22,14 @@ test('channel directory refresh and clear-search icon controls meet 48-point mob
   assert.ok(source.includes('accessibilityLabel="Refresh channels" style={{ width: 48, height: 48'));
   assert.ok(source.includes('accessibilityLabel="Clear channel search" style={{ width: 48, height: 48'));
 });
+
+
+test('channel discovery and moderation secondary actions meet the 48-point touch baseline', () => {
+  assert.match(source, /accessibilityLabel="Refresh channels" style=\{\{ width: 48, height: 48/);
+  assert.match(source, /accessibilityLabel="Clear channel search" style=\{\{ width: 48, height: 48/);
+  assert.match(source, /accessibilityLabel="Report channel post" style=\{\{ alignSelf: 'flex-start', minHeight: 48/);
+  assert.ok(source.includes("comments for post`} style={{ alignSelf: 'flex-start', minHeight: 48"));
+  assert.match(source, /accessibilityLabel="Load older channel comments" style=\{\{ alignSelf: 'flex-start', minHeight: 48/);
+  assert.match(source, /accessibilityLabel="Cancel comment edit" style=\{\{ minHeight: 48/);
+  assert.ok((source.match(/minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', padding: spacing\.xs/g) || []).length >= 3);
+});
