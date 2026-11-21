@@ -133,26 +133,23 @@ export default function CallScreenWeb({ route, navigation }) {
     return true;
   }, [activeCallType, conversationId, navigation, navigateToConference, participantName]);
 
-  const endCall = useCallback(async (reason = 'ended') => {
+  const endCall = useCallback((reason = 'ended') => {
     if (endingRef.current) return;
     endingRef.current = true;
-    // Stop local capture before waiting for the network. A slow or offline
-    // status write must never leave the browser camera/microphone running.
+    // Stop local capture and leave immediately; network persistence is best-effort.
     try { pcRef.current?.close(); } catch (_) {}
     try { localStreamRef.current?.getTracks?.().forEach((track) => track.stop()); } catch (_) {}
     try { remoteStreamRef.current?.getTracks?.().forEach((track) => track.stop()); } catch (_) {}
     const current = callRef.current || call;
+    navigation.goBack();
     if (current?.id && ['ringing', 'accepted'].includes(current.status)) {
       const nextStatus = getCallEndStatus({ reason, isCaller, status: current.status });
-      try {
-        const updated = await updateCallStatus(current.id, nextStatus);
-        callRef.current = { ...current, ...updated };
-      } catch (error) {
-        console.warn('[calls] local media stopped; call-end status will be reconciled after network recovery:', error?.message || error);
-      }
+      updateCallStatus(current.id, nextStatus)
+        .then((updated) => { callRef.current = { ...current, ...updated }; })
+        .catch((error) => {
+          console.warn('[calls] local media stopped; call-end status will be reconciled after network recovery:', error?.message || error);
+        });
     }
-    // Keep endingRef set so beforeRemove cannot block navigation with another write.
-    navigation.goBack();
   }, [call, isCaller, navigation]);
 
   useEffect(() => {
