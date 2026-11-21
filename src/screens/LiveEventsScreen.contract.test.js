@@ -82,3 +82,11 @@ test('LIVE Event cards provide date hierarchy, audience labels and accessible ca
   assert.ok(screen.includes("event.visibility === 'private' ? 'INVITE ONLY'"));
   assert.ok(screen.includes("capacityPercent>=100?'FULL':capacityPercent+'% RESERVED'"));
 });
+
+
+test('LIVE Event filters, invitee rows, RSVP and cancellation actions meet the 48-point target', () => {
+  assert.ok(screen.includes('const chip=(selected)=>({minHeight:48'));
+  assert.ok(screen.includes('style={{minHeight:48,flexDirection:'));
+  assert.ok(screen.includes('style={{flex:1,minHeight:48'));
+  assert.ok(screen.includes('style={{minHeight:48,borderWidth:1'));
+});
