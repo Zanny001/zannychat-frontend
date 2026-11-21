@@ -24,7 +24,7 @@ test('web group call disconnects and stops published local tracks before immedia
   assert.ok(handler.indexOf('activeRoom?.disconnect()') < handler.indexOf('navigation.goBack();'));
   assert.ok(handler.indexOf('publication.track?.stop?.()') < handler.indexOf('navigation.goBack();'));
   assert.ok(handler.indexOf('navigation.goBack();') < handler.indexOf('const persistLeave'));
-  assert.match(handler, /Promise.resolve(persistLeave).catch/);
+  assert.ok(handler.includes('Promise.resolve(persistLeave).catch('));
 });
 
 test('web video-call camera startup failure falls back to microphone-only calling', () => {
