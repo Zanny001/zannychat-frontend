@@ -33,4 +33,4 @@ test('call route fallback returns to the existing app instead of reloading the w
   assert.match(boundary, /navigation\?\.navigate\?\.\('Main'\)/);
   assert.match(boundary, /Your chat is still available/);
   assert.doesNotMatch(boundary, /window\.location\.reload/);
-});;
+});
