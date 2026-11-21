@@ -7,7 +7,7 @@ const hub = fs.readFileSync(new URL('./LiveHubScreen.js', import.meta.url), 'utf
 const navigator = fs.readFileSync(new URL('../navigation/AppNavigator.js', import.meta.url), 'utf8');
 
 test('LIVE Creator Profile reuses the privacy-aware peer profile and LIVE impact card', () => {
-  assert.ok(navigator.includes('name="LiveCreatorProfile" component={PeerProfileScreen}'));
+  assert.ok(navigator.includes('name="LiveCreatorProfile" component={LiveCreatorProfileRoute}'));
   assert.ok(navigator.includes('name="LiveCreatorStudio" component={LiveCreatorStudioScreen}'));
   assert.ok(source.includes('const fromLive = route.params?.fromLive === true'));
   assert.ok(source.includes('<LiveImpactCard impact={liveImpact} />'));
