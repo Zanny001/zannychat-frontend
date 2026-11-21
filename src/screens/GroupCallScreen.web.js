@@ -91,9 +91,11 @@ export default function GroupCallScreenWeb({ route, navigation }) {
     };
     const updateRemoteVideoMuteState = (publication, participant, isMuted) => {
       const trackSid = publication?.trackSid || publication?.sid || publication?.track?.sid;
-      if (!trackSid || publication?.kind !== Track.Kind.Video) return;
+      if (publication?.kind !== Track.Kind.Video) return;
+      if (publication?.source && publication.source !== Track.Source.Camera) return;
+      if (!trackSid && !participant?.identity) return;
       setRemoteVideoTracks((current) => current.map((entry) => (
-        entry.track.sid === trackSid || (participant?.identity && entry.participant?.identity === participant.identity)
+        (trackSid && entry.track.sid === trackSid) || (!trackSid && entry.participant?.identity === participant.identity)
           ? { ...entry, isMuted }
           : entry
       )));
