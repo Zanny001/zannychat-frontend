@@ -30,3 +30,9 @@ test('failed folder refresh hides stale rows and disables edit/delete actions', 
   assert.match(screen, /const remove = \(folder\) => \{ if \(loadFailed \|\| loading \|\| saving\)/);
   assert.match(screen, /disabled=\{loadFailed \|\| loading \|\| saving\}/);
 });
+
+
+test('chat folder retry action meets the shared 48-point mobile target', () => {
+  const screen = read('./ChatFoldersScreen.js');
+  assert.match(screen, /accessibilityLabel="Retry loading chat folders" style=\{\{ minHeight: 48/);
+});
