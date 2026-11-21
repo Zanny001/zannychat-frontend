@@ -49,6 +49,7 @@ test('web group calls preserve audio and render a camera-off tile when a remote 
   assert.match(source, /RoomEvent\\.TrackMuted/);
   assert.match(source, /RoomEvent\\.TrackUnmuted/);
   assert.match(source, /updateRemoteVideoMuteState/);
+  assert.match(source, /publication\.source !== Track\.Source\.Camera/);
   assert.match(source, /isMuted: Boolean\\(track\\.isMuted\\)/);
   assert.match(source, /camera is off/);
   assert.match(source, /remoteAudioRef/);
