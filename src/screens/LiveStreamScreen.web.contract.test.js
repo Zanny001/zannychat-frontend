@@ -221,3 +221,9 @@ test('web LIVE guest video tiles use the adaptive non-overlapping stage layout',
   assert.ok(web.includes('floatingCount={floatingRemoteTracks.length}'));
   assert.ok(web.includes('getLiveStageTileFrame({ index: floatingIndex, count: floatingCount, width: bounds.width, height: bounds.height })'));
 });
+
+
+test('web LIVE imports the color helper used by the room header and replay controls', () => {
+  assert.ok(web.includes("import { hexToRgba } from '../utils/color';"));
+  assert.ok(web.includes('hexToRgba(colors.onDanger, 0.35)'));
+});
