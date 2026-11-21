@@ -161,3 +161,9 @@ test('chat header collapses call and utility actions before participant names ar
   assert.match(header, /right: \{ flexDirection: 'row', alignItems: 'center', flexShrink: 0 \}/);
   assert.match(screen, /headerAction: \{ width: 48, height: 48/);
 });
+
+
+test('pending attachment and message recovery actions meet the shared 48-point mobile target', () => {
+  assert.match(screen, /accessibilityLabel="Retry loading pending attachments" style=\{\{ alignSelf: 'flex-end', minHeight: 48/);
+  assert.match(screen, /accessibilityLabel="Retry loading pending messages" style=\{\{ alignSelf: 'flex-end', minHeight: 48/);
+});
