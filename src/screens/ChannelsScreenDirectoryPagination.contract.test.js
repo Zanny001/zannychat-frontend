@@ -26,5 +26,5 @@ test('channel discovery and moderation secondary actions meet the 48-point touch
   assert.match(source, /comments for post\`} style=\{\{ alignSelf: 'flex-start', minHeight: 48/);
   assert.match(source, /accessibilityLabel="Load older channel comments" style=\{\{ alignSelf: 'flex-start', minHeight: 48/);
   assert.match(source, /accessibilityLabel="Cancel comment edit" style=\{\{ minHeight: 48/);
-  assert.ok((source.match(/minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', padding: spacing\.xs/g) || []).length >= 2);
+  assert.ok((source.match(/minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', padding: spacing\.xs/g) || []).length >= 3);
 });
