@@ -11,7 +11,7 @@ const preflight=fs.readFileSync(path.join(process.cwd(),'src/screens/LivePreflig
 
 test('LIVE Events screen is registered without changing the six primary tabs',()=>{
   assert.ok(navigation.includes("import LiveEventsScreen from '../screens/LiveEventsScreen'"));
-  assert.ok(navigation.includes('name="LiveEvents" component={LiveEventsScreen}'));
+  assert.ok(navigation.includes('name="LiveEvents" component={LiveEventsRoute}'));
   assert.ok(hub.includes("navigation.navigate('LiveEvents')"));
   assert.ok(hub.includes("['live_event_invitation', 'live_event_reminder'].includes(type)"));
   assert.ok(hub.includes("'live_event_started'"));

@@ -71,6 +71,7 @@ import { clearNativeCallMapping, getNativeCallMapping, initializeNativeCallSyste
 import { completeGoogleOAuthCallback } from '../services/googleAuth';
 import { takePendingAuthRoute } from './pendingAuthRoute';
 import CallRouteErrorBoundary from '../components/CallRouteErrorBoundary';
+import LiveRouteErrorBoundary from '../components/LiveRouteErrorBoundary';
 
 // Lets code outside the component tree (the push-notification tap
 // handler in App.js) trigger navigation — the standard React
@@ -197,7 +198,7 @@ function MainTabNavigator() {
     >
       <MainTabs.Screen name="Chats" component={ChatListScreen} />
       <MainTabs.Screen name="Calls" component={CallHistoryScreen} />
-      <MainTabs.Screen name="LIVE" component={LiveHubScreen} options={{ tabBarLabel: "LIVE" }} />
+      <MainTabs.Screen name="LIVE" component={LiveHubRoute} options={{ tabBarLabel: "LIVE" }} />
       <MainTabs.Screen name="Updates" component={StatusUpdatesScreen} options={{ tabBarLabel: 'Updates' }} />
       <MainTabs.Screen name="Channels" component={ChannelsScreen} options={{ tabBarLabel: 'Explore' }} />
       <MainTabs.Screen name="Profile" component={ProfileScreen} />
@@ -224,6 +225,34 @@ const IncomingCallRoute = withCallRouteBoundary(IncomingCallScreen, 'IncomingCal
 const OutgoingCallRoute = withCallRouteBoundary(OutgoingCallScreen, 'OutgoingCall');
 const DirectCallRoute = withCallRouteBoundary(CallScreen, 'Call');
 const GroupCallRoute = withCallRouteBoundary(GroupCallScreen, 'GroupCall');
+function withLiveRouteBoundary(Screen, routeName) {
+  function IsolatedLiveRoute(props) {
+    return (
+      <LiveRouteErrorBoundary navigation={props.navigation} routeName={routeName}>
+        <Screen {...props} />
+      </LiveRouteErrorBoundary>
+    );
+  }
+  IsolatedLiveRoute.displayName = 'Isolated' + routeName + 'Route';
+  return IsolatedLiveRoute;
+}
+
+const LiveHubRoute = withLiveRouteBoundary(LiveHubScreen, 'LiveHub');
+const LivePreflightRoute = withLiveRouteBoundary(LivePreflightScreen, 'LivePreflight');
+const LiveStreamRoute = withLiveRouteBoundary(LiveStreamScreen, 'LiveStream');
+const LiveReplayRoute = withLiveRouteBoundary(LiveReplayScreen, 'LiveReplay');
+const LiveCreatorStudioRoute = withLiveRouteBoundary(LiveCreatorStudioScreen, 'LiveCreatorStudio');
+const LiveCreatorProfileRoute = withLiveRouteBoundary(PeerProfileScreen, 'LiveCreatorProfile');
+const LiveReplayLibraryRoute = withLiveRouteBoundary(LiveReplayLibraryScreen, 'LiveReplayLibrary');
+const LiveGuestQueueRoute = withLiveRouteBoundary(LiveGuestQueueScreen, 'LiveGuestQueue');
+const LiveModerationRoute = withLiveRouteBoundary(LiveModerationScreen, 'LiveModeration');
+const LiveReportsRoute = withLiveRouteBoundary(LiveReportsScreen, 'LiveReports');
+const LiveAnalyticsRoute = withLiveRouteBoundary(LiveAnalyticsScreen, 'LiveAnalytics');
+const LivePostStreamSummaryRoute = withLiveRouteBoundary(LivePostStreamSummaryScreen, 'LivePostStreamSummary');
+const LiveLeaderboardRoute = withLiveRouteBoundary(LiveLeaderboardScreen, 'LiveLeaderboard');
+const LiveSettingsRoute = withLiveRouteBoundary(LiveSettingsScreen, 'LiveSettings');
+const LiveEventsRoute = withLiveRouteBoundary(LiveEventsScreen, 'LiveEvents');
+
 
 export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthenticated = false }) {
   const { colors } = useTheme();
@@ -487,20 +516,20 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
           <RootStack.Screen name="GroupCall" component={GroupCallRoute} options={{ gestureEnabled: false, animation: 'fade' }} />
           {/* LIVE EXPERIENCE: one canonical Hub entry in MainTabs; all supporting routes live in this group. */}
           <RootStack.Group>
-            <RootStack.Screen name="LivePreflight" component={LivePreflightScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-            <RootStack.Screen name="LiveStream" component={LiveStreamScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
-            <RootStack.Screen name="LiveReplay" component={LiveReplayScreen} options={{ animation: 'fade' }} />
-            <RootStack.Screen name="LiveCreatorStudio" component={LiveCreatorStudioScreen} options={{ animation: 'fade' }} />
-            <RootStack.Screen name="LiveCreatorProfile" component={PeerProfileScreen} options={{ animation: 'fade' }} />
-            <RootStack.Screen name="LiveReplayLibrary" component={LiveReplayLibraryScreen} options={{ animation: 'fade' }} />
-            <RootStack.Screen name="LiveGuestQueue" component={LiveGuestQueueScreen} options={{ animation: 'slide_from_right' }} />
-            <RootStack.Screen name="LiveModeration" component={LiveModerationScreen} options={{ animation: 'slide_from_right' }} />
-            <RootStack.Screen name="LiveReports" component={LiveReportsScreen} options={{ animation: 'slide_from_right' }} />
-            <RootStack.Screen name="LiveAnalytics" component={LiveAnalyticsScreen} options={{ animation: 'slide_from_right' }} />
-            <RootStack.Screen name="LivePostStreamSummary" component={LivePostStreamSummaryScreen} options={{ animation: 'fade' }} />
-            <RootStack.Screen name="LiveLeaderboard" component={LiveLeaderboardScreen} options={{ animation: 'slide_from_right' }} />
-            <RootStack.Screen name="LiveSettings" component={LiveSettingsScreen} options={{ animation: 'slide_from_right' }} />
-            <RootStack.Screen name="LiveEvents" component={LiveEventsScreen} options={{ animation: 'slide_from_right' }} />
+            <RootStack.Screen name="LivePreflight" component={LivePreflightRoute} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+            <RootStack.Screen name="LiveStream" component={LiveStreamRoute} options={{ gestureEnabled: false, animation: 'fade' }} />
+            <RootStack.Screen name="LiveReplay" component={LiveReplayRoute} options={{ animation: 'fade' }} />
+            <RootStack.Screen name="LiveCreatorStudio" component={LiveCreatorStudioRoute} options={{ animation: 'fade' }} />
+            <RootStack.Screen name="LiveCreatorProfile" component={LiveCreatorProfileRoute} options={{ animation: 'fade' }} />
+            <RootStack.Screen name="LiveReplayLibrary" component={LiveReplayLibraryRoute} options={{ animation: 'fade' }} />
+            <RootStack.Screen name="LiveGuestQueue" component={LiveGuestQueueRoute} options={{ animation: 'slide_from_right' }} />
+            <RootStack.Screen name="LiveModeration" component={LiveModerationRoute} options={{ animation: 'slide_from_right' }} />
+            <RootStack.Screen name="LiveReports" component={LiveReportsRoute} options={{ animation: 'slide_from_right' }} />
+            <RootStack.Screen name="LiveAnalytics" component={LiveAnalyticsRoute} options={{ animation: 'slide_from_right' }} />
+            <RootStack.Screen name="LivePostStreamSummary" component={LivePostStreamSummaryRoute} options={{ animation: 'fade' }} />
+            <RootStack.Screen name="LiveLeaderboard" component={LiveLeaderboardRoute} options={{ animation: 'slide_from_right' }} />
+            <RootStack.Screen name="LiveSettings" component={LiveSettingsRoute} options={{ animation: 'slide_from_right' }} />
+            <RootStack.Screen name="LiveEvents" component={LiveEventsRoute} options={{ animation: 'slide_from_right' }} />
           </RootStack.Group>
           <RootStack.Screen name="PeerProfile" component={PeerProfileScreen} />
           <RootStack.Screen name="NewChat" component={NewChatScreen} options={{ presentation: 'modal' }} />

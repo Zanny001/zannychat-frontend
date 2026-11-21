@@ -1,4 +1,5 @@
 import React from 'react';
+import { reportClientRenderError } from '../services/clientDiagnostics';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 // A fatal render must never leave the production web app as an unexplained
@@ -7,7 +8,7 @@ import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 export default class AppErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, diagnosticId: null };
   }
 
   static getDerivedStateFromError() {
@@ -20,6 +21,14 @@ export default class AppErrorBoundary extends React.Component {
       name: error?.name || 'Error',
       message: error?.message || 'Unknown render error',
       componentStack: info?.componentStack || '',
+    });
+    reportClientRenderError({
+      sector: 'app',
+      route: 'App',
+      error,
+      componentStack: info?.componentStack || '',
+    }).then((diagnosticId) => {
+      if (diagnosticId) this.setState({ diagnosticId });
     });
   }
 
@@ -42,6 +51,7 @@ export default class AppErrorBoundary extends React.Component {
           <Text style={styles.description}>
             Something interrupted the app while it was loading. Your account and messages have not been deleted.
           </Text>
+          {this.state.diagnosticId ? <Text selectable style={styles.code}>Diagnostic reference: {this.state.diagnosticId}</Text> : null}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Reload ZannyChat"
@@ -93,6 +103,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 23,
   },
+  code: { marginTop: 12, color: '#B7A3FF', fontSize: 11 },
   button: {
     minHeight: 48,
     marginTop: 24,

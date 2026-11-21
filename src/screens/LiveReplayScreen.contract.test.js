@@ -17,7 +17,7 @@ test('private LIVE replay player requests a signed playback URL and plays in-app
 
 test('LIVE replay player is registered in the authenticated navigator', () => {
   assert.ok(navigator.includes("import LiveReplayScreen from '../screens/LiveReplayScreen'"));
-  assert.ok(navigator.includes('name="LiveReplay" component={LiveReplayScreen}'));
+  assert.ok(navigator.includes('name="LiveReplay" component={LiveReplayRoute}'));
 });
 
 test('all replay player actions expose explicit accessibility names', () => {

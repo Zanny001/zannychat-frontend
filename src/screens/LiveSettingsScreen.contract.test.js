@@ -58,7 +58,7 @@ test('LIVE settings has accessible format, audience, category and guest-default 
 
 test('LIVE Hub and navigation expose the dedicated settings experience', () => {
   assert.ok(hub.includes("navigation.navigate('LiveSettings')"));
-  assert.ok(navigator.includes('name="LiveSettings" component={LiveSettingsScreen}'));
+  assert.ok(navigator.includes('name="LiveSettings" component={LiveSettingsRoute}'));
   assert.ok(navigator.includes("import LiveSettingsScreen from '../screens/LiveSettingsScreen'"));
 });
 

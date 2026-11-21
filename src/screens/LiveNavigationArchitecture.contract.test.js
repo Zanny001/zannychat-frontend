@@ -8,7 +8,7 @@ const webStream = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.me
 const summary = fs.readFileSync(new URL('./LivePostStreamSummaryScreen.js', import.meta.url), 'utf8');
 
 test('LIVE has one canonical Hub entry and no duplicate root-stack Hub route', () => {
-  assert.equal((navigator.match(/MainTabs\.Screen name="LIVE" component={LiveHubScreen}/g) || []).length, 1);
+  assert.equal((navigator.match(/MainTabs\.Screen name="LIVE" component={LiveHubRoute}/g) || []).length, 1);
   assert.equal((navigator.match(/RootStack\.Screen name="LiveHub"/g) || []).length, 0);
   assert.match(navigator, /LIVE EXPERIENCE: one canonical Hub entry in MainTabs/);
 });
@@ -28,7 +28,7 @@ test('all supporting LIVE routes are grouped together without changing their rou
 });
 
 test('LIVE creator identity reuses the shared profile implementation', () => {
-  assert.match(navigator, /name="LiveCreatorProfile" component={PeerProfileScreen}/);
+  assert.match(navigator, /name="LiveCreatorProfile" component={LiveCreatorProfileRoute}/);
 });
 
 test('broadcast exits and post-LIVE return paths target the canonical LIVE tab', () => {

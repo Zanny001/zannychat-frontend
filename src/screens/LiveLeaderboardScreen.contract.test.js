@@ -31,7 +31,7 @@ test('LIVE leaderboard explains public-only privacy and unsupported time windows
 
 test('LIVE leaderboard is reachable from LIVE Hub and every action has an accessible name', () => {
   assert.ok(hub.includes("navigation.navigate('LiveLeaderboard')"));
-  assert.ok(navigator.includes('name="LiveLeaderboard" component={LiveLeaderboardScreen}'));
+  assert.ok(navigator.includes('name="LiveLeaderboard" component={LiveLeaderboardRoute}'));
   assert.ok(navigator.includes("import LiveLeaderboardScreen from '../screens/LiveLeaderboardScreen'"));
   const controlLines = leaderboard.split('\n').filter((line) => line.includes('<TouchableOpacity'));
   assert.ok(controlLines.length >= 1, 'leaderboard retains its follow action');
