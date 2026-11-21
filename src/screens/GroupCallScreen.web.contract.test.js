@@ -20,7 +20,7 @@ test('web group calls attach remote audio and video tracks and recover blocked p
   assert.match(source, /track\.attach\(\)/);
   assert.match(source, /remoteAudioRef/);
   assert.match(source, /RoomEvent\.AudioPlaybackStatusChanged/);
-  assert.match(source, /roomRef\.current\?\.startAudio\(\)/);
+  assert.match(source, /await room\.startAudio\(\)/);
   assert.match(source, /MediaTile/);
 });
 
