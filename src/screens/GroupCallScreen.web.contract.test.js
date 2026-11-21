@@ -62,3 +62,14 @@ test('call presence heartbeat contains synchronous throws and Supabase RPC error
   assert.match(source, /catch \(error\) \{\s*if \(active\) console\.warn\('\[calls\] presence heartbeat failed:/);
   assert.match(source, /return null/);
 });
+
+test('web group calls explicitly play remote audio and expose autoplay recovery', () => {
+  assert.match(source, /remoteAudioTracksRef = useRef\(new Map\(\)\)/);
+  assert.match(source, /element\.muted = false/);
+  assert.match(source, /element\.volume = 1/);
+  assert.match(source, /const playback = element\.play\?\.\(\)/);
+  assert.match(source, /playback\.catch\(\(\) => \{ if \(active\) setAudioBlocked\(true\); \}\)/);
+  assert.match(source, /await room\.startAudio\(\)/);
+  assert.match(source, /Promise\.allSettled/);
+  assert.match(source, /remoteAudioTracksRef\.current\.clear\(\)/);
+});
