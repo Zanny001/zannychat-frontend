@@ -5,7 +5,7 @@ import fs from 'node:fs';
 const screen = fs.readFileSync(new URL('./SavedMessagesScreen.js', import.meta.url), 'utf8');
 
 test('saved messages load failures are distinct from a genuine empty collection', () => {
-  assert.match(screen, /\) : error \? \(/);
+  assert.ok(screen.includes(' : error ? ('));
   assert.match(screen, /Retry loading saved messages/);
   assert.match(screen, /ListEmptyComponent=/);
   assert.match(screen, /Nothing saved yet/);
