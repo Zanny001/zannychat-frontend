@@ -275,19 +275,28 @@ export default function GroupCallScreenWeb({ route, navigation }) {
   const endCall = useCallback(async () => {
     if (endedRef.current) return;
     endedRef.current = true;
+    const activeRoom = roomRef.current;
+    // Disconnect and stop local capture immediately. Never keep a camera or
+    // microphone live while waiting for a slow call-end API request.
+    try { activeRoom?.disconnect(); } catch (_) {}
+    try {
+      for (const publication of activeRoom?.localParticipant?.trackPublications?.values?.() || []) {
+        publication.track?.stop?.();
+      }
+    } catch (_) {}
+    const activeRoomId = connection?.roomId || joinedRoomIdRef.current || roomId;
     try {
       if (directCallId) {
         await updateCallStatus(directCallId, 'ended');
-      } else {
-        const activeRoomId = connection?.roomId || joinedRoomIdRef.current || roomId;
-        if (!activeRoomId) { navigation.goBack(); return; }
+      } else if (activeRoomId) {
         await backendFetch(`/group-calls/${activeRoomId}/${canEnd ? 'end' : 'leave'}`, { method: 'POST' });
       }
-      roomRef.current?.disconnect();
-      navigation.goBack();
     } catch (error) {
-      endedRef.current = false;
-      setErrorText(error?.message || 'Could not leave this call.');
+      // Local media is already shut down. Heartbeats stop on unmount and server
+      // stale-session cleanup remains the fallback for an offline exit.
+      console.warn('[calls] local room disconnected; server leave update failed:', error?.message || error);
+    } finally {
+      navigation.goBack();
     }
   }, [canEnd, connection?.roomId, directCallId, navigation, roomId]);
 
