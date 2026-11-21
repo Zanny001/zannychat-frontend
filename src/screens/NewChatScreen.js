@@ -409,6 +409,7 @@ export default function NewChatScreen({ navigation, route }) {
             accessibilityRole="button"
             accessibilityLabel="Retry loading contacts"
             accessibilityState={{ disabled: loadingContacts, busy: loadingContacts }}
+            style={{ minHeight: 48, alignSelf: 'flex-start', justifyContent: 'center', paddingHorizontal: spacing.sm }}
           >
             <Text
               style={[
