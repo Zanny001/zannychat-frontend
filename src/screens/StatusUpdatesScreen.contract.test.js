@@ -90,3 +90,10 @@ test('account changes clear Status reactions, replies, privacy selections and ac
   assert.ok(screen.includes('requestedStoryOpenRef.current = null'));
   assert.ok(screen.includes("if (!userId) {\n      setLoading(false);"));
 });
+
+
+test('status media removal and privacy row actions meet the 48-point mobile target', () => {
+  assert.ok(screen.includes('accessibilityLabel="Remove selected status media" accessibilityState={{ disabled: !statusComposerReady }} style={{ minHeight: 48'));
+  assert.ok(screen.includes('Unmute statuses from ${statusUserNames[entry.muted_user_id] || \'this account\'}`} style={{ minHeight: 48'));
+  assert.ok(screen.includes('Allow ${statusUserNames[entry.excluded_user_id] || \'this contact\'} to view your status`} style={{ minHeight: 48'));
+});
