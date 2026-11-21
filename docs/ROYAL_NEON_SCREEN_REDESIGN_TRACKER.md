@@ -5,8 +5,8 @@ Source of truth: the current `src/navigation/AppNavigator.js` route declarations
 ## Current deployment status — 21 Nov 2026
 
 - Vercel project `zannychat` is now connected to `Zanny001/zannychat-frontend`; verified production alias: `https://zannychat.vercel.app`.
-- Production deployment `dpl_DJBy9kHXe288sUfgUKGE4oDWRhyk` is **READY** for runtime-code commit `9e7b904c02fdb0e66160773add28e70b3910104d`. It includes the safe-area work through PR #259. The later `5f0e5c69` main commit is documentation-only.
-- Vercel's last-30-minute runtime error aggregation returned no errors. The runtime-log API rejected a one-hour query because the Hobby plan's retention window is one hour; the 30-minute error/fatal query returned no records.
+- Latest production deployment `dpl_4cJrgwHL9YEeqjTMLY6EpsqqSmDu` is **READY** for main commit `ccb8cf40c036999b290264b4764a6c230284dc21`; it includes all runtime changes through PR #261 (custom-palette contrast/LIVE overlay fixes) plus the subsequent tracker documentation update. The verified aliases `zannychat.vercel.app` and `zannychat-frontend.vercel.app` are attached and `aliasError` is null.
+- Vercel's last-30-minute runtime error aggregation returned no errors, and deployment-specific error/fatal runtime logs returned no records. A wider one-hour query was rejected by the Hobby plan's one-hour runtime-log retention boundary.
 - The external web viewer could not fetch the app URL, so a real browser route smoke test is not claimed. Alias assignment and deployment readiness are verified by Vercel.
 - The 16 Nov notes below about an empty Vercel project list, HTTP 403 project creation, build-rate limits and no confirmed production deployment are historical snapshots and are superseded by this 21 Nov deployment record.
 
