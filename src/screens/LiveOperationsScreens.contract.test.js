@@ -68,3 +68,11 @@ test('LIVE operations screens provide 48-point controls, refresh, loading, error
     assert.ok(source.includes('Try again'));
   }
 });
+
+
+test('LIVE operations recovery actions each meet the 48-point mobile target', () => {
+  assert.ok(guestQueue.includes('accessibilityLabel="Retry loading guest queue" style={{ minHeight: 48'));
+  assert.ok(moderation.includes('accessibilityLabel="Retry loading LIVE participants" style={{ minHeight: 48'));
+  assert.ok(reports.includes('accessibilityLabel="Retry loading LIVE reports" style={{ minHeight: 48'));
+  assert.ok(reports.includes('minHeight: 48, paddingHorizontal: spacing.md'));
+});
