@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   heroFooter: { flexDirection: 'row', alignItems: 'center', marginTop: 22 },
   statusDot: { width: 7, height: 7, borderRadius: 4 },
   persistenceWarning: { borderWidth: 1, borderRadius: 16, padding: 14, flexDirection: 'row', alignItems: 'flex-start' },
-  retryButton: { minHeight: 44, alignSelf: 'flex-start', justifyContent: 'center', marginTop: 5, paddingRight: 12 },
+  retryButton: { minHeight: 48, alignSelf: 'flex-start', justifyContent: 'center', marginTop: 5, paddingRight: 12 },
   sectionHeading: { marginTop: 28, marginBottom: 14 },
   qualityList: { gap: 10 },
   qualityOption: { minHeight: 78, borderWidth: 1, borderRadius: 19, padding: 13, flexDirection: 'row', alignItems: 'center' },
