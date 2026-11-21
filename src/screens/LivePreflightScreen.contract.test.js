@@ -98,3 +98,10 @@ test('pre-flight rechecks permissions when the app returns from device settings'
   assert.ok(preflight.includes("if (state === 'active') refreshMediaPermissions()"));
   assert.ok(preflight.includes('getCameraPermission(), getMicrophonePermission()'));
 });
+
+
+test('LIVE pre-flight camera switch and permission-settings recovery actions meet 48-point targets', () => {
+  assert.ok(preflight.includes('accessibilityLabel="Switch camera"'));
+  assert.ok(preflight.includes('minWidth: 48, minHeight: 48'));
+  assert.ok(preflight.includes('accessibilityLabel="Open device settings for LIVE permissions" style={{ minHeight: 48'));
+});
