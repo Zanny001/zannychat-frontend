@@ -282,4 +282,6 @@ The connected account is confirmed as an `OWNER` of the `ZannyChat` Hobby team, 
 
 - 21 Nov 2026 LIVE Hub now fetches the authenticated creator profile and changes its hero CTA to `Rejoin LIVE` when an active creator stream exists; it routes directly to that stream and clears the state on account changes. PR #271 (`00ee29c0c26e12eeec1dc62ebdbf7d1c711a96b7`) passed all four frontend checks.
 
+
+- 21 Nov 2026 Status Updates privacy actions in PR #273 (`72c2c131985242bf6a63318099a142b60c5c4837`) now provide 48-point touch targets for media removal, muted-account unmute and excluded-contact allow actions. All four frontend quality checks passed.
 - 21 Nov 2026 Shared Media lightbox close control increased to a 48×48-point mobile target in PR #272 (`e1162a704d29479e0737e9a89f80c68a76c3f875`), with an accessibility regression contract. All four frontend checks passed; decorative media icons were left unchanged.
