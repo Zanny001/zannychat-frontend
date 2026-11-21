@@ -265,7 +265,18 @@ function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarn
             </View>
             <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary, flex: 1, minWidth: 0 }]}>{title}</Text>
             {!compactRoomHeader ? (<View style={{ paddingHorizontal: 8, paddingVertical: 5, borderRadius: 9, backgroundColor: colors.primary, borderWidth: 1, borderColor: hexToRgba(colors.onPrimary, 0.24) }}><Text style={{ color: colors.onPrimary, fontSize: 9, fontWeight: '900', letterSpacing: 0.45 }}>{creatorMode ? 'HOST' : publisherMode ? 'GUEST' : moderatorMode ? 'MODERATOR' : 'VIEWER'}</Text></View>) : null}
-            <TouchableOpacity onPress={() => setShowOverlayMenu((value) => !value)} accessibilityRole="button" accessibilityLabel={showOverlayMenu ? 'Close LIVE controls menu' : 'Open LIVE controls menu'} style={{ width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.16), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.3) }}>
+            {creatorMode && replayEnabled ? <TouchableOpacity
+              onPress={replayStatus === 'ready' ? onViewReplay : replayStatus === 'recording' ? onStopReplay : onStartReplay}
+              disabled={replayBusy || ['starting', 'processing'].includes(replayStatus)}
+              accessibilityRole="button"
+              accessibilityLabel={replayStatus === 'ready' ? 'Watch saved LIVE replay' : replayStatus === 'recording' ? 'Stop LIVE replay recording' : 'Start LIVE replay recording'}
+              accessibilityState={{ disabled: replayBusy || ['starting', 'processing'].includes(replayStatus), busy: replayBusy }}
+              style={{ minWidth: 52, height: 48, paddingHorizontal: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, borderRadius: 14, backgroundColor: replayStatus === 'recording' ? hexToRgba(colors.danger, 0.16) : hexToRgba(colors.primary, 0.16), borderWidth: 1, borderColor: replayStatus === 'recording' ? colors.danger : colors.border, opacity: replayBusy || ['starting', 'processing'].includes(replayStatus) ? 0.55 : 1 }}
+            >
+              {replayBusy || ['starting', 'processing'].includes(replayStatus) ? <ActivityIndicator size="small" color={colors.primary} /> : <Ionicons name={replayStatus === 'ready' ? 'play-circle-outline' : replayStatus === 'recording' ? 'stop-circle-outline' : 'radio-button-on-outline'} size={15} color={replayStatus === 'recording' ? colors.danger : colors.primary} />}
+              <Text style={{ color: replayStatus === 'recording' ? colors.danger : colors.textPrimary, fontSize: 8, fontWeight: '900', letterSpacing: 0.2 }}>{replayBusy || ['starting', 'processing'].includes(replayStatus) ? 'WAIT' : replayStatus === 'ready' ? 'PLAY' : replayStatus === 'recording' ? 'STOP' : 'REC'}</Text>
+            </TouchableOpacity> : null}
+            <TouchableOpacity onPress={() => setShowOverlayMenu((value) => !value) accessibilityRole="button" accessibilityLabel={showOverlayMenu ? 'Close LIVE controls menu' : 'Open LIVE controls menu'} style={{ width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.16), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.3) }}>
               <Ionicons name={showOverlayMenu ? 'close' : 'ellipsis-horizontal'} size={21} color={colors.textPrimary} />
             </TouchableOpacity>
             <TouchableOpacity onPress={onEnd} disabled={busy} accessibilityRole="button" accessibilityLabel={creatorMode ? 'End LIVE broadcast' : 'Leave LIVE stream'} accessibilityState={{ disabled: busy }} style={{ minWidth: creatorMode ? 82 : 70, height: 48, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: creatorMode ? colors.danger : hexToRgba(colors.surface, 0.92), borderWidth: 1, borderColor: creatorMode ? hexToRgba(colors.danger, 0.65) : colors.border, opacity: busy ? 0.55 : 1 }}>
@@ -282,16 +293,6 @@ function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarn
             <LiveMenuAction icon="volume-high-outline" label="Audio output" accessibilityLabel="Choose LIVE audio output" onPress={chooseNativeAudioOutput} colors={colors} />
             {creatorMode ? <LiveMenuAction icon="people-outline" label="Participants" accessibilityLabel="Open Creator Studio" onPress={onToggleParticipants} colors={colors} /> : null}
             {creatorMode && canManageGuests ? <LiveMenuAction icon="person-add-outline" label="Requests" accessibilityLabel="Review guest requests" onPress={onToggleGuestRequests} colors={colors} /> : null}
-            {creatorMode && replayEnabled ? <LiveMenuAction
-              icon={replayStatus === 'ready' ? 'play-circle-outline' : replayStatus === 'recording' ? 'stop-circle-outline' : 'radio-button-on-outline'}
-              label={replayStatus === 'ready' ? 'Watch replay' : replayStatus === 'recording' ? 'Stop replay' : replayBusy ? 'Updating…' : 'Start replay'}
-              accessibilityLabel={replayStatus === 'ready' ? 'Watch saved LIVE replay' : replayStatus === 'recording' ? 'Stop LIVE replay recording' : 'Start LIVE replay recording'}
-              onPress={replayStatus === 'ready' ? onViewReplay : replayStatus === 'recording' ? onStopReplay : onStartReplay}
-              disabled={replayBusy || ['starting', 'processing'].includes(replayStatus)}
-              loading={replayBusy || ['starting', 'processing'].includes(replayStatus)}
-              colors={colors}
-              danger={replayStatus === 'recording'}
-            /> : null}
             {creatorMode && !replayEnabled ? <View accessibilityRole="summary" style={{ justifyContent: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, backgroundColor: hexToRgba(colors.surface, 0.72), borderWidth: 1, borderColor: colors.border }}><Text style={{ color: colors.textPrimary, fontSize: 10, fontWeight: '800' }}>{replayAvailability === 'checking' ? 'Checking replay setup…' : replayAvailability === 'unavailable' ? 'Replay setup could not be checked' : 'Replay recording unavailable'}</Text><Text style={{ color: colors.textSecondary, fontSize: 9, maxWidth: 190 }}>{replayAvailability === 'unavailable' ? 'Try again later. Your LIVE broadcast is unaffected.' : replayAvailability === 'checking' ? 'Please wait' : 'Replay recording is not enabled for this server.'}</Text></View> : null}
             {moderatorMode ? <LiveMenuAction icon="shield-checkmark-outline" label="Report panel" accessibilityLabel="Open LIVE safety reports" onPress={onToggleReports} colors={colors} /> : null}
           </ScrollView>}
