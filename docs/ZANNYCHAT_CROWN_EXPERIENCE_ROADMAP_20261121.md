@@ -184,3 +184,12 @@ Every feature release must include:
 - Frontend production main was last verified in project handoff as commit `8ea621a`; local unit suite reported 1,159 passing and web export succeeded on that commit.
 - PR #293, browser LiveKit remote-audio playback recovery, is open on branch `fix/web-livekit-remote-audio-playback` at `662923c`; automated workflows and Vercel preview were reported passing/READY, but real two-participant browser/device acceptance remains outstanding. Do not call it production-fixed until accepted and merged/deployed.
 - This roadmap does not replace the canonical Delivery Register or the LIVE-first execution gates. Reconcile all statuses against current GitHub, deployments and runtime before starting each slice.
+
+
+## 8. Execution update — 2026-11-22
+
+- PR #294 (this roadmap) is merged into main; merge commit `0e6a358372b593a409e6f777de0b5262b2e53c60`.
+- Voice-note playback controls (speed cycling 1×/1.25×/1.5×/2×, tap-to-seek, elapsed/total time and accessibility labels) were delivered in PR #295 and merged as `f8d36066b9d52a028cfc3f65531cbb7c256f13e1` after all recorded frontend quality, dependency, native Android compile, iOS prebuild, web/Android export, release/contract/integrity and bundle-exposure checks passed.
+- The production Vercel deployment for `f8d3606` was observed in BUILDING state at the time of this update. It must be rechecked before marking deployed; physical-device playback/seek acceptance remains open.
+- PR #293 (browser LiveKit remote-audio recovery) remains open. Its base is behind current main and GitHub currently reports it non-mergeable; it still requires branch synchronization, fresh CI and two-participant browser/device acceptance. Do not mark browser calling fixed based on source changes alone.
+- Next feature work must continue only after reconciling these P0 acceptance gates and auditing existing main code to avoid duplicating already-merged capabilities.
