@@ -47,7 +47,7 @@ test('upgraded one-to-one calls appear only once as conference history', () => {
 
 test('call history uses a virtualized list with stable direct and group call keys', () => {
   assert.ok(callsScreen.includes('<FlatList'));
-  assert.ok(callsScreen.includes('data={calls}'));
+  assert.ok(callsScreen.includes('data={visibleCalls}'));
   assert.ok(callsScreen.includes('keyExtractor='));
   assert.ok(callsScreen.includes('renderItem='));
   assert.ok(!callsScreen.includes('calls.map('));
@@ -56,4 +56,25 @@ test('call history uses a virtualized list with stable direct and group call key
 test('quick-connect cards use a more compact premium footprint', () => {
   assert.ok(callsScreen.includes('minHeight: 116'));
   assert.ok(callsScreen.includes('START IN A TAP'));
+});
+
+test('call history supports local search and composable call-type and missed-call filters', () => {
+  assert.ok(callsScreen.includes("const [callFilter, setCallFilter] = useState('all')"));
+  assert.ok(callsScreen.includes("const [searchQuery, setSearchQuery] = useState('')"));
+  assert.ok(callsScreen.includes('Search call history'));
+  assert.ok(callsScreen.includes('Clear call history search'));
+  assert.ok(callsScreen.includes("['all', 'All'], ['missed', 'Missed'], ['audio', 'Audio'], ['video', 'Video'], ['group', 'Group']"));
+  assert.ok(callsScreen.includes("callFilter === 'missed' && missed"));
+  assert.ok(callsScreen.includes("callFilter === 'video' && item.call_type === 'video'"));
+  assert.ok(callsScreen.includes("callFilter === 'group' && Boolean(item.isGroupCall)"));
+  assert.ok(callsScreen.includes('const visibleCalls = useMemo'));
+});
+
+test('call history filters only already-loaded records and preserves the existing redial and delete actions', () => {
+  assert.ok(callsScreen.includes('return calls.filter((item) =>'));
+  assert.ok(callsScreen.includes('data={visibleCalls}'));
+  assert.ok(callsScreen.includes('redialCall(item, peerUserId, \'audio\')'));
+  assert.ok(callsScreen.includes('redialCall(item, peerUserId, \'video\')'));
+  assert.ok(callsScreen.includes('await hideCallHistory(item)'));
+  assert.ok(callsScreen.includes('No matching calls'));
 });
