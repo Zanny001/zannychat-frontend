@@ -21,5 +21,5 @@ test('action sheet exposes selected and disabled states with pressed feedback', 
 test('action sheet actions retain comfortable mobile touch targets', () => {
   assert.ok(sheet.includes('width: 48'));
   assert.ok(sheet.includes('height: 48'));
-  assert.ok(sheet.includes('minHeight: 48'));
+  assert.ok(sheet.includes('minHeight: 60'));
 });

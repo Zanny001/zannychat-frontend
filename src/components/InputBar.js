@@ -286,14 +286,14 @@ export default function InputBar({
           <TouchableOpacity
             onPress={onAttach}
             hitSlop={8}
-            style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}
+            style={[styles.utilityBtn, { backgroundColor: hexToRgba(colors.surfaceElevated, 0.82), borderColor: hexToRgba(colors.primary, 0.16) }]}
             accessibilityLabel="Attach a photo, file, or contact"
             accessibilityRole="button"
           >
-            <Ionicons name="add-circle-outline" size={26} color={colors.textSecondary} />
+            <Ionicons name="add" size={25} color={colors.primary} />
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => setEmojiOpen((open) => !open)} hitSlop={6} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }} accessibilityRole="button" accessibilityLabel={emojiOpen ? 'Close emoji picker' : 'Open emoji picker'}>
+          <TouchableOpacity onPress={() => setEmojiOpen((open) => !open)} hitSlop={6} style={[styles.utilityBtn, { backgroundColor: emojiOpen ? hexToRgba(colors.primary, 0.15) : hexToRgba(colors.surfaceElevated, 0.82), borderColor: emojiOpen ? hexToRgba(colors.primary, 0.42) : hexToRgba(colors.primary, 0.16) }]} accessibilityRole="button" accessibilityState={{ expanded: emojiOpen }} accessibilityLabel={emojiOpen ? 'Close emoji picker' : 'Open emoji picker'}>
             <Text style={{ fontSize: 23 }}>{emojiOpen ? '⌨️' : '😊'}</Text>
           </TouchableOpacity>
 
@@ -301,9 +301,13 @@ export default function InputBar({
             style={[
               styles.inputWrap,
               {
-                backgroundColor: colors.surfaceElevated,
-                borderColor: hexToRgba(colors.primary, 0.32),
-                borderRadius: 20,
+                backgroundColor: hexToRgba(colors.surfaceElevated, 0.94),
+                borderColor: hexToRgba(colors.primary, 0.28),
+                borderRadius: 22,
+                shadowColor: colors.primary,
+                shadowOpacity: 0.07,
+                shadowRadius: 10,
+                elevation: 1,
               },
             ]}
           >
@@ -344,6 +348,7 @@ const styles = StyleSheet.create({
   wrap: { borderTopWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   draftStatus: { flexDirection: 'row', alignItems: 'center', paddingTop: 5, paddingBottom: 1 },
   row: { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
+  utilityBtn: { width: 48, height: 48, minWidth: 48, minHeight: 48, borderRadius: 24, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   inputWrap: { flex: 1, minWidth: 0, minHeight: 52, paddingHorizontal: 14, marginHorizontal: 2, maxHeight: 108, borderWidth: 1, justifyContent: 'center' },
   sendBtn: { width: 48, height: 48, minWidth: 48, minHeight: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)' },
   replyBar: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },

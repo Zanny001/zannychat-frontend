@@ -50,14 +50,14 @@ export default function ActionSheet({ visible, title, options = [], reactions, o
           <View style={[styles.grabber, { backgroundColor: hexToRgba(colors.textPrimary, 0.25) }]} />
 
           {title ? (
-            <Text
-              style={[
-                typography.caption,
-                { color: colors.textSecondary, marginBottom: spacing.sm, paddingHorizontal: spacing.md },
-              ]}
-            >
-              {title}
-            </Text>
+            <View style={{ paddingHorizontal: spacing.md, marginBottom: spacing.md, gap: 4 }}>
+              <Text style={[typography.small, { color: colors.primary, fontWeight: '800', letterSpacing: 1.15 }]}>
+                ZANNYCHAT · QUICK ACTIONS
+              </Text>
+              <Text numberOfLines={1} style={[typography.title, { color: colors.textPrimary }]}>
+                {title}
+              </Text>
+            </View>
           ) : null}
 
           {reactions ? (
@@ -104,12 +104,23 @@ export default function ActionSheet({ visible, title, options = [], reactions, o
               ]}
             >
               {option.icon ? (
-                <Ionicons
-                  name={option.icon}
-                  size={20}
-                  color={option.destructive ? colors.danger : colors.accent}
-                  style={{ marginRight: spacing.sm }}
-                />
+                <View style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 12,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: spacing.sm,
+                  backgroundColor: option.destructive ? hexToRgba(colors.danger, 0.1) : hexToRgba(colors.primary, 0.1),
+                  borderWidth: 1,
+                  borderColor: option.destructive ? hexToRgba(colors.danger, 0.2) : hexToRgba(colors.primary, 0.16),
+                }}>
+                  <Ionicons
+                    name={option.icon}
+                    size={19}
+                    color={option.destructive ? colors.danger : colors.primary}
+                  />
+                </View>
               ) : null}
               <Text
                 style={[
@@ -172,6 +183,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  optionRow: { minHeight: 48, flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
+  optionRow: { minHeight: 60, flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
   cancelRow: { marginTop: 6 },
 });

@@ -53,8 +53,8 @@ test('shared layout tokens preserve the minimum mobile touch target and stepped 
 
 test('chat composer uses a raised, readable, moderately rounded input surface', () => {
   const source = readFileSync(new URL('../components/InputBar.js', import.meta.url), 'utf8');
-  assert.match(source, /backgroundColor: colors\.surfaceElevated/);
-  assert.match(source, /borderRadius: 20/);
+  assert.match(source, /backgroundColor: hexToRgba\(colors\.surfaceElevated, 0\.94\)/);
+  assert.match(source, /borderRadius: 22/);
   assert.match(source, /minHeight: 52/);
   assert.match(source, /accessibilityLabel={editing \? 'Edit message text' : 'Message text'}/);
   // Keep the draft, edit, reply, emoji and voice-recording paths in the shared composer.
