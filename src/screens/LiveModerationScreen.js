@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +17,7 @@ export default function LiveModerationScreen({ route, navigation }) {
   const streamTitle = route.params?.title || 'LIVE stage';
   const [participants, setParticipants] = useState([]);
   const [participantFilter, setParticipantFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busyUserId, setBusyUserId] = useState(null);
@@ -72,11 +73,13 @@ export default function LiveModerationScreen({ route, navigation }) {
   }, [refresh]);
 
   const visibleParticipants = useMemo(() => {
-    if (participantFilter === 'viewers') return participants.filter((item) => item.joined && item.role === 'viewer');
-    if (participantFilter === 'guests') return participants.filter((item) => item.joined && item.role === 'guest');
-    if (participantFilter === 'moderators') return participants.filter((item) => item.moderator);
-    return participants;
-  }, [participantFilter, participants]);
+    let filtered = participants;
+    if (participantFilter === 'viewers') filtered = filtered.filter((item) => item.joined && item.role === 'viewer');
+    else if (participantFilter === 'guests') filtered = filtered.filter((item) => item.joined && item.role === 'guest');
+    else if (participantFilter === 'moderators') filtered = filtered.filter((item) => item.moderator);
+    const query = searchQuery.trim().toLowerCase();
+    return query ? filtered.filter((item) => (String(item.name || '') + ' ' + String(item.role || '')).toLowerCase().includes(query)) : filtered;
+  }, [participantFilter, participants, searchQuery]);
 
   const counts = useMemo(() => ({
     viewers: participants.filter((item) => item.joined && item.role === 'viewer').length,
@@ -242,6 +245,11 @@ export default function LiveModerationScreen({ route, navigation }) {
               <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 18 }]}>People in this LIVE</Text>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>Controls are limited by your creator permissions and each participant's current role.</Text>
             </View>
+            <View style={{ minHeight: 50, flexDirection: 'row', alignItems: 'center', borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.md }}>
+              <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+              <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder="Search participants by name or role" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search LIVE participants by name or role" returnKeyType="search" style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, paddingVertical: spacing.sm, paddingLeft: spacing.sm }]} />
+              {searchQuery ? <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear participant search" style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
+            </View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
               {[
                 { value: 'all', label: 'Everyone', count: participants.length },
@@ -267,8 +275,9 @@ export default function LiveModerationScreen({ route, navigation }) {
         ListEmptyComponent={!loading && !error ? <View style={{ width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
           <GlassCard contentStyle={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}>
             <Ionicons name="people-outline" size={30} color={colors.textSecondary} />
-            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{participants.length ? 'No participants in this view' : 'No participants to manage'}</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>{participants.length ? 'Choose another role filter to see more people.' : 'Joined viewers, stage guests and appointed moderators will appear here.'}</Text>
+            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{searchQuery.trim() ? 'No matching participants' : participants.length ? 'No participants in this view' : 'No participants to manage'}</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>{searchQuery.trim() ? 'Try another name or role, or clear your search.' : participants.length ? 'Choose another role filter to see more people.' : 'Joined viewers, stage guests and appointed moderators will appear here.'}</Text>
+            {searchQuery.trim() ? <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear participant search" style={{ minHeight: 48, justifyContent: 'center', paddingHorizontal: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Clear search</Text></TouchableOpacity> : null}
           </GlassCard>
         </View> : null}
       />

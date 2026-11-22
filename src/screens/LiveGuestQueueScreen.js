@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +21,7 @@ export default function LiveGuestQueueScreen({ route, navigation }) {
   const streamId = route.params?.streamId || null;
   const streamTitle = route.params?.title || 'LIVE stage';
   const [requests, setRequests] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [participants, setParticipants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -85,6 +86,10 @@ export default function LiveGuestQueueScreen({ route, navigation }) {
 
   const guestCount = participants.filter((item) => item.joined && item.role === 'guest').length;
   const guestSlots = Math.max(0, 5 - guestCount);
+  const visibleRequests = requests.filter((item) => {
+    const query = searchQuery.trim().toLowerCase();
+    return !query || String(item.name || 'ZannyChat viewer').toLowerCase().includes(query);
+  });
 
   const decide = async (userId, status) => {
     if (!streamId || !userId || actionLock.current || (status === 'accepted' && guestSlots <= 0)) return;
@@ -115,11 +120,38 @@ export default function LiveGuestQueueScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView
+      <FlatList
+        data={visibleRequests}
+        keyExtractor={(item) => String(item.user_id)}
+        renderItem={({ item }) => {
+          const busy = busyUserId === item.user_id;
+          return <GlassCard style={{ width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center', marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              <View style={{ width: 44, height: 44, borderRadius: 15, backgroundColor: item.avatarColor || colors.primary, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
+                <Text accessibilityLabel={(item.name || 'Guest').trim() + ' avatar'} style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '900' }}>{(item.name || 'G').trim().charAt(0).toUpperCase()}</Text>
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.name || 'ZannyChat viewer'}</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>{formatRequestDate(item.created_at)}</Text>
+              </View>
+              <View style={{ paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+                <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800' }]}>PENDING</Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+              <TouchableOpacity disabled={busy} onPress={() => decide(item.user_id, 'declined')} accessibilityRole="button" accessibilityLabel={'Decline guest request from ' + (item.name || 'viewer')} style={{ flex: 1, minHeight: 48, borderRadius: 14, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: busy ? 0.6 : 1 }}>
+                <Text style={[typography.bodyStrong, { color: colors.textSecondary }]}>Decline</Text>
+              </TouchableOpacity>
+              <TouchableOpacity disabled={busy || guestSlots <= 0} onPress={() => decide(item.user_id, 'accepted')} accessibilityRole="button" accessibilityLabel={'Approve guest request from ' + (item.name || 'viewer')} accessibilityState={{ disabled: busy || guestSlots <= 0 }} style={{ flex: 1, minHeight: 48, borderRadius: 14, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', opacity: busy || guestSlots <= 0 ? 0.55 : 1 }}>
+                <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>{busy ? 'Updating…' : guestSlots <= 0 ? 'Stage full' : 'Approve guest'}</Text>
+              </TouchableOpacity>
+            </View>
+            {guestSlots <= 0 ? <Text style={[typography.caption, { color: colors.warning }]}>All five guest seats are occupied. Remove a guest before approving another request.</Text> : null}
+          </GlassCard>;
+        }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => refresh(true)} tintColor={colors.primary} />}
-        contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, alignItems: 'center' }}
-      >
-        <View style={{ width: '100%', maxWidth: layout.contentMaxWidth, gap: spacing.md }}>
+        contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, flexGrow: 1, alignItems: 'center' }}
+        ListHeaderComponent={        <View style={{ width: '100%', maxWidth: layout.contentMaxWidth, gap: spacing.md }}>
           <LivePremiumHeader
             navigation={navigation}
             eyebrow="ZANNYCHAT · LIVE OPERATIONS"
@@ -154,45 +186,29 @@ export default function LiveGuestQueueScreen({ route, navigation }) {
               <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 18 }]}>Requests to join</Text>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>Approve only people you want on stage</Text>
             </View>
-            <Text style={[typography.bodyStrong, { color: colors.primary }]}>{requests.length}</Text>
+            <Text style={[typography.bodyStrong, { color: colors.primary }]}>{visibleRequests.length}{visibleRequests.length !== requests.length ? ' of ' + requests.length : ''}</Text>
+          </View>
+          <View style={{ minHeight: 50, flexDirection: 'row', alignItems: 'center', borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.md }}>
+            <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+            <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder="Find a viewer by name" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search guest requests by viewer name" returnKeyType="search" style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, paddingVertical: spacing.sm, paddingLeft: spacing.sm }]} />
+            {searchQuery ? <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear guest request search" style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
           </View>
 
           {loading && !requests.length ? <View style={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary }]}>Loading guest requests…</Text></View> : null}
           {!!error ? <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text accessibilityRole="alert" style={[typography.body, { color: colors.danger }]}>{error}</Text><TouchableOpacity onPress={() => refresh()} accessibilityRole="button" accessibilityLabel="Retry loading guest queue" style={{ minHeight: 48, justifyContent: 'center' }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
-          {!loading && !error && requests.length === 0 ? <GlassCard contentStyle={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}>
-            <Ionicons name="people-outline" size={30} color={colors.textSecondary} />
-            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Your queue is clear</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', lineHeight: 20 }]}>New viewer requests will appear here while your LIVE allows guests.</Text>
-          </GlassCard> : null}
 
-          {requests.map((item) => {
-            const busy = busyUserId === item.user_id;
-            return <GlassCard key={item.user_id} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                <View style={{ width: 44, height: 44, borderRadius: 15, backgroundColor: item.avatarColor || colors.primary, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
-                  <Text accessibilityLabel={(item.name || 'Guest').trim() + ' avatar'} style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '900' }}>{(item.name || 'G').trim().charAt(0).toUpperCase()}</Text>
-                </View>
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{item.name || 'ZannyChat viewer'}</Text>
-                  <Text style={[typography.caption, { color: colors.textSecondary }]}>{formatRequestDate(item.created_at)}</Text>
-                </View>
-                <View style={{ paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
-                  <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800' }]}>PENDING</Text>
-                </View>
-              </View>
-              <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-                <TouchableOpacity disabled={busy} onPress={() => decide(item.user_id, 'declined')} accessibilityRole="button" accessibilityLabel={'Decline guest request from ' + (item.name || 'viewer')} style={{ flex: 1, minHeight: 48, borderRadius: 14, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: busy ? 0.6 : 1 }}>
-                  <Text style={[typography.bodyStrong, { color: colors.textSecondary }]}>Decline</Text>
-                </TouchableOpacity>
-                <TouchableOpacity disabled={busy || guestSlots <= 0} onPress={() => decide(item.user_id, 'accepted')} accessibilityRole="button" accessibilityLabel={'Approve guest request from ' + (item.name || 'viewer')} accessibilityState={{ disabled: busy || guestSlots <= 0 }} style={{ flex: 1, minHeight: 48, borderRadius: 14, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', opacity: busy || guestSlots <= 0 ? 0.55 : 1 }}>
-                  <Text style={[typography.bodyStrong, { color: colors.onPrimary }]}>{busy ? 'Updating…' : guestSlots <= 0 ? 'Stage full' : 'Approve guest'}</Text>
-                </TouchableOpacity>
-              </View>
-              {guestSlots <= 0 ? <Text style={[typography.caption, { color: colors.warning }]}>All five guest seats are occupied. Remove a guest before approving another request.</Text> : null}
-            </GlassCard>;
-          })}
-        </View>
-      </ScrollView>
+
+
+        </View>}
+        ListEmptyComponent={!loading && !error ? <View style={{ width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
+          <GlassCard contentStyle={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}>
+            <Ionicons name="people-outline" size={30} color={colors.textSecondary} />
+            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{searchQuery.trim() ? 'No matching requests' : 'Your queue is clear'}</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', lineHeight: 20 }]}>{searchQuery.trim() ? 'Try another viewer name, or clear your search.' : 'New viewer requests will appear here while your LIVE allows guests.'}</Text>
+            {searchQuery.trim() ? <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear guest request search" style={{ minHeight: 48, justifyContent: 'center', paddingHorizontal: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Clear search</Text></TouchableOpacity> : null}
+          </GlassCard>
+        </View> : null}
+      />
     </SafeAreaView>
   );
 }

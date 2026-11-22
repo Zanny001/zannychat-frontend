@@ -96,3 +96,76 @@ test('LIVE participant moderation virtualizes large rosters without weakening ro
   assert.ok(moderation.includes("backendFetch(\u0060/live/\u0024{streamId}/guests/\u0024{item.userId}/mute\u0060"));
   assert.ok(moderation.includes('makeModerator ? ' + String.fromCharCode(96) + '/live/${streamId}/moderators' + String.fromCharCode(96)));
 });
+
+test('LIVE report queue exposes dismissed reports and accounts for every terminal status', () => {
+  assert.ok(reports.includes("{ value: 'dismissed', label: 'Dismissed' }"));
+  assert.ok(reports.includes("dismissed: reports.filter((item) => item.status === 'dismissed').length"));
+  assert.ok(reports.includes("['Dismissed', counts.dismissed]"));
+  assert.ok(reports.includes("const terminal = ['resolved', 'dismissed'].includes(item.status)"));
+});
+
+test('LIVE guest request queue virtualizes long lists while retaining stage context and recovery states', () => {
+  assert.ok(guestQueue.includes('<FlatList'));
+  assert.ok(guestQueue.includes('data={visibleRequests}'));
+  assert.ok(guestQueue.includes('keyExtractor={(item) => String(item.user_id)}'));
+  assert.ok(guestQueue.includes('renderItem={({ item }) =>'));
+  assert.ok(!guestQueue.includes('requests.map('));
+  assert.ok(guestQueue.includes('ListHeaderComponent='));
+  assert.ok(guestQueue.includes('ListEmptyComponent='));
+  assert.ok(guestQueue.includes('refreshControl={<RefreshControl'));
+  assert.ok(guestQueue.includes('Math.max(0, 5 - guestCount)'));
+});
+
+test('LIVE safety report queue virtualizes report cards while preserving review controls and recovery states', () => {
+  assert.ok(reports.includes('<FlatList'));
+  assert.ok(reports.includes('data={visibleReports}'));
+  assert.ok(reports.includes('keyExtractor={(item) => String(item.id)}'));
+  assert.ok(reports.includes('renderItem={({ item }) =>'));
+  assert.ok(!reports.includes('visibleReports.map('));
+  assert.ok(reports.includes('ListHeaderComponent='));
+  assert.ok(reports.includes('ListEmptyComponent='));
+  assert.ok(reports.includes('refreshControl={<RefreshControl'));
+  assert.ok(reports.includes("review(item.id, 'reviewing')"));
+  assert.ok(reports.includes("review(item.id, 'dismissed')"));
+  assert.ok(reports.includes("review(item.id, 'resolved')"));
+});
+
+test('LIVE guest queue supports local viewer-name search without changing the approval capacity', () => {
+  assert.ok(guestQueue.includes("const [searchQuery, setSearchQuery] = useState('')"));
+  assert.ok(guestQueue.includes('const visibleRequests = requests.filter'));
+  assert.ok(guestQueue.includes('Search guest requests by viewer name'));
+  assert.ok(guestQueue.includes('Clear guest request search'));
+  assert.ok(guestQueue.includes('data={visibleRequests}'));
+  assert.ok(guestQueue.includes('Math.max(0, 5 - guestCount)'));
+  assert.ok(guestQueue.includes("status === 'accepted' && guestSlots <= 0"));
+  assert.ok(guestQueue.includes('No matching requests'));
+});
+
+test('LIVE safety reports support local reason/detail search alongside status filters', () => {
+  assert.ok(reports.includes("const [searchQuery, setSearchQuery] = useState('')"));
+  assert.ok(reports.includes('const visibleReports = useMemo'));
+  assert.ok(reports.includes("String(item.reason || '') + ' ' + String(item.details || '')"));
+  assert.ok(reports.includes('Search LIVE reports by reason or details'));
+  assert.ok(reports.includes('Clear LIVE report search'));
+  assert.ok(reports.includes('No matching reports'));
+  assert.ok(reports.includes('data={visibleReports}'));
+});
+
+test('LIVE participant moderation supports local name and role search alongside role filters', () => {
+  assert.ok(moderation.includes("const [searchQuery, setSearchQuery] = useState('')"));
+  assert.ok(moderation.includes('const visibleParticipants = useMemo'));
+  assert.ok(moderation.includes("String(item.name || '') + ' ' + String(item.role || '')"));
+  assert.ok(moderation.includes('Search LIVE participants by name or role'));
+  assert.ok(moderation.includes('Clear participant search'));
+  assert.ok(moderation.includes('No matching participants'));
+  assert.ok(moderation.includes('data={visibleParticipants}'));
+});
+
+test('LIVE operations searches filter already-loaded queue data locally', () => {
+  assert.ok(guestQueue.includes('const visibleRequests = requests.filter'));
+  assert.ok(reports.includes('const visibleReports = useMemo'));
+  assert.ok(moderation.includes('const visibleParticipants = useMemo'));
+  assert.ok(guestQueue.includes('data={visibleRequests}'));
+  assert.ok(reports.includes('data={visibleReports}'));
+  assert.ok(moderation.includes('data={visibleParticipants}'));
+});
