@@ -66,3 +66,12 @@ test('native group calls expose speaker and earpiece output selection', () => {
 test('group-call controls wrap safely when audio routing and invitations are visible together', () => {
   assert.ok(screen.includes("flexWrap: 'wrap'"));
 });
+
+test('native group calls can flip the published LiveKit camera without leaving the room', () => {
+  assert.ok(screen.includes("const [cameraFacingMode, setCameraFacingMode] = useState('user')"));
+  assert.ok(screen.includes('room.localParticipant.getTrackPublication(Track.Source.Camera)'));
+  assert.ok(screen.includes('await videoTrack.restartTrack({ facingMode: nextFacingMode })'));
+  assert.ok(screen.includes("accessibilityLabel={cameraFacingMode === 'user' ? 'Switch to rear camera' : 'Switch to front camera'}"));
+  assert.ok(screen.includes('cameraSwitchInProgressRef.current = false'));
+  assert.ok(screen.includes('Your current camera is still active. Please try again.'));
+});
