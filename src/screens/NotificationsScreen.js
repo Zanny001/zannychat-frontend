@@ -135,7 +135,18 @@ export default function NotificationsScreen({ navigation }) {
   return (
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Notifications" onBack={() => navigation.goBack()} />
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
+        <GlassCard glow contentStyle={{ gap: spacing.md, paddingVertical: spacing.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            <View style={{ width: 54, height: 54, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}><Ionicons name="notifications-outline" size={27} color={colors.primary} /></View>
+            <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+              <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.15 }]}>YOUR ATTENTION, YOUR RULES</Text>
+              <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 21 }]}>Stay in the loop.</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>A calmer notification experience, shaped by you.</Text>
+            </View>
+          </View>
+          <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 20 }]}>Choose how ZannyChat reaches you, then set quiet hours for the moments that deserve your focus.</Text>
+        </GlassCard>
         {persistenceError ? (
           <View accessibilityRole="alert" accessibilityLiveRegion="polite" style={[styles.persistenceWarning, { backgroundColor: colors.surface, borderColor: colors.warning, marginBottom: spacing.md }]}>
             <Ionicons name="alert-circle-outline" size={20} color={colors.warning} />
@@ -148,7 +159,9 @@ export default function NotificationsScreen({ navigation }) {
             </View>
           </View>
         ) : null}
-        <GlassCard style={{ marginBottom: spacing.md }}>
+        <View style={{ gap: spacing.xs }}>
+          <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.1, paddingHorizontal: spacing.xs }]}>DELIVERY & SOUND</Text>
+          <GlassCard>
           <PrefRow
             icon="notifications-outline"
             label="Push notifications"
@@ -186,9 +199,12 @@ export default function NotificationsScreen({ navigation }) {
             onValueChange={(v) => update({ soundEnabled: v })}
             last
           />
-        </GlassCard>
+          </GlassCard>
+        </View>
 
-        <GlassCard style={{ marginBottom: spacing.md }}>
+        <View style={{ gap: spacing.xs }}>
+          <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.1, paddingHorizontal: spacing.xs }]}>MAKE ROOM FOR QUIET</Text>
+          <GlassCard>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <View style={{ flex: 1, minWidth: 0, marginRight: spacing.md }}>
               <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Quiet hours</Text>
@@ -237,16 +253,20 @@ export default function NotificationsScreen({ navigation }) {
           <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm, lineHeight: 19 }]}>
             Uses your device's local time. This only suppresses banners and sounds while ZannyChat is open; background push alerts are controlled by your device and notification service.
           </Text>
-        </GlassCard>
+          </GlassCard>
+        </View>
 
-        <GlassCard>
+        <View style={{ gap: spacing.xs }}>
+          <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.1, paddingHorizontal: spacing.xs }]}>CONVERSATION CONTROL</Text>
+          <GlassCard>
           <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
             <Ionicons name="volume-mute-outline" size={18} color={colors.accent} style={{ marginTop: 1 }} />
             <Text style={[typography.caption, { color: colors.textSecondary, flex: 1, minWidth: 0, marginLeft: spacing.sm, lineHeight: 20 }]}>
               To mute one conversation, open it and tap ⋮ → Mute. Conversation mute is separate from these device-level presentation settings.
             </Text>
           </View>
-        </GlassCard>
+          </GlassCard>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
