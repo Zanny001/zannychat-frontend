@@ -99,7 +99,7 @@ export default function IncomingCallScreen({ route, navigation }) {
       <StatusBar barStyle={resolvedMode === 'light' ? 'dark-content' : 'light-content'} />
       <View style={[styles.glow, { backgroundColor: hexToRgba(colors.primary, 0.14) }]} />
       <View style={styles.top}>
-        <View style={[styles.brandMark, { backgroundColor: colors.primary, shadowColor: colors.primary }]}><Ionicons name="chatbubbles" size={19} color={colors.onPrimary} /></View>
+        <View style={[styles.brandMark, { backgroundColor: colors.primary, borderColor: hexToRgba(colors.onPrimary, 0.24), shadowColor: colors.primary }]}><Ionicons name="chatbubbles" size={19} color={colors.onPrimary} /></View>
         <Text style={[typography.heading, styles.brand, { color: colors.textPrimary }]}>ZannyChat</Text>
         <Text style={[typography.caption, styles.secure, { color: colors.textSecondary }]}><Ionicons name="lock-closed" size={12} color={colors.accent} />  Private call invitation</Text>
       </View>
@@ -110,7 +110,7 @@ export default function IncomingCallScreen({ route, navigation }) {
         <View style={[styles.statusPill, { backgroundColor: hexToRgba(colors.surface, 0.78), borderColor: colors.border }]}><View style={[styles.liveDot, { backgroundColor: colors.online }]} /><Text style={[typography.small, styles.statusText, { color: colors.textPrimary }]}>{remaining > 0 ? `Ringing · ${remaining}s` : 'Call expired'}</Text></View>
       </View>
       <View style={[styles.actions, { width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center', backgroundColor: hexToRgba(colors.surface, 0.62), borderColor: colors.border }]}>
-        <TouchableOpacity onPress={decline} disabled={busy} accessibilityRole="button" accessibilityLabel="Decline call" style={[styles.action, styles.decline, { backgroundColor: colors.danger, shadowColor: colors.danger }]}>
+        <TouchableOpacity onPress={decline} disabled={busy} accessibilityRole="button" accessibilityLabel="Decline call" style={[styles.action, styles.decline, { backgroundColor: colors.danger, borderColor: hexToRgba(colors.onDanger, 0.24), shadowColor: colors.danger }]}>
           <Ionicons name="call" size={28} color={colors.onDanger} style={{ transform: [{ rotate: '135deg' }] }} />
           <Text style={[typography.small, styles.actionText, { color: colors.onDanger }]}>Decline</Text>
         </TouchableOpacity>
