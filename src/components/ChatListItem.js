@@ -37,11 +37,16 @@ export default function ChatListItem({ conversation, onPress, onLongPressActions
       accessibilityHint="Long-press for favorite, mute, and archive options"
       style={({ pressed }) => [
         styles.row,
-        { borderBottomColor: hexToRgba(colors.textPrimary, 0.08) },
-        pressed && { backgroundColor: hexToRgba(colors.primary, 0.08) },
+        {
+          borderBottomColor: hexToRgba(colors.textPrimary, 0.05),
+          borderColor: unreadCount > 0 ? hexToRgba(colors.primary, 0.2) : hexToRgba(colors.textPrimary, 0.055),
+          backgroundColor: unreadCount > 0 ? hexToRgba(colors.primary, 0.055) : hexToRgba(colors.surface, 0.16),
+        },
+        pressed && { backgroundColor: hexToRgba(colors.primary, 0.12), borderColor: hexToRgba(colors.primary, 0.34) },
       ]}
     >
       <Avatar
+        size={54}
         name={displayName}
         color={participant.avatarColor}
         imageUrl={participant.avatarUrl}
@@ -104,11 +109,14 @@ export default function ChatListItem({ conversation, onPress, onLongPressActions
 
 const styles = StyleSheet.create({
   row: {
-    minHeight: 76,
+    minHeight: 82,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 4,
-    paddingVertical: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 11,
+    marginBottom: 5,
+    borderRadius: 17,
+    borderWidth: 1,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   details: { flex: 1, minWidth: 0 },
