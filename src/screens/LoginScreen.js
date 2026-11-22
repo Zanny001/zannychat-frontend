@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { startGoogleOAuth } from '../services/googleAuth';
 import { View, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import { signInWithEmail } from '../services/api';
 import { isValidEmail, normalizeEmail } from '../utils/authValidation';
@@ -64,13 +65,18 @@ export default function LoginScreen({ navigation }) {
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <View style={{ padding: spacing.lg, flex: 1, minWidth: 0, justifyContent: 'center', width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center' }}>
-          <Knot size={40} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={7} />
-          <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.md, marginBottom: spacing.xs }]}>
-            Welcome back
-          </Text>
-          <Text style={[typography.body, { color: colors.textSecondary, marginBottom: spacing.lg }]}>
-            Sign in to keep chatting.
-          </Text>
+          <GlassCard glow style={{ marginBottom: spacing.lg, borderRadius: 26 }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+              <View style={{ width: 62, height: 62, borderRadius: 21, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+                <Knot size={38} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={6} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+                <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.2 }]}>YOUR WORLD, RECONNECTED</Text>
+                <Text style={[typography.title, { color: colors.textPrimary }]}>Welcome back.</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>Your conversations are waiting.</Text>
+              </View>
+            </View>
+          </GlassCard>
 
           {!SUPABASE_ENABLED && (
             <GlassCard style={{ marginBottom: spacing.md }} intensity={20}>
@@ -119,13 +125,14 @@ export default function LoginScreen({ navigation }) {
             accessibilityRole="button"
             accessibilityLabel="Continue with Google"
           >
+            <Ionicons name="logo-google" size={17} color={colors.textPrimary} style={{ marginRight: 9 }} />
             <Text style={[styles.buttonText, { color: colors.textPrimary }]}>
               Continue with Google
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={{ marginTop: spacing.sm, alignItems: 'flex-end' }}
+            style={{ marginTop: spacing.sm, minHeight: 48, justifyContent: 'center', alignItems: 'flex-end' }}
             onPress={() => navigation.navigate('PasswordRecovery')}
             accessibilityRole="button"
             accessibilityLabel="Forgot password"
@@ -133,7 +140,7 @@ export default function LoginScreen({ navigation }) {
             <Text style={[typography.caption, { color: colors.primary }]}>Forgot password?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={{ marginTop: spacing.md, alignItems: 'center' }} onPress={() => navigation.navigate('Signup')} accessibilityRole="button" accessibilityLabel="Create a new account">
+          <TouchableOpacity style={{ marginTop: spacing.md, minHeight: 48, justifyContent: 'center', alignItems: 'center' }} onPress={() => navigation.navigate('Signup')} accessibilityRole="button" accessibilityLabel="Create a new account">
             <Text style={[typography.caption, { color: colors.textSecondary }]}>
               Don't have an account? <Text style={{ color: colors.primary, fontFamily: 'Manrope_700Bold' }}>Sign up</Text>
             </Text>
@@ -145,6 +152,6 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  button: { paddingVertical: 16, alignItems: 'center', marginTop: 8 },
+  button: { minHeight: 54, paddingVertical: 12, paddingHorizontal: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 8 },
   buttonText: { fontFamily: 'Manrope_700Bold', fontSize: 16 },
 });
