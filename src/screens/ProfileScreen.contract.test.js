@@ -37,7 +37,7 @@ test('profile navigation is grouped into clear personal, community and support d
   assert.ok(profile.includes('YOUR IDENTITY'));
   assert.ok(profile.includes('YOUR CONTENT & COMMUNITY'));
   assert.ok(profile.includes('SUPPORT & STORAGE'));
-  assert.ok(profile.includes('minHeight: 56'));
+  assert.ok(profile.includes('minHeight: 72'));
 });
 
 
