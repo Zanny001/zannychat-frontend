@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -34,6 +34,8 @@ export default function SessionsScreen({ navigation }) {
   const [sessions, setSessions] = useState([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
   const [sessionsError, setSessionsError] = useState('');
+  const [sessionSearch, setSessionSearch] = useState('');
+  const [sessionFilter, setSessionFilter] = useState('all');
 
   const loadSessions = useCallback(async (isActive = () => true) => {
     if (!SUPABASE_ENABLED || !supabase) {
@@ -98,6 +100,16 @@ export default function SessionsScreen({ navigation }) {
   }
 
   const otherSessions = sessions.filter((item) => !item.is_current);
+  const sessionCounts = { all: otherSessions.length, mobile: otherSessions.filter((item) => /Android|iPhone|iPad|iPod/i.test(String(item.user_agent || ''))).length, desktop: otherSessions.filter((item) => /Windows|Mac OS X|Macintosh|Linux/i.test(String(item.user_agent || ''))).length };
+  const visibleSessions = otherSessions.filter((item) => {
+    const userAgent = String(item.user_agent || '');
+    const label = sessionDeviceLabel(userAgent);
+    const query = sessionSearch.trim().toLowerCase();
+    if (query && !(label + ' ' + userAgent).toLowerCase().includes(query)) return false;
+    if (sessionFilter === 'mobile') return /Android|iPhone|iPad|iPod/i.test(userAgent);
+    if (sessionFilter === 'desktop') return /Windows|Mac OS X|Macintosh|Linux/i.test(userAgent);
+    return true;
+  });
   const deviceName = Device.modelName || Device.deviceName || 'This device';
   const platform = [Device.osName, Device.osVersion].filter(Boolean).join(' ');
 
