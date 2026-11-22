@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import GlassCard from '../components/GlassCard';
 import { useTheme } from '../theme/ThemeContext';
+import { hexToRgba } from '../utils/color';
 import { getCurrentUser } from '../services/api';
 import { loadPinnedMessages, unpinMessageLocally } from '../services/pinnedMessages';
 import { filterPinnedMessages } from '../utils/pinnedMessages';
