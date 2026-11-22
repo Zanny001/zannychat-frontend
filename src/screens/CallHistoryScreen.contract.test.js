@@ -88,3 +88,12 @@ test('call history supports accessible contact-name search and a one-tap clear a
   assert.ok(callsScreen.includes('accessibilityLabel="Clear call history search"'));
   assert.ok(callsScreen.includes('data={filteredCalls}'));
 });
+
+test('call history adds a dedicated group-call filter without changing direct call filters', () => {
+  assert.ok(callsScreen.includes("if (historyFilter === 'group') return Boolean(item.isGroupCall)"));
+  assert.ok(callsScreen.includes("{ value: 'group', label: 'Group' }"));
+  assert.ok(callsScreen.includes("item.isGroupCall"));
+  for (const value of ['all', 'missed', 'incoming', 'outgoing', 'video', 'audio']) {
+    assert.ok(callsScreen.includes("value: '" + value + "'"), value);
+  }
+});
