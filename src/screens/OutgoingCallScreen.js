@@ -91,7 +91,7 @@ export default function OutgoingCallScreen({ route, navigation }) {
         <Text style={[typography.bodyStrong, styles.status, { color: colors.textPrimary }]}>{statusText}</Text>
         <Text style={[typography.small, styles.countdown, { color: colors.textSecondary }]}>{remaining > 0 ? `Invitation expires in ${remaining}s` : 'Invitation expired'}</Text>
       </View>
-      <View style={[styles.actions, { width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center' }]}>
+      <View style={[styles.actions, { width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center', backgroundColor: hexToRgba(colors.surface, 0.62), borderColor: colors.border }]}>
         <TouchableOpacity onPress={cancel} disabled={busy} accessibilityRole="button" accessibilityLabel="Cancel outgoing call" style={[styles.cancelButton, { backgroundColor: colors.danger, shadowColor: colors.danger }]}>
           {busy ? <ActivityIndicator color={colors.onDanger} /> : <Ionicons name="call" size={27} color={colors.onDanger} style={{ transform: [{ rotate: '135deg' }] }} />}
         </TouchableOpacity>
@@ -116,8 +116,8 @@ const styles = StyleSheet.create({
   kind: { marginTop: 9 },
   status: { marginTop: 13 },
   countdown: { marginTop: 10 },
-  actions: { alignItems: 'center', paddingBottom: 18 },
-  cancelButton: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', shadowOpacity: 0.3, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
+  actions: { alignItems: 'center', alignSelf: 'center', width: '100%', paddingVertical: 18, paddingBottom: 20, borderWidth: 1, borderRadius: 30 },
+  cancelButton: { width: 80, height: 80, borderRadius: 28, borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center', shadowOpacity: 0.3, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
   cancelLabel: { marginTop: 10 },
   footer: { textAlign: 'center', paddingBottom: 18 },
 });
