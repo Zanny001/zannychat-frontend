@@ -52,3 +52,8 @@ test('call history uses a virtualized list with stable direct and group call key
   assert.ok(callsScreen.includes('renderItem='));
   assert.ok(!callsScreen.includes('calls.map('));
 });
+
+test('quick-connect cards use a more compact premium footprint', () => {
+  assert.ok(callsScreen.includes('minHeight: 116'));
+  assert.ok(callsScreen.includes('START IN A TAP'));
+});

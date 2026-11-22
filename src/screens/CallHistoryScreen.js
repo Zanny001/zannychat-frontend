@@ -94,7 +94,7 @@ export default function CallHistoryScreen({ navigation }) {
         ListHeaderComponent={<View style={{ gap: spacing.lg }}><View style={{ gap: spacing.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Quick connect</Text>
-            <Text style={[typography.small, { color: colors.textSecondary }]}>INSTANT ACCESS</Text>
+            <Text style={[typography.small, { color: colors.textSecondary, letterSpacing: 0.8 }]}>START IN A TAP</Text>
           </View>
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
             {actions.map((item) => (
@@ -106,7 +106,7 @@ export default function CallHistoryScreen({ navigation }) {
                 accessibilityLabel={item.title === 'Favourites' ? 'Open favourite contacts' : `Start ${item.title.toLowerCase()} call`}
                 style={{ flex: 1, minWidth: 0 }}
               >
-                <GlassCard glow={item.title === 'Video'} tintAlpha={0.34} contentStyle={{ padding: spacing.sm, minHeight: 126, justifyContent: 'space-between', gap: spacing.sm }}>
+                <GlassCard glow={item.title === 'Video'} tintAlpha={0.34} contentStyle={{ padding: spacing.sm, minHeight: 116, justifyContent: 'space-between', gap: spacing.sm }}>
                   <View style={{ width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(item.accent, 0.16), borderWidth: 1, borderColor: hexToRgba(item.accent, 0.35) }}>
                     <Ionicons name={item.icon} size={21} color={item.accent} />
                   </View>
