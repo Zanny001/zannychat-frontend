@@ -553,11 +553,12 @@ export default function LiveStreamScreen({ route, navigation }) {
   }, [returnFromLive]);
 
   const refreshComments = useCallback(async () => {
-    if (!stream?.id || !isDocumentVisible()) return;
+    if (endedRef.current || !stream?.id || !isDocumentVisible()) return;
     if (commentsRefreshInFlight.current) { commentsRefreshQueued.current = true; return; }
     commentsRefreshInFlight.current = true;
     try {
       const result = await backendFetch(`/live/${stream.id}/comments`);
+      if (endedRef.current) return;
       setComments(Array.isArray(result?.comments) ? result.comments : []);
       setError('');
       const incomingReactions = (Array.isArray(result?.reactions) ? result.reactions : [])
@@ -581,7 +582,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       commentsRefreshInFlight.current = false;
       if (commentsRefreshQueued.current) {
         commentsRefreshQueued.current = false;
-        void refreshComments();
+        if (!endedRef.current) void refreshComments();
       }
     }
   }, [stream?.id, exitEndedStream]);
@@ -615,11 +616,11 @@ export default function LiveStreamScreen({ route, navigation }) {
     if (!stream?.id || creatorMode || publisherMode || !stream.allow_guests) return undefined;
     let active = true;
     const check = async () => {
-      if (!active || !isDocumentVisible() || guestStatusRefreshInFlight.current) return;
+      if (!active || endedRef.current || !isDocumentVisible() || guestStatusRefreshInFlight.current) return;
       guestStatusRefreshInFlight.current = true;
       try {
         const result = await backendFetch(`/live/${stream.id}/guest-status`);
-        if (active) { setGuestStatus(result?.status || 'none'); setGuestApproved(result?.status === 'accepted'); }
+        if (active && !endedRef.current) { setGuestStatus(result?.status || 'none'); setGuestApproved(result?.status === 'accepted'); }
       } catch (_) {
         // Preserve the last known guest approval state during transient failures.
       } finally {
@@ -651,11 +652,11 @@ export default function LiveStreamScreen({ route, navigation }) {
     if (!creatorMode || !stream?.id || !stream.allow_guests) return undefined;
     let active = true;
     const refreshGuestRequests = async () => {
-      if (!active || !isDocumentVisible() || guestRequestsRefreshInFlight.current) return;
+      if (!active || endedRef.current || !isDocumentVisible() || guestRequestsRefreshInFlight.current) return;
       guestRequestsRefreshInFlight.current = true;
       try {
         const result = await backendFetch(`/live/${stream.id}/guest-requests`);
-        if (!active) return;
+        if (!active || endedRef.current) return;
         const incoming = Array.isArray(result?.requests) ? result.requests : [];
         const incomingIds = new Set(incoming.map((item) => item.user_id));
         seenGuestRequestIds.current.forEach((userId) => {
