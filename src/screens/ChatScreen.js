@@ -1221,6 +1221,7 @@ export default function ChatScreen({ route, navigation }) {
   return (
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: resolveChatCanvas(chatCanvasKey, colors.background) }}>
       <Header
+        eyebrow="PRIVATE CONVERSATION"
         title={display.participant?.name || '…'}
         subtitle={subtitle}
         onTitlePress={!display.isGroup && display.participant?.id ? () => navigation.navigate('PeerProfile', { participant: display.participant, conversation: display }) : undefined}

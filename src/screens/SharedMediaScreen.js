@@ -144,7 +144,7 @@ export default function SharedMediaScreen({ route, navigation }) {
 
   return (
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
-      <Header title="Shared media" subtitle={conversation.participant?.name || 'Conversation'} onBack={() => navigation.goBack()} />
+      <Header eyebrow="SHARED MOMENTS" title="Shared media" subtitle={conversation.participant?.name || 'Conversation'} onBack={() => navigation.goBack()} />
       <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         <View style={[styles.tabRail, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.lg }]} accessibilityRole="tablist">
           {TABS.map((item) => {

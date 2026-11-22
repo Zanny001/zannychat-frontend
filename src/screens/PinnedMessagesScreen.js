@@ -45,7 +45,7 @@ export default function PinnedMessagesScreen({ route, navigation }) {
 
   return (
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
-      <Header title="Pinned messages" subtitle={conversation?.name || conversation?.participant?.name || 'This conversation'} onBack={() => navigation.goBack()} />
+      <Header eyebrow="QUICK ACCESS" title="Pinned messages" subtitle={conversation?.name || conversation?.participant?.name || 'This conversation'} onBack={() => navigation.goBack()} />
       <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         <GlassCard noPadding glow intensity={24} tintAlpha={0.42}>
           <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, minHeight: 48 }}>
