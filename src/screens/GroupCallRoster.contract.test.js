@@ -12,6 +12,10 @@ test('native group calls keep a live participant roster visible in audio and vid
   assert.match(native, /participant\.name \|\| participant\.identity/);
   assert.match(native, /participant\.isLocal \? ' · You'/);
   assert.match(native, /rosterPresence/);
+  assert.match(native, /participant\.isMicrophoneEnabled === false/);
+  assert.match(native, /participant\.isCameraEnabled/);
+  assert.match(native, /mic-off-outline/);
+  assert.match(native, /videocam-off-outline/);
 });
 
 test('web group calls render the roster from current LiveKit local and remote participants', () => {
@@ -21,6 +25,11 @@ test('web group calls render the roster from current LiveKit local and remote pa
   assert.match(web, /identity === roomRef\.current\?\.localParticipant\?\.identity \? ' · You'/);
   assert.match(web, /IN THE ROOM/);
   assert.match(web, /rosterPresence/);
+  assert.match(web, /participant\?\.isMicrophoneEnabled === false/);
+  assert.match(web, /participant\?\.isCameraEnabled/);
+  assert.match(web, /mic-off-outline/);
+  assert.match(web, /videocam-off-outline/);
+  assert.match(web, /refreshParticipants\(\)/);
 });
 
 test('participant roster remains a read-only presentation and does not bypass server permissions', () => {
