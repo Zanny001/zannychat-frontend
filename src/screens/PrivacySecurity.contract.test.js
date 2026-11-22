@@ -49,6 +49,7 @@ test('Privacy Security clears blocked users and account-deletion proof when auth
   assert.match(screen, /blockedRequestRef\.current \+= 1/);
   assert.match(screen, /authProviderRequestRef\.current \+= 1/);
   assert.match(screen, /setBlocked\(\[\]\)/);
+  assert.match(screen, /setBlockedSearch\(''\)/);
   assert.match(screen, /setGoogleReauthVerifiedUserId\(null\)/);
   assert.match(screen, /setDeletePassword\(''\)/);
   assert.match(screen, /setDeleteConfirmation\(''\)/);
