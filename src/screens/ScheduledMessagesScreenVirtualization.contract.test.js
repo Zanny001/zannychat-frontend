@@ -47,5 +47,5 @@ test('scheduled-message search does not change scheduling, cancellation or serve
   assert.ok(source.includes('await scheduleMessage(conversationId, validateScheduledMessageText(text), iso)'));
   assert.ok(source.includes('await cancelScheduledMessage(item.id)'));
   assert.ok(source.includes('worker is configured and running'));
-  assert.ok(source.includes('items.filter((row) => row.id !== item.id)'));
+  assert.ok(source.includes('current.filter((row) => row.id !== item.id)'));
 });
