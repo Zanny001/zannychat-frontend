@@ -26,3 +26,14 @@ test('event list uses bounded cursor pages and exposes load more', () => {
   assert.ok(service.includes('.range(0, limit)'));
   assert.ok(service.includes('validateEventCursor(cursor)'));
 });
+
+test('conversation events use a premium shared-moments composer and scannable event cards', () => {
+  assert.match(source, /eyebrow="MAKE IT A MOMENT"/);
+  assert.match(source, /Create a shared moment/);
+  assert.match(source, /EVENT NAME/);
+  assert.match(source, /DATE & TIME · YOUR LOCAL TIME/);
+  assert.match(source, /Coming together/);
+  assert.match(source, /eventDate\.toLocaleTimeString/);
+  assert.match(source, /YOUR RESPONSE/);
+  assert.match(source, /accessibilityState=\{\{ selected: mine === option\.value \}\}/);
+});
