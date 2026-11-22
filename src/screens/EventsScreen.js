@@ -110,7 +110,7 @@ export default function EventsScreen({ navigation, route }) {
 
   return (
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
-      <Header title="Events" subtitle="Plan something together" onBack={() => navigation.goBack()} />
+      <Header eyebrow="MAKE IT A MOMENT" title="Events" subtitle="Bring your conversations into real life" onBack={() => navigation.goBack()} />
       <FlatList
         style={{ flex: 1 }}
         data={events}
@@ -123,19 +123,44 @@ export default function EventsScreen({ navigation, route }) {
         contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, flexGrow: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
         ListHeaderComponent={
           <View>
-            <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
-              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Create an event</Text>
-              <TextInput value={title} onChangeText={setTitle} maxLength={160} placeholder="Event title" placeholderTextColor={colors.textSecondary} accessibilityLabel="Event title" style={fieldStyle} />
-              <TextInput value={startsAt} onChangeText={setStartsAt} placeholder="Date and time (e.g. 2030-05-01T18:30)" placeholderTextColor={colors.textSecondary} accessibilityLabel="Event date and time" style={fieldStyle} autoCapitalize="none" />
-              <TextInput value={location} onChangeText={setLocation} maxLength={240} placeholder="Location (optional)" placeholderTextColor={colors.textSecondary} accessibilityLabel="Event location" style={fieldStyle} />
-              <TextInput value={description} onChangeText={setDescription} maxLength={1000} multiline placeholder="Details (optional)" placeholderTextColor={colors.textSecondary} accessibilityLabel="Event details" style={[fieldStyle, { minHeight: 80, textAlignVertical: 'top' }]} />
+            <GlassCard glow style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.md }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                <View style={{ width: 42, height: 42, borderRadius: 15, backgroundColor: `${colors.primary}18`, borderWidth: 1, borderColor: `${colors.primary}35`, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="sparkles-outline" size={21} color={colors.primary} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Create a shared moment</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>Give your people something to look forward to.</Text>
+                </View>
+              </View>
+              <View style={{ gap: spacing.xs }}>
+                <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800' }]}>EVENT NAME · {title.length}/160</Text>
+                <TextInput value={title} onChangeText={setTitle} maxLength={160} placeholder="What are we getting together for?" placeholderTextColor={colors.textSecondary} accessibilityLabel="Event title" style={[fieldStyle, { backgroundColor: colors.surface }]} />
+              </View>
+              <View style={{ gap: spacing.xs }}>
+                <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800' }]}>DATE & TIME · YOUR LOCAL TIME</Text>
+                <TextInput value={startsAt} onChangeText={setStartsAt} placeholder="YYYY-MM-DDTHH:mm" placeholderTextColor={colors.textSecondary} accessibilityLabel="Event date and time" style={[fieldStyle, { backgroundColor: colors.surface }]} autoCapitalize="none" />
+              </View>
+              <View style={{ gap: spacing.xs }}>
+                <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800' }]}>WHERE · OPTIONAL</Text>
+                <TextInput value={location} onChangeText={setLocation} maxLength={240} placeholder="Add a place or meeting point" placeholderTextColor={colors.textSecondary} accessibilityLabel="Event location" style={[fieldStyle, { backgroundColor: colors.surface }]} />
+              </View>
+              <View style={{ gap: spacing.xs }}>
+                <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800' }]}>THE DETAILS · {description.length}/1,000</Text>
+                <TextInput value={description} onChangeText={setDescription} maxLength={1000} multiline placeholder="Share a little more about the plan…" placeholderTextColor={colors.textSecondary} accessibilityLabel="Event details" style={[fieldStyle, { minHeight: 92, textAlignVertical: 'top', backgroundColor: colors.surface, lineHeight: 22 }]} />
+              </View>
               <TouchableOpacity onPress={publish} disabled={saving || !title.trim() || !startsAt.trim()} accessibilityRole="button" accessibilityLabel="Publish event" accessibilityState={{ disabled: saving || !title.trim() || !startsAt.trim(), busy: saving }} style={{ minHeight: 48, borderRadius: radii.md, backgroundColor: saving || !title.trim() || !startsAt.trim() ? colors.border : colors.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}>
                 {saving ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name="calendar-outline" size={17} color={colors.onPrimary} />}
                 <Text style={[typography.bodyStrong, { color: colors.background }]}>{saving ? 'Creating…' : 'Create event'}</Text>
               </TouchableOpacity>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>Choose a future date and time in your device's local timezone. Database migration 0018 is required.</Text>
             </GlassCard>
-            <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: spacing.sm }]}>Upcoming events</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Coming together</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>{events.length} upcoming {events.length === 1 ? 'event' : 'events'}</Text>
+              </View>
+            </View>
             {loading && events.length ? <ActivityIndicator color={colors.primary} style={{ padding: spacing.md }} /> : null}
             {error && events.length ? <View style={{ padding: spacing.md, marginBottom: spacing.sm }}><Text style={[typography.body, { color: colors.textSecondary }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading events" style={{ minHeight: 48, justifyContent: 'center' }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></View> : null}
           </View>
@@ -146,22 +171,44 @@ export default function EventsScreen({ navigation, route }) {
           const going = rsvps.filter((r) => r.response === 'going').length;
           const maybe = rsvps.filter((r) => r.response === 'maybe').length;
           const notGoing = rsvps.filter((r) => r.response === 'not_going').length;
+          const eventDate = new Date(event.starts_at);
+          const validEventDate = !Number.isNaN(eventDate.getTime());
+          const eventDay = validEventDate ? eventDate.toLocaleDateString(undefined, { day: '2-digit' }) : '—';
+          const eventMonth = validEventDate ? eventDate.toLocaleDateString(undefined, { month: 'short' }).toUpperCase() : 'DATE';
           const options = [
             { value: 'going', label: 'Going' },
             { value: 'maybe', label: 'Maybe' },
             { value: 'not_going', label: 'Can’t go' },
           ];
           return (
-            <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
-              <Text style={[typography.bodyStrong, { color: colors.textPrimary, flexShrink: 1 }]}>{event.title}</Text>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>{new Date(event.starts_at).toLocaleString()}</Text>
-              {event.location ? <Text style={[typography.body, { color: colors.textPrimary }]}>{event.location}</Text> : null}
-              {event.description ? <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 21 }]}>{event.description}</Text> : null}
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>{going} going · {maybe} maybe · {notGoing} not going</Text>
+            <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.md }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                <View style={{ width: 56, minHeight: 60, borderRadius: radii.md, borderWidth: 1, borderColor: `${colors.primary}35`, backgroundColor: `${colors.primary}12`, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={[typography.heading, { color: colors.primary, lineHeight: 27 }]}>{eventDay}</Text>
+                  <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>{eventMonth}</Text>
+                </View>
+                <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+                  <Text style={[typography.bodyStrong, { color: colors.textPrimary }]} numberOfLines={2}>{event.title}</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>{validEventDate ? eventDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Time unavailable'}</Text>
+                  {event.location ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><Ionicons name="location-outline" size={13} color={colors.textSecondary} /><Text numberOfLines={1} style={[typography.caption, { color: colors.textSecondary, flex: 1 }]}>{event.location}</Text></View> : null}
+                </View>
+              </View>
+              {event.description ? <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>{event.description}</Text> : null}
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.xs }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: spacing.sm, minHeight: 30, borderRadius: radii.pill, backgroundColor: colors.surface }}>
+                  <Ionicons name="people-outline" size={13} color={colors.textSecondary} />
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>{going} going</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: spacing.sm, minHeight: 30, borderRadius: radii.pill, backgroundColor: colors.surface }}>
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>{maybe} maybe · {notGoing} can’t go</Text>
+                </View>
+              </View>
+              <View style={{ height: 1, backgroundColor: colors.border }} />
+              <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800' }]}>YOUR RESPONSE</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
                 {options.map((option) => (
-                  <TouchableOpacity key={option.value} onPress={() => respond(event, option.value)} accessibilityRole="button" accessibilityLabel={'RSVP ' + option.label} style={{ borderWidth: 1, borderColor: colors.primary, backgroundColor: mine === option.value ? colors.primary : 'transparent', borderRadius: radii.md, minHeight: 48, paddingVertical: spacing.sm, paddingHorizontal: spacing.md }}>
-                    <Text style={[typography.caption, { color: mine === option.value ? colors.onPrimary : colors.primary }]}>{option.label}</Text>
+                  <TouchableOpacity key={option.value} onPress={() => respond(event, option.value)} accessibilityRole="button" accessibilityLabel={'RSVP ' + option.label} accessibilityState={{ selected: mine === option.value }} style={{ borderWidth: 1, borderColor: mine === option.value ? colors.primary : colors.border, backgroundColor: mine === option.value ? colors.primary : colors.surface, borderRadius: radii.md, minHeight: 48, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, justifyContent: 'center' }}>
+                    <Text style={[typography.caption, { color: mine === option.value ? colors.onPrimary : colors.textSecondary, fontWeight: mine === option.value ? '800' : '600' }]}>{option.label}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
