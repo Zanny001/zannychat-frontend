@@ -275,8 +275,9 @@ export default function LiveModerationScreen({ route, navigation }) {
         ListEmptyComponent={!loading && !error ? <View style={{ width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
           <GlassCard contentStyle={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}>
             <Ionicons name="people-outline" size={30} color={colors.textSecondary} />
-            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{participants.length ? 'No participants in this view' : 'No participants to manage'}</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>{participants.length ? 'Choose another role filter to see more people.' : 'Joined viewers, stage guests and appointed moderators will appear here.'}</Text>
+            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{searchQuery.trim() ? 'No matching participants' : participants.length ? 'No participants in this view' : 'No participants to manage'}</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>{searchQuery.trim() ? 'Try another name or role, or clear your search.' : participants.length ? 'Choose another role filter to see more people.' : 'Joined viewers, stage guests and appointed moderators will appear here.'}</Text>
+            {searchQuery.trim() ? <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear participant search" style={{ minHeight: 48, justifyContent: 'center', paddingHorizontal: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Clear search</Text></TouchableOpacity> : null}
           </GlassCard>
         </View> : null}
       />
