@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,6 +29,7 @@ const ACCOUNT_DELETE_REAUTH_TTL_MS = 4 * 60 * 1000 + 30 * 1000;
 export default function PrivacySecurityScreen({ navigation }) {
   const { colors, spacing, typography, layout } = useTheme();
   const [blocked, setBlocked] = useState([]);
+  const [blockedSearch, setBlockedSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -37,6 +38,11 @@ export default function PrivacySecurityScreen({ navigation }) {
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [authProviders, setAuthProviders] = useState({ email: true, google: false });
+  const visibleBlocked = blocked.filter((entry) => {
+    const query = blockedSearch.trim().toLowerCase();
+    const name = entry.profile?.name || 'Unknown';
+    return !query || name.toLowerCase().includes(query);
+  });
   const [reauthenticatingGoogle, setReauthenticatingGoogle] = useState(false);
   const [googleReauthVerifiedUserId, setGoogleReauthVerifiedUserId] = useState(null);
   const [googleReauthMismatch, setGoogleReauthMismatch] = useState(false);
@@ -359,12 +365,19 @@ export default function PrivacySecurityScreen({ navigation }) {
             Blocked people can't message you, and their messages don't reach you. Block from a chat's ⋮ menu.
           </Text>
 
+          {blocked.length > 0 ? <View style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.sm, marginBottom: spacing.sm }}>
+            <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+            <TextInput value={blockedSearch} onChangeText={setBlockedSearch} placeholder="Search blocked accounts" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search blocked accounts by name" returnKeyType="search" style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs }]} />
+            {blockedSearch ? <TouchableOpacity onPress={() => setBlockedSearch('')} accessibilityRole="button" accessibilityLabel="Clear blocked account search" style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
+          </View> : null}
           {loading ? null : blocked.length === 0 ? (
             <Text style={[typography.caption, { color: colors.textSecondary, fontStyle: 'italic' }]}>
               You haven't blocked anyone.
             </Text>
+          ) : visibleBlocked.length === 0 ? (
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>No blocked accounts match this search.</Text>
           ) : (
-            blocked.map((entry) => (
+            visibleBlocked.map((entry) => (
               <View key={entry.userId} style={[styles.blockRow, { marginBottom: spacing.sm }]}>
                 <Avatar
                   name={entry.profile?.name || 'Unknown'}
