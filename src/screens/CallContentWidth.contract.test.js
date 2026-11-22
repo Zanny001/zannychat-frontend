@@ -46,3 +46,11 @@ test('native group-call controls use a compact themed dock that can wrap on narr
   assert.match(files.group, /minWidth: 68, minHeight: 68/);
   assert.match(files.group, /backgroundColor: hexToRgba\(colors\.surface, 0\.84\)/);
 });
+
+test('group-call tiles and participant chips surface the active speaker without hiding names', () => {
+  assert.match(files.group, /item\\.participant\\.isSpeaking/);
+  assert.match(files.group, /SPEAKING/);
+  assert.match(files.group, /participant\\.isSpeaking \\? 'volume-high' : 'person-circle-outline'/);
+  assert.match(files.group, /accessibilityLabel=\\{\\x60\\$\\{participant\\.name/);
+  assert.match(files.group, /borderColor: item\\.participant\\.isSpeaking \\? colors\\.accent/);
+});
