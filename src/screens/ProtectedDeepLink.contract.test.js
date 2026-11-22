@@ -19,3 +19,19 @@ test('authentication restores the pending protected route after Main is mounted'
   assert.match(gateSource, /setPendingAuthRoute\(returnRoute\)/);
   assert.match(gateSource, /navigation\.navigate\(screen\)/);
 });
+
+test('protected-link handoff uses a Crown Aurora context icon and a clear secure-link explanation', () => {
+  assert.match(gateSource, /ZANNYCHAT · SECURE LINK/);
+  assert.match(gateSource, /GlassCard glow intensity=\{22\}/);
+  assert.match(gateSource, /const linkIcon = \(\{ QRContact:/);
+  assert.match(gateSource, /Your link is only used to resume the requested action after authentication\./);
+  assert.match(gateSource, /accessibilityLabel="Sign in to continue to this link"/);
+  assert.match(gateSource, /accessibilityLabel="Create an account to continue to this link"/);
+});
+
+test('invalid protected links never resume an action and explain how to recover', () => {
+  assert.match(gateSource, /const validLink = Boolean\(normalizePendingAuthRoute\(returnRoute\)\)/);
+  assert.match(gateSource, /No action has been resumed\. Request a fresh link from the sender\./);
+  assert.match(gateSource, /!validLink/);
+  assert.match(gateSource, /if \(!setPendingAuthRoute\(returnRoute\)\) return/);
+});
