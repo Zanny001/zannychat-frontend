@@ -106,7 +106,7 @@ test('LIVE report queue exposes dismissed reports and accounts for every termina
 
 test('LIVE guest request queue virtualizes long lists while retaining stage context and recovery states', () => {
   assert.ok(guestQueue.includes('<FlatList'));
-  assert.ok(guestQueue.includes('data={requests}'));
+  assert.ok(guestQueue.includes('data={visibleRequests}'));
   assert.ok(guestQueue.includes('keyExtractor={(item) => String(item.user_id)}'));
   assert.ok(guestQueue.includes('renderItem={({ item }) =>'));
   assert.ok(!guestQueue.includes('requests.map('));
