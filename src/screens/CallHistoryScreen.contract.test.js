@@ -78,3 +78,7 @@ test('call history filters only already-loaded records and preserves the existin
   assert.ok(callsScreen.includes('await hideCallHistory(item)'));
   assert.ok(callsScreen.includes('No matching calls'));
 });
+
+test('call history filter chips retain comfortable 48-point touch targets', () => {
+  assert.ok(callsScreen.includes("minHeight: 48, justifyContent: 'center', paddingHorizontal: spacing.md"));
+});
