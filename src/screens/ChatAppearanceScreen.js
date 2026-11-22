@@ -52,7 +52,7 @@ export default function ChatAppearanceScreen({ navigation }) {
 
   return (
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
-      <Header title="Chat appearance" onBack={() => navigation.goBack()} />
+      <Header eyebrow="PERSONALISE YOUR SPACE" title="Chat appearance" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xl, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         <View style={[styles.eyebrow, { backgroundColor: `${colors.primary}18`, borderColor: `${colors.primary}35` }]}>
           <Ionicons name="sparkles-outline" size={15} color={colors.primary} />
