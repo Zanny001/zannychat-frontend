@@ -79,7 +79,7 @@ test('LIVE operations recovery actions each meet the 48-point mobile target', ()
 
 test('LIVE participant moderation virtualizes large rosters without weakening role-based controls', () => {
   assert.ok(moderation.includes('<FlatList'));
-  assert.ok(moderation.includes('data={participants}'));
+  assert.ok(moderation.includes('data={visibleParticipants}'));
   assert.ok(moderation.includes('keyExtractor={(item) => String(item.userId)}'));
   assert.ok(moderation.includes('renderItem={({ item }) =>'));
   assert.ok(!moderation.includes('participants.map('));
