@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +21,7 @@ export default function LiveGuestQueueScreen({ route, navigation }) {
   const streamId = route.params?.streamId || null;
   const streamTitle = route.params?.title || 'LIVE stage';
   const [requests, setRequests] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [participants, setParticipants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -85,6 +86,10 @@ export default function LiveGuestQueueScreen({ route, navigation }) {
 
   const guestCount = participants.filter((item) => item.joined && item.role === 'guest').length;
   const guestSlots = Math.max(0, 5 - guestCount);
+  const visibleRequests = requests.filter((item) => {
+    const query = searchQuery.trim().toLowerCase();
+    return !query || String(item.name || 'ZannyChat viewer').toLowerCase().includes(query);
+  });
 
   const decide = async (userId, status) => {
     if (!streamId || !userId || actionLock.current || (status === 'accepted' && guestSlots <= 0)) return;
@@ -116,7 +121,7 @@ export default function LiveGuestQueueScreen({ route, navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <FlatList
-        data={requests}
+        data={visibleRequests}
         keyExtractor={(item) => String(item.user_id)}
         renderItem={({ item }) => {
           const busy = busyUserId === item.user_id;
