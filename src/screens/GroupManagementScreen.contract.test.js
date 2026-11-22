@@ -33,3 +33,15 @@ test('group admin, invite and leave actions remain present in virtualized rows a
 test('group member recovery retry action meets the 48-point mobile touch target', () => {
   assert.match(source, /accessibilityLabel="Retry loading group members" style=\{\{ minHeight: 48/);
 });
+
+
+test('group management presents a premium community identity without changing membership permissions', () => {
+  assert.ok(source.includes('YOUR COMMUNITY'));
+  assert.ok(source.includes('GROUP SPACE') === false);
+  assert.ok(source.includes('hexToRgba(colors.primary, 0.28)'));
+  assert.ok(source.includes('Admin access'));
+  assert.ok(source.includes('Member access'));
+  assert.ok(source.includes('Changes are verified securely by ZannyChat.'));
+  assert.ok(source.includes('createInvite'));
+  assert.ok(source.includes('changeAdmin(member)'));
+});
