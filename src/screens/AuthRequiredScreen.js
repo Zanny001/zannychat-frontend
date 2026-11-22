@@ -75,7 +75,7 @@ export default function AuthRequiredScreen({ navigation, route }) {
             </TouchableOpacity>
           </>
         ) : null}
-        <Text style={[typography.caption, styles.footer, { color: colors.textSecondary }]}>Your link is only used to resume the requested action after authentication.</Text>
+        {!validLink ? <Text accessibilityRole="alert" style={[typography.caption, styles.footer, { color: colors.textSecondary }]}>No action has been resumed. Request a fresh link from the sender.</Text> : null}
       </View>
     </SafeAreaView>
   );
