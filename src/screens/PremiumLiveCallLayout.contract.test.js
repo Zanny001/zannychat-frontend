@@ -49,7 +49,7 @@ test('Group call stages remain bounded instead of expanding into oversized panel
   assert.match(native, /tile: \{ flex: 1, minHeight: 190/);
   assert.match(native, /control: \{ minWidth: 68, minHeight: 68/);
   assert.match(web, /videoTile: \{ width: '47%', minWidth: 145, aspectRatio: 9 \/ 16, maxHeight: 330/);
-  assert.match(web, /control: \{ minWidth: 74, minHeight: 58/);
+  assert.match(web, /control: \{ minWidth: 68, minHeight: 64/);
 });
 
 test('LIVE replay player remains 16:9 and bounded on wide screens with 48-point actions', () => {
