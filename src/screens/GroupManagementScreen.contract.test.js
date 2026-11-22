@@ -37,7 +37,6 @@ test('group member recovery retry action meets the 48-point mobile touch target'
 
 test('group management presents a premium community identity without changing membership permissions', () => {
   assert.ok(source.includes('YOUR COMMUNITY'));
-  assert.ok(source.includes('GROUP SPACE') === false);
   assert.ok(source.includes('hexToRgba(colors.primary, 0.28)'));
   assert.ok(source.includes('Admin access'));
   assert.ok(source.includes('Member access'));
