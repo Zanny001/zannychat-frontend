@@ -81,7 +81,7 @@ export default function CallHistoryScreen({ navigation }) {
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
-      <Header title="Calls" subtitle="Your moments, one connection away" />
+      <Header eyebrow="REAL-TIME CONNECTIONS" title="Calls" subtitle="Your moments, one connection away" />
       <FlatList
         style={{ flex: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
         data={calls}
