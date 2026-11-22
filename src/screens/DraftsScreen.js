@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { FlatList, View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { FlatList, View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +20,7 @@ function updatedLabel(value) {
 export default function DraftsScreen({ navigation }) {
   const { colors, spacing, radii, typography, layout } = useTheme();
   const [drafts, setDrafts] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -55,6 +56,15 @@ export default function DraftsScreen({ navigation }) {
   }, []);
 
   const conversationsById = useMemo(() => new Map(conversations.map((item) => [item.id, item])), [conversations]);
+  const filteredDrafts = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return drafts;
+    return drafts.filter((draft) => {
+      const conversation = conversationsById.get(draft.conversationId);
+      const title = conversation?.participant?.name || conversation?.name || 'Conversation';
+      return (title + ' ' + String(draft.text || '')).toLowerCase().includes(query);
+    });
+  }, [conversationsById, drafts, searchQuery]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -90,7 +100,7 @@ export default function DraftsScreen({ navigation }) {
         </GlassCard>
       ) : (
         <FlatList
-          data={drafts}
+          data={filteredDrafts}
           keyExtractor={(draft) => String(draft.id)}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -121,14 +131,28 @@ export default function DraftsScreen({ navigation }) {
                   ) : null}
                 </View>
               ) : null}
+              <View style={{ minHeight: 50, flexDirection: 'row', alignItems: 'center', borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.md, marginTop: spacing.sm }}>
+                <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+                <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder="Search drafts or conversations" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search drafts by message or conversation" returnKeyType="search" style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, paddingVertical: spacing.sm, paddingLeft: spacing.sm }]} />
+                {searchQuery ? <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear draft search" style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
+              </View>
             </View>
           }
           ListEmptyComponent={
-            <View style={{ alignItems: 'center', paddingHorizontal: spacing.xl, paddingVertical: spacing.xxl }}>
-              <View style={{ width: 68, height: 68, borderRadius: 24, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="checkmark-done-outline" size={30} color={colors.textSecondary} /></View>
-              <Text style={[typography.heading, { color: colors.textPrimary, marginTop: spacing.md }]}>All caught up</Text>
-              <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>Unsent messages you write will appear here automatically.</Text>
-            </View>
+            drafts.length > 0 ? (
+              <View style={{ alignItems: 'center', paddingHorizontal: spacing.xl, paddingVertical: spacing.xxl, gap: spacing.xs }}>
+                <Ionicons name="search-outline" size={30} color={colors.textSecondary} />
+                <Text style={[typography.heading, { color: colors.textPrimary, marginTop: spacing.sm }]}>No matching drafts</Text>
+                <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>Try another message or conversation name, or clear your search.</Text>
+                <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear draft search" style={{ minHeight: 48, justifyContent: 'center', paddingHorizontal: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Clear search</Text></TouchableOpacity>
+              </View>
+            ) : (
+              <View style={{ alignItems: 'center', paddingHorizontal: spacing.xl, paddingVertical: spacing.xxl }}>
+                <View style={{ width: 68, height: 68, borderRadius: 24, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="checkmark-done-outline" size={30} color={colors.textSecondary} /></View>
+                <Text style={[typography.heading, { color: colors.textPrimary, marginTop: spacing.md }]}>All caught up</Text>
+                <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>Unsent messages you write will appear here automatically.</Text>
+              </View>
+            )
           }
           renderItem={({ item: draft }) => {
             const conversation = conversationsById.get(draft.conversationId);
