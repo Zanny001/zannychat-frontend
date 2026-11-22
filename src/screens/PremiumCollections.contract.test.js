@@ -21,9 +21,10 @@ test('Draft continuation and deletion actions retain balanced accessible dimensi
   assert.match(source, /minHeight: 48, alignSelf: 'center'/);
 });
 
-test('Chat folder choices, form controls and row actions meet the 48-point target baseline', () => {
+test('Chat folder category tiles and exclusion rows retain accessible mobile touch dimensions', () => {
   const source = read('ChatFoldersScreen.js');
-  assert.match(source, /minHeight: 48, flexDirection: 'row', alignItems: 'center'/);
+  assert.match(source, /minHeight: 88/);
+  assert.match(source, /minHeight: 52, flexDirection: 'row'/);
   assert.match(source, /borderRadius: radii\.md, minHeight: 48/);
   assert.match(source, /borderRadius: radii\.pill, minHeight: 48/);
   assert.match(source, /minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center'/);

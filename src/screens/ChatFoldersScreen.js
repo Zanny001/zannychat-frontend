@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import GlassCard from '../components/GlassCard';
 import { useTheme } from '../theme/ThemeContext';
+import { hexToRgba } from '../utils/color';
 import { getCurrentUser } from '../services/api';
 import { loadChatFolders, saveChatFolder, deleteChatFolder } from '../services/chatFolders';
 
@@ -80,11 +81,30 @@ export default function ChatFoldersScreen({ navigation }) {
     } },
   ]); };
 
-  const Choice = ({ item, selected, onPress, subtitle }) => (
-    <TouchableOpacity onPress={onPress} accessibilityRole="checkbox" accessibilityLabel={item.label} accessibilityState={{ checked: selected }} style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', paddingVertical: 10 }}>
+  const Choice = ({ item, selected, onPress }) => item.icon ? (
+    <TouchableOpacity
+      onPress={onPress}
+      accessibilityRole="checkbox"
+      accessibilityLabel={item.label}
+      accessibilityState={{ checked: selected }}
+      style={{ width: '48%', minWidth: 132, flexGrow: 1, minHeight: 88 }}
+      activeOpacity={0.84}
+    >
+      <GlassCard noPadding glow={selected} intensity={selected ? 24 : 12} tintAlpha={selected ? 0.42 : 0.2} contentStyle={{ minHeight: 88, padding: spacing.sm, justifyContent: 'space-between', borderWidth: 1, borderColor: selected ? hexToRgba(colors.primary, 0.58) : colors.border }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ width: 34, height: 34, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(selected ? colors.primary : colors.surfaceAlt, selected ? 0.2 : 0.7) }}>
+            <Ionicons name={item.icon} size={18} color={selected ? colors.primary : colors.textSecondary} />
+          </View>
+          <Ionicons name={selected ? 'checkmark-circle' : 'ellipse-outline'} size={19} color={selected ? colors.primary : colors.textSecondary} />
+        </View>
+        <Text style={[typography.small, { color: colors.textPrimary, fontWeight: selected ? '800' : '600' }]} numberOfLines={2}>{item.label}</Text>
+      </GlassCard>
+    </TouchableOpacity>
+  ) : (
+    <TouchableOpacity onPress={onPress} accessibilityRole="checkbox" accessibilityLabel={item.label} accessibilityState={{ checked: selected }} style={{ minHeight: 52, flexDirection: 'row', alignItems: 'center', paddingVertical: 9, paddingHorizontal: spacing.sm, borderRadius: radii.md, backgroundColor: selected ? hexToRgba(colors.primary, 0.08) : 'transparent' }}>
       <Ionicons name={selected ? 'checkbox' : 'square-outline'} size={21} color={selected ? colors.primary : colors.textSecondary} />
       <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm, flex: 1, minWidth: 0 }]}>{item.label}</Text>
-      {item.icon ? <Ionicons name={item.icon} size={18} color={colors.textSecondary} /> : null}
+      <Text style={[typography.caption, { color: colors.textSecondary }]}>{selected ? 'On' : 'Off'}</Text>
     </TouchableOpacity>
   );
 
@@ -103,13 +123,30 @@ export default function ChatFoldersScreen({ navigation }) {
         ListHeaderComponent={
           <View>
             <GlassCard glow style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md }}>
-          <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.xs }]}>Create a folder</Text>
-          <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>A chat appears when it matches any selected category. Folders are saved on this device and are not synced across devices yet.</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md }}>
+            <View style={{ width: 42, height: 42, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.16), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.28) }}>
+              <Ionicons name="albums-outline" size={21} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm }}>
+              <Text style={[typography.heading, { color: colors.textPrimary }]}>Shape your chat space</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>Build a view around the conversations that matter.</Text>
+            </View>
+          </View>
+          <View style={{ borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, backgroundColor: hexToRgba(colors.surfaceAlt, 0.48), padding: spacing.sm, marginBottom: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+            <Ionicons name="phone-portrait-outline" size={16} color={colors.accent || colors.primary} />
+            <Text style={[typography.caption, { color: colors.textSecondary, flex: 1 }]}>Folders are stored on this device and do not sync across devices yet.</Text>
+          </View>
           <TextInput value={name} onChangeText={setName} maxLength={32} placeholder="e.g. Work, Close friends" placeholderTextColor={colors.textSecondary} accessibilityLabel="Folder name" style={[typography.body, { color: colors.textPrimary, borderColor: colors.border, borderWidth: 1, borderRadius: radii.md, minHeight: 48, paddingHorizontal: spacing.md, paddingVertical: 10, marginBottom: spacing.md }]} />
-          <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Include chats</Text>
-          {INCLUSIONS.map((item) => <Choice key={item.key} item={item} selected={rules.includes(item.key)} onPress={() => toggle(rules, setRules, item.key)} />)}
-          <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.sm }} />
-          <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Additional filters</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Include conversations</Text>
+            <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>{rules.length} selected</Text>
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+            {INCLUSIONS.map((item) => <Choice key={item.key} item={item} selected={rules.includes(item.key)} onPress={() => toggle(rules, setRules, item.key)} />)}
+          </View>
+          <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
+          <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: spacing.xs }]}>Fine-tune your view</Text>
+          <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.xs }]}>Hide conversations you don't want in this folder.</Text>
           {EXCLUSIONS.map((item) => <Choice key={item.key} item={item} selected={excluded.includes(item.key)} onPress={() => toggle(excluded, setExcluded, item.key)} />)}
           {error ? <Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger, marginTop: spacing.sm }]}>{error}</Text> : null}
           {loadFailed ? <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading chat folders" style={{ minHeight: 48, alignSelf: 'flex-start', justifyContent: 'center', paddingHorizontal: spacing.sm }}><Text style={[typography.caption, { color: colors.primary, fontWeight: '700' }]}>Retry loading folders</Text></TouchableOpacity> : null}
