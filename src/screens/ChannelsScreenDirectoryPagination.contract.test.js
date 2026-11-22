@@ -34,3 +34,14 @@ test('channel discovery and moderation secondary actions meet the 48-point touch
   assert.ok((source.match(/minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', padding: spacing\.xs/g) || []).length >= 3);
   assert.match(source, /comment reaction.*?style=\{\{ minWidth: 48, minHeight: 48/);
 });
+
+test('Explore opens with a premium Crown Aurora discovery identity and clear LIVE/community hierarchy', () => {
+  assert.ok(source.includes('YOUR WORLD, IN MOTION'));
+  assert.ok(source.includes('Explore ZannyChat'));
+  assert.ok(source.includes('LIVE + SOCIAL'));
+  assert.ok(source.includes('Open LIVE'));
+  assert.ok(source.includes('LIVE DISCOVERY'));
+  assert.ok(source.includes('COMMUNITY PULSE'));
+  assert.ok(source.includes('hexToRgba(colors.primary, 0.28)'));
+  assert.ok(source.includes('accessibilityLabel="Open creator LIVE"'));
+});
