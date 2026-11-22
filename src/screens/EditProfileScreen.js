@@ -223,6 +223,28 @@ export default function EditProfileScreen({ navigation }) {
       } />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
+          <View accessibilityLabel={`Profile identity. ${profileCompletion}% complete.`} style={{ marginBottom: spacing.md, padding: spacing.md, borderRadius: 24, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceElevated, overflow: 'hidden' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+              <View style={{ width: 68, height: 68, borderRadius: 22, padding: 3, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface }}>
+                <Avatar name={name || 'You'} color={user?.avatarColor || colors.primary} size={60} imageUrl={avatarPreviewUri || avatarUrl} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+                <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.3 }]}>YOUR ZANNYCHAT IDENTITY</Text>
+                <Text numberOfLines={1} style={[typography.heading, { color: colors.text }]}>{name.trim() || 'Your name'}</Text>
+                <Text numberOfLines={1} style={[typography.caption, { color: colors.textSecondary }]}>{username.trim() ? `@${username.trim().replace(/^@/, '')}` : 'Choose your unique username'}</Text>
+              </View>
+            </View>
+            <View style={{ marginTop: spacing.md, gap: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>Profile strength</Text>
+                <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>{profileCompletion}%</Text>
+              </View>
+              <View style={{ height: 7, borderRadius: 8, overflow: 'hidden', backgroundColor: colors.border }}>
+                <View style={{ height: '100%', width: `${profileCompletion}%`, borderRadius: 8, backgroundColor: colors.primary }} />
+              </View>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>A complete profile helps people recognize and connect with you.</Text>
+            </View>
+          </View>
           <Section title="Profile appearance" colors={colors} spacing={spacing} typography={typography} radii={radii}>
             <TouchableOpacity onPress={() => chooseImage('cover')} disabled={uploadingCover} accessibilityRole="button" accessibilityLabel="Add or change profile cover image" accessibilityState={{ disabled: uploadingCover, busy: uploadingCover }} style={[styles.cover, { backgroundColor: colors.surfaceElevated, borderRadius: radii.md }]}>
               {(coverPreviewUri || details.cover_image_url) ? <Image source={{ uri: coverPreviewUri || details.cover_image_url }} resizeMode="cover" style={StyleSheet.absoluteFillObject} /> : <Ionicons name="image-outline" size={26} color={colors.textSecondary} />}
