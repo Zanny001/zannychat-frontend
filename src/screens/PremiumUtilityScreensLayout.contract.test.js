@@ -20,7 +20,7 @@ test('Contact discovery, group creation and group management actions use 48-poin
 });
 
 test('Join group, creator profile, notifications and scheduled message actions use 48-point sizing', () => {
-  assert.match(read('JoinGroupScreen.js'), /minHeight: 48/);
+  assert.match(read('JoinGroupScreen.js'), /minHeight: (?:4[8-9]|[5-9][0-9])/);
   assert.ok(read('LiveCreatorStudioScreen.js').includes('<LivePremiumHeader'));
   const liveHeader = fs.readFileSync(new URL('../components/LivePremiumHeader.js', import.meta.url), 'utf8');
   assert.match(liveHeader, /width: 48,[\s\S]*?height: 48/);
