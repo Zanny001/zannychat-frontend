@@ -21,3 +21,12 @@ test('group contact search does not change selection or the minimum group member
   assert.match(screen, /createGroupConversation\(selectedIds, name\.trim\(\), memberProfiles\)/);
   assert.match(screen, /accessibilityRole="checkbox"/);
 });
+
+test('group creation keeps selected members visible and removable while the contact search changes', () => {
+  assert.match(screen, /const selectedContacts = selectedIds\.map/);
+  assert.match(screen, /SELECTED PEOPLE · TAP TO REMOVE/);
+  assert.match(screen, /selectedContacts\.map\(\(contact\) =>/);
+  assert.match(screen, /Remove .* from selected group members/);
+  assert.match(screen, /onPress=\{\(\) => toggle\(contact\.id\)\}/);
+  assert.match(screen, /minHeight: 44/);
+});
