@@ -125,38 +125,48 @@ export default function ProfileScreen({ navigation }) {
         </GlassCard>
         <LiveImpactCard impact={liveImpact} showEmpty />
         <Text style={[typography.small, { color: colors.textSecondary, marginBottom: spacing.sm, marginLeft: 4, letterSpacing: 1.1 }]}>PERSONALIZE & PROTECT</Text>
-        <MenuRow icon="color-palette-outline" label="Appearance & theme" onPress={() => navigation.navigate('Settings')} />
-        <MenuRow icon="shield-checkmark-outline" label="Privacy & security" onPress={() => navigation.navigate('PrivacySecurity')} />
-        <MenuRow icon="notifications-outline" label="Notifications" onPress={() => navigation.navigate('Notifications')} />
+        <MenuRow icon="color-palette-outline" label="Appearance & theme" description="Colours, motion and comfortable reading" onPress={() => navigation.navigate('Settings')} />
+        <MenuRow icon="shield-checkmark-outline" label="Privacy & security" description="Control who sees you and how your account is protected" onPress={() => navigation.navigate('PrivacySecurity')} />
+        <MenuRow icon="notifications-outline" label="Notifications" description="Choose the alerts that matter to you" onPress={() => navigation.navigate('Notifications')} />
         <Text style={[typography.small, { color: colors.textSecondary, marginTop: spacing.lg, marginBottom: spacing.sm, marginLeft: 4, letterSpacing: 1.1 }]}>YOUR CONTENT & COMMUNITY</Text>
-        <MenuRow icon="aperture-outline" label="Status updates" onPress={() => navigation.navigate('StatusUpdates')} />
-        <MenuRow icon="megaphone-outline" label="Channels" onPress={() => navigation.navigate('Channels')} />
-        <MenuRow icon="bookmark-outline" label="Saved messages" onPress={() => navigation.navigate('SavedMessages')} />
-        <MenuRow icon="time-outline" label="Scheduled messages" onPress={() => navigation.navigate('ScheduledMessages')} />
-        <MenuRow icon="folder-outline" label="Chat folders" onPress={() => navigation.navigate('ChatFolders')} />
-        <MenuRow icon="people-outline" label="Join a group" onPress={() => navigation.navigate('JoinGroup')} />
+        <MenuRow icon="aperture-outline" label="Status updates" description="Share moments with your chosen audience" onPress={() => navigation.navigate('StatusUpdates')} />
+        <MenuRow icon="megaphone-outline" label="Channels" description="Discover conversations and communities" onPress={() => navigation.navigate('Channels')} />
+        <MenuRow icon="bookmark-outline" label="Saved messages" description="Your private library of important moments" onPress={() => navigation.navigate('SavedMessages')} />
+        <MenuRow icon="time-outline" label="Scheduled messages" description="Messages you have planned for later" onPress={() => navigation.navigate('ScheduledMessages')} />
+        <MenuRow icon="folder-outline" label="Chat folders" description="Organize conversations your way" onPress={() => navigation.navigate('ChatFolders')} />
+        <MenuRow icon="people-outline" label="Join a group" description="Find a space to connect and collaborate" onPress={() => navigation.navigate('JoinGroup')} />
         <Text style={[typography.small, { color: colors.textSecondary, marginTop: spacing.lg, marginBottom: spacing.sm, marginLeft: 4, letterSpacing: 1.1 }]}>SUPPORT & STORAGE</Text>
-        <MenuRow icon="cloud-upload-outline" label="Data & storage" onPress={() => navigation.navigate('DataStorage')} />
-        <MenuRow icon="help-circle-outline" label="Help" onPress={() => navigation.navigate('Help')} />
+        <MenuRow icon="cloud-upload-outline" label="Data & storage" description="Manage media, downloads and storage use" onPress={() => navigation.navigate('DataStorage')} />
+        <MenuRow icon="help-circle-outline" label="Help" description="Guidance and support for ZannyChat" onPress={() => navigation.navigate('Help')} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function MenuRow({ icon, label, onPress }) {
-  const { colors, spacing, typography } = useTheme();
+function MenuRow({ icon, label, description, onPress }) {
+  const { colors, spacing, typography, mood, radii } = useTheme();
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityHint={`Opens ${label.toLowerCase()}`}
-      style={({ pressed }) => pressed && { opacity: 0.76 }}
+      accessibilityHint={description || `Opens ${label.toLowerCase()}`}
+      style={({ pressed }) => [
+        styles.menuPressable,
+        pressed && { opacity: 0.78, transform: [{ scale: 0.992 }] },
+      ]}
     >
-      <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={styles.row} intensity={26}>
-        <Ionicons name={icon} size={20} color={colors.accent} />
-        <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm, flex: 1 }]}>{label}</Text>
-        <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+      <GlassCard style={{ marginBottom: spacing.sm, borderRadius: radii.lg }} contentStyle={styles.row} intensity={30}>
+        <View style={[styles.menuIconWell, { backgroundColor: hexToRgba(mood.signal, 0.12), borderColor: hexToRgba(mood.signal, 0.2), borderRadius: radii.md }]}>
+          <Ionicons name={icon} size={20} color={mood.signal} />
+        </View>
+        <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.md }}>
+          <Text style={[typography.bodyStrong, { color: colors.textPrimary }]} numberOfLines={1}>{label}</Text>
+          {description ? <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]} numberOfLines={2}>{description}</Text> : null}
+        </View>
+        <View style={[styles.menuChevron, { borderColor: colors.border, backgroundColor: hexToRgba(colors.surface, 0.72) }]}>
+          <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+        </View>
       </GlassCard>
     </Pressable>
   );
@@ -171,7 +181,10 @@ const styles = StyleSheet.create({
   profileDivider: { height: StyleSheet.hairlineWidth, marginVertical: 18 },
   profileActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   profileAction: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 11, flex: 1, minWidth: 132 },
-  row: { flexDirection: 'row', alignItems: 'center', minHeight: 56, paddingHorizontal: 14, paddingVertical: 12 },
+  row: { flexDirection: 'row', alignItems: 'center', minHeight: 72, paddingHorizontal: 14, paddingVertical: 12 },
+  menuPressable: { borderRadius: 18 },
+  menuIconWell: { width: 42, height: 42, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  menuChevron: { width: 30, height: 30, borderWidth: 1, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
   editPill: {
     flexDirection: 'row',
     alignItems: 'center',
