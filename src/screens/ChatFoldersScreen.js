@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { FlatList, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -34,6 +34,7 @@ export default function ChatFoldersScreen({ navigation }) {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState('');
+  const [folderSearch, setFolderSearch] = useState('');
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -52,6 +53,12 @@ export default function ChatFoldersScreen({ navigation }) {
     finally { setLoading(false); }
   }, []);
   useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
+
+  const visibleFolders = useMemo(() => {
+    const query = folderSearch.trim().toLowerCase();
+    if (!query) return folders;
+    return folders.filter((folder) => [folder.name, ...(folder.rules || []), ...(folder.excluded || [])].join(' ').toLowerCase().includes(query));
+  }, [folders, folderSearch]);
 
   const toggle = (list, setList, key) => setList((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]);
   const create = async () => {
@@ -112,7 +119,7 @@ export default function ChatFoldersScreen({ navigation }) {
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Chat folders" subtitle="Build your own chat filters" onBack={() => navigation.goBack()} />
       <FlatList
-        data={folders}
+        data={visibleFolders}
         keyExtractor={(folder) => String(folder.id)}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -156,7 +163,15 @@ export default function ChatFoldersScreen({ navigation }) {
           </TouchableOpacity>
           {editingId ? <TouchableOpacity onPress={cancelEdit} accessibilityRole="button" accessibilityLabel="Cancel chat folder editing" style={{ minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 }}><Text style={[typography.body, { color: colors.textSecondary }]}>Cancel editing</Text></TouchableOpacity> : null}
         </GlassCard>
-            <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.sm }]}>Your folders · {folders.length}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+              <Text style={[typography.heading, { color: colors.textPrimary }]}>Your folders</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>{visibleFolders.length} of {folders.length}</Text>
+            </View>
+            {folders.length > 0 ? <View style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.sm, marginBottom: spacing.sm }}>
+              <Ionicons name="search-outline" size={17} color={colors.textSecondary} />
+              <TextInput value={folderSearch} onChangeText={setFolderSearch} placeholder="Search folders and rules" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search saved chat folders" returnKeyType="search" style={[typography.body, { flex: 1, minWidth: 0, color: colors.textPrimary, paddingVertical: spacing.sm, paddingLeft: spacing.sm }]} />
+              {folderSearch ? <TouchableOpacity onPress={() => setFolderSearch('')} accessibilityRole="button" accessibilityLabel="Clear folder search" style={{ minWidth: 40, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
+            </View> : null}
           </View>
         }
         renderItem={({ item: folder }) => (
