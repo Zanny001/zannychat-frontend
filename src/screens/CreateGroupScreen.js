@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,6 +24,7 @@ export default function CreateGroupScreen({ navigation }) {
   const [creating, setCreating] = useState(false);
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [contactsError, setContactsError] = useState('');
+  const [contactSearch, setContactSearch] = useState('');
   const mountedRef = useRef(true);
 
   async function loadContacts() {
@@ -51,6 +52,7 @@ export default function CreateGroupScreen({ navigation }) {
     );
   }
 
+  const visibleContacts = useMemo(() => { const query = contactSearch.trim().toLowerCase(); return query ? contacts.filter((contact) => String(contact.name || '').toLowerCase().includes(query)) : contacts; }, [contacts, contactSearch]);
   const canCreate = name.trim().length > 0 && selectedIds.length >= MIN_OTHER_MEMBERS;
 
   async function handleCreate() {
@@ -107,11 +109,15 @@ export default function CreateGroupScreen({ navigation }) {
             </View>
           </View>
         </GlassCard>
-        <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800', letterSpacing: 1, marginBottom: spacing.xs }]}>INVITE YOUR PEOPLE</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.xs }}>
+          <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800', letterSpacing: 1 }]}>INVITE YOUR PEOPLE</Text>
+          <Text style={[typography.small, { color: colors.textSecondary }]}>{contacts.length} {contacts.length === 1 ? 'contact' : 'contacts'}</Text>
+        </View>
+        <GlassInput value={contactSearch} onChangeText={setContactSearch} placeholder="Find someone by name" accessibilityLabel="Search contacts by name" autoCapitalize="none" returnKeyType="search" />
       </View>
 
       <FlatList
-        data={contacts}
+        data={visibleContacts}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.lg, flexGrow: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
         ListEmptyComponent={
