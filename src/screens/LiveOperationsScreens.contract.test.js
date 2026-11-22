@@ -76,3 +76,17 @@ test('LIVE operations recovery actions each meet the 48-point mobile target', ()
   assert.ok(reports.includes('accessibilityLabel="Retry loading LIVE reports" style={{ minHeight: 48'));
   assert.ok(reports.includes('minHeight: 48, paddingHorizontal: spacing.md'));
 });
+
+test('LIVE safety report queue virtualizes report cards while preserving review controls and recovery states', () => {
+  assert.ok(reports.includes('<FlatList'));
+  assert.ok(reports.includes('data={visibleReports}'));
+  assert.ok(reports.includes('keyExtractor={(item) => String(item.id)}'));
+  assert.ok(reports.includes('renderItem={({ item }) =>'));
+  assert.ok(!reports.includes('visibleReports.map('));
+  assert.ok(reports.includes('ListHeaderComponent='));
+  assert.ok(reports.includes('ListEmptyComponent='));
+  assert.ok(reports.includes('refreshControl={<RefreshControl'));
+  assert.ok(reports.includes("review(item.id, 'reviewing')"));
+  assert.ok(reports.includes("review(item.id, 'dismissed')"));
+  assert.ok(reports.includes("review(item.id, 'resolved')"));
+});
