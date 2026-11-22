@@ -29,3 +29,20 @@ test('group video stage and control dock use separate media and content measures
   assert.match(files.group, /maxWidth: layout\.mediaStageMaxWidth/);
   assert.match(files.group, /maxWidth: layout\.contentMaxWidth/);
 });
+
+test('native and web active-call controls use a contained responsive premium dock', () => {
+  for (const name of ['CallScreen.js', 'CallScreen.web.js']) {
+    const source = readFileSync(new URL(`./${name}`, import.meta.url), 'utf8');
+    assert.match(source, /maxWidth: 340/);
+    assert.match(source, /flexWrap: 'wrap'/);
+    assert.match(source, /borderRadius: 28/);
+    assert.match(source, /minHeight: 64/);
+  }
+});
+
+test('native group-call controls use a compact themed dock that can wrap on narrow screens', () => {
+  assert.match(files.group, /flexWrap: 'wrap'/);
+  assert.match(files.group, /marginBottom: 14/);
+  assert.match(files.group, /minWidth: 68, minHeight: 68/);
+  assert.match(files.group, /backgroundColor: hexToRgba\(colors\.surface, 0\.84\)/);
+});
