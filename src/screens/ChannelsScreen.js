@@ -605,7 +605,7 @@ export default function ChannelsScreen({ navigation }) {
   const buttonText = [typography.bodyStrong, { color: colors.onPrimary || colors.background }];
 
   return <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
-    <Header title={selected ? "Channel" : "Explore"} subtitle={selected ? selected.title : "LIVE, public channels and communities"} onBack={() => selected ? clearSelectedChannel() : navigation.goBack()} />
+    <Header eyebrow={selected ? "CHANNEL SPACE" : "DISCOVER YOUR WORLD"} title={selected ? "Channel" : "Explore"} subtitle={selected ? selected.title : "LIVE, public channels and communities"} onBack={() => selected ? clearSelectedChannel() : navigation.goBack()} />
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, gap: spacing.md, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
       <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
