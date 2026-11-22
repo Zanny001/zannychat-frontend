@@ -7,7 +7,7 @@ const service = readFileSync(new URL('../services/events.js', import.meta.url), 
 
 test('upcoming events render in a virtualized list with stable event IDs', () => {
   assert.ok(source.includes('<FlatList'));
-  assert.ok(source.includes('data={events}'));
+  assert.ok(source.includes('data={visibleEvents}'));
   assert.ok(source.includes('keyExtractor='));
   assert.ok(source.includes('renderItem='));
 });
@@ -36,4 +36,23 @@ test('conversation events use a premium shared-moments composer and scannable ev
   assert.match(source, /eventDate\.toLocaleTimeString/);
   assert.match(source, /YOUR RESPONSE/);
   assert.match(source, /accessibilityState=\{\{ selected: mine === option\.value \}\}/);
+});
+
+test('conversation events support local search across title, location and description', () => {
+  assert.ok(source.includes("const [searchQuery, setSearchQuery] = useState('')"));
+  assert.ok(source.includes('const visibleEvents = events.filter'));
+  assert.ok(source.includes('[event.title, event.location, event.description]'));
+  assert.ok(source.includes('Search loaded events'));
+  assert.ok(source.includes('Search loaded events by title, location or details'));
+  assert.ok(source.includes('Clear event search'));
+  assert.ok(source.includes('No matching loaded events'));
+  assert.ok(source.includes('data={visibleEvents}'));
+});
+
+test('event search remains local to loaded cursor pages and preserves RSVP and pagination', () => {
+  assert.ok(source.includes('listConversationEventPage(conversationId, { cursor: nextCursor })'));
+  assert.ok(source.includes('Search updates as you load more'));
+  assert.ok(source.includes('respondToConversationEvent(event.id, response)'));
+  assert.ok(source.includes('Load more upcoming events'));
+  assert.ok(service.includes('listConversationEventPage'));
 });
