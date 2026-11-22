@@ -81,7 +81,7 @@ test('privacy and security opens with a Crown Aurora trust-center overview', () 
 
 test('privacy trust-center framing preserves honest non-end-to-end-encryption disclosure', () => {
   assert.match(screen, /messages are not end-to-end encrypted/i);
-  assert.match(screen, /The service operator could technically access message\\s+text/i);
+  assert.match(screen, /The service operator could technically access message\s+text/i);
   assert.match(screen, /signed link is still a bearer link/i);
   assert.match(screen, /private storage bucket/i);
 });
