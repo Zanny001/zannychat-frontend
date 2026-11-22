@@ -43,6 +43,8 @@ export default function GroupCallScreenWeb({ route, navigation }) {
   const [muted, setMuted] = useState(false);
   const [cameraOff, setCameraOff] = useState(callType !== 'video');
   const [isVideo, setIsVideo] = useState(callType === 'video');
+  const [cameraFacingMode, setCameraFacingMode] = useState('user');
+  const cameraSwitchInProgressRef = useRef(false);
   const [remoteVideoTracks, setRemoteVideoTracks] = useState([]);
   const [participantIds, setParticipantIds] = useState([]);
   const [audioBlocked, setAudioBlocked] = useState(false);
@@ -304,6 +306,27 @@ export default function GroupCallScreenWeb({ route, navigation }) {
     } catch (error) { setErrorText(error?.message || 'Could not change camera state.'); }
   }, [cameraOff]);
 
+  const switchCamera = useCallback(async () => {
+    const room = roomRef.current;
+    if (cameraSwitchInProgressRef.current || cameraOff || !isVideo || !activeRef.current || !room || room.state !== 'connected') return;
+    const videoTrack = room.localParticipant.getTrackPublication(Track.Source.Camera)?.videoTrack;
+    if (!videoTrack || typeof videoTrack.restartTrack !== 'function') {
+      setErrorText('Camera switching is unavailable on this device. Your call can continue.');
+      return;
+    }
+    const nextFacingMode = cameraFacingMode === 'user' ? 'environment' : 'user';
+    cameraSwitchInProgressRef.current = true;
+    try {
+      await videoTrack.restartTrack({ facingMode: nextFacingMode });
+      setCameraFacingMode(nextFacingMode);
+      setErrorText('');
+    } catch (_) {
+      setErrorText('Could not switch camera. Your current camera is still active.');
+    } finally {
+      cameraSwitchInProgressRef.current = false;
+    }
+  }, [cameraFacingMode, cameraOff, isVideo]);
+
   const enableAudio = useCallback(async () => {
     const room = roomRef.current;
     if (!room) return;
@@ -456,6 +479,12 @@ export default function GroupCallScreenWeb({ route, navigation }) {
             <Ionicons name={cameraOff ? 'videocam-off' : 'videocam'} size={21} color={cameraOff ? colors.onPrimary : colors.textPrimary} />
             <Text style={[typography.small, { color: cameraOff ? colors.onPrimary : colors.textPrimary }]}>{cameraOff ? 'Switch to video' : 'Switch to audio'}</Text>
         </TouchableOpacity>
+        {isVideo && !cameraOff ? (
+          <TouchableOpacity onPress={switchCamera} accessibilityRole="button" accessibilityLabel={cameraFacingMode === 'user' ? 'Switch to rear camera' : 'Switch to front camera'} style={[styles.control, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Ionicons name="camera-reverse" size={21} color={colors.textPrimary} />
+            <Text style={[typography.small, { color: colors.textPrimary }]}>Flip camera</Text>
+          </TouchableOpacity>
+        ) : null}
         {canInviteNow ? (
           <TouchableOpacity onPress={() => setInvitePickerVisible(true)} accessibilityRole="button" accessibilityLabel="Add people to call" style={[styles.control, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Ionicons name="person-add" size={21} color={colors.textPrimary} />
