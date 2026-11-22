@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import GlassCard from '../components/GlassCard';
 import { useTheme } from '../theme/ThemeContext';
+import { hexToRgba } from '../utils/color';
 import { getCurrentUser } from '../services/api';
 import { loadPinnedMessages, unpinMessageLocally } from '../services/pinnedMessages';
 import { filterPinnedMessages } from '../utils/pinnedMessages';
@@ -16,9 +17,10 @@ export default function PinnedMessagesScreen({ route, navigation }) {
   const [userId, setUserId] = useState(null);
   const [items, setItems] = useState([]);
   const [query, setQuery] = useState('');
+  const [kindFilter, setKindFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const visible = useMemo(() => filterPinnedMessages(items, query, conversation?.id), [items, query, conversation?.id]);
+  const visible = useMemo(() => filterPinnedMessages(items, query, conversation?.id).filter((item) => kindFilter === 'all' || (kindFilter === 'text' && !item.attachment) || (kindFilter === 'attachments' && Boolean(item.attachment)) || (kindFilter === 'voice' && item.attachment?.type === 'voice')), [items, query, conversation?.id, kindFilter]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -54,6 +56,14 @@ export default function PinnedMessagesScreen({ route, navigation }) {
             {query ? <TouchableOpacity onPress={() => setQuery('')} accessibilityRole="button" accessibilityLabel="Clear search" style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
           </View>
         </GlassCard>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.sm }}>
+          {[['all', 'All'], ['text', 'Text'], ['attachments', 'Attachments'], ['voice', 'Voice notes']].map(([value, label]) => {
+            const selected = kindFilter === value;
+            return <TouchableOpacity key={value} onPress={() => setKindFilter(value)} accessibilityRole="button" accessibilityState={{ selected }} accessibilityLabel={'Show ' + label.toLowerCase() + ' pins'} style={{ minHeight: 48, justifyContent: 'center', paddingHorizontal: spacing.md, borderRadius: 999, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? hexToRgba(colors.primary, 0.1) : colors.surface }}>
+              <Text style={[typography.caption, { color: selected ? colors.primary : colors.textSecondary, fontWeight: selected ? '800' : '600' }]}>{label}</Text>
+            </TouchableOpacity>;
+          })}
+        </View>
         <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Pins are stored on this device and do not sync to other devices. They are bookmarks, not shared conversation pins.</Text>
       </View>
       {loading ? <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Loading pinned messages…</Text></View> : error ? (
@@ -85,7 +95,7 @@ export default function PinnedMessagesScreen({ route, navigation }) {
               </TouchableOpacity>
             </GlassCard>
           )}
-          ListEmptyComponent={<View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 48, paddingHorizontal: spacing.xl }}><View style={{ width: 64, height: 64, borderRadius: 22, backgroundColor: `${colors.primary}18`, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="pin-outline" size={29} color={colors.primary} /></View><Text style={[typography.bodyStrong, { color: colors.textPrimary, marginTop: spacing.md }]}>{query ? 'No matching pins' : 'No pinned messages yet'}</Text><Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>{query ? 'Try a different search.' : 'Long-press a message in this chat and choose Pin message to keep it close.'}</Text></View>}
+          ListEmptyComponent={<View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 48, paddingHorizontal: spacing.xl }}><View style={{ width: 64, height: 64, borderRadius: 22, backgroundColor: `${colors.primary}18`, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="pin-outline" size={29} color={colors.primary} /></View><Text style={[typography.bodyStrong, { color: colors.textPrimary, marginTop: spacing.md }]}>{query || kindFilter !== 'all' ? 'No matching pins' : 'No pinned messages yet'}</Text><Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>{query || kindFilter !== 'all' ? 'Try another filter or clear your search.' : 'Long-press a message in this chat and choose Pin message to keep it close.'}</Text></View>}
         />
       )}
     </SafeAreaView>
