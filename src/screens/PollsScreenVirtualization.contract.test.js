@@ -31,8 +31,8 @@ test('polls have a distinct participation header context', () => {
 
 test('conversation polls opens with a Crown Aurora decision hub and live poll count', () => {
   assert.match(source, /LET EVERY VOICE IN/);
-  assert.match(source, /Decide together\\./);
-  assert.match(source, /\\{polls\\.length\\} poll/);
+  assert.ok(source.includes('Decide together.'));
+  assert.ok(source.includes('{polls.length} poll'));
   assert.match(source, /CREATE A CONVERSATION POLL/);
   assert.match(source, /THE GROUP'S VOICE/);
 });
