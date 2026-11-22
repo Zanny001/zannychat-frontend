@@ -209,3 +209,12 @@ Every feature release must include:
 - **LIVE teardown polling:** PR #298 was superseded and closed. Its current-main replacement, PR #300, passed frontend-quality and advanced-calling client CI and merged as `748c1a3d097437ae0d7a9743797d7ca9194548c2`. The Vercel preview `https://zannychat-j3zx29g40-zanny-chat.vercel.app` was READY. The production deployment for this exact main SHA was still BUILDING at the checkpoint; verify before calling it deployed.
 - **Browser remote audio:** PR #297 was superseded because its base diverged. PR #301 reapplies the two-file change on current main at `f65870d432791ae0b945f466e02e4b9ecce6e0ec`; fresh CI and Vercel preview are pending. Keep the two-participant browser/device audio and autoplay-unlock test as a hard P0 gate.
 - **Manual acceptance:** production Android voice-note playback/speed/seek; LIVE creator/viewer/guest lifecycle after #300 deployment; two-way browser call audio on #301 preview. Do not equate green CI or a READY preview with user/device acceptance.
+
+
+## 11. Browser audio acceptance — 2026-11-22 07:19 UTC
+
+- User tested a real two-participant audio call and confirmed clear two-way audio.
+- PR #301 merged as `b4b9eee9eecc98e511d4b939376ce778f782465d`; advanced-calling client and premium/LIVE quality workflows passed on the PR head, as did dependency and bundle-exposure audits. Vercel preview was READY.
+- Production deployment for the merge SHA was still BUILDING at the checkpoint; verify before claiming production rollout.
+- Keep a distinct acceptance check for forced autoplay denial followed by the audio-unlock gesture. The user's successful call confirms normal two-way audio, not necessarily this edge case.
+- Still pending: Android voice-note playback/speed/seek acceptance and LIVE creator/viewer/guest lifecycle acceptance.
