@@ -631,7 +631,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
   ]);
 
   return <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
-    <Header title="Stories" subtitle="Share a moment with your people" onBack={() => navigation.goBack()} />
+    <Header eyebrow="YOUR CIRCLE" title="Stories" subtitle="Share a moment with your people" onBack={() => navigation.goBack()} />
     <FlatList
       style={{ flex: 1 }}
       data={groupedStatuses}
