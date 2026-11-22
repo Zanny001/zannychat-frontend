@@ -6,6 +6,8 @@ import { resendSignupEmailOtp, verifySignupEmailOtp } from '../services/api';
 import GlassInput from '../components/GlassInput';
 import Knot from '../components/Knot';
 import { SUPABASE_ENABLED } from '../services/supabaseClient';
+import { Ionicons } from '@expo/vector-icons';
+import GlassCard from '../components/GlassCard';
 
 function message(title, body) {
   if (Platform.OS === 'web' && typeof window !== 'undefined') window.alert(`${title}\n\n${body}`);
@@ -47,11 +49,27 @@ export default function VerifyEmailScreen({ navigation, route }) {
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <View style={{ flex: 1, minWidth: 0, justifyContent: 'center', padding: spacing.lg, width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center' }}>
-          <Knot size={40} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={7} />
-          <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.md }]}>Verify your email</Text>
-          <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.sm, marginBottom: spacing.lg }]}>Enter the 6-digit code sent to {email || 'your email address'}. Make sure your Supabase email template is configured to send the code.</Text>
+          <View style={{ alignItems: 'flex-start' }}>
+            <Knot size={44} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={7} />
+            <Text style={[typography.overline || typography.caption, { color: colors.accent, marginTop: spacing.lg, letterSpacing: 1.4 }]}>ACCOUNT SECURITY  ·  STEP 02</Text>
+            <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.xs }]}>One last step.</Text>
+            <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.sm, marginBottom: spacing.lg }]}>Confirm your email to secure your place in the ZannyChat community.</Text>
+          </View>
+          <GlassCard intensity={24} style={{ marginBottom: spacing.md, padding: spacing.md }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', marginRight: spacing.sm }}>
+                <Ionicons name="mail-open-outline" size={19} color={colors.accent} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>VERIFICATION SENT TO</Text>
+                <Text numberOfLines={2} style={[typography.body, { color: colors.textPrimary, fontFamily: 'Manrope_700Bold', marginTop: 2 }]}>{email || 'Your email address'}</Text>
+              </View>
+              <Ionicons name="shield-checkmark-outline" size={20} color={colors.accent} />
+            </View>
+          </GlassCard>
+          <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.sm }]}>Enter the 6-digit code from your inbox. Check spam or promotions if it is not there.</Text>
           <GlassInput value={token} onChangeText={(value) => setToken(value.replace(/[^0-9]/g, '').slice(0, 6))} placeholder="6-digit code" accessibilityLabel="Email verification code" keyboardType="number-pad" autoComplete="one-time-code" maxLength={6} />
-          <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary, borderRadius: radii.pill, opacity: loading ? 0.65 : 1 }]} onPress={verify} disabled={loading} accessibilityRole="button" accessibilityLabel="Verify email address" accessibilityState={{ disabled: loading, busy: loading }}>
+          <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary, borderRadius: radii.pill, minHeight: 54, opacity: loading ? 0.65 : 1 }]} onPress={verify} disabled={loading} accessibilityRole="button" accessibilityLabel="Verify email address" accessibilityState={{ disabled: loading, busy: loading }}>
             <Text style={[styles.buttonText, { color: colors.onPrimary }]}>{loading ? 'Verifying…' : 'Verify email'}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={{ marginTop: spacing.md, alignItems: 'center' }} onPress={resend} disabled={resending} accessibilityRole="button" accessibilityLabel="Resend verification code" accessibilityState={{ disabled: resending, busy: resending }}>
@@ -66,4 +84,4 @@ export default function VerifyEmailScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({ container: { flex: 1 }, button: { marginTop: 12, paddingVertical: 16, alignItems: 'center' }, buttonText: { fontFamily: 'Manrope_700Bold', fontSize: 16 } });
+const styles = StyleSheet.create({ container: { flex: 1 }, button: { marginTop: 12, paddingVertical: 16, paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center' }, buttonText: { fontFamily: 'Manrope_700Bold', fontSize: 16 } });

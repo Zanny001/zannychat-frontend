@@ -75,14 +75,17 @@ export default function PasswordResetScreen({ navigation, route }) {
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <View style={{ padding: spacing.lg, flex: 1, minWidth: 0, justifyContent: 'center', width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center' }}>
-          <Knot size={40} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={7} />
-          <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.md, marginBottom: spacing.xs }]}>Choose a new password</Text>
-          <Text style={[typography.body, { color: colors.textSecondary, marginBottom: spacing.lg }]}>Set a new password for your ZannyChat account.</Text>
+          <View style={{ alignItems: 'flex-start' }}>
+            <Knot size={44} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={7} />
+            <Text style={[typography.caption, { color: colors.accent, marginTop: spacing.lg, letterSpacing: 1.4 }]}>ACCOUNT SECURITY  ·  FINAL STEP</Text>
+            <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.xs, marginBottom: spacing.xs }]}>A fresh start.</Text>
+            <Text style={[typography.body, { color: colors.textSecondary, marginBottom: spacing.lg }]}>Create a strong new password to protect your ZannyChat account.</Text>
+          </View>
           {!SUPABASE_ENABLED && <GlassCard intensity={20} style={{ marginBottom: spacing.md }}><Text style={[typography.caption, { color: colors.textSecondary }]}>Password reset is unavailable in mock mode. Configure a Supabase project to test this flow.</Text></GlassCard>}
           {!complete && <>
             <GlassInput value={password} onChangeText={setPassword} placeholder="New password (8+ characters)" accessibilityLabel="New password" textContentType="newPassword" autoComplete="new-password" secureTextEntry />
             <GlassInput value={confirmPassword} onChangeText={setConfirmPassword} placeholder="Confirm new password" accessibilityLabel="Confirm new password" textContentType="newPassword" autoComplete="new-password" secureTextEntry />
-            <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary, borderRadius: radii.pill, opacity: loading || !SUPABASE_ENABLED ? 0.55 : 1 }]} onPress={handleSave} disabled={loading || !SUPABASE_ENABLED} accessibilityRole="button" accessibilityLabel={loading ? 'Updating password' : 'Update password'} accessibilityState={{ disabled: loading || !SUPABASE_ENABLED, busy: loading }}>
+            <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary, borderRadius: radii.pill, minHeight: 54, justifyContent: 'center', opacity: loading || !SUPABASE_ENABLED ? 0.55 : 1 }]} onPress={handleSave} disabled={loading || !SUPABASE_ENABLED} accessibilityRole="button" accessibilityLabel={loading ? 'Updating password' : 'Update password'} accessibilityState={{ disabled: loading || !SUPABASE_ENABLED, busy: loading }}>
               <Text style={[styles.buttonText, { color: colors.onPrimary }]}>{loading ? 'Updating…' : 'Update password'}</Text>
             </TouchableOpacity>
           </>}

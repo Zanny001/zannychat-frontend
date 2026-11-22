@@ -44,7 +44,7 @@ export default function PasswordRecoveryScreen({ navigation }) {
       const normalizedMessage = rawMessage.toLowerCase();
       let message = rawMessage || 'Please try again in a moment. If the problem continues, contact support.';
       if (/redirect|url.*(allow|valid)|not allowed/.test(normalizedMessage)) {
-        message = 'Supabase rejected the recovery redirect. In Supabase Dashboard → Authentication → URL Configuration, allow https://zannychat-app.netlify.app/**, then retry. If testing locally, allow that local web origin too.';
+        message = 'Supabase rejected the recovery redirect. In Supabase Dashboard → Authentication → URL Configuration, allow https://zannychat.vercel.app/**, then retry. If testing locally, allow that local web origin too.';
       } else if (/rate limit|too many requests/.test(normalizedMessage)) {
         message = 'Too many recovery requests were made. Wait a few minutes, then try again.';
       } else if (/fetch|network|timeout/.test(normalizedMessage)) {
@@ -66,9 +66,12 @@ export default function PasswordRecoveryScreen({ navigation }) {
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <View style={{ padding: spacing.lg, flex: 1, minWidth: 0, justifyContent: 'center', width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center' }}>
-          <Knot size={40} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={7} />
-          <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.md, marginBottom: spacing.xs }]}>Reset your password</Text>
-          <Text style={[typography.body, { color: colors.textSecondary, marginBottom: spacing.lg }]}>Enter the email address associated with your account. We’ll help you get back in.</Text>
+          <View style={{ alignItems: 'flex-start' }}>
+            <Knot size={44} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={7} />
+            <Text style={[typography.caption, { color: colors.accent, marginTop: spacing.lg, letterSpacing: 1.4 }]}>ACCOUNT ACCESS  ·  RECOVERY</Text>
+            <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.xs, marginBottom: spacing.xs }]}>Let’s get you back in.</Text>
+            <Text style={[typography.body, { color: colors.textSecondary, marginBottom: spacing.lg }]}>A secure reset link is the first step back to your conversations.</Text>
+          </View>
           {!SUPABASE_ENABLED && <GlassCard style={{ marginBottom: spacing.md }} intensity={20}><Text style={[typography.caption, { color: colors.textSecondary }]}>Demo mode is active. Password recovery email is not sent until a Supabase project is configured.</Text></GlassCard>}
           {submitted ? (
             <GlassCard intensity={20} style={{ marginBottom: spacing.md }}>
@@ -78,7 +81,7 @@ export default function PasswordRecoveryScreen({ navigation }) {
           ) : (
             <>
               <GlassInput value={email} onChangeText={setEmail} placeholder="Email" accessibilityLabel="Email address" textContentType="emailAddress" autoComplete="email" autoCapitalize="none" autoCorrect={false} keyboardType="email-address" returnKeyType="go" onSubmitEditing={handleSubmit} />
-              <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary, borderRadius: radii.pill }]} onPress={handleSubmit} disabled={loading} accessibilityRole="button" accessibilityLabel={loading ? 'Requesting password reset' : 'Send recovery instructions'} accessibilityState={{ disabled: loading, busy: loading }}>
+              <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary, borderRadius: radii.pill, minHeight: 54, justifyContent: 'center' }]} onPress={handleSubmit} disabled={loading} accessibilityRole="button" accessibilityLabel={loading ? 'Requesting password reset' : 'Send recovery instructions'} accessibilityState={{ disabled: loading, busy: loading }}>
                 <Text style={[styles.buttonText, { color: colors.onPrimary }]}>{loading ? 'Sending…' : 'Send recovery instructions'}</Text>
               </TouchableOpacity>
             </>
