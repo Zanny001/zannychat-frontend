@@ -76,3 +76,10 @@ test('LIVE operations recovery actions each meet the 48-point mobile target', ()
   assert.ok(reports.includes('accessibilityLabel="Retry loading LIVE reports" style={{ minHeight: 48'));
   assert.ok(reports.includes('minHeight: 48, paddingHorizontal: spacing.md'));
 });
+
+test('LIVE report queue exposes dismissed reports and accounts for every terminal status', () => {
+  assert.ok(reports.includes("{ value: 'dismissed', label: 'Dismissed' }"));
+  assert.ok(reports.includes("dismissed: reports.filter((item) => item.status === 'dismissed').length"));
+  assert.ok(reports.includes("['Dismissed', counts.dismissed]"));
+  assert.ok(reports.includes("const terminal = ['resolved', 'dismissed'].includes(item.status)"));
+});
