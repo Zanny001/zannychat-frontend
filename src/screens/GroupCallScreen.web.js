@@ -52,6 +52,7 @@ export default function GroupCallScreenWeb({ route, navigation }) {
   const roomRef = useRef(null);
   const joinedRoomIdRef = useRef(roomId || null);
   const remoteAudioRef = useRef(null);
+  const remoteAudioTracksRef = useRef(new Map());
   const activeRef = useRef(false);
   const endedRef = useRef(false);
   const requestedVideo = callType === 'video';
@@ -75,10 +76,25 @@ export default function GroupCallScreenWeb({ route, navigation }) {
     };
     const onTrackSubscribed = (track, _publication, participant) => {
       if (track.kind === Track.Kind.Audio) {
+        const previousElement = remoteAudioTracksRef.current.get(track.sid);
+        if (previousElement) {
+          track.detach(previousElement);
+          previousElement.remove?.();
+        }
         const element = track.attach();
         element.autoplay = true;
         element.playsInline = true;
-        remoteAudioRef.current?.appendChild(element);
+        element.muted = false;
+        element.volume = 1;
+        element.setAttribute?.('autoplay', '');
+        element.setAttribute?.('playsinline', '');
+        const audioContainer = remoteAudioRef.current;
+        if (audioContainer && element.parentNode !== audioContainer) audioContainer.appendChild(element);
+        remoteAudioTracksRef.current.set(track.sid, element);
+        // Browsers may reject autoplay until a user gesture. Surface the
+        // existing audio-unlock action instead of silently losing remote audio.
+        const playback = element.play?.();
+        if (playback?.catch) playback.catch(() => { if (active) setAudioBlocked(true); });
       } else if (track.kind === Track.Kind.Video) {
         setRemoteVideoTracks((current) => current.some((entry) => entry.track.sid === track.sid)
           ? current.map((entry) => entry.track.sid === track.sid
@@ -105,6 +121,7 @@ export default function GroupCallScreenWeb({ route, navigation }) {
     const onTrackUnsubscribed = (track) => {
       const detached = track.detach();
       (Array.isArray(detached) ? detached : [detached]).filter(Boolean).forEach((element) => element.remove?.());
+      remoteAudioTracksRef.current.delete(track.sid);
       if (track.kind === Track.Kind.Video) setRemoteVideoTracks((current) => current.filter((entry) => entry.track.sid !== track.sid));
       refreshParticipants();
     };
@@ -198,6 +215,16 @@ export default function GroupCallScreenWeb({ route, navigation }) {
       active = false;
       activeRef.current = false;
       room.removeAllListeners();
+      for (const [trackSid, element] of remoteAudioTracksRef.current) {
+        try {
+          const publication = Array.from(room.remoteParticipants.values())
+            .flatMap((participant) => Array.from(participant.trackPublications.values()))
+            .find((entry) => entry.trackSid === trackSid || entry.track?.sid === trackSid);
+          publication?.track?.detach(element);
+        } catch (_) {}
+        element.remove?.();
+      }
+      remoteAudioTracksRef.current.clear();
       room.disconnect();
       for (const publication of room.localParticipant.trackPublications.values()) publication.track?.stop?.();
       const activeRoomId = joinedRoomIdRef.current;
@@ -278,9 +305,15 @@ export default function GroupCallScreenWeb({ route, navigation }) {
   }, [cameraOff]);
 
   const enableAudio = useCallback(async () => {
+    const room = roomRef.current;
+    if (!room) return;
     try {
-      await roomRef.current?.startAudio();
-      setAudioBlocked(Boolean(roomRef.current && !roomRef.current.canPlaybackAudio));
+      await room.startAudio();
+      const playbackResults = await Promise.allSettled(
+        Array.from(remoteAudioTracksRef.current.values()).map((element) => element.play?.())
+      );
+      const rejectedPlayback = playbackResults.some((result) => result.status === 'rejected');
+      setAudioBlocked(!room.canPlaybackAudio || rejectedPlayback);
     } catch (_) { setAudioBlocked(true); }
   }, []);
 
