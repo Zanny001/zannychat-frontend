@@ -9,6 +9,7 @@ import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
 import LivePremiumHeader from '../components/LivePremiumHeader';
 import { confirmAction, showAppAlert } from '../utils/appDialogs';
+import { hexToRgba } from '../utils/color';
 
 export default function LiveModerationScreen({ route, navigation }) {
   const { colors, spacing, radii, typography, layout } = useTheme();
