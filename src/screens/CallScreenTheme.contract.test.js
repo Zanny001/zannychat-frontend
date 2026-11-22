@@ -36,6 +36,8 @@ test('incoming call actions retain accessible labels and a generous touch target
   assert.match(source, /width: 88, height: 88/);
   assert.match(source, /borderRadius: 30/);
   assert.match(source, /borderColor: colors\.border/);
+  assert.match(source, /flexWrap: 'wrap'/, 'incoming actions adapt to narrow viewports');
+  assert.match(source, /gap: 20/, 'incoming actions retain comfortable spacing');
 });
 
 test('outgoing call cancellation remains an accessible, generously sized action', () => {
