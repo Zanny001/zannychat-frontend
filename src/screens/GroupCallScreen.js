@@ -17,11 +17,22 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
   const { colors, typography, layout } = useTheme();
   const cameraTracks = useTracks([Track.Source.Camera]);
   const participants = useParticipants();
+  const [, setParticipantMediaRevision] = useState(0);
   const [muted, setMuted] = useState(false);
   const [cameraOff, setCameraOff] = useState(callType !== 'video');
   const [isVideo, setIsVideo] = useState(callType === 'video');
   const [connectionState, setConnectionState] = useState('Connecting…');
   const canInviteNow = canInvite && connectionState === 'Connected';
+
+  useEffect(() => {
+    const refreshMediaState = () => setParticipantMediaRevision((revision) => revision + 1);
+    room.on(RoomEvent.TrackMuted, refreshMediaState);
+    room.on(RoomEvent.TrackUnmuted, refreshMediaState);
+    return () => {
+      room.off(RoomEvent.TrackMuted, refreshMediaState);
+      room.off(RoomEvent.TrackUnmuted, refreshMediaState);
+    };
+  }, [room]);
 
   useEffect(() => {
     onParticipantsChange?.(participants.map((participant) => participant.identity));
