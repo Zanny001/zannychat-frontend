@@ -118,8 +118,14 @@ export default function GroupCallScreenWeb({ route, navigation }) {
           : entry
       )));
     };
-    const onTrackMuted = (publication, participant) => updateRemoteVideoMuteState(publication, participant, true);
-    const onTrackUnmuted = (publication, participant) => updateRemoteVideoMuteState(publication, participant, false);
+    const onTrackMuted = (publication, participant) => {
+      updateRemoteVideoMuteState(publication, participant, true);
+      refreshParticipants();
+    };
+    const onTrackUnmuted = (publication, participant) => {
+      updateRemoteVideoMuteState(publication, participant, false);
+      refreshParticipants();
+    };
     const onTrackUnsubscribed = (track) => {
       const detached = track.detach();
       (Array.isArray(detached) ? detached : [detached]).filter(Boolean).forEach((element) => element.remove?.());
@@ -440,6 +446,37 @@ export default function GroupCallScreenWeb({ route, navigation }) {
         </View>
       </View>
 
+      <View style={styles.rosterStrip} accessibilityLabel={`Call participants, ${participantIds.length} connected`}>
+        <Text style={[typography.caption, styles.rosterEyebrow, { color: colors.textSecondary }]}>IN THE ROOM</Text>
+        <View style={styles.rosterChips}>
+          {participantIds.map((identity) => {
+            const participant = identity === roomRef.current?.localParticipant?.identity
+              ? roomRef.current?.localParticipant
+              : roomRef.current?.remoteParticipants?.get(identity);
+            return (
+              <View key={identity} style={[styles.rosterChip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View style={[styles.rosterPresence, { backgroundColor: colors.online }]} />
+                <Text style={[typography.small, styles.rosterName, { color: colors.textPrimary }]} numberOfLines={1}>
+                  {participant?.name || identity}{identity === roomRef.current?.localParticipant?.identity ? ' · You' : ''}
+                </Text>
+                <Ionicons
+                  name={participant?.isMicrophoneEnabled === false ? 'mic-off-outline' : 'mic-outline'}
+                  size={13}
+                  color={participant?.isMicrophoneEnabled === false ? colors.warning || colors.gold : colors.textSecondary}
+                  accessibilityLabel={participant?.isMicrophoneEnabled === false ? 'Microphone muted' : 'Microphone on'}
+                />
+                <Ionicons
+                  name={participant?.isCameraEnabled ? 'videocam-outline' : 'videocam-off-outline'}
+                  size={13}
+                  color={participant?.isCameraEnabled ? colors.primary : colors.textSecondary}
+                  accessibilityLabel={participant?.isCameraEnabled ? 'Camera on' : 'Camera off'}
+                />
+              </View>
+            );
+          })}
+        </View>
+      </View>
+
       {errorText ? <Text style={[typography.small, styles.error, { color: colors.danger }]}>{errorText}</Text> : null}
 
       {(isVideoMode || localCameraTrack || remoteVideoTracksView.length > 0) ? (
@@ -518,6 +555,12 @@ const styles = StyleSheet.create({
   header: { minHeight: 68, paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: StyleSheet.hairlineWidth },
   headerCopy: { flex: 1, gap: 4 },
   error: { paddingHorizontal: 18, paddingTop: 10 },
+  rosterStrip: { paddingHorizontal: 14, paddingTop: 10, paddingBottom: 8, gap: 7, width: '100%', maxWidth: 760, alignSelf: 'center' },
+  rosterEyebrow: { fontSize: 9, fontWeight: '800', letterSpacing: 1.2 },
+  rosterChips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 7 },
+  rosterChip: { maxWidth: '48%', minHeight: 30, flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: StyleSheet.hairlineWidth, borderRadius: 16, paddingHorizontal: 10, paddingVertical: 5 },
+  rosterPresence: { width: 6, height: 6, borderRadius: 3 },
+  rosterName: { maxWidth: 150, fontSize: 11, fontWeight: '700' },
   videoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, padding: 14, justifyContent: 'center' },
   videoTile: { width: '47%', minWidth: 145, aspectRatio: 9 / 16, maxHeight: 330, borderRadius: 18, borderWidth: 1, overflow: 'hidden' },
   videoElement: { flex: 1, width: '100%', minHeight: 180 },
