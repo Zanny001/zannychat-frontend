@@ -47,7 +47,7 @@ test('upgraded one-to-one calls appear only once as conference history', () => {
 
 test('call history uses a virtualized list with stable direct and group call keys', () => {
   assert.ok(callsScreen.includes('<FlatList'));
-  assert.ok(callsScreen.includes('data={calls}'));
+  assert.ok(callsScreen.includes('data={filteredCalls}'));
   assert.ok(callsScreen.includes('keyExtractor='));
   assert.ok(callsScreen.includes('renderItem='));
   assert.ok(!callsScreen.includes('calls.map('));
@@ -56,4 +56,44 @@ test('call history uses a virtualized list with stable direct and group call key
 test('quick-connect cards use a more compact premium footprint', () => {
   assert.ok(callsScreen.includes('minHeight: 116'));
   assert.ok(callsScreen.includes('START IN A TAP'));
+});
+
+test('call history offers live filters for missed, direction and media type', () => {
+  for (const value of ['all', 'missed', 'incoming', 'outgoing', 'video', 'audio']) {
+    assert.ok(callsScreen.includes(`value: '${value}'`), value);
+  }
+  assert.ok(callsScreen.includes('const missedCount = calls.filter(isMissedCall).length'));
+  assert.ok(callsScreen.includes('count: calls.length'));
+  assert.ok(callsScreen.includes('count: missedCount'));
+});
+
+test('call history filters preserve safe expired-ringing missed-call detection and empty states', () => {
+  assert.ok(callsScreen.includes("item.status === 'ringing' && Number.isFinite(Date.parse(item.expires_at)) && Date.parse(item.expires_at) <= Date.now()"));
+  assert.ok(callsScreen.includes("item.direction === 'incoming'"));
+  assert.ok(callsScreen.includes("item.direction === 'outgoing'"));
+  assert.ok(callsScreen.includes("item.call_type === 'video'"));
+  assert.ok(callsScreen.includes("calls.length > 0 ? 'No calls in this view'"));
+});
+
+test('call history filters are accessible selectable controls', () => {
+  assert.ok(callsScreen.includes('accessibilityRole="radio"'));
+  assert.ok(callsScreen.includes('accessibilityState={{ checked: selected }}'));
+  assert.ok(callsScreen.includes('minHeight: 44'));
+});
+
+test('call history supports accessible contact-name search and a one-tap clear action', () => {
+  assert.ok(callsScreen.includes('const [searchQuery, setSearchQuery] = useState(\'\')'));
+  assert.ok(callsScreen.includes('Search call history by contact name'));
+  assert.ok(callsScreen.includes('String(item.participantName || \'\').toLowerCase().includes(query)'));
+  assert.ok(callsScreen.includes('accessibilityLabel="Clear call history search"'));
+  assert.ok(callsScreen.includes('data={filteredCalls}'));
+});
+
+test('call history adds a dedicated group-call filter without changing direct call filters', () => {
+  assert.ok(callsScreen.includes("if (historyFilter === 'group') return Boolean(item.isGroupCall)"));
+  assert.ok(callsScreen.includes("{ value: 'group', label: 'Group' }"));
+  assert.ok(callsScreen.includes("item.isGroupCall"));
+  for (const value of ['all', 'missed', 'incoming', 'outgoing', 'video', 'audio']) {
+    assert.ok(callsScreen.includes("value: '" + value + "'"), value);
+  }
 });
