@@ -20,6 +20,8 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
   const [muted, setMuted] = useState(false);
   const [cameraOff, setCameraOff] = useState(callType !== 'video');
   const [isVideo, setIsVideo] = useState(callType === 'video');
+  const [cameraFacingMode, setCameraFacingMode] = useState('user');
+  const cameraSwitchInProgressRef = useRef(false);
   const [connectionState, setConnectionState] = useState('Connecting…');
   const canInviteNow = canInvite && connectionState === 'Connected';
 
@@ -87,6 +89,26 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
       setIsVideo(cameraOff);
     } catch (_) {
       Alert.alert('Camera unavailable', 'Check camera permission and try again.');
+    }
+  };
+
+  const switchCamera = async () => {
+    if (cameraSwitchInProgressRef.current || cameraOff || !isVideo || room.state !== 'connected') return;
+    const publication = room.localParticipant.getTrackPublication(Track.Source.Camera);
+    const videoTrack = publication?.videoTrack;
+    if (!videoTrack || typeof videoTrack.restartTrack !== 'function') {
+      Alert.alert('Camera switching unavailable', 'This device does not support switching cameras during a group call.');
+      return;
+    }
+    const nextFacingMode = cameraFacingMode === 'user' ? 'environment' : 'user';
+    cameraSwitchInProgressRef.current = true;
+    try {
+      await videoTrack.restartTrack({ facingMode: nextFacingMode });
+      setCameraFacingMode(nextFacingMode);
+    } catch (_) {
+      Alert.alert('Could not switch camera', 'Your current camera is still active. Please try again.');
+    } finally {
+      cameraSwitchInProgressRef.current = false;
     }
   };
 
@@ -204,6 +226,17 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
             <Ionicons name={cameraOff ? 'videocam-off' : 'videocam'} size={23} color={cameraOff ? colors.onPrimary : colors.textPrimary} />
             <Text style={[styles.controlLabel, typography.small, { color: cameraOff ? colors.onPrimary : colors.textPrimary }]}>{cameraOff ? 'Switch to video' : 'Switch to audio'}</Text>
         </Pressable>
+        {isVideo && !cameraOff && (
+          <Pressable
+            onPress={switchCamera}
+            accessibilityRole="button"
+            accessibilityLabel={cameraFacingMode === 'user' ? 'Switch to rear camera' : 'Switch to front camera'}
+            style={({ pressed }) => controlStyle(pressed)}
+          >
+            <Ionicons name="camera-reverse" size={22} color={colors.textPrimary} />
+            <Text style={[styles.controlLabel, typography.small, { color: colors.textPrimary }]}>Flip camera</Text>
+          </Pressable>
+        )}
         {canInviteNow && (
           <Pressable
             onPress={onAddPeople}
