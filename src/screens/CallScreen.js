@@ -597,9 +597,29 @@ export default function CallScreen({ route, navigation }) {
       cameraSwitchInProgressRef.current = false;
     }
   };
-  const switchCamera = () => {
+  const switchCamera = async () => {
+    if (cameraSwitchInProgressRef.current) return;
+    if (cameraOff || !activeRef.current) {
+      Alert.alert('Camera unavailable', 'Turn your camera on before switching cameras.');
+      return;
+    }
     const track = localRef.current?.getVideoTracks?.()[0];
-    if (track?._switchCamera) track._switchCamera();
+    if (!track || track.readyState === 'ended') {
+      Alert.alert('Camera unavailable', 'Your active camera is not ready yet. Please try again.');
+      return;
+    }
+    if (typeof track._switchCamera !== 'function') {
+      Alert.alert('Camera switching unavailable', 'This device does not support switching cameras during a call.');
+      return;
+    }
+    cameraSwitchInProgressRef.current = true;
+    try {
+      track._switchCamera();
+    } catch (_) {
+      Alert.alert('Could not switch camera', 'Your current camera is still active. Please try again.');
+    } finally {
+      cameraSwitchInProgressRef.current = false;
+    }
   };
   const formatTime = formatCallDuration;
   const iconButton = (name, label, onPress, active = false, danger = false) => (
