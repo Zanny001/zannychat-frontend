@@ -64,3 +64,12 @@ test('web active calls can flip between available front and rear cameras without
   assert.match(web, /previousTrack\.stop\(\)/);
   assert.match(web, /await sender\.replaceTrack\(previousTrack\)\.catch\(\(\) => \{\}\)/, 'failed flips restore the previous sender track');
 });
+
+test('native in-call camera flip reports unsupported or unavailable camera states accessibly', () => {
+  const native = readFileSync(new URL('./CallScreen.js', import.meta.url), 'utf8');
+  assert.match(native, /const switchCamera = async/);
+  assert.match(native, /Turn your camera on before switching cameras/);
+  assert.match(native, /does not support switching cameras during a call/);
+  assert.match(native, /track\._switchCamera\(\)/);
+  assert.match(native, /cameraSwitchInProgressRef\.current = false/);
+});
