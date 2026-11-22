@@ -55,7 +55,7 @@ export default function SettingsScreen({ navigation }) {
 
   return (
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
-      <Header title="Appearance & theme" onBack={() => navigation.goBack()} />
+      <Header eyebrow="PERSONALIZATION" title="Appearance & theme" onBack={() => navigation.goBack()} />
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         {persistenceError ? (
           <View style={[styles.persistenceWarning, { backgroundColor: colors.surface, borderColor: colors.warning, borderRadius: radii.md, marginBottom: spacing.md }]}>
