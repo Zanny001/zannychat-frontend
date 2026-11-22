@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { requestPasswordReset } from '../services/api';
@@ -66,24 +67,38 @@ export default function PasswordRecoveryScreen({ navigation }) {
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <View style={{ padding: spacing.lg, flex: 1, minWidth: 0, justifyContent: 'center', width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center' }}>
-          <Knot size={40} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={7} />
-          <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.md, marginBottom: spacing.xs }]}>Reset your password</Text>
-          <Text style={[typography.body, { color: colors.textSecondary, marginBottom: spacing.lg }]}>Enter the email address associated with your account. We’ll help you get back in.</Text>
+          <Knot size={48} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={7} />
+          <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.5, marginTop: spacing.lg }]}>ZANNYCHAT · ACCOUNT RECOVERY</Text>
+          <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.sm, marginBottom: spacing.xs }]}>Your way back in.</Text>
+          <Text style={[typography.body, { color: colors.textSecondary, marginBottom: spacing.lg }]}>A secure reset link is the first step. Enter the email address connected to your account.</Text>
+          <GlassCard intensity={18} style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+            <View style={{ width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+              <Ionicons name="shield-checkmark-outline" size={20} color={colors.accent} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Private by design</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>We never reveal whether an email has an account.</Text>
+            </View>
+          </GlassCard>
           {!SUPABASE_ENABLED && <GlassCard style={{ marginBottom: spacing.md }} intensity={20}><Text style={[typography.caption, { color: colors.textSecondary }]}>Demo mode is active. Password recovery email is not sent until a Supabase project is configured.</Text></GlassCard>}
           {submitted ? (
-            <GlassCard intensity={20} style={{ marginBottom: spacing.md }}>
-              <Text style={[typography.body, { color: colors.textPrimary, marginBottom: spacing.xs }]}>If an account matches that address, recovery instructions can be sent.</Text>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>If you are testing with a real backend, check your inbox and spam folder.</Text>
+            <GlassCard glow intensity={24} style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.lg, gap: spacing.sm }}>
+              <View style={{ width: 48, height: 48, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+                <Ionicons name="mail-open-outline" size={23} color={colors.primary} />
+              </View>
+              <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1 }]}>CHECK YOUR INBOX</Text>
+              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Your next step is on its way.</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 20 }]}>If an account matches that address, recovery instructions can be sent. Check your inbox and spam folder.</Text>
             </GlassCard>
           ) : (
             <>
               <GlassInput value={email} onChangeText={setEmail} placeholder="Email" accessibilityLabel="Email address" textContentType="emailAddress" autoComplete="email" autoCapitalize="none" autoCorrect={false} keyboardType="email-address" returnKeyType="go" onSubmitEditing={handleSubmit} />
-              <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary, borderRadius: radii.pill }]} onPress={handleSubmit} disabled={loading} accessibilityRole="button" accessibilityLabel={loading ? 'Requesting password reset' : 'Send recovery instructions'} accessibilityState={{ disabled: loading, busy: loading }}>
+              <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary, borderRadius: radii.pill, minHeight: 54 }]} onPress={handleSubmit} disabled={loading} accessibilityRole="button" accessibilityLabel={loading ? 'Requesting password reset' : 'Send recovery instructions'} accessibilityState={{ disabled: loading, busy: loading }}>
                 <Text style={[styles.buttonText, { color: colors.onPrimary }]}>{loading ? 'Sending…' : 'Send recovery instructions'}</Text>
               </TouchableOpacity>
             </>
           )}
-          <TouchableOpacity style={{ marginTop: spacing.md, alignItems: 'center' }} onPress={() => navigation.navigate('Login')} accessibilityRole="button" accessibilityLabel="Return to sign in">
+          <TouchableOpacity style={{ marginTop: spacing.md, minHeight: 48, alignItems: 'center', justifyContent: 'center' }} onPress={() => navigation.navigate('Login')} accessibilityRole="button" accessibilityLabel="Return to sign in">
             <Text style={[typography.caption, { color: colors.textSecondary }]}>Back to <Text style={{ color: colors.primary, fontFamily: 'Manrope_700Bold' }}>sign in</Text></Text>
           </TouchableOpacity>
         </View>
