@@ -37,3 +37,8 @@ test('LIVE Hub links followed creators and live stream cards to the public profi
   assert.ok(hub.includes('openCreatorProfile(item, item.id, item.is_creator)'));
   assert.ok(hub.includes('currentLiveStreamId,'));
 });
+
+test('peer profile header distinguishes creator identity from a personal connection', () => {
+  assert.ok(source.includes('CREATOR SPOTLIGHT'));
+  assert.ok(source.includes('YOUR CONNECTION'));
+});
