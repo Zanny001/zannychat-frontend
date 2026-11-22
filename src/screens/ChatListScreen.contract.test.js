@@ -91,11 +91,12 @@ test('inbox conversation list uses a bounded virtualized render window', () => {
 
 
 test('Crown Aurora inbox uses a distinctive brand lockup and clear content hierarchy', () => {
-  assert.ok(screen.includes('CROWN AURORA · YOUR SPACE'));
-  assert.ok(screen.includes('Conversations, close at hand.'));
+  assert.ok(screen.includes('YOUR SPACE'));
+  assert.ok(screen.includes('Your people, close.'));
   assert.ok(screen.includes('FROM YOUR CIRCLE'));
   assert.ok(screen.includes('Find a person, group or message'));
   assert.ok(screen.includes('letterSpacing: 1.15'));
+  assert.ok(screen.includes('numberOfLines={1}'));
 });
 
 test('Crown Aurora inbox keeps the header compact and its primary actions touch-friendly', () => {
