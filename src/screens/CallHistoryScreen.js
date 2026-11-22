@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,6 +26,7 @@ export default function CallHistoryScreen({ navigation }) {
   const { colors, spacing, typography, radii, layout } = useTheme();
   const [calls, setCalls] = useState([]);
   const [historyFilter, setHistoryFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -43,6 +44,8 @@ export default function CallHistoryScreen({ navigation }) {
   const isMissedCall = (item) => item.status === 'missed' || (item.status === 'ringing' && Number.isFinite(Date.parse(item.expires_at)) && Date.parse(item.expires_at) <= Date.now());
   const missedCount = calls.filter(isMissedCall).length;
   const filteredCalls = calls.filter((item) => {
+    const query = searchQuery.trim().toLowerCase();
+    if (query && !String(item.participantName || '').toLowerCase().includes(query)) return false;
     if (historyFilter === 'missed') return isMissedCall(item);
     if (historyFilter === 'incoming') return item.direction === 'incoming';
     if (historyFilter === 'outgoing') return item.direction === 'outgoing';
@@ -152,6 +155,11 @@ export default function CallHistoryScreen({ navigation }) {
             </GlassCard>
           ) : null}
 
+          <View style={{ minHeight: 50, flexDirection: 'row', alignItems: 'center', borderRadius: 16, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.md, marginTop: spacing.sm }}>
+            <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+            <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder="Find a person in your call history" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search call history by contact name" returnKeyType="search" style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, paddingVertical: spacing.sm, paddingLeft: spacing.sm }]} />
+            {searchQuery ? <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear call history search" style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
+          </View>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.sm }}>
             {[
               { value: 'all', label: 'All calls', count: calls.length },
