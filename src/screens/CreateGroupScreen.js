@@ -53,6 +53,7 @@ export default function CreateGroupScreen({ navigation }) {
   }
 
   const visibleContacts = useMemo(() => { const query = contactSearch.trim().toLowerCase(); return query ? contacts.filter((contact) => String(contact.name || '').toLowerCase().includes(query)) : contacts; }, [contacts, contactSearch]);
+  const selectedContacts = selectedIds.map((id) => contacts.find((contact) => contact.id === id)).filter(Boolean);
   const canCreate = name.trim().length > 0 && selectedIds.length >= MIN_OTHER_MEMBERS;
 
   async function handleCreate() {
@@ -108,6 +109,19 @@ export default function CreateGroupScreen({ navigation }) {
               <Text style={[typography.small, { color: canCreate ? colors.primary : colors.textSecondary, fontWeight: '900', letterSpacing: 0.5 }]}>{selectedIds.length} SELECTED</Text>
             </View>
           </View>
+          {selectedContacts.length > 0 ? (
+            <View style={{ gap: spacing.xs }}>
+              <Text style={[typography.small, { color: colors.textSecondary, fontWeight: '800', letterSpacing: 0.7 }]}>SELECTED PEOPLE · TAP TO REMOVE</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
+                {selectedContacts.map((contact) => (
+                  <TouchableOpacity key={contact.id} onPress={() => toggle(contact.id)} accessibilityRole="button" accessibilityLabel={'Remove ' + contact.name + ' from selected group members'} style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: spacing.sm, borderRadius: 999, borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.34), backgroundColor: hexToRgba(colors.primary, 0.11) }}>
+                    <Text numberOfLines={1} style={[typography.caption, { color: colors.textPrimary, maxWidth: 150 }]}>{contact.name}</Text>
+                    <Ionicons name="close-circle" size={16} color={colors.primary} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          ) : null}
         </GlassCard>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.xs }}>
           <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800', letterSpacing: 1 }]}>INVITE YOUR PEOPLE</Text>
