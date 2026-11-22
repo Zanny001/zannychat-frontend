@@ -278,7 +278,7 @@ test('LIVE navigation serializes only a stable stream ID and fetches a fresh aut
 
 test('LIVE reactions refresh the server feed immediately after an accepted reaction', () => {
   assert.ok(screen.includes('if (result?.accepted) await refreshComments()'));
-  assert.ok(screen.includes('if (!stream?.id)'));
+  assert.ok(screen.includes('if (!stream?.id || reactionRequestInFlight.current) return'));
 });
 
 
