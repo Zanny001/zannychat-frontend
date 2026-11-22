@@ -93,7 +93,7 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
 
   return (
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
-      <Header title="Scheduled messages" subtitle="Plan a message for later" onBack={() => navigation.goBack()} />
+      <Header eyebrow="PLAN AHEAD" title="Scheduled messages" subtitle="A thoughtful message, at the right moment" onBack={() => navigation.goBack()} />
       <FlatList
         style={{ flex: 1 }}
         data={visibleItems}
@@ -108,15 +108,20 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
           <View>
             <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-            <Ionicons name="time-outline" size={22} color={colors.primary} />
-            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>New scheduled message</Text>
+            <View style={{ width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: `${colors.primary}18`, borderWidth: 1, borderColor: `${colors.primary}35` }}>
+              <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Compose for later</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>Choose the conversation and the moment.</Text>
+            </View>
           </View>
           <Text style={[typography.caption, { color: colors.textSecondary }]}>
             {conversationId ? `To: ${conversationName(conversationId)}` : 'Choose a conversation, then write the message and select when it should be sent.'}
           </Text>
           {canChooseConversation && conversations.length > 0 ? (
             <View style={{ gap: spacing.xs }}>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>Conversation</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800' }]}>SEND TO</Text>
               {conversations.slice(0, 100).map((row) => {
                 const active = row.id === conversationId;
                 return <TouchableOpacity key={row.id} onPress={() => setSelectedConversationId(row.id)} accessibilityRole="radio" accessibilityState={{ checked: active }} accessibilityLabel={`Schedule for ${conversationName(row.id)}`} style={{ padding: spacing.sm, borderRadius: radii.md, borderWidth: 1, borderColor: active ? colors.primary : colors.border, backgroundColor: active ? `${colors.primary}14` : 'transparent', flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
@@ -126,18 +131,27 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
               })}
             </View>
           ) : null}
-          <TextInput
-            value={text} onChangeText={setText} maxLength={4000} multiline
-            placeholder="Write your message…" placeholderTextColor={colors.textSecondary}
-            accessibilityLabel="Scheduled message text"
-            style={[fieldStyle, { minHeight: 100, textAlignVertical: 'top' }]}
-          />
-          <TextInput
-            value={scheduledFor} onChangeText={setScheduledFor}
-            placeholder="YYYY-MM-DDTHH:mm (local time)" placeholderTextColor={colors.textSecondary}
-            accessibilityLabel="Scheduled date and time" autoCapitalize="none" autoCorrect={false}
-            style={fieldStyle}
-          />
+          <View style={{ gap: spacing.xs }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800' }]}>YOUR MESSAGE</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary, fontVariant: ['tabular-nums'] }]}>{text.length}/4,000</Text>
+            </View>
+            <TextInput
+              value={text} onChangeText={setText} maxLength={4000} multiline
+              placeholder="Write something worth remembering…" placeholderTextColor={colors.textSecondary}
+              accessibilityLabel="Scheduled message text"
+              style={[fieldStyle, { minHeight: 116, textAlignVertical: 'top', lineHeight: 23, backgroundColor: colors.surface }]}
+            />
+          </View>
+          <View style={{ gap: spacing.xs }}>
+            <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800' }]}>SEND AT · YOUR LOCAL TIME</Text>
+            <TextInput
+              value={scheduledFor} onChangeText={setScheduledFor}
+              placeholder="YYYY-MM-DDTHH:mm" placeholderTextColor={colors.textSecondary}
+              accessibilityLabel="Scheduled date and time" autoCapitalize="none" autoCorrect={false}
+              style={[fieldStyle, { backgroundColor: colors.surface }]}
+            />
+          </View>
           <Text style={[typography.caption, { color: colors.textSecondary }]}>Use your device's local time in YYYY-MM-DDTHH:mm format. Schedule from 1 minute to 30 days ahead. Maximum 4,000 characters.</Text>
           <TouchableOpacity
             onPress={submit} disabled={saving || !conversationId || !text.trim()}
@@ -151,7 +165,7 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
 
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm }}>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Pending messages</Text>
+            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Your queue</Text>
             <Text style={[typography.caption, { color: colors.textSecondary }]}>{visibleItems.length} of {items.length} scheduled</Text>
           </View>
           <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh scheduled messages" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="refresh-outline" size={19} color={colors.primary} /></TouchableOpacity>
@@ -166,18 +180,26 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
           </View>
         }
         renderItem={({ item }) => (
-          <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm }}>
-              <View style={{ width: 38, height: 38, borderRadius: 13, backgroundColor: `${colors.primary}20`, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="time-outline" size={19} color={colors.primary} /></View>
-              <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-                <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{conversationName(item.conversation_id)}</Text>
-                <Text style={[typography.caption, { color: colors.textSecondary }]}>{item.scheduled_for ? new Date(item.scheduled_for).toLocaleString() : 'Time unavailable'}</Text>
+          <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.md }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: `${colors.primary}18`, borderWidth: 1, borderColor: `${colors.primary}30`, alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="calendar-outline" size={20} color={colors.primary} />
               </View>
-              <TouchableOpacity onPress={() => cancel(item)} disabled={busyId === item.id} accessibilityRole="button" accessibilityLabel={`Cancel scheduled message to ${conversationName(item.conversation_id)}`} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}>
-                {busyId === item.id ? <ActivityIndicator color={colors.primary} /> : <Ionicons name="close-circle-outline" size={22} color={colors.textSecondary} />}
+              <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+                <Text style={[typography.bodyStrong, { color: colors.textPrimary }]} numberOfLines={1}>{conversationName(item.conversation_id)}</Text>
+                <Text style={[typography.caption, { color: colors.primary, fontWeight: '700' }]}>{item.scheduled_for ? new Date(item.scheduled_for).toLocaleString() : 'Time unavailable'}</Text>
+              </View>
+              <TouchableOpacity onPress={() => cancel(item)} disabled={busyId === item.id} accessibilityRole="button" accessibilityLabel={`Cancel scheduled message to ${conversationName(item.conversation_id)}`} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: radii.md, backgroundColor: colors.surface }}>
+                {busyId === item.id ? <ActivityIndicator color={colors.primary} /> : <Ionicons name="close-circle-outline" size={21} color={colors.textSecondary} />}
               </TouchableOpacity>
             </View>
-            <Text selectable style={[typography.body, { color: colors.textPrimary }]}>{item.text}</Text>
+            <View style={{ borderLeftWidth: 2, borderLeftColor: colors.primary, paddingLeft: spacing.md }}>
+              <Text selectable style={[typography.body, { color: colors.textPrimary, lineHeight: 23 }]}>{item.text}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Ionicons name="time-outline" size={13} color={colors.textSecondary} />
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>SCHEDULED · CANCEL ANYTIME BEFORE DELIVERY</Text>
+            </View>
           </GlassCard>
         )}
         ListEmptyComponent={

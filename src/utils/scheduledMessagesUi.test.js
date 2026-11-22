@@ -33,3 +33,20 @@ test('scheduled messages can choose a destination when opened from Profile', () 
   assert.match(screen, /setSelectedConversationId\(row\.id\)/);
   assert.match(screen, /Choose a conversation, then write the message/);
 });
+
+
+test('scheduled-message planner uses a premium composition hierarchy and clear local-time labels', () => {
+  assert.match(screen, /eyebrow="PLAN AHEAD"/);
+  assert.match(screen, /Compose for later/);
+  assert.match(screen, /YOUR MESSAGE/);
+  assert.match(screen, /SEND AT · YOUR LOCAL TIME/);
+  assert.match(screen, /\{text\.length\}\/4,000/);
+  assert.match(screen, /Your queue/);
+});
+
+test('scheduled queue cards distinguish the destination, send time, message preview and cancellation action', () => {
+  assert.match(screen, /borderLeftWidth: 2, borderLeftColor: colors\.primary/);
+  assert.match(screen, /SCHEDULED · CANCEL ANYTIME BEFORE DELIVERY/);
+  assert.match(screen, /Cancel scheduled message to/);
+  assert.match(screen, /new Date\(item\.scheduled_for\)\.toLocaleString\(\)/);
+});
