@@ -139,10 +139,10 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
           numColumns={2}
           contentContainerStyle={styles.tiles}
           renderItem={({ item }) => (
-            <View style={[styles.tile, { backgroundColor: colors.surfaceAlt }]}>
+            <View style={[styles.tile, { backgroundColor: colors.surfaceAlt, borderColor: item.participant.isSpeaking ? colors.accent : colors.border }]}>
               <VideoTrack trackRef={item} style={styles.video} />
               <View style={styles.tileCaption}>
-                <Text style={[styles.tileName, typography.small]} numberOfLines={1}>{item.participant.name || item.participant.identity}</Text>
+                <View style={styles.tileCaptionRow}><Text style={[styles.tileName, typography.small]} numberOfLines={1}>{item.participant.name || item.participant.identity}</Text>{item.participant.isSpeaking ? <Text style={styles.speakingLabel}>SPEAKING</Text> : null}</View>
               </View>
             </View>
           )}
@@ -162,8 +162,8 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
           <Text style={[styles.audioHint, typography.body, { color: colors.textSecondary }]}>Everyone in the room can hear you when your microphone is on.</Text>
           <View style={styles.participantList}>
             {participants.map((participant) => (
-              <View key={participant.identity} style={[styles.participantChip, { backgroundColor: colors.surfaceAlt, borderColor: colors.border || colors.surfaceAlt }]}>
-                <Ionicons name="person-circle-outline" size={18} color={colors.primary} />
+              <View key={participant.identity} accessibilityRole="text" accessibilityLabel={`${participant.name || participant.identity}${participant.isLocal ? ' (you)' : ''}${participant.isSpeaking ? ', speaking' : ''}`} style={[styles.participantChip, { backgroundColor: participant.isSpeaking ? hexToRgba(colors.primary, 0.12) : colors.surfaceAlt, borderColor: participant.isSpeaking ? colors.primary : colors.border || colors.surfaceAlt }]}>
+                <Ionicons name={participant.isSpeaking ? 'volume-high' : 'person-circle-outline'} size={18} color={participant.isSpeaking ? colors.primary : colors.textSecondary} />
                 <Text style={[styles.participantName, typography.small, { color: colors.textPrimary }]} numberOfLines={1}>
                   {participant.name || participant.identity}
                   {participant.isLocal ? ' (you)' : ''}
@@ -492,9 +492,11 @@ const styles = StyleSheet.create({
   connectionDot: { width: 7, height: 7, borderRadius: 4 },
   connectionText: { fontSize: 12, fontWeight: '600' },
   tiles: { padding: 8, gap: 8, flexGrow: 1 },
-  tile: { flex: 1, minHeight: 190, margin: 4, borderRadius: 18, overflow: 'hidden' },
+  tile: { flex: 1, minHeight: 190, margin: 4, borderRadius: 20, borderWidth: 1, overflow: 'hidden' },
   video: { flex: 1, minHeight: 190 },
-  tileCaption: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 8, backgroundColor: 'rgba(0,0,0,0.55)' },
+  tileCaption: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 9, backgroundColor: 'rgba(0,0,0,0.58)' },
+  tileCaptionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  speakingLabel: { color: '#FFFFFF', fontSize: 9, fontWeight: '900', letterSpacing: 0.8 },
   tileName: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
   videoEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   empty: { textAlign: 'center', padding: 16, lineHeight: 21 },
