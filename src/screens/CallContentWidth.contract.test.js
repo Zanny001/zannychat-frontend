@@ -62,4 +62,5 @@ test('web active calls can flip between available front and rear cameras without
   assert.match(web, /await sender\.replaceTrack\(nextTrack\)/);
   assert.match(web, /control\('camera-reverse', 'Flip camera', switchCamera\)/);
   assert.match(web, /previousTrack\.stop\(\)/);
+  assert.match(web, /await sender\.replaceTrack\(previousTrack\)\.catch\(\(\) => \{\}\)/, 'failed flips restore the previous sender track');
 });
