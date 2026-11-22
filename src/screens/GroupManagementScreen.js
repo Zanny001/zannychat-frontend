@@ -10,6 +10,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { createGroupInvite, fetchGroupInvites, fetchGroupMembers, fetchGroupMetadata, getCurrentUser, removeGroupMember, revokeGroupInvite, setGroupMemberAdmin, updateGroupMetadata } from '../services/api';
 import { filterGroupMembers } from '../utils/filterGroupMembers';
 import { validateGroupMetadata } from '../utils/groupMetadataValidation';
+import { hexToRgba } from '../utils/color';
 
 export default function GroupManagementScreen({ navigation, route }) {
   const conversation = route?.params?.conversation;
@@ -130,9 +131,22 @@ ${invite.token}` });
       maxToRenderPerBatch={12}
       windowSize={7}
       contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xl, flexGrow: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
-      ListHeaderComponent={<View><GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
-        <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Manage members</Text>
-        <Text style={[typography.caption, { color: colors.textSecondary }]}>{isAdmin ? 'You are a group admin. Changes are verified by the server.' : 'You can review members and leave the group. Only admins can change other members.'}</Text>
+      ListHeaderComponent={<View><GlassCard glow style={{ marginBottom: spacing.md, borderRadius: 24, borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.28) }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+          <View style={{ width: 54, height: 54, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.16), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.3) }}>
+            <Ionicons name="people" size={25} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+            <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.2 }]}>YOUR COMMUNITY</Text>
+            <Text numberOfLines={2} style={[typography.heading, { color: colors.textPrimary, fontSize: 20, lineHeight: 25 }]}>{groupMetadata.name || conversation?.participant?.name || 'Your group'}</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>{members.length} {members.length === 1 ? 'member' : 'members'} · {isAdmin ? 'Admin access' : 'Member access'}</Text>
+          </View>
+          <View style={{ paddingHorizontal: 10, paddingVertical: 7, borderRadius: 12, backgroundColor: hexToRgba(colors.gold || colors.accent || colors.primary, 0.12), borderWidth: 1, borderColor: hexToRgba(colors.gold || colors.accent || colors.primary, 0.28) }}>
+            <Text style={[typography.small, { color: colors.gold || colors.accent || colors.primary, fontWeight: '900', letterSpacing: 0.6 }]}>{isAdmin ? 'ADMIN' : 'MEMBER'}</Text>
+          </View>
+        </View>
+        <View style={{ height: 1, backgroundColor: colors.border }} />
+        <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 19 }]}>{isAdmin ? 'Shape the space, welcome new people and keep your community organised. Changes are verified securely by ZannyChat.' : 'Explore your community, find people and manage your own membership. Group permissions remain protected by ZannyChat.'}</Text>
       </GlassCard>
       {isAdmin ? <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Group details</Text>
