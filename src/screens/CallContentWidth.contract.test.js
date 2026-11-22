@@ -48,9 +48,9 @@ test('native group-call controls use a compact themed dock that can wrap on narr
 });
 
 test('group-call tiles and participant chips surface the active speaker without hiding names', () => {
-  assert.match(files.group, /item\\.participant\\.isSpeaking/);
-  assert.match(files.group, /SPEAKING/);
-  assert.match(files.group, /participant\\.isSpeaking \\? 'volume-high' : 'person-circle-outline'/);
-  assert.match(files.group, /accessibilityLabel=\\{\\x60\\$\\{participant\\.name/);
-  assert.match(files.group, /borderColor: item\\.participant\\.isSpeaking \\? colors\\.accent/);
+  assert.ok(files.group.includes('item.participant.isSpeaking'));
+  assert.ok(files.group.includes('SPEAKING'));
+  assert.ok(files.group.includes("participant.isSpeaking ? 'volume-high' : 'person-circle-outline'"));
+  assert.ok(files.group.includes('accessibilityLabel={`${participant.name'));
+  assert.ok(files.group.includes('borderColor: item.participant.isSpeaking ? colors.accent'));
 });
