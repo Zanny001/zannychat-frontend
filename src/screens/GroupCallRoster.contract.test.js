@@ -16,6 +16,8 @@ test('native group calls keep a live participant roster visible in audio and vid
   assert.match(native, /participant\.isCameraEnabled/);
   assert.match(native, /mic-off-outline/);
   assert.match(native, /videocam-off-outline/);
+  assert.match(native, /room\.on\(RoomEvent\.TrackMuted/);
+  assert.match(native, /room\.on\(RoomEvent\.TrackUnmuted/);
 });
 
 test('web group calls render the roster from current LiveKit local and remote participants', () => {
