@@ -51,6 +51,7 @@ export default function CallHistoryScreen({ navigation }) {
     if (historyFilter === 'outgoing') return item.direction === 'outgoing';
     if (historyFilter === 'video') return item.call_type === 'video';
     if (historyFilter === 'audio') return item.call_type !== 'video';
+    if (historyFilter === 'group') return Boolean(item.isGroupCall);
     return true;
   });
 
@@ -168,6 +169,7 @@ export default function CallHistoryScreen({ navigation }) {
               { value: 'outgoing', label: 'Outgoing' },
               { value: 'video', label: 'Video' },
               { value: 'audio', label: 'Audio' },
+              { value: 'group', label: 'Group' },
             ].map((option) => {
               const selected = historyFilter === option.value;
               return (
