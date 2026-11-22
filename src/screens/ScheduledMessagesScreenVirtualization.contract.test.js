@@ -49,3 +49,13 @@ test('scheduled-message search does not change scheduling, cancellation or serve
   assert.ok(source.includes('worker is configured and running'));
   assert.ok(source.includes('current.filter((row) => row.id !== item.id)'));
 });
+
+test('scheduled-message composer can search the bounded conversation picker before choosing a recipient', () => {
+  assert.ok(source.includes("const [conversationSearch, setConversationSearch] = useState('')"));
+  assert.ok(source.includes('const visibleConversations = conversations.filter'));
+  assert.ok(source.includes('Search conversations for scheduled message'));
+  assert.ok(source.includes('Clear conversation search'));
+  assert.ok(source.includes('visibleConversations.map((row) =>'));
+  assert.ok(source.includes('No matching conversations.'));
+  assert.ok(source.includes('fetchConversations({ limit: 100, offset: 0 })'));
+});
