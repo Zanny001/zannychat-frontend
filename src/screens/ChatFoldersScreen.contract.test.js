@@ -36,3 +36,24 @@ test('chat folder retry action meets the shared 48-point mobile target', () => {
   const screen = read('./ChatFoldersScreen.js');
   assert.match(screen, /accessibilityLabel="Retry loading chat folders" style=\{\{ minHeight: 48/);
 });
+
+
+test('chat folder builder uses distinct selectable category tiles and compact exclusion controls', () => {
+  const screen = read('./ChatFoldersScreen.js');
+  assert.match(screen, /Shape your chat space/);
+  assert.match(screen, /Include conversations/);
+  assert.match(screen, /width: '48%', minWidth: 132, flexGrow: 1, minHeight: 88/);
+  assert.match(screen, /glow=\{selected\}/);
+  assert.match(screen, /\{rules\.length\} selected/);
+  assert.match(screen, /Fine-tune your view/);
+  assert.match(screen, /accessibilityRole="checkbox"/);
+  assert.match(screen, /minHeight: 52, flexDirection: 'row'/);
+});
+
+test('folder selection remains accessible and the create action retains its original validation gates', () => {
+  const screen = read('./ChatFoldersScreen.js');
+  assert.match(screen, /accessibilityState=\{\{ checked: selected \}\}/);
+  assert.match(screen, /if \(!cleanName\) \{ setError\('Enter a name for this folder\.'/);
+  assert.match(screen, /disabled=\{saving \|\| loading \|\| loadFailed \|\| !rules\.length\}/);
+  assert.match(screen, /if \(loadFailed \|\| loading\)/);
+});
