@@ -67,3 +67,8 @@ test('all recovery and verification screens retain comfortable touch targets and
     assert.ok(source.includes('KeyboardAvoidingView'));
   }
 });
+
+test('password recovery redirect guidance names the current Vercel production origin', () => {
+  assert.ok(recovery.includes('https://zannychat.vercel.app/**'));
+  assert.ok(!recovery.includes('zannychat-app.netlify.app'));
+});
