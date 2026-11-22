@@ -42,3 +42,19 @@ test('peer profile header distinguishes creator identity from a personal connect
   assert.ok(source.includes('CREATOR SPOTLIGHT'));
   assert.ok(source.includes('YOUR CONNECTION'));
 });
+
+test('peer profile exposes direct voice and video calls for the selected contact', () => {
+  assert.ok(source.includes('label="Voice call"'));
+  assert.ok(source.includes('label="Video call"'));
+  assert.ok(source.includes("callType: 'audio', directoryFilter: 'all', targetUserId: creatorId"));
+  assert.ok(source.includes("callType: 'video', directoryFilter: 'all', targetUserId: creatorId"));
+  assert.ok(source.includes("navigation.navigate('NewChat'"));
+});
+
+test('peer profile call actions remain responsive and do not replace LIVE creator actions', () => {
+  assert.ok(source.includes('flexWrap: \'wrap\''));
+  assert.ok(source.includes("{fromLive ? ("));
+  assert.ok(source.includes("label={followBusy ? 'Updating follow…'"));
+  assert.ok(source.includes("label={alreadyViewingLive ? 'Return to LIVE' : 'Watch LIVE'}"));
+  assert.ok(source.includes('minHeight: 76'));
+});
