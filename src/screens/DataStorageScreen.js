@@ -60,7 +60,7 @@ export default function DataStorageScreen({ navigation }) {
           <View style={styles.heroFooter}>
             <View style={[styles.statusDot, { backgroundColor: persistenceError ? colors.warning : colors.online }]} />
             <Text style={[typography.small, { color: colors.textSecondary, marginLeft: 7 }]}>
-              {persistenceError ? 'SESSION ONLY · NOT SAVED' : 'PREFERENCES SAVED ON THIS DEVICE'}
+              {persistenceError ? 'SESSION ONLY · NOT SAVED' : loaded ? 'PREFERENCES SAVED ON THIS DEVICE' : 'LOADING DEVICE PREFERENCES…'}
             </Text>
           </View>
         </View>
