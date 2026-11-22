@@ -5,8 +5,8 @@ import { readFileSync } from 'node:fs';
 const source = readFileSync(new URL('./StatusUpdatesScreen.js', import.meta.url), 'utf8');
 
 test('stories screen virtualizes recent status groups and the friends rail', () => {
-  assert.match(source, /data=\{groupedStatuses\}/);
-  assert.match(source, /data=\{friendStatusGroups\}/);
+  assert.match(source, /data=\{visibleGroupedStatuses\}/);
+  assert.match(source, /data=\{visibleFriendStatusGroups\}/);
   assert.match(source, /keyExtractor=\{\(group\) => String\(group\.ownerId\)\}/);
   assert.doesNotMatch(source, /groupedStatuses\.map\(/);
   assert.doesNotMatch(source, /friendStatusGroups\.map\(/);
@@ -21,4 +21,11 @@ test('recent statuses retain loading, retry, and empty states', () => {
   assert.match(source, /ListEmptyComponent=/);
   assert.match(source, /Refresh statuses/);
   assert.match(source, /No active statuses yet/);
+});
+
+test('stories feed keeps virtualized group lists while using the locally searched data sources', () => {
+  assert.match(source, /data=\{visibleGroupedStatuses\}/);
+  assert.match(source, /data=\{visibleFriendStatusGroups\}/);
+  assert.match(source, /visibleGroupedStatuses = groupedStatuses\.filter/);
+  assert.match(source, /visibleFriendStatusGroups = friendStatusGroups\.filter/);
 });
