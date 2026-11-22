@@ -25,3 +25,14 @@ test('group creation retains minimum membership, selected contact data and exist
   assert.match(screen, /navigation\.replace\('Chat', \{ conversation \}\)/);
   assert.match(screen, /accessibilityRole="checkbox"/);
 });
+
+test('group creation supports local contact search without losing selected-member review', () => {
+  assert.match(screen, /const \[contactSearch, setContactSearch\] = useState\(''\)/);
+  assert.match(screen, /Search contacts by name/);
+  assert.match(screen, /const visibleContacts = useMemo/);
+  assert.match(screen, /data=\{visibleContacts\}/);
+  assert.match(screen, /No contacts match that name/);
+  assert.match(screen, /Clear contact search/);
+  assert.match(screen, /YOUR SELECTED PEOPLE/);
+  assert.match(screen, /selectedContacts\.map\(\(contact\) =>/);
+});
