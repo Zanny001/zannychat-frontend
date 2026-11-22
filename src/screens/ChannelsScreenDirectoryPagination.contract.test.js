@@ -45,3 +45,9 @@ test('Explore opens with a premium Crown Aurora discovery identity and clear LIV
   assert.ok(source.includes('hexToRgba(colors.primary, 0.28)'));
   assert.ok(source.includes('accessibilityLabel="Open creator LIVE"'));
 });
+
+test('channel discovery and selected-channel views have distinct Crown Aurora context', () => {
+  assert.ok(source.includes('DISCOVER YOUR WORLD'));
+  assert.ok(source.includes('CHANNEL SPACE'));
+  assert.ok(source.includes('<Header eyebrow={selected ? "CHANNEL SPACE" : "DISCOVER YOUR WORLD"}'));
+});
