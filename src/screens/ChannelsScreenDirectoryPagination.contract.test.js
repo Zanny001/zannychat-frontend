@@ -34,3 +34,10 @@ test('channel discovery and moderation secondary actions meet the 48-point touch
   assert.ok((source.match(/minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', padding: spacing\.xs/g) || []).length >= 3);
   assert.match(source, /comment reaction.*?style=\{\{ minWidth: 48, minHeight: 48/);
 });
+
+
+test('channel discovery and selected-channel views have distinct Crown Aurora context', () => {
+  assert.ok(source.includes('DISCOVER YOUR WORLD'));
+  assert.ok(source.includes('CHANNEL SPACE'));
+  assert.ok(source.includes('<Header eyebrow={selected ? "CHANNEL SPACE" : "DISCOVER YOUR WORLD"}'));
+});
