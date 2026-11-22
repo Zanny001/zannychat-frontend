@@ -607,20 +607,37 @@ export default function ChannelsScreen({ navigation }) {
   return <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
     <Header title={selected ? "Channel" : "Explore"} subtitle={selected ? selected.title : "LIVE, public channels and communities"} onBack={() => selected ? clearSelectedChannel() : navigation.goBack()} />
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, gap: spacing.md, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
-      <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
+      <GlassCard style={{ borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.28) }} contentStyle={{ padding: spacing.lg, gap: spacing.md }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-          <View style={{ width: 42, height: 42, borderRadius: radii.md, backgroundColor: hexToRgba(colors.danger, 0.12), alignItems: 'center', justifyContent: 'center' }}><Ionicons name="radio" size={21} color={colors.danger} /></View>
-          <View style={{ flex: 1 }}>
+          <View style={{ width: 48, height: 48, borderRadius: radii.lg, backgroundColor: hexToRgba(colors.primary, 0.14), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.28), alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="sparkles" size={23} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+            <Text style={[typography.small, { color: colors.primary, fontWeight: '800', letterSpacing: 1.1 }]}>YOUR WORLD, IN MOTION</Text>
+            <Text style={[typography.title, { color: colors.textPrimary }]}>Explore ZannyChat</Text>
+          </View>
+          <View style={{ borderRadius: radii.full || 999, borderWidth: 1, borderColor: hexToRgba(colors.danger, 0.35), backgroundColor: hexToRgba(colors.danger, 0.1), paddingHorizontal: spacing.sm, paddingVertical: spacing.xs }}>
+            <Text style={[typography.small, { color: colors.danger, fontWeight: '800' }]}>LIVE + SOCIAL</Text>
+          </View>
+        </View>
+        <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>Find communities worth following, join conversations and step into live moments with your people.</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+          <View style={{ flex: 1, gap: 2 }}>
             <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>ZannyChat LIVE</Text>
             <Text style={[typography.caption, { color: colors.textSecondary }]}>Broadcast or watch live video with audience chat.</Text>
           </View>
-          <TouchableOpacity onPress={() => navigation.navigate('LiveHub')} accessibilityRole="button" accessibilityLabel="Open creator LIVE" style={[buttonStyle(false), { minHeight: 48 }]}><Text style={buttonText}>Open</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('LiveHub')} accessibilityRole="button" accessibilityLabel="Open creator LIVE" style={[buttonStyle(false), { minHeight: 48, paddingHorizontal: spacing.lg }]}>
+            <Text style={buttonText}>Open LIVE</Text>
+          </TouchableOpacity>
         </View>
       </GlassCard>
       {!selected ? (
         <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={[typography.bodyStrong, { color: colors.textPrimary, flex: 1 }]}>Live now</Text>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[typography.small, { color: colors.danger, fontWeight: '800', letterSpacing: 1 }]}>LIVE DISCOVERY</Text>
+              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Live now</Text>
+            </View>
             <TouchableOpacity onPress={() => navigation.navigate('LiveHub')} accessibilityRole="button" accessibilityLabel="See all LIVE streams" style={{ minHeight: 48, justifyContent: 'center', paddingHorizontal: spacing.xs }}>
               <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>See all</Text>
             </TouchableOpacity>
@@ -659,7 +676,10 @@ export default function ChannelsScreen({ navigation }) {
       {!selected ? (
         <View style={{ gap: spacing.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={[typography.bodyStrong, { color: colors.textPrimary, flex: 1 }]}>From your communities</Text>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[typography.small, { color: colors.primary, fontWeight: '800', letterSpacing: 1 }]}>COMMUNITY PULSE</Text>
+              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>From your communities</Text>
+            </View>
             <Text style={[typography.small, { color: colors.textSecondary }]}>Public posts</Text>
           </View>
           {communityError ? (
