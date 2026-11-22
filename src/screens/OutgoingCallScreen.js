@@ -92,7 +92,7 @@ export default function OutgoingCallScreen({ route, navigation }) {
         <Text style={[typography.small, styles.countdown, { color: colors.textSecondary }]}>{remaining > 0 ? `Invitation expires in ${remaining}s` : 'Invitation expired'}</Text>
       </View>
       <View style={[styles.actions, { width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center', backgroundColor: hexToRgba(colors.surface, 0.62), borderColor: colors.border }]}>
-        <TouchableOpacity onPress={cancel} disabled={busy} accessibilityRole="button" accessibilityLabel="Cancel outgoing call" style={[styles.cancelButton, { backgroundColor: colors.danger, shadowColor: colors.danger }]}>
+        <TouchableOpacity onPress={cancel} disabled={busy} accessibilityRole="button" accessibilityLabel="Cancel outgoing call" style={[styles.cancelButton, { backgroundColor: colors.danger, borderColor: hexToRgba(colors.onDanger, 0.24), shadowColor: colors.danger }]}>
           {busy ? <ActivityIndicator color={colors.onDanger} /> : <Ionicons name="call" size={27} color={colors.onDanger} style={{ transform: [{ rotate: '135deg' }] }} />}
         </TouchableOpacity>
         <Text style={[typography.small, styles.cancelLabel, { color: colors.textSecondary }]}>Cancel call</Text>
