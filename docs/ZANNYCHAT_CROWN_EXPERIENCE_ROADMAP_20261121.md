@@ -202,3 +202,10 @@ Every feature release must include:
 - **LIVE teardown polling:** PR #298 adds ended-state guards to native/web comments, guest-status and guest-request pollers, ignores in-flight responses after teardown, and prevents queued comment refreshes restarting after end. Motivation is observed guest-request 404 traffic during teardown. Fresh frontend/client/bundle CI is running; Vercel preview is QUEUED. No merge/deployment acceptance yet.
 - **Current release baseline:** production main deployment for commit `66e4b9d` is READY. Do not mistake PR previews for production.
 - **Manual P0 gates still required:** (1) two participants test browser call audio on PR #297 preview; (2) a creator/viewer LIVE session confirms reactions, guest approval, and that guest-request polling stops after ending/leaving; (3) test voice-note playback, speed and seek on production Android. Automated CI and READY deployments are not substitutes for these device checks.
+
+
+## 10. Execution update — 2026-11-22 07:12 UTC
+
+- **LIVE teardown polling:** PR #298 was superseded and closed. Its current-main replacement, PR #300, passed frontend-quality and advanced-calling client CI and merged as `748c1a3d097437ae0d7a9743797d7ca9194548c2`. The Vercel preview `https://zannychat-j3zx29g40-zanny-chat.vercel.app` was READY. The production deployment for this exact main SHA was still BUILDING at the checkpoint; verify before calling it deployed.
+- **Browser remote audio:** PR #297 was superseded because its base diverged. PR #301 reapplies the two-file change on current main at `f65870d432791ae0b945f466e02e4b9ecce6e0ec`; fresh CI and Vercel preview are pending. Keep the two-participant browser/device audio and autoplay-unlock test as a hard P0 gate.
+- **Manual acceptance:** production Android voice-note playback/speed/seek; LIVE creator/viewer/guest lifecycle after #300 deployment; two-way browser call audio on #301 preview. Do not equate green CI or a READY preview with user/device acceptance.
