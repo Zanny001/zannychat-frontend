@@ -11,7 +11,7 @@ test('LIVE Creator Profile reuses the privacy-aware peer profile and LIVE impact
   assert.ok(navigator.includes('name="LiveCreatorStudio" component={LiveCreatorStudioRoute}'));
   assert.ok(source.includes('const fromLive = route.params?.fromLive === true'));
   assert.ok(source.includes('<LiveImpactCard impact={liveImpact} />'));
-  assert.ok(source.includes("Header title={fromLive ? \"LIVE Creator\" : \"Profile\"}"));
+  assert.ok(source.includes("title={fromLive ? \"LIVE Creator\" : \"Profile\"}"));
 });
 
 test('LIVE Creator Profile exposes authenticated follow and watch actions only in LIVE context', () => {
