@@ -186,7 +186,12 @@ export default function LiveGuestQueueScreen({ route, navigation }) {
               <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 18 }]}>Requests to join</Text>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>Approve only people you want on stage</Text>
             </View>
-            <Text style={[typography.bodyStrong, { color: colors.primary }]}>{requests.length}</Text>
+            <Text style={[typography.bodyStrong, { color: colors.primary }]}>{visibleRequests.length}{visibleRequests.length !== requests.length ? ' of ' + requests.length : ''}</Text>
+          </View>
+          <View style={{ minHeight: 50, flexDirection: 'row', alignItems: 'center', borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.md }}>
+            <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+            <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder="Find a viewer by name" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search guest requests by viewer name" returnKeyType="search" style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, paddingVertical: spacing.sm, paddingLeft: spacing.sm }]} />
+            {searchQuery ? <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear guest request search" style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
           </View>
 
           {loading && !requests.length ? <View style={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary }]}>Loading guest requests…</Text></View> : null}
