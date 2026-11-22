@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,6 +34,7 @@ export default function LiveReportsScreen({ route, navigation }) {
   const streamTitle = route.params?.title || 'LIVE stage';
   const [reports, setReports] = useState([]);
   const [filter, setFilter] = useState('open');
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busyReportId, setBusyReportId] = useState(null);
@@ -88,9 +89,11 @@ export default function LiveReportsScreen({ route, navigation }) {
     return () => data?.subscription?.unsubscribe?.();
   }, [refresh]);
 
-  const visibleReports = useMemo(() => filter === 'all'
-    ? reports
-    : reports.filter((item) => item.status === filter), [filter, reports]);
+  const visibleReports = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    const byStatus = filter === 'all' ? reports : reports.filter((item) => item.status === filter);
+    return query ? byStatus.filter((item) => (String(item.reason || '') + ' ' + String(item.details || '')).toLowerCase().includes(query)) : byStatus;
+  }, [filter, reports, searchQuery]);
 
   const review = async (reportId, status) => {
     if (!streamId || !reportId || actionLock.current) return;
@@ -183,6 +186,11 @@ export default function LiveReportsScreen({ route, navigation }) {
             </TouchableOpacity> : null}
           </GlassCard>
 
+          <View style={{ minHeight: 50, flexDirection: 'row', alignItems: 'center', borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.md }}>
+            <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+            <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder="Search report reason or details" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search LIVE reports by reason or details" returnKeyType="search" style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, paddingVertical: spacing.sm, paddingLeft: spacing.sm }]} />
+            {searchQuery ? <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear LIVE report search" style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
+          </View>
           <View style={{ flexDirection: 'row', gap: spacing.xs, flexWrap: 'wrap' }}>
             {FILTERS.map((item) => {
               const selected = filter === item.value;
@@ -201,8 +209,9 @@ export default function LiveReportsScreen({ route, navigation }) {
         ListEmptyComponent={!loading && !error ? <View style={{ width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
           <GlassCard contentStyle={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}>
             <Ionicons name="shield-checkmark-outline" size={30} color={colors.textSecondary} />
-            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>No reports in this view</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', lineHeight: 20 }]}>The queue updates when a viewer reports this LIVE. Review each report promptly and consistently.</Text>
+            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{searchQuery.trim() ? 'No matching reports' : 'No reports in this view'}</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', lineHeight: 20 }]}>{searchQuery.trim() ? 'Try another reason or detail, or clear your search.' : 'The queue updates when a viewer reports this LIVE. Review each report promptly and consistently.'}</Text>
+            {searchQuery.trim() ? <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear LIVE report search" style={{ minHeight: 48, justifyContent: 'center', paddingHorizontal: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Clear search</Text></TouchableOpacity> : null}
           </GlassCard>
         </View> : null}
       />
