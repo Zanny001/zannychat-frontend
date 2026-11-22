@@ -174,7 +174,7 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
         </View>
       )}
 
-      <View style={[styles.controls, { width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }]}>
+      <View style={[styles.controls, { width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center', backgroundColor: hexToRgba(colors.surface, 0.84), borderColor: colors.border }]}>
         <Pressable
           onPress={toggleMute}
           accessibilityRole="button"
@@ -505,8 +505,8 @@ const styles = StyleSheet.create({
   participantList: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 22 },
   participantChip: { maxWidth: '100%', flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: StyleSheet.hairlineWidth, borderRadius: 18, paddingVertical: 7, paddingHorizontal: 10 },
   participantName: { fontSize: 12, fontWeight: '600', maxWidth: 180 },
-  controls: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 12, padding: 14, paddingBottom: 22 },
-  control: { minWidth: 76, minHeight: 72, borderRadius: 24, alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 10 },
+  controls: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 9, marginHorizontal: 12, marginBottom: 14, padding: 12, paddingBottom: 16, borderRadius: 28, borderWidth: 1 },
+  control: { minWidth: 68, minHeight: 68, borderRadius: 22, alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 8 },
   controlLabel: { fontSize: 11, fontWeight: '700' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28 },
   error: { fontSize: 17, fontWeight: '700', textAlign: 'center', marginTop: 16, maxWidth: '100%' },
