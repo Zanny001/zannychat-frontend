@@ -45,7 +45,7 @@ export default function PasswordRecoveryScreen({ navigation }) {
       const normalizedMessage = rawMessage.toLowerCase();
       let message = rawMessage || 'Please try again in a moment. If the problem continues, contact support.';
       if (/redirect|url.*(allow|valid)|not allowed/.test(normalizedMessage)) {
-        message = 'Supabase rejected the recovery redirect. In Supabase Dashboard → Authentication → URL Configuration, allow https://zannychat-app.netlify.app/**, then retry. If testing locally, allow that local web origin too.';
+        message = 'Supabase rejected the recovery redirect. In Supabase Dashboard → Authentication → URL Configuration, allow https://zannychat.vercel.app/**, then retry. If testing locally, allow that local web origin too.';
       } else if (/rate limit|too many requests/.test(normalizedMessage)) {
         message = 'Too many recovery requests were made. Wait a few minutes, then try again.';
       } else if (/fetch|network|timeout/.test(normalizedMessage)) {
