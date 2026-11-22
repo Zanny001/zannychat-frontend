@@ -64,7 +64,22 @@ export default function PinnedMessagesScreen({ route, navigation }) {
             </TouchableOpacity>;
           })}
         </View>
-        <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Pins are stored on this device and do not sync to other devices. They are bookmarks, not shared conversation pins.</Text>
+        <GlassCard glow style={{ marginTop: spacing.md, borderRadius: 24, borderWidth: 1, borderColor: colors.border }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            <View style={{ width: 50, height: 50, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+              <Ionicons name="bookmark" size={23} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+              <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.2 }]}>YOUR PERSONAL HIGHLIGHTS</Text>
+              <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 19 }]}>Keep the important close.</Text>
+            </View>
+            <View style={{ minWidth: 44, minHeight: 44, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.xs }}>
+              <Text style={[typography.bodyStrong, { color: colors.primary }]}>{visible.length}</Text>
+              <Text style={[typography.small, { color: colors.textSecondary }]}>shown</Text>
+            </View>
+          </View>
+          <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 19 }]}>Find a saved moment, then jump straight back to its original conversation. Your pins are private device bookmarks and do not sync across devices.</Text>
+        </GlassCard>
       </View>
       {loading ? <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Loading pinned messages…</Text></View> : error ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl }}><Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading pinned messages" style={{ minHeight: 48, justifyContent: 'center', marginTop: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></View>
@@ -95,7 +110,7 @@ export default function PinnedMessagesScreen({ route, navigation }) {
               </TouchableOpacity>
             </GlassCard>
           )}
-          ListEmptyComponent={<View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 48, paddingHorizontal: spacing.xl }}><View style={{ width: 64, height: 64, borderRadius: 22, backgroundColor: `${colors.primary}18`, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="pin-outline" size={29} color={colors.primary} /></View><Text style={[typography.bodyStrong, { color: colors.textPrimary, marginTop: spacing.md }]}>{query || kindFilter !== 'all' ? 'No matching pins' : 'No pinned messages yet'}</Text><Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>{query || kindFilter !== 'all' ? 'Try another filter or clear your search.' : 'Long-press a message in this chat and choose Pin message to keep it close.'}</Text></View>}
+          ListEmptyComponent={<View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 48, paddingHorizontal: spacing.xl }}><View style={{ width: 72, height: 72, borderRadius: 25, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="bookmark-outline" size={31} color={colors.primary} /></View><Text style={[typography.bodyStrong, { color: colors.textPrimary, marginTop: spacing.md }]}>{query || kindFilter !== 'all' ? 'No matching pins' : 'No pinned messages yet'}</Text><Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs, lineHeight: 21 }]}>{query || kindFilter !== 'all' ? 'Try another filter or clear your search to see every saved message.' : 'When a message matters, pin it from the conversation. It will be waiting here whenever you need it.'}</Text></View>}
         />
       )}
     </SafeAreaView>
