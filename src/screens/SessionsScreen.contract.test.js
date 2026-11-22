@@ -56,3 +56,11 @@ test('session filters expose accessible selection states and comfortable touch t
   assert.match(screen, /minHeight: 44, flexDirection: 'row'/);
   assert.match(screen, /accessibilityLabel="Search active sessions by device or browser"/);
 });
+
+test('Android user agents are classified as mobile rather than overlapping desktop Linux sessions', () => {
+  assert.match(screen, /function isMobileSession\(userAgent\)/);
+  assert.match(screen, /function isDesktopSession\(userAgent\)/);
+  assert.match(screen, /return !isMobileSession\(value\) && \/Windows\|Mac OS X\|Macintosh\|Linux\/i\.test\(value\)/);
+  assert.match(screen, /isMobileSession\(item\.user_agent\)/);
+  assert.match(screen, /isDesktopSession\(item\.user_agent\)/);
+});
