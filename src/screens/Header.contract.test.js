@@ -16,3 +16,12 @@ test('shared header back control meets the 48-point touch target and shows press
   assert.ok(header.includes('minHeight: 48'));
   assert.ok(header.includes('pressed && { backgroundColor: hexToRgba(colors.primary, 0.12) }'));
 });
+
+
+test('shared header supports a compact Crown Aurora eyebrow without disturbing title truncation', () => {
+  assert.ok(header.includes('eyebrow'));
+  assert.ok(header.includes('styles.eyebrowText'));
+  assert.ok(header.includes("letterSpacing: 1.15"));
+  assert.ok(header.includes("borderRadius: 16, borderWidth: 1"));
+  assert.ok(header.includes("backgroundColor: colors.surface, borderColor: colors.border"));
+});

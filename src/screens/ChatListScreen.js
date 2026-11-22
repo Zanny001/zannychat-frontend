@@ -401,8 +401,12 @@ export default function ChatListScreen({ navigation }) {
       <View style={{ flex: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
       <View style={[styles.header, { paddingHorizontal: spacing.md }]}>
         <View style={styles.titleRow}>
-          <Knot size={26} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={5} />
-          <Text style={[typography.title, { color: colors.textPrimary, marginLeft: 8 }]}>Chats</Text>
+          <Knot size={30} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={5} />
+          <View style={styles.brandCopy}>
+            <Text numberOfLines={1} style={[typography.small, styles.brandEyebrow, { color: colors.warning }]}>YOUR SPACE</Text>
+            <Text numberOfLines={1} style={[typography.title, { color: colors.textPrimary }]}>Chats</Text>
+            <Text numberOfLines={1} style={[typography.small, styles.brandSubtitle, { color: colors.textSecondary }]}>Your people, close.</Text>
+          </View>
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity
@@ -434,9 +438,12 @@ export default function ChatListScreen({ navigation }) {
 
       <View style={{ marginBottom: spacing.sm }}>
         <View style={styles.storyHeading}>
-          <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Moments</Text>
+          <View style={{ gap: 1 }}>
+            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Moments</Text>
+            <Text style={[typography.small, { color: colors.textSecondary, fontSize: 10, letterSpacing: 1.05 }]}>FROM YOUR CIRCLE</Text>
+          </View>
           <TouchableOpacity onPress={() => navigation.navigate('Updates')} accessibilityRole="button" accessibilityLabel="See all moments" style={{ minHeight: 48, paddingHorizontal: 8, justifyContent: 'center' }}>
-            <Text style={[typography.small, { color: colors.primary }]}>See all</Text>
+            <Text style={[typography.small, { color: colors.primary, letterSpacing: 0.7 }]}>VIEW ALL</Text>
           </TouchableOpacity>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storyTray}>
@@ -469,7 +476,7 @@ export default function ChatListScreen({ navigation }) {
             <TextInput
               value={query}
               onChangeText={setQuery}
-              placeholder="Search"
+              placeholder="Find a person, group or message"
               placeholderTextColor={colors.textSecondary}
               style={[typography.body, { color: colors.textPrimary, marginLeft: 8, flex: 1, minWidth: 0 }]}
               accessibilityLabel="Search chats"
@@ -780,7 +787,7 @@ export default function ChatListScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   storyHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 9 },
   storyTray: { paddingHorizontal: 16, gap: 14 },
   storyItem: { width: 64, alignItems: 'center' },
@@ -789,8 +796,11 @@ const styles = StyleSheet.create({
   storyAdd: { position: 'absolute', right: -1, bottom: -1, width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   draftsBtn: { width: 48, height: 48, minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   cameraBtn: { width: 48, height: 48, minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 15, shadowOpacity: 0.34, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 5 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  titleRow: { flexDirection: 'row', alignItems: 'center' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: 76, marginBottom: 10, gap: 8 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0, gap: 9 },
+  brandCopy: { flex: 1, minWidth: 0, gap: 0 },
+  brandEyebrow: { fontSize: 9, lineHeight: 13, letterSpacing: 1.15, fontWeight: '800' },
+  brandSubtitle: { fontSize: 10.5, lineHeight: 15, letterSpacing: 0.1 },
   newChatBtn: { width: 48, height: 48, minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   searchBar: { minHeight: 48, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 9 },
   filterPill: { minHeight: 48, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },

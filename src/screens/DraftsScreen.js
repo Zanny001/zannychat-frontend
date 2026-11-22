@@ -80,7 +80,7 @@ export default function DraftsScreen({ navigation }) {
 
   return (
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
-      <Header title="Drafts" subtitle="Unsent messages on this device" onBack={() => navigation.goBack()} />
+      <Header eyebrow="MESSAGE STUDIO" title="Drafts" subtitle="Unsent messages on this device" onBack={() => navigation.goBack()} />
       {loading ? (
         <View style={{ alignItems: 'center', paddingVertical: spacing.xxl }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Finding your drafts…</Text></View>
       ) : error && drafts.length === 0 ? (

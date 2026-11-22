@@ -338,6 +338,7 @@ export default function NewChatScreen({ navigation, route }) {
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       <Header
+        eyebrow={isShareMode ? 'CONTACT SHARING' : requestedCallType ? 'START A CALL' : 'PEOPLE & CONNECTIONS'}
         title={isShareMode ? 'Share a contact' : requestedCallType === 'audio' ? 'Choose someone to call' : requestedCallType === 'video' ? 'Choose someone for video call' : 'New chat'}
         onBack={() => navigation.goBack()}
       />
