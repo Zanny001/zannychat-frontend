@@ -24,3 +24,7 @@ test('cursor pagination and load-older state remain attached to the list footer'
   assert.ok(source.includes('Load older polls'));
   assert.ok(source.includes('ListEmptyComponent='));
 });
+
+test('polls have a distinct participation header context', () => {
+  assert.ok(source.includes('YOUR VOICE COUNTS'));
+});
