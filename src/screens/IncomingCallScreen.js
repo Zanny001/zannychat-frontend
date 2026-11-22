@@ -109,7 +109,7 @@ export default function IncomingCallScreen({ route, navigation }) {
         <Text style={[typography.body, styles.callKind, { color: colors.textSecondary }]}>{isVideo ? 'Incoming video call' : 'Incoming audio call'}</Text>
         <View style={[styles.statusPill, { backgroundColor: hexToRgba(colors.surface, 0.78), borderColor: colors.border }]}><View style={[styles.liveDot, { backgroundColor: colors.online }]} /><Text style={[typography.small, styles.statusText, { color: colors.textPrimary }]}>{remaining > 0 ? `Ringing · ${remaining}s` : 'Call expired'}</Text></View>
       </View>
-      <View style={[styles.actions, { width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center' }]}>
+      <View style={[styles.actions, { width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center', backgroundColor: hexToRgba(colors.surface, 0.62), borderColor: colors.border }]}>
         <TouchableOpacity onPress={decline} disabled={busy} accessibilityRole="button" accessibilityLabel="Decline call" style={[styles.action, styles.decline, { backgroundColor: colors.danger, shadowColor: colors.danger }]}>
           <Ionicons name="call" size={28} color={colors.onDanger} style={{ transform: [{ rotate: '135deg' }] }} />
           <Text style={[typography.small, styles.actionText, { color: colors.onDanger }]}>Decline</Text>
@@ -138,8 +138,8 @@ const styles = StyleSheet.create({
   statusPill: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 19, paddingVertical: 8, paddingHorizontal: 13, borderRadius: 18 },
   liveDot: { width: 7, height: 7, borderRadius: 4 },
   statusText: {},
-  actions: { flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'center', paddingBottom: 25 },
-  action: { width: 84, height: 84, borderRadius: 30, alignItems: 'center', justifyContent: 'center', gap: 6, shadowOpacity: 0.28, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
+  actions: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', alignSelf: 'center', paddingHorizontal: 20, paddingVertical: 16, paddingBottom: 25, gap: 34, borderWidth: 1, borderRadius: 30 },
+  action: { width: 88, height: 88, borderRadius: 30, borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center', gap: 6, shadowOpacity: 0.28, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
   decline: {},
   answer: {},
   disabled: { opacity: 0.5 },
