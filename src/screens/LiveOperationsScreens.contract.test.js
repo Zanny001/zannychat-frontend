@@ -96,3 +96,36 @@ test('LIVE participant moderation virtualizes large rosters without weakening ro
   assert.ok(moderation.includes("backendFetch(\u0060/live/\u0024{streamId}/guests/\u0024{item.userId}/mute\u0060"));
   assert.ok(moderation.includes('makeModerator ? ' + String.fromCharCode(96) + '/live/${streamId}/moderators' + String.fromCharCode(96)));
 });
+
+test('LIVE report queue exposes dismissed reports and accounts for every terminal status', () => {
+  assert.ok(reports.includes("{ value: 'dismissed', label: 'Dismissed' }"));
+  assert.ok(reports.includes("dismissed: reports.filter((item) => item.status === 'dismissed').length"));
+  assert.ok(reports.includes("['Dismissed', counts.dismissed]"));
+  assert.ok(reports.includes("const terminal = ['resolved', 'dismissed'].includes(item.status)"));
+});
+
+test('LIVE guest request queue virtualizes long lists while retaining stage context and recovery states', () => {
+  assert.ok(guestQueue.includes('<FlatList'));
+  assert.ok(guestQueue.includes('data={requests}'));
+  assert.ok(guestQueue.includes('keyExtractor={(item) => String(item.user_id)}'));
+  assert.ok(guestQueue.includes('renderItem={({ item }) =>'));
+  assert.ok(!guestQueue.includes('requests.map('));
+  assert.ok(guestQueue.includes('ListHeaderComponent='));
+  assert.ok(guestQueue.includes('ListEmptyComponent='));
+  assert.ok(guestQueue.includes('refreshControl={<RefreshControl'));
+  assert.ok(guestQueue.includes('Math.max(0, 5 - guestCount)'));
+});
+
+test('LIVE safety report queue virtualizes report cards while preserving review controls and recovery states', () => {
+  assert.ok(reports.includes('<FlatList'));
+  assert.ok(reports.includes('data={visibleReports}'));
+  assert.ok(reports.includes('keyExtractor={(item) => String(item.id)}'));
+  assert.ok(reports.includes('renderItem={({ item }) =>'));
+  assert.ok(!reports.includes('visibleReports.map('));
+  assert.ok(reports.includes('ListHeaderComponent='));
+  assert.ok(reports.includes('ListEmptyComponent='));
+  assert.ok(reports.includes('refreshControl={<RefreshControl'));
+  assert.ok(reports.includes("review(item.id, 'reviewing')"));
+  assert.ok(reports.includes("review(item.id, 'dismissed')"));
+  assert.ok(reports.includes("review(item.id, 'resolved')"));
+});
