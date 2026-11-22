@@ -18,6 +18,7 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
   const [text, setText] = useState('');
   const [scheduledFor, setScheduledFor] = useState(() => localDateTimeInput(new Date(Date.now() + 60 * 60 * 1000)));
   const [items, setItems] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -84,13 +85,18 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
     return found?.participant?.name || found?.name || (id === conversationId ? conversation?.participant?.name || conversation?.name : null) || 'Conversation';
   };
   const canChooseConversation = !initialConversationId;
+  const filteredItems = items.filter((item) => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return true;
+    return (conversationName(item.conversation_id) + ' ' + String(item.text || '')).toLowerCase().includes(query);
+  });
 
   return (
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Scheduled messages" subtitle="Plan a message for later" onBack={() => navigation.goBack()} />
       <FlatList
         style={{ flex: 1 }}
-        data={items}
+        data={filteredItems}
         keyExtractor={(item) => String(item.id)}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -144,9 +150,14 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
         </GlassCard>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm }}>
-          <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Pending messages</Text>
+          <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Pending messages · {filteredItems.length}{filteredItems.length !== items.length ? ' of ' + items.length : ''}</Text>
           <TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh scheduled messages" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="refresh-outline" size={19} color={colors.primary} /></TouchableOpacity>
         </View>
+            <View style={{ minHeight: 50, flexDirection: 'row', alignItems: 'center', borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.md, marginBottom: spacing.sm }}>
+              <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+              <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder="Search message or conversation" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search scheduled messages by text or conversation" returnKeyType="search" style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, paddingVertical: spacing.sm, paddingLeft: spacing.sm }]} />
+              {searchQuery ? <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear scheduled message search" style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
+            </View>
             {loading && items.length ? <ActivityIndicator color={colors.primary} style={{ padding: spacing.md }} /> : null}
             {error && items.length ? <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text accessibilityRole="alert" style={[typography.body, { color: colors.textSecondary }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh scheduled messages" style={{ minHeight: 48, justifyContent: 'center', alignSelf: 'flex-start' }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
           </View>
@@ -169,6 +180,7 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
         ListEmptyComponent={
           loading ? <ActivityIndicator color={colors.primary} style={{ padding: spacing.xl }} />
             : error ? <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text accessibilityRole="alert" style={[typography.body, { color: colors.textSecondary }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Refresh scheduled messages"><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard>
+            : items.length > 0 ? <View style={{ alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.xs }}><Ionicons name="search-outline" size={30} color={colors.textSecondary} /><Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>No matching scheduled messages</Text><Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>Try another message or conversation name, or clear your search.</Text><TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear scheduled message search" style={{ minHeight: 48, justifyContent: 'center', paddingHorizontal: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Clear search</Text></TouchableOpacity></View>
             : <View style={{ alignItems: 'center', paddingVertical: spacing.xl }}><Ionicons name="calendar-clear-outline" size={34} color={colors.textSecondary} /><Text style={[typography.bodyStrong, { color: colors.textPrimary, marginTop: spacing.sm }]}>Nothing scheduled yet</Text><Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>Messages you schedule will appear here until they are sent or cancelled.</Text></View>
         }
       />
