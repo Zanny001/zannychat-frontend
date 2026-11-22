@@ -25,3 +25,19 @@ test('shared header supports a compact Crown Aurora eyebrow without disturbing t
   assert.ok(header.includes("borderRadius: 16, borderWidth: 1"));
   assert.ok(header.includes("backgroundColor: colors.surface, borderColor: colors.border"));
 });
+
+
+test('core conversation and social destinations use purposeful Crown Aurora header context', () => {
+  const screens = [
+    ['ChatScreen.js', 'PRIVATE CONVERSATION'],
+    ['ChatAppearanceScreen.js', 'PERSONALISE YOUR SPACE'],
+    ['SharedMediaScreen.js', 'SHARED MOMENTS'],
+    ['PinnedMessagesScreen.js', 'QUICK ACCESS'],
+    ['ForwardMessageScreen.js', 'SHARE WITH CARE'],
+    ['StatusUpdatesScreen.js', 'YOUR CIRCLE'],
+  ];
+  for (const [file, eyebrow] of screens) {
+    const source = fs.readFileSync(new URL('./' + file, import.meta.url), 'utf8');
+    assert.ok(source.includes(eyebrow), file + ' should expose its screen context');
+  }
+});
