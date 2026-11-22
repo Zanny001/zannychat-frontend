@@ -237,6 +237,8 @@ export default function PeerProfileScreen({ route, navigation }) {
           ) : (
             <>
               <QuickAction icon="chatbubble-ellipses" label="Message" primary onPress={() => navigation.goBack()} />
+              <QuickAction icon="call-outline" label="Voice call" onPress={() => navigation.navigate('NewChat', { callType: 'audio', directoryFilter: 'all', targetUserId: creatorId })} />
+              <QuickAction icon="videocam-outline" label="Video call" onPress={() => navigation.navigate('NewChat', { callType: 'video', directoryFilter: 'all', targetUserId: creatorId })} />
               {conversation ? <QuickAction icon="images-outline" label="Shared media" onPress={() => navigation.navigate('SharedMedia', { conversation })} /> : null}
             </>
           )}
@@ -320,8 +322,8 @@ const styles = StyleSheet.create({
   livePill: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 6 },
   liveDot: { width: 7, height: 7, borderRadius: 4 },
   presenceLine: { flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderRadius: 18, paddingHorizontal: 11, paddingVertical: 6, marginTop: 11 },
-  actionRow: { flexDirection: 'row', justifyContent: 'center', marginHorizontal: -4 },
-  quickAction: { flex: 1, minHeight: 76, alignItems: 'center', justifyContent: 'center', borderWidth: 1, paddingHorizontal: 6, paddingVertical: 10 },
+  actionRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginHorizontal: -4, rowGap: 8 },
+  quickAction: { flex: 1, minWidth: '22%', minHeight: 76, alignItems: 'center', justifyContent: 'center', borderWidth: 1, paddingHorizontal: 6, paddingVertical: 10 },
   detailRow: { flexDirection: 'row', alignItems: 'center' },
   detailIcon: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   mediaRow: { flexDirection: 'row', alignItems: 'center', minHeight: 62 },
