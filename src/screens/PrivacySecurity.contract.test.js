@@ -49,6 +49,7 @@ test('Privacy Security clears blocked users and account-deletion proof when auth
   assert.match(screen, /blockedRequestRef\.current \+= 1/);
   assert.match(screen, /authProviderRequestRef\.current \+= 1/);
   assert.match(screen, /setBlocked\(\[\]\)/);
+  assert.match(screen, /setBlockedSearch\(''\)/);
   assert.match(screen, /setGoogleReauthVerifiedUserId\(null\)/);
   assert.match(screen, /setDeletePassword\(''\)/);
   assert.match(screen, /setDeleteConfirmation\(''\)/);
@@ -68,4 +69,30 @@ test('blocked-list loading settles only for the latest authenticated account req
   assert.match(screen, /return requestId/);
   assert.match(screen, /if \(requestId === blockedRequestRef\.current\) setLoading\(false\)/);
   assert.match(screen, /authUserIdRef\.current === nextUserId\) setLoading\(false\)/);
+});
+
+test('privacy and security opens with a Crown Aurora trust-center overview', () => {
+  assert.match(screen, /ZANNYCHAT · TRUST CENTER/);
+  assert.match(screen, /Your privacy, clearly explained\./);
+  assert.match(screen, /Review the controls you can use today/);
+  assert.match(screen, /getPrivacyCheckupItems\(\)\.length \+ ' checkpoints'/);
+  assert.match(screen, /Honest privacy limits/);
+  assert.match(screen, /borderColor: hexToRgba\(colors\.primary, 0\.28\)/);
+});
+
+test('privacy trust-center framing preserves honest non-end-to-end-encryption disclosure', () => {
+  assert.match(screen, /messages are not end-to-end encrypted/i);
+  assert.match(screen, /The service operator could technically access message\s+text/i);
+  assert.match(screen, /signed link is still a bearer link/i);
+  assert.match(screen, /private storage bucket/i);
+});
+
+test('blocked-account controls support local name search and preserve unblock behavior', () => {
+  assert.match(screen, /const \[blockedSearch, setBlockedSearch\] = useState\(''\)/);
+  assert.match(screen, /const visibleBlocked = blocked\.filter/);
+  assert.match(screen, /Search blocked accounts by name/);
+  assert.match(screen, /Clear blocked account search/);
+  assert.match(screen, /visibleBlocked\.map\(\(entry\) =>/);
+  assert.match(screen, /No blocked accounts match this search/);
+  assert.match(screen, /await unblockUser\(entry\.userId\)/);
 });

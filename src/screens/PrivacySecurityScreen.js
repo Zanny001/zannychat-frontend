@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,6 +29,7 @@ const ACCOUNT_DELETE_REAUTH_TTL_MS = 4 * 60 * 1000 + 30 * 1000;
 export default function PrivacySecurityScreen({ navigation }) {
   const { colors, spacing, typography, layout } = useTheme();
   const [blocked, setBlocked] = useState([]);
+  const [blockedSearch, setBlockedSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -37,6 +38,11 @@ export default function PrivacySecurityScreen({ navigation }) {
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [authProviders, setAuthProviders] = useState({ email: true, google: false });
+  const visibleBlocked = blocked.filter((entry) => {
+    const query = blockedSearch.trim().toLowerCase();
+    const name = entry.profile?.name || 'Unknown';
+    return !query || name.toLowerCase().includes(query);
+  });
   const [reauthenticatingGoogle, setReauthenticatingGoogle] = useState(false);
   const [googleReauthVerifiedUserId, setGoogleReauthVerifiedUserId] = useState(null);
   const [googleReauthMismatch, setGoogleReauthMismatch] = useState(false);
@@ -133,6 +139,7 @@ export default function PrivacySecurityScreen({ navigation }) {
         authProviderRequestRef.current += 1;
         blockedRequestRef.current += 1;
         setBlocked([]);
+        setBlockedSearch('');
         setAuthProviders({ email: false, google: false });
         setGoogleReauthVerifiedUserId(null);
         setGoogleReauthMismatch(false);
@@ -302,6 +309,30 @@ export default function PrivacySecurityScreen({ navigation }) {
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Privacy & security" onBack={() => navigation.goBack()} />
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
+        <GlassCard glow intensity={24} style={{ marginBottom: spacing.md, borderRadius: 24, borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.28) }} contentStyle={{ padding: spacing.lg, gap: spacing.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            <View style={{ width: 52, height: 52, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.16), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.3) }}>
+              <Ionicons name="shield-checkmark-outline" size={25} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+              <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.3 }]}>ZANNYCHAT · TRUST CENTER</Text>
+              <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 21 }]}>Your privacy, clearly explained.</Text>
+            </View>
+          </View>
+          <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>Review the controls you can use today, understand the limits of message protection, and make informed choices about your account.</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
+            {[
+              { icon: 'checkmark-circle-outline', label: getPrivacyCheckupItems().length + ' checkpoints' },
+              { icon: 'lock-closed-outline', label: 'Account controls' },
+              { icon: 'information-circle-outline', label: 'Honest privacy limits' },
+            ].map((item) => (
+              <View key={item.label} style={{ minHeight: 34, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: spacing.sm, borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }}>
+                <Ionicons name={item.icon} size={15} color={colors.accent} />
+                <Text style={[typography.small, { color: colors.textSecondary, fontWeight: '700' }]}>{item.label}</Text>
+              </View>
+            ))}
+          </View>
+        </GlassCard>
         <GlassCard style={{ marginBottom: spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs }}>
             <Ionicons name="shield-checkmark-outline" size={20} color={colors.accent} />
@@ -335,12 +366,19 @@ export default function PrivacySecurityScreen({ navigation }) {
             Blocked people can't message you, and their messages don't reach you. Block from a chat's ⋮ menu.
           </Text>
 
+          {blocked.length > 0 ? <View style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.sm, marginBottom: spacing.sm }}>
+            <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+            <TextInput value={blockedSearch} onChangeText={setBlockedSearch} placeholder="Search blocked accounts" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search blocked accounts by name" returnKeyType="search" style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs }]} />
+            {blockedSearch ? <TouchableOpacity onPress={() => setBlockedSearch('')} accessibilityRole="button" accessibilityLabel="Clear blocked account search" style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
+          </View> : null}
           {loading ? null : blocked.length === 0 ? (
             <Text style={[typography.caption, { color: colors.textSecondary, fontStyle: 'italic' }]}>
               You haven't blocked anyone.
             </Text>
+          ) : visibleBlocked.length === 0 ? (
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>No blocked accounts match this search.</Text>
           ) : (
-            blocked.map((entry) => (
+            visibleBlocked.map((entry) => (
               <View key={entry.userId} style={[styles.blockRow, { marginBottom: spacing.sm }]}>
                 <Avatar
                   name={entry.profile?.name || 'Unknown'}
