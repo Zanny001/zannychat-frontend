@@ -952,3 +952,25 @@ The group invite and group-call preference checks are enforced in trusted backen
 - Gas LIVE creator/viewer acceptance remains unconfirmed by the user.
 
 No production migration, SQL, data, storage, auth, infrastructure or cleanup job was changed during this reconciliation.
+
+
+## 36. P0 reliability execution update — 2026-11-22 07:12 UTC
+
+### LIVE teardown polling
+- PR #298 was closed unmerged as superseded; do not treat it as a merged delivery.
+- Fresh-main PR #300 delivered the native/web ended-state guards for comments, guest-status and guest-request polling, ignored in-flight responses after teardown, and prevented queued comment refreshes from restarting after end.
+- PR #300 merged successfully as `748c1a3d097437ae0d7a9743797d7ca9194548c2`. Frontend-quality and advanced-calling client workflows both passed on head `20e7dcfd1f548bd75b414ac9eb51139b94596db6`; Vercel preview `https://zannychat-j3zx29g40-zanny-chat.vercel.app` reached READY.
+- Production deployment for main commit `748c1a3d097437ae0d7a9743797d7ca9194548c2` was observed BUILDING at 07:12 UTC. Recheck exact deployment and production alias before marking deployed.
+- Creator/viewer device acceptance remains open: verify the guest-request poll stops after end/leave and normal guest requests still work while LIVE is active.
+
+### Browser LiveKit remote audio
+- PR #297 was closed unmerged as superseded because its branch had diverged from current main after PR #300.
+- PR #301 reapplies the same reviewed two-file remote-audio recovery change on current main at `f65870d432791ae0b945f466e02e4b9ecce6e0ec`; fresh frontend/client CI was running at 07:12 UTC and preview must be rechecked.
+- Keep the feature out of production until two participants confirm audible two-way browser/device playback, including autoplay rejection followed by the user-gesture audio-unlock recovery.
+
+### P0 acceptance still open
+- Android production voice-note playback, speed and seek test.
+- Two-participant browser/device call audio test on PR #301 preview.
+- LIVE creator/viewer/guest test on the deployed #300 release, including active guest-request polling, end/leave semantics and no post-teardown polling.
+
+No production database, Auth, Storage, backend configuration, or infrastructure mutation was made by these frontend changes.
