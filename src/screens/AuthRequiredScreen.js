@@ -1,8 +1,10 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { normalizePendingAuthRoute, setPendingAuthRoute } from '../navigation/pendingAuthRoute';
+import GlassCard from '../components/GlassCard';
 
 const COPY = {
   QRContact: {
@@ -31,6 +33,7 @@ export default function AuthRequiredScreen({ navigation, route }) {
   };
   const returnRoute = { name: route?.name, params: route?.params || {} };
   const validLink = Boolean(normalizePendingAuthRoute(returnRoute));
+  const linkIcon = ({ QRContact: 'qr-code-outline', JoinGroup: 'people-outline', LiveStream: 'radio-outline', LiveReplay: 'play-circle-outline' })[route?.name] || 'link-outline';
 
   const continueTo = (screen) => {
     if (!setPendingAuthRoute(returnRoute)) return;
