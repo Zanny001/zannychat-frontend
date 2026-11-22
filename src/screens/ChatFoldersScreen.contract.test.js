@@ -57,3 +57,23 @@ test('folder selection remains accessible and the create action retains its orig
   assert.match(screen, /disabled=\{saving \|\| loading \|\| loadFailed \|\| !rules\.length\}/);
   assert.match(screen, /if \(loadFailed \|\| loading\)/);
 });
+
+test('saved chat folder library supports local name and rule search with a clear no-match state', () => {
+  const screen = read('./ChatFoldersScreen.js');
+  assert.match(screen, /const visibleFolders = useMemo/);
+  assert.match(screen, /Search saved chat folders/);
+  assert.match(screen, /Search folders and rules/);
+  assert.match(screen, /folder\.name, \.\.\.\(folder\.rules \|\| \[\]\), \.\.\.\(folder\.excluded \|\| \[\]\)/);
+  assert.match(screen, /data=\{visibleFolders\}/);
+  assert.match(screen, /No folders match your search/);
+  assert.match(screen, /Clear folder search/);
+  assert.match(screen, /\{visibleFolders\.length\} of \{folders\.length\}/);
+});
+
+test('folder search is a local presentation filter and preserves folder save and delete operations', () => {
+  const screen = read('./ChatFoldersScreen.js');
+  assert.match(screen, /loadChatFolders\(id\)/);
+  assert.match(screen, /saveChatFolder\(userId/);
+  assert.match(screen, /deleteChatFolder\(userId, folder\.id\)/);
+  assert.match(screen, /setEditingId\(folder\.id\)/);
+});
