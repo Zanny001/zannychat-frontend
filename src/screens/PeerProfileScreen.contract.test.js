@@ -44,17 +44,17 @@ test('peer profile header distinguishes creator identity from a personal connect
 });
 
 test('peer profile exposes direct voice and video calls for the selected contact', () => {
-  assert.ok(screen.includes('label="Voice call"'));
-  assert.ok(screen.includes('label="Video call"'));
-  assert.ok(screen.includes("callType: 'audio', directoryFilter: 'all', targetUserId: creatorId"));
-  assert.ok(screen.includes("callType: 'video', directoryFilter: 'all', targetUserId: creatorId"));
-  assert.ok(screen.includes("navigation.navigate('NewChat'"));
+  assert.ok(source.includes('label="Voice call"'));
+  assert.ok(source.includes('label="Video call"'));
+  assert.ok(source.includes("callType: 'audio', directoryFilter: 'all', targetUserId: creatorId"));
+  assert.ok(source.includes("callType: 'video', directoryFilter: 'all', targetUserId: creatorId"));
+  assert.ok(source.includes("navigation.navigate('NewChat'"));
 });
 
 test('peer profile call actions remain responsive and do not replace LIVE creator actions', () => {
-  assert.ok(screen.includes('flexWrap: \'wrap\''));
-  assert.ok(screen.includes("if (fromLive)"));
-  assert.ok(screen.includes("label={followBusy ? 'Updating follow…'"));
-  assert.ok(screen.includes("label={alreadyViewingLive ? 'Return to LIVE' : 'Watch LIVE'}"));
-  assert.ok(screen.includes('minHeight: 76'));
+  assert.ok(source.includes('flexWrap: \'wrap\''));
+  assert.ok(source.includes("if (fromLive)"));
+  assert.ok(source.includes("label={followBusy ? 'Updating follow…'"));
+  assert.ok(source.includes("label={alreadyViewingLive ? 'Return to LIVE' : 'Watch LIVE'}"));
+  assert.ok(source.includes('minHeight: 76'));
 });
