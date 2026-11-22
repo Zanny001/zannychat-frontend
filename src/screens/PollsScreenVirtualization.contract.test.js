@@ -28,3 +28,11 @@ test('cursor pagination and load-older state remain attached to the list footer'
 test('polls have a distinct participation header context', () => {
   assert.ok(source.includes('YOUR VOICE COUNTS'));
 });
+
+test('conversation polls opens with a Crown Aurora decision hub and live poll count', () => {
+  assert.match(source, /LET EVERY VOICE IN/);
+  assert.ok(source.includes('Decide together.'));
+  assert.ok(source.includes('{polls.length} poll'));
+  assert.match(source, /CREATE A CONVERSATION POLL/);
+  assert.match(source, /THE GROUP'S VOICE/);
+});

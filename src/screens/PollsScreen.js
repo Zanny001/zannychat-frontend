@@ -82,9 +82,23 @@ export default function PollsScreen({ navigation, route }) {
       windowSize={7}
       contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, flexGrow: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
       ListHeaderComponent={
-        <View>
+        <View style={{ gap: spacing.md }}>
+          <GlassCard glow contentStyle={{ padding: spacing.md, gap: spacing.md }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+              <View style={{ width: 52, height: 52, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+                <Ionicons name="podium-outline" size={26} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+                <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.15 }]}>LET EVERY VOICE IN</Text>
+                <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 20 }]}>Decide together.</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>{conversation?.name || 'Your conversation'} · {polls.length} poll{polls.length === 1 ? '' : 's'} loaded</Text>
+              </View>
+            </View>
+            <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 20 }]}>Ask once, gather everyone's choices and keep the decision moving in one place.</Text>
+          </GlassCard>
           <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
-        <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Create a poll</Text>
+        <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.1 }]}>CREATE A CONVERSATION POLL</Text>
+        <Text style={[typography.small, { color: colors.textSecondary }]}>Create a poll your group can answer together.</Text>
         <TextInput value={question} onChangeText={setQuestion} maxLength={240} placeholder="Ask a question" placeholderTextColor={colors.textSecondary} accessibilityLabel="Poll question" style={[typography.body, { color: colors.textPrimary, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, minHeight: 48, padding: spacing.md }]} />
         {options.map((value, index) => <TextInput key={index} value={value} onChangeText={(v) => setOptions((old) => old.map((item, i) => i === index ? v : item))} maxLength={120} placeholder={`Option ${index + 1}${index < 2 ? ' (required)' : ' (optional)'}`} placeholderTextColor={colors.textSecondary} accessibilityLabel={`Poll option ${index + 1}`} style={[typography.body, { color: colors.textPrimary, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.md }]} />)}
         <TouchableOpacity onPress={() => setAllowMultiple((value) => !value)} accessibilityRole="checkbox" accessibilityLabel="Allow multiple poll answers" accessibilityState={{ checked: allowMultiple }} style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}><Ionicons name={allowMultiple ? 'checkbox' : 'square-outline'} size={20} color={allowMultiple ? colors.primary : colors.textSecondary} /><Text style={[typography.body, { color: colors.textPrimary }]}>Allow multiple answers</Text></TouchableOpacity>
@@ -94,7 +108,10 @@ export default function PollsScreen({ navigation, route }) {
         </TouchableOpacity>
         <Text style={[typography.caption, { color: colors.textSecondary }]}>Choose single-choice or multi-select voting; 2–10 options. Percentages show the share of voters who selected each option. Requires migrations 0017, 0051, 0052 and 0053.</Text>
       </GlassCard>
-      <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: spacing.sm }]}>Conversation polls</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+            <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.1 }]}>THE GROUP'S VOICE</Text>
+            <Text style={[typography.small, { color: colors.textSecondary }]}>{polls.length} loaded</Text>
+          </View>
           {loading && polls.length ? <ActivityIndicator color={colors.primary} style={{ padding: spacing.md }} /> : null}
           {error && polls.length ? <View style={{ padding: spacing.md }}><Text style={[typography.body, { color: colors.textSecondary }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading conversation polls" style={{ minHeight: 48, justifyContent: 'center', paddingVertical: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></View> : null}
         </View>
