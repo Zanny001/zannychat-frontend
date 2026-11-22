@@ -618,6 +618,7 @@ export default function CallScreenWeb({ route, navigation }) {
     if (!stream || !pc || !previousTrack) return;
     cameraSwitchInProgressRef.current = true;
     let nextTrack = null;
+    let sender = null;
     const nextFacingMode = cameraFacingModeRef.current === 'user' ? 'environment' : 'user';
     try {
       const cameraStream = await navigator.mediaDevices.getUserMedia({
@@ -626,7 +627,7 @@ export default function CallScreenWeb({ route, navigation }) {
       });
       nextTrack = cameraStream.getVideoTracks?.()[0];
       if (!nextTrack) throw new Error('The selected camera is unavailable.');
-      const sender = cameraSenderRef.current || pc.getSenders().find((item) => item.track?.kind === 'video');
+      sender = cameraSenderRef.current || pc.getSenders().find((item) => item.track?.kind === 'video');
       if (!sender) throw new Error('The call camera is not ready yet.');
       await sender.replaceTrack(nextTrack);
       stream.removeTrack(previousTrack);
@@ -639,6 +640,7 @@ export default function CallScreenWeb({ route, navigation }) {
       setErrorText('');
       setMediaNotice('');
     } catch (error) {
+      if (nextTrack && sender) await sender.replaceTrack(previousTrack).catch(() => {});
       nextTrack?.stop?.();
       setErrorText(error?.message || 'Could not switch cameras. Your current camera remains active.');
     } finally {
