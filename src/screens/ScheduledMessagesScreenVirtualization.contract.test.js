@@ -43,7 +43,7 @@ test('scheduled-message library searches message text and conversation names loc
 });
 
 test('scheduled-message search does not change scheduling, cancellation or server data access', () => {
-  assert.ok(source.includes('await fetchScheduledMessages()'));
+  assert.ok(source.includes('fetchScheduledMessages(),'));
   assert.ok(source.includes('await scheduleMessage(conversationId, validateScheduledMessageText(text), iso)'));
   assert.ok(source.includes('await cancelScheduledMessage(item.id)'));
   assert.ok(source.includes('worker is configured and running'));
