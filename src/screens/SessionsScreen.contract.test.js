@@ -38,7 +38,7 @@ test('session inventory supports searchable mobile and desktop filters with live
   assert.match(screen, /Clear session search/);
   assert.match(screen, /key: 'mobile', label: 'Mobile'/);
   assert.match(screen, /key: 'desktop', label: 'Desktop'/);
-  assert.match(screen, /data/);
+  assert.match(screen, /visibleSessions\.map\(\(item\) => \(/);
   assert.match(screen, /sessionCounts\[option\.key\]/);
 });
 
