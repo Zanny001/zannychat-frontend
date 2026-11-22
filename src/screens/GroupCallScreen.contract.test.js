@@ -75,3 +75,14 @@ test('native group calls can flip the published LiveKit camera without leaving t
   assert.ok(screen.includes('cameraSwitchInProgressRef.current = false'));
   assert.ok(screen.includes('Your current camera is still active. Please try again.'));
 });
+
+test('native and web group calls expose guarded front and rear camera switching', () => {
+  const web = fs.readFileSync(new URL('./GroupCallScreen.web.js', import.meta.url), 'utf8');
+  for (const source of [screen, web]) {
+    assert.ok(source.includes('getTrackPublication(Track.Source.Camera)'));
+    assert.ok(source.includes('restartTrack({ facingMode: nextFacingMode })'));
+    assert.ok(source.includes('cameraSwitchInProgressRef.current = false'));
+    assert.ok(source.includes('Flip camera'));
+    assert.ok(source.includes('Switch to rear camera'));
+  }
+});
