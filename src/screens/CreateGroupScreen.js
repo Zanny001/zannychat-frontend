@@ -132,7 +132,7 @@ export default function CreateGroupScreen({ navigation }) {
           const selected = selectedIds.includes(item.id);
           return (
             <TouchableOpacity onPress={() => toggle(item.id)} activeOpacity={0.8} accessibilityRole="checkbox" accessibilityLabel={'Select ' + item.name + ' for group'} accessibilityState={{ checked: selected }} style={{ minHeight: 48 }}>
-              <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={styles.row} intensity={26}>
+              <GlassCard glow={selected} tintAlpha={selected ? 0.42 : 0.24} style={{ marginBottom: spacing.sm, borderWidth: 1, borderColor: selected ? hexToRgba(colors.primary, 0.58) : colors.border, borderRadius: 18 }} contentStyle={[styles.row, { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs }] } intensity={26}>
                 <Avatar name={item.name} color={item.avatarColor} imageUrl={item.avatarUrl} online={item.online} />
                 <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm, flex: 1, minWidth: 0 }]}>{item.name}</Text>
                 <View
