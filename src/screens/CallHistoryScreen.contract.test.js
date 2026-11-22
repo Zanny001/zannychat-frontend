@@ -80,3 +80,11 @@ test('call history filters are accessible selectable controls', () => {
   assert.ok(callsScreen.includes('accessibilityState={{ checked: selected }}'));
   assert.ok(callsScreen.includes('minHeight: 44'));
 });
+
+test('call history supports accessible contact-name search and a one-tap clear action', () => {
+  assert.ok(callsScreen.includes('const [searchQuery, setSearchQuery] = useState(\'\')'));
+  assert.ok(callsScreen.includes('Search call history by contact name'));
+  assert.ok(callsScreen.includes('String(item.participantName || \'\').toLowerCase().includes(query)'));
+  assert.ok(callsScreen.includes('accessibilityLabel="Clear call history search"'));
+  assert.ok(callsScreen.includes('data={filteredCalls}'));
+});
