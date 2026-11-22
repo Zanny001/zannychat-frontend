@@ -99,7 +99,7 @@ export default function IncomingCallScreen({ route, navigation }) {
       <StatusBar barStyle={resolvedMode === 'light' ? 'dark-content' : 'light-content'} />
       <View style={[styles.glow, { backgroundColor: hexToRgba(colors.primary, 0.14) }]} />
       <View style={styles.top}>
-        <View style={[styles.brandMark, { backgroundColor: colors.primary, shadowColor: colors.primary }]}><Ionicons name="chatbubbles" size={19} color={colors.onPrimary} /></View>
+        <View style={[styles.brandMark, { backgroundColor: colors.primary, borderColor: hexToRgba(colors.onPrimary, 0.24), shadowColor: colors.primary }]}><Ionicons name="chatbubbles" size={19} color={colors.onPrimary} /></View>
         <Text style={[typography.heading, styles.brand, { color: colors.textPrimary }]}>ZannyChat</Text>
         <Text style={[typography.caption, styles.secure, { color: colors.textSecondary }]}><Ionicons name="lock-closed" size={12} color={colors.accent} />  Private call invitation</Text>
       </View>
@@ -109,12 +109,12 @@ export default function IncomingCallScreen({ route, navigation }) {
         <Text style={[typography.body, styles.callKind, { color: colors.textSecondary }]}>{isVideo ? 'Incoming video call' : 'Incoming audio call'}</Text>
         <View style={[styles.statusPill, { backgroundColor: hexToRgba(colors.surface, 0.78), borderColor: colors.border }]}><View style={[styles.liveDot, { backgroundColor: colors.online }]} /><Text style={[typography.small, styles.statusText, { color: colors.textPrimary }]}>{remaining > 0 ? `Ringing · ${remaining}s` : 'Call expired'}</Text></View>
       </View>
-      <View style={[styles.actions, { width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center' }]}>
-        <TouchableOpacity onPress={decline} disabled={busy} accessibilityRole="button" accessibilityLabel="Decline call" style={[styles.action, styles.decline, { backgroundColor: colors.danger, shadowColor: colors.danger }]}>
+      <View style={[styles.actions, { width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center', backgroundColor: hexToRgba(colors.surface, 0.62), borderColor: colors.border }]}>
+        <TouchableOpacity onPress={decline} disabled={busy} accessibilityRole="button" accessibilityLabel="Decline call" style={[styles.action, styles.decline, { backgroundColor: colors.danger, borderColor: colors.border, shadowColor: colors.danger }]}>
           <Ionicons name="call" size={28} color={colors.onDanger} style={{ transform: [{ rotate: '135deg' }] }} />
           <Text style={[typography.small, styles.actionText, { color: colors.onDanger }]}>Decline</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={answer} disabled={busy || remaining <= 0} accessibilityRole="button" accessibilityLabel="Answer call" style={[styles.action, styles.answer, { backgroundColor: colors.primary, shadowColor: colors.primary }, (busy || remaining <= 0) && styles.disabled]}>
+        <TouchableOpacity onPress={answer} disabled={busy || remaining <= 0} accessibilityRole="button" accessibilityLabel="Answer call" style={[styles.action, styles.answer, { backgroundColor: colors.primary, borderColor: colors.border, shadowColor: colors.primary }, (busy || remaining <= 0) && styles.disabled]}>
           {busy ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name={isVideo ? 'videocam' : 'call'} size={28} color={colors.onPrimary} />}
           <Text style={[typography.small, styles.actionText, { color: colors.onPrimary }]}>Answer</Text>
         </TouchableOpacity>
@@ -138,8 +138,8 @@ const styles = StyleSheet.create({
   statusPill: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 19, paddingVertical: 8, paddingHorizontal: 13, borderRadius: 18 },
   liveDot: { width: 7, height: 7, borderRadius: 4 },
   statusText: {},
-  actions: { flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'center', paddingBottom: 25 },
-  action: { width: 84, height: 84, borderRadius: 30, alignItems: 'center', justifyContent: 'center', gap: 6, shadowOpacity: 0.28, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
+  actions: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', alignSelf: 'center', flexWrap: 'wrap', paddingHorizontal: 16, paddingVertical: 16, paddingBottom: 20, gap: 20, borderWidth: 1, borderRadius: 30 },
+  action: { width: 88, height: 88, borderRadius: 30, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 6, shadowOpacity: 0.28, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
   decline: {},
   answer: {},
   disabled: { opacity: 0.5 },

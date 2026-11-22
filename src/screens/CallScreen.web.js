@@ -40,6 +40,7 @@ export default function CallScreenWeb({ route, navigation }) {
   const cameraSenderRef = useRef(null);
   const cameraSwitchInProgressRef = useRef(false);
   const localStreamRef = useRef(null);
+  const cameraFacingModeRef = useRef('user');
   const callRef = useRef(initial);
   const activeRef = useRef(true);
   const remoteDescriptionReady = useRef(false);
@@ -550,7 +551,7 @@ export default function CallScreenWeb({ route, navigation }) {
       } else if (!next && !previousTrack) {
         const cameraStream = await navigator.mediaDevices.getUserMedia({
           audio: false,
-          video: { facingMode: 'user', width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: 24 } },
+          video: { facingMode: cameraFacingModeRef.current, width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: 24 } },
         });
         addedTrack = cameraStream.getVideoTracks?.()[0];
         if (!addedTrack) throw new Error('No camera track was provided by this device.');
@@ -609,6 +610,43 @@ export default function CallScreenWeb({ route, navigation }) {
       cameraSwitchInProgressRef.current = false;
     }
   };
+  const switchCamera = async () => {
+    if (cameraSwitchInProgressRef.current || cameraOff || !activeRef.current) return;
+    const stream = localStreamRef.current;
+    const pc = pcRef.current;
+    const previousTrack = stream?.getVideoTracks?.()[0];
+    if (!stream || !pc || !previousTrack) return;
+    cameraSwitchInProgressRef.current = true;
+    let nextTrack = null;
+    let sender = null;
+    const nextFacingMode = cameraFacingModeRef.current === 'user' ? 'environment' : 'user';
+    try {
+      const cameraStream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { facingMode: { ideal: nextFacingMode }, width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: 24 } },
+      });
+      nextTrack = cameraStream.getVideoTracks?.()[0];
+      if (!nextTrack) throw new Error('The selected camera is unavailable.');
+      sender = cameraSenderRef.current || pc.getSenders().find((item) => item.track?.kind === 'video');
+      if (!sender) throw new Error('The call camera is not ready yet.');
+      await sender.replaceTrack(nextTrack);
+      stream.removeTrack(previousTrack);
+      stream.addTrack(nextTrack);
+      previousTrack.stop();
+      cameraSenderRef.current = sender;
+      cameraFacingModeRef.current = nextFacingMode;
+      localStreamRef.current = stream;
+      setLocalStream(stream);
+      setErrorText('');
+      setMediaNotice('');
+    } catch (error) {
+      if (nextTrack && sender) await sender.replaceTrack(previousTrack).catch(() => {});
+      nextTrack?.stop?.();
+      setErrorText(error?.message || 'Could not switch cameras. Your current camera remains active.');
+    } finally {
+      cameraSwitchInProgressRef.current = false;
+    }
+  };
   const control = (icon, label, action, active = false, danger = false) => (
     <TouchableOpacity key={label} onPress={action} accessibilityRole="button" accessibilityLabel={label}
       style={[styles.control, { backgroundColor: danger ? colors.danger : active ? colors.primary : immersiveVideo ? 'rgba(255,255,255,0.13)' : colors.surfaceAlt, borderColor: immersiveVideo ? 'transparent' : colors.border, borderWidth: immersiveVideo ? 0 : 1 }]}>
@@ -652,9 +690,10 @@ export default function CallScreenWeb({ route, navigation }) {
         {phase !== 'Connected' && phase !== 'Unavailable' && !isTerminalCallStatus(call?.status) ? <ActivityIndicator style={{ marginTop: 18 }} color={immersiveVideo ? '#FFFFFF' : colors.primary} /> : null}
       </View>
       <View style={styles.bottom}>
-        <View style={styles.controlsRow}>
+        <View style={[styles.controlsRow, { backgroundColor: immersiveVideo ? 'rgba(12,12,22,0.72)' : colors.surface, borderColor: immersiveVideo ? 'rgba(255,255,255,0.12)' : colors.border }]}>
           {control(muted ? 'mic-off' : 'mic', muted ? 'Unmute' : 'Mute', toggleMute, muted)}
           {control(cameraOff ? 'videocam-off' : 'videocam', cameraOff ? 'Switch to video' : 'Switch to audio', toggleCamera, cameraOff)}
+          {activeCallType === 'video' ? control('camera-reverse', 'Flip camera', switchCamera) : null}
         </View>
         <TouchableOpacity onPress={() => endCall('ended')} accessibilityRole="button" accessibilityLabel="End call" style={[styles.endButton, { backgroundColor: colors.danger }]}>
           <Ionicons name="call" size={27} color={colors.onDanger} style={{ transform: [{ rotate: '135deg' }] }} />
@@ -693,10 +732,10 @@ const styles = StyleSheet.create({
   name: { marginTop: 24, textAlign: 'center' },
   phase: { marginTop: 9 },
   networkNotice: { textAlign: 'center', marginTop: 12, maxWidth: 320 },
-  error: { textAlign: 'center', marginTop: 16, maxWidth: 340 },
+  error: { textAlign: 'center', marginTop: 16, maxWidth: layout.contentMaxWidth },
   bottom: { paddingHorizontal: 22, paddingBottom: 28, alignItems: 'center' },
-  controlsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 28 },
-  control: { width: 68, height: 68, borderRadius: 22, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  controlsRow: { width: '100%', maxWidth: 340, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', columnGap: 8, rowGap: 8, padding: 10, borderRadius: 28, borderWidth: 1, marginBottom: 20 },
+  control: { width: 64, minWidth: 64, height: 68, minHeight: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center', gap: 4 },
   controlLabel: {},
   endButton: { width: 70, height: 70, borderRadius: 35, backgroundColor: '#E4475A', alignItems: 'center', justifyContent: 'center' },
 });

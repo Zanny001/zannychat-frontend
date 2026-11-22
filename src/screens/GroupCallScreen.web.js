@@ -43,6 +43,8 @@ export default function GroupCallScreenWeb({ route, navigation }) {
   const [muted, setMuted] = useState(false);
   const [cameraOff, setCameraOff] = useState(callType !== 'video');
   const [isVideo, setIsVideo] = useState(callType === 'video');
+  const [cameraFacingMode, setCameraFacingMode] = useState('user');
+  const cameraSwitchInProgressRef = useRef(false);
   const [remoteVideoTracks, setRemoteVideoTracks] = useState([]);
   const [participantIds, setParticipantIds] = useState([]);
   const [audioBlocked, setAudioBlocked] = useState(false);
@@ -304,6 +306,27 @@ export default function GroupCallScreenWeb({ route, navigation }) {
     } catch (error) { setErrorText(error?.message || 'Could not change camera state.'); }
   }, [cameraOff]);
 
+  const switchCamera = useCallback(async () => {
+    const room = roomRef.current;
+    if (cameraSwitchInProgressRef.current || cameraOff || !isVideo || !activeRef.current || !room || room.state !== 'connected') return;
+    const videoTrack = room.localParticipant.getTrackPublication(Track.Source.Camera)?.videoTrack;
+    if (!videoTrack || typeof videoTrack.restartTrack !== 'function') {
+      setErrorText('Camera switching is unavailable on this device. Your call can continue.');
+      return;
+    }
+    const nextFacingMode = cameraFacingMode === 'user' ? 'environment' : 'user';
+    cameraSwitchInProgressRef.current = true;
+    try {
+      await videoTrack.restartTrack({ facingMode: nextFacingMode });
+      setCameraFacingMode(nextFacingMode);
+      setErrorText('');
+    } catch (_) {
+      setErrorText('Could not switch camera. Your current camera is still active.');
+    } finally {
+      cameraSwitchInProgressRef.current = false;
+    }
+  }, [cameraFacingMode, cameraOff, isVideo]);
+
   const enableAudio = useCallback(async () => {
     const room = roomRef.current;
     if (!room) return;
@@ -447,7 +470,7 @@ export default function GroupCallScreenWeb({ route, navigation }) {
         </TouchableOpacity>
       ) : null}
 
-      <View style={[styles.controls, { borderTopColor: colors.border }]}>
+      <View style={[styles.controls, { backgroundColor: hexToRgba(colors.surface, 0.86), borderColor: colors.border }]}>
         <TouchableOpacity onPress={toggleMute} accessibilityRole="button" accessibilityLabel={muted ? 'Unmute microphone' : 'Mute microphone'} style={[styles.control, { backgroundColor: muted ? colors.primary : colors.surface, borderColor: colors.border }]}>
           <Ionicons name={muted ? 'mic-off' : 'mic'} size={21} color={muted ? colors.onPrimary : colors.textPrimary} />
           <Text style={[typography.small, { color: muted ? colors.onPrimary : colors.textPrimary }]}>{muted ? 'Unmute' : 'Mute'}</Text>
@@ -456,6 +479,12 @@ export default function GroupCallScreenWeb({ route, navigation }) {
             <Ionicons name={cameraOff ? 'videocam-off' : 'videocam'} size={21} color={cameraOff ? colors.onPrimary : colors.textPrimary} />
             <Text style={[typography.small, { color: cameraOff ? colors.onPrimary : colors.textPrimary }]}>{cameraOff ? 'Switch to video' : 'Switch to audio'}</Text>
         </TouchableOpacity>
+        {isVideo && !cameraOff ? (
+          <TouchableOpacity onPress={switchCamera} accessibilityRole="button" accessibilityLabel={cameraFacingMode === 'user' ? 'Switch to rear camera' : 'Switch to front camera'} style={[styles.control, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Ionicons name="camera-reverse" size={21} color={colors.textPrimary} />
+            <Text style={[typography.small, { color: colors.textPrimary }]}>Flip camera</Text>
+          </TouchableOpacity>
+        ) : null}
         {canInviteNow ? (
           <TouchableOpacity onPress={() => setInvitePickerVisible(true)} accessibilityRole="button" accessibilityLabel="Add people to call" style={[styles.control, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Ionicons name="person-add" size={21} color={colors.textPrimary} />
@@ -499,6 +528,6 @@ const styles = StyleSheet.create({
   audioOrb: { width: 116, height: 116, borderRadius: 58, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   hiddenAudio: { width: 0, height: 0, overflow: 'hidden' },
   audioUnlock: { alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 11, borderRadius: 13, marginBottom: 8 },
-  controls: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: 10, paddingHorizontal: 12, paddingVertical: 14, borderTopWidth: StyleSheet.hairlineWidth },
-  control: { minWidth: 74, minHeight: 58, borderRadius: 15, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 7 },
+  controls: { width: '100%', maxWidth: 680, alignSelf: 'center', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: 9, marginHorizontal: 12, marginBottom: 14, paddingHorizontal: 12, paddingVertical: 14, borderWidth: 1, borderRadius: 28 },
+  control: { minWidth: 68, minHeight: 64, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 7 },
 });

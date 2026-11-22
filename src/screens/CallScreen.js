@@ -597,9 +597,29 @@ export default function CallScreen({ route, navigation }) {
       cameraSwitchInProgressRef.current = false;
     }
   };
-  const switchCamera = () => {
+  const switchCamera = async () => {
+    if (cameraSwitchInProgressRef.current) return;
+    if (cameraOff || !activeRef.current) {
+      Alert.alert('Camera unavailable', 'Turn your camera on before switching cameras.');
+      return;
+    }
     const track = localRef.current?.getVideoTracks?.()[0];
-    if (track?._switchCamera) track._switchCamera();
+    if (!track || track.readyState === 'ended') {
+      Alert.alert('Camera unavailable', 'Your active camera is not ready yet. Please try again.');
+      return;
+    }
+    if (typeof track._switchCamera !== 'function') {
+      Alert.alert('Camera switching unavailable', 'This device does not support switching cameras during a call.');
+      return;
+    }
+    cameraSwitchInProgressRef.current = true;
+    try {
+      track._switchCamera();
+    } catch (_) {
+      Alert.alert('Could not switch camera', 'Your current camera is still active. Please try again.');
+    } finally {
+      cameraSwitchInProgressRef.current = false;
+    }
   };
   const formatTime = formatCallDuration;
   const iconButton = (name, label, onPress, active = false, danger = false) => (
@@ -631,7 +651,7 @@ export default function CallScreen({ route, navigation }) {
         {phase !== 'Connected' && phase !== 'Unavailable' ? <ActivityIndicator style={{ marginTop: 18 }} color={foreground} /> : null}
       </View>
       <View style={[styles.bottom, { width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }]}>
-        <View style={styles.controlsRow}>
+        <View style={[styles.controlsRow, { backgroundColor: immersiveVideo ? 'rgba(12,12,22,0.72)' : hexToRgba(colors.surface, 0.82), borderColor: immersiveVideo ? 'rgba(255,255,255,0.12)' : colors.border }]}>
           {iconButton(speakerOn ? 'volume-high' : 'volume-low', speakerOn ? 'Speaker' : 'Earpiece', toggleSpeaker, speakerOn)}
           {iconButton(muted ? 'mic-off' : 'mic', muted ? 'Unmute' : 'Mute', toggleMute, muted)}
           {iconButton(cameraOff ? 'videocam-off' : 'videocam', cameraOff ? 'Switch to video' : 'Switch to audio', toggleCamera, cameraOff)}
@@ -679,8 +699,8 @@ const styles = StyleSheet.create({
   retryText: {},
   localVideo: { position: 'absolute', right: 16, top: 76, width: 112, height: 160, borderRadius: 18, overflow: 'hidden', zIndex: 2 },
   bottom: { paddingHorizontal: 22, paddingBottom: 28, alignItems: 'center' },
-  controlsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 28 },
-  control: { width: 68, height: 68, borderRadius: 22, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  controlsRow: { width: '100%', maxWidth: layout.contentMaxWidth, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', columnGap: 8, rowGap: 8, padding: 10, borderRadius: 28, borderWidth: 1, marginBottom: 20 },
+  control: { width: 64, minWidth: 64, height: 68, minHeight: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center', gap: 4 },
   controlLabel: {},
   endButton: { width: 70, height: 70, borderRadius: 35, alignItems: 'center', justifyContent: 'center', shadowOpacity: 0.36, shadowRadius: 17, shadowOffset: { width: 0, height: 6 }, elevation: 7 },
 });

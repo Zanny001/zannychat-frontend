@@ -20,6 +20,8 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
   const [muted, setMuted] = useState(false);
   const [cameraOff, setCameraOff] = useState(callType !== 'video');
   const [isVideo, setIsVideo] = useState(callType === 'video');
+  const [cameraFacingMode, setCameraFacingMode] = useState('user');
+  const cameraSwitchInProgressRef = useRef(false);
   const [connectionState, setConnectionState] = useState('Connecting…');
   const canInviteNow = canInvite && connectionState === 'Connected';
 
@@ -90,6 +92,26 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
     }
   };
 
+  const switchCamera = async () => {
+    if (cameraSwitchInProgressRef.current || cameraOff || !isVideo || room.state !== 'connected') return;
+    const publication = room.localParticipant.getTrackPublication(Track.Source.Camera);
+    const videoTrack = publication?.videoTrack;
+    if (!videoTrack || typeof videoTrack.restartTrack !== 'function') {
+      Alert.alert('Camera switching unavailable', 'This device does not support switching cameras during a group call.');
+      return;
+    }
+    const nextFacingMode = cameraFacingMode === 'user' ? 'environment' : 'user';
+    cameraSwitchInProgressRef.current = true;
+    try {
+      await videoTrack.restartTrack({ facingMode: nextFacingMode });
+      setCameraFacingMode(nextFacingMode);
+    } catch (_) {
+      Alert.alert('Could not switch camera', 'Your current camera is still active. Please try again.');
+    } finally {
+      cameraSwitchInProgressRef.current = false;
+    }
+  };
+
   const chooseAudioOutput = async () => {
     try {
       if (Platform.OS === 'ios') {
@@ -139,10 +161,10 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
           numColumns={2}
           contentContainerStyle={styles.tiles}
           renderItem={({ item }) => (
-            <View style={[styles.tile, { backgroundColor: colors.surfaceAlt }]}>
+            <View style={[styles.tile, { backgroundColor: colors.surfaceAlt, borderColor: item.participant.isSpeaking ? colors.accent : colors.border }]}>
               <VideoTrack trackRef={item} style={styles.video} />
               <View style={styles.tileCaption}>
-                <Text style={[styles.tileName, typography.small]} numberOfLines={1}>{item.participant.name || item.participant.identity}</Text>
+                <View style={styles.tileCaptionRow}><Text style={[styles.tileName, typography.small]} numberOfLines={1}>{item.participant.name || item.participant.identity}</Text>{item.participant.isSpeaking ? <Text style={styles.speakingLabel}>SPEAKING</Text> : null}</View>
               </View>
             </View>
           )}
@@ -162,8 +184,8 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
           <Text style={[styles.audioHint, typography.body, { color: colors.textSecondary }]}>Everyone in the room can hear you when your microphone is on.</Text>
           <View style={styles.participantList}>
             {participants.map((participant) => (
-              <View key={participant.identity} style={[styles.participantChip, { backgroundColor: colors.surfaceAlt, borderColor: colors.border || colors.surfaceAlt }]}>
-                <Ionicons name="person-circle-outline" size={18} color={colors.primary} />
+              <View key={participant.identity} accessibilityRole="text" accessibilityLabel={`${participant.name || participant.identity}${participant.isLocal ? ' (you)' : ''}${participant.isSpeaking ? ', speaking' : ''}`} style={[styles.participantChip, { backgroundColor: participant.isSpeaking ? hexToRgba(colors.primary, 0.12) : colors.surfaceAlt, borderColor: participant.isSpeaking ? colors.primary : colors.border || colors.surfaceAlt }]}>
+                <Ionicons name={participant.isSpeaking ? 'volume-high' : 'person-circle-outline'} size={18} color={participant.isSpeaking ? colors.primary : colors.textSecondary} />
                 <Text style={[styles.participantName, typography.small, { color: colors.textPrimary }]} numberOfLines={1}>
                   {participant.name || participant.identity}
                   {participant.isLocal ? ' (you)' : ''}
@@ -174,7 +196,7 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
         </View>
       )}
 
-      <View style={[styles.controls, { width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }]}>
+      <View style={[styles.controls, { width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center', backgroundColor: hexToRgba(colors.surface, 0.84), borderColor: colors.border }]}>
         <Pressable
           onPress={toggleMute}
           accessibilityRole="button"
@@ -204,6 +226,17 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
             <Ionicons name={cameraOff ? 'videocam-off' : 'videocam'} size={23} color={cameraOff ? colors.onPrimary : colors.textPrimary} />
             <Text style={[styles.controlLabel, typography.small, { color: cameraOff ? colors.onPrimary : colors.textPrimary }]}>{cameraOff ? 'Switch to video' : 'Switch to audio'}</Text>
         </Pressable>
+        {isVideo && !cameraOff && (
+          <Pressable
+            onPress={switchCamera}
+            accessibilityRole="button"
+            accessibilityLabel={cameraFacingMode === 'user' ? 'Switch to rear camera' : 'Switch to front camera'}
+            style={({ pressed }) => controlStyle(pressed)}
+          >
+            <Ionicons name="camera-reverse" size={22} color={colors.textPrimary} />
+            <Text style={[styles.controlLabel, typography.small, { color: colors.textPrimary }]}>Flip camera</Text>
+          </Pressable>
+        )}
         {canInviteNow && (
           <Pressable
             onPress={onAddPeople}
@@ -492,9 +525,11 @@ const styles = StyleSheet.create({
   connectionDot: { width: 7, height: 7, borderRadius: 4 },
   connectionText: { fontSize: 12, fontWeight: '600' },
   tiles: { padding: 8, gap: 8, flexGrow: 1 },
-  tile: { flex: 1, minHeight: 190, margin: 4, borderRadius: 18, overflow: 'hidden' },
+  tile: { flex: 1, minHeight: 190, margin: 4, borderRadius: 20, borderWidth: 1, overflow: 'hidden' },
   video: { flex: 1, minHeight: 190 },
-  tileCaption: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 8, backgroundColor: 'rgba(0,0,0,0.55)' },
+  tileCaption: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 9, backgroundColor: 'rgba(0,0,0,0.58)' },
+  tileCaptionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  speakingLabel: { color: '#FFFFFF', fontSize: 9, fontWeight: '900', letterSpacing: 0.8 },
   tileName: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
   videoEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   empty: { textAlign: 'center', padding: 16, lineHeight: 21 },
@@ -505,8 +540,8 @@ const styles = StyleSheet.create({
   participantList: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 22 },
   participantChip: { maxWidth: '100%', flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: StyleSheet.hairlineWidth, borderRadius: 18, paddingVertical: 7, paddingHorizontal: 10 },
   participantName: { fontSize: 12, fontWeight: '600', maxWidth: 180 },
-  controls: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 12, padding: 14, paddingBottom: 22 },
-  control: { minWidth: 76, minHeight: 72, borderRadius: 24, alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 10 },
+  controls: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 9, marginHorizontal: 12, marginBottom: 14, padding: 12, paddingBottom: 16, borderRadius: 28, borderWidth: 1 },
+  control: { minWidth: 68, minHeight: 68, borderRadius: 22, alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 8 },
   controlLabel: { fontSize: 11, fontWeight: '700' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28 },
   error: { fontSize: 17, fontWeight: '700', textAlign: 'center', marginTop: 16, maxWidth: '100%' },
