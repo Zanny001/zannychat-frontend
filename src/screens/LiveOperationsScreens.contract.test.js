@@ -76,3 +76,15 @@ test('LIVE operations recovery actions each meet the 48-point mobile target', ()
   assert.ok(reports.includes('accessibilityLabel="Retry loading LIVE reports" style={{ minHeight: 48'));
   assert.ok(reports.includes('minHeight: 48, paddingHorizontal: spacing.md'));
 });
+
+test('LIVE guest request queue virtualizes long lists while retaining stage context and recovery states', () => {
+  assert.ok(guestQueue.includes('<FlatList'));
+  assert.ok(guestQueue.includes('data={requests}'));
+  assert.ok(guestQueue.includes('keyExtractor={(item) => String(item.user_id)}'));
+  assert.ok(guestQueue.includes('renderItem={({ item }) =>'));
+  assert.ok(!guestQueue.includes('requests.map('));
+  assert.ok(guestQueue.includes('ListHeaderComponent='));
+  assert.ok(guestQueue.includes('ListEmptyComponent='));
+  assert.ok(guestQueue.includes('refreshControl={<RefreshControl'));
+  assert.ok(guestQueue.includes('Math.max(0, 5 - guestCount)'));
+});
