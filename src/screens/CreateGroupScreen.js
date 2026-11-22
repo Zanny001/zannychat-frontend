@@ -130,6 +130,12 @@ export default function CreateGroupScreen({ navigation }) {
                 <Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text>
               </TouchableOpacity>
             </View>
+          ) : contactSearch.trim() ? (
+            <View style={{ alignItems: 'center', padding: spacing.lg, gap: spacing.sm }}>
+              <Ionicons name="search-outline" size={26} color={colors.textSecondary} />
+              <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>No contacts match that name.</Text>
+              <TouchableOpacity onPress={() => setContactSearch('')} accessibilityRole="button" accessibilityLabel="Clear contact search" style={{ minHeight: 48, justifyContent: 'center', paddingHorizontal: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Clear search</Text></TouchableOpacity>
+            </View>
           ) : (
             <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', padding: spacing.lg }]}>No contacts available to add yet.</Text>
           )
