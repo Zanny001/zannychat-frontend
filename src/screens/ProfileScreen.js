@@ -132,7 +132,7 @@ export default function ProfileScreen({ navigation }) {
         <MenuRow icon="aperture-outline" label="Status updates" description="Share moments with your chosen audience" onPress={() => navigation.navigate('StatusUpdates')} />
         <MenuRow icon="megaphone-outline" label="Channels" description="Discover conversations and communities" onPress={() => navigation.navigate('Channels')} />
         <MenuRow icon="bookmark-outline" label="Saved messages" description="Your private library of important moments" onPress={() => navigation.navigate('SavedMessages')} />
-        <MenuRow icon="time-outline" label="Scheduled messages" description="Messages you have planned for later" onPress={() => navigation.navigate('ScheduledMessages')} />
+        <MenuRow icon="time-outline" label="Scheduled messages" onPress={() => navigation.navigate('ScheduledMessages')} description="Messages you have planned for later" />
         <MenuRow icon="folder-outline" label="Chat folders" description="Organize conversations your way" onPress={() => navigation.navigate('ChatFolders')} />
         <MenuRow icon="people-outline" label="Join a group" description="Find a space to connect and collaborate" onPress={() => navigation.navigate('JoinGroup')} />
         <Text style={[typography.small, { color: colors.textSecondary, marginTop: spacing.lg, marginBottom: spacing.sm, marginLeft: 4, letterSpacing: 1.1 }]}>SUPPORT & STORAGE</Text>
