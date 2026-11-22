@@ -50,3 +50,22 @@ test('profile navigation rows use premium icon wells, descriptive hierarchy and 
   assert.ok(profile.includes('row: { flexDirection: \'row\', alignItems: \'center\', minHeight: 72'));
   assert.ok(profile.includes('accessibilityHint={description ||'));
 });
+
+test('profile hub supports local search across destination names and descriptions', () => {
+  assert.ok(profile.includes('Search profile settings and destinations'));
+  assert.ok(profile.includes('const matchesMenuItem ='));
+  assert.ok(profile.includes('const hasProfileMatches ='));
+  assert.ok(profile.includes('matchesMenuItem(label, description)'));
+  assert.ok(profile.includes('No profile destinations found'));
+  assert.ok(profile.includes('Clear profile search'));
+  assert.ok(profile.includes('profileSearch.trim()'));
+});
+
+test('profile search keeps destination routes and grouped headings intact for matching descriptions', () => {
+  for (const route of ['Settings', 'PrivacySecurity', 'Notifications', 'StatusUpdates', 'Channels', 'SavedMessages', 'ScheduledMessages', 'ChatFolders', 'JoinGroup', 'DataStorage', 'Help']) {
+    assert.ok(profile.includes("navigation.navigate('" + route + "')"), route);
+  }
+  assert.ok(profile.includes('PERSONALIZE & PROTECT'));
+  assert.ok(profile.includes('YOUR CONTENT & COMMUNITY'));
+  assert.ok(profile.includes('SUPPORT & STORAGE'));
+});
