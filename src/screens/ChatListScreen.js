@@ -403,7 +403,7 @@ export default function ChatListScreen({ navigation }) {
         <View style={styles.titleRow}>
           <Knot size={30} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={5} />
           <View style={styles.brandCopy}>
-            <Text numberOfLines={1} style={[typography.small, styles.brandEyebrow, { color: colors.gold }]}>YOUR SPACE</Text>
+            <Text numberOfLines={1} style={[typography.small, styles.brandEyebrow, { color: colors.warning }]}>YOUR SPACE</Text>
             <Text numberOfLines={1} style={[typography.title, { color: colors.textPrimary }]}>Chats</Text>
             <Text numberOfLines={1} style={[typography.small, styles.brandSubtitle, { color: colors.textSecondary }]}>Your people, close.</Text>
           </View>
