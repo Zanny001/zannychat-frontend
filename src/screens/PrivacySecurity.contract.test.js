@@ -69,3 +69,19 @@ test('blocked-list loading settles only for the latest authenticated account req
   assert.match(screen, /if \(requestId === blockedRequestRef\.current\) setLoading\(false\)/);
   assert.match(screen, /authUserIdRef\.current === nextUserId\) setLoading\(false\)/);
 });
+
+test('privacy and security opens with a Crown Aurora trust-center overview', () => {
+  assert.match(screen, /ZANNYCHAT · TRUST CENTER/);
+  assert.match(screen, /Your privacy, clearly explained\./);
+  assert.match(screen, /Review the controls you can use today/);
+  assert.match(screen, /getPrivacyCheckupItems\(\)\.length \+ ' checkpoints'/);
+  assert.match(screen, /Honest privacy limits/);
+  assert.match(screen, /borderColor: hexToRgba\(colors\.primary, 0\.28\)/);
+});
+
+test('privacy trust-center framing preserves honest non-end-to-end-encryption disclosure', () => {
+  assert.match(screen, /messages are not end-to-end encrypted/i);
+  assert.match(screen, /The service operator could technically access message text/i);
+  assert.match(screen, /signed link is still a bearer link/i);
+  assert.match(screen, /private storage bucket/i);
+});
