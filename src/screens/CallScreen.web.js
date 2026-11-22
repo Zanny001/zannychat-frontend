@@ -40,6 +40,7 @@ export default function CallScreenWeb({ route, navigation }) {
   const cameraSenderRef = useRef(null);
   const cameraSwitchInProgressRef = useRef(false);
   const localStreamRef = useRef(null);
+  const cameraFacingModeRef = useRef('user');
   const callRef = useRef(initial);
   const activeRef = useRef(true);
   const remoteDescriptionReady = useRef(false);
@@ -550,7 +551,7 @@ export default function CallScreenWeb({ route, navigation }) {
       } else if (!next && !previousTrack) {
         const cameraStream = await navigator.mediaDevices.getUserMedia({
           audio: false,
-          video: { facingMode: 'user', width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: 24 } },
+          video: { facingMode: cameraFacingModeRef.current, width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: 24 } },
         });
         addedTrack = cameraStream.getVideoTracks?.()[0];
         if (!addedTrack) throw new Error('No camera track was provided by this device.');
@@ -609,6 +610,41 @@ export default function CallScreenWeb({ route, navigation }) {
       cameraSwitchInProgressRef.current = false;
     }
   };
+  const switchCamera = async () => {
+    if (cameraSwitchInProgressRef.current || cameraOff || !activeRef.current) return;
+    const stream = localStreamRef.current;
+    const pc = pcRef.current;
+    const previousTrack = stream?.getVideoTracks?.()[0];
+    if (!stream || !pc || !previousTrack) return;
+    cameraSwitchInProgressRef.current = true;
+    let nextTrack = null;
+    const nextFacingMode = cameraFacingModeRef.current === 'user' ? 'environment' : 'user';
+    try {
+      const cameraStream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { facingMode: { ideal: nextFacingMode }, width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: 24 } },
+      });
+      nextTrack = cameraStream.getVideoTracks?.()[0];
+      if (!nextTrack) throw new Error('The selected camera is unavailable.');
+      const sender = cameraSenderRef.current || pc.getSenders().find((item) => item.track?.kind === 'video');
+      if (!sender) throw new Error('The call camera is not ready yet.');
+      await sender.replaceTrack(nextTrack);
+      stream.removeTrack(previousTrack);
+      stream.addTrack(nextTrack);
+      previousTrack.stop();
+      cameraSenderRef.current = sender;
+      cameraFacingModeRef.current = nextFacingMode;
+      localStreamRef.current = stream;
+      setLocalStream(stream);
+      setErrorText('');
+      setMediaNotice('');
+    } catch (error) {
+      nextTrack?.stop?.();
+      setErrorText(error?.message || 'Could not switch cameras. Your current camera remains active.');
+    } finally {
+      cameraSwitchInProgressRef.current = false;
+    }
+  };
   const control = (icon, label, action, active = false, danger = false) => (
     <TouchableOpacity key={label} onPress={action} accessibilityRole="button" accessibilityLabel={label}
       style={[styles.control, { backgroundColor: danger ? colors.danger : active ? colors.primary : immersiveVideo ? 'rgba(255,255,255,0.13)' : colors.surfaceAlt, borderColor: immersiveVideo ? 'transparent' : colors.border, borderWidth: immersiveVideo ? 0 : 1 }]}>
@@ -655,6 +691,7 @@ export default function CallScreenWeb({ route, navigation }) {
         <View style={[styles.controlsRow, { backgroundColor: immersiveVideo ? 'rgba(12,12,22,0.72)' : colors.surface, borderColor: immersiveVideo ? 'rgba(255,255,255,0.12)' : colors.border }]}>
           {control(muted ? 'mic-off' : 'mic', muted ? 'Unmute' : 'Mute', toggleMute, muted)}
           {control(cameraOff ? 'videocam-off' : 'videocam', cameraOff ? 'Switch to video' : 'Switch to audio', toggleCamera, cameraOff)}
+          {activeCallType === 'video' ? control('camera-reverse', 'Flip camera', switchCamera) : null}
         </View>
         <TouchableOpacity onPress={() => endCall('ended')} accessibilityRole="button" accessibilityLabel="End call" style={[styles.endButton, { backgroundColor: colors.danger }]}>
           <Ionicons name="call" size={27} color={colors.onDanger} style={{ transform: [{ rotate: '135deg' }] }} />
