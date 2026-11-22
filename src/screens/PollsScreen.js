@@ -70,7 +70,7 @@ export default function PollsScreen({ navigation, route }) {
     finally { setVotingPollId(null); }
   };
   return <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
-    <Header title="Polls" subtitle="Ask your conversation and vote" onBack={() => navigation.goBack()} />
+    <Header eyebrow="YOUR VOICE COUNTS" title="Polls" subtitle="Ask your conversation and vote" onBack={() => navigation.goBack()} />
     <FlatList
       style={{ flex: 1 }}
       data={polls}
