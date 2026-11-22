@@ -25,6 +25,7 @@ function formatDuration(seconds) {
 export default function CallHistoryScreen({ navigation }) {
   const { colors, spacing, typography, radii, layout } = useTheme();
   const [calls, setCalls] = useState([]);
+  const [historyFilter, setHistoryFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -38,6 +39,17 @@ export default function CallHistoryScreen({ navigation }) {
   }, []);
   useFocusEffect(useCallback(() => { load(); return undefined; }, [load]));
 
+
+  const isMissedCall = (item) => item.status === 'missed' || (item.status === 'ringing' && Number.isFinite(Date.parse(item.expires_at)) && Date.parse(item.expires_at) <= Date.now());
+  const missedCount = calls.filter(isMissedCall).length;
+  const filteredCalls = calls.filter((item) => {
+    if (historyFilter === 'missed') return isMissedCall(item);
+    if (historyFilter === 'incoming') return item.direction === 'incoming';
+    if (historyFilter === 'outgoing') return item.direction === 'outgoing';
+    if (historyFilter === 'video') return item.call_type === 'video';
+    if (historyFilter === 'audio') return item.call_type !== 'video';
+    return true;
+  });
 
   const removeCall = async (item) => {
     const confirmed = await confirmAction({
@@ -84,7 +96,7 @@ export default function CallHistoryScreen({ navigation }) {
       <Header eyebrow="REAL-TIME CONNECTIONS" title="Calls" subtitle="Your moments, one connection away" />
       <FlatList
         style={{ flex: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
-        data={calls}
+        data={filteredCalls}
         keyExtractor={(item) => `${item.isGroupCall ? 'group' : 'direct'}:${item.id}`}
         showsVerticalScrollIndicator={false}
         initialNumToRender={12}
@@ -140,9 +152,27 @@ export default function CallHistoryScreen({ navigation }) {
             </GlassCard>
           ) : null}
 
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.sm }}>
+            {[
+              { value: 'all', label: 'All calls', count: calls.length },
+              { value: 'missed', label: 'Missed', count: missedCount },
+              { value: 'incoming', label: 'Incoming' },
+              { value: 'outgoing', label: 'Outgoing' },
+              { value: 'video', label: 'Video' },
+              { value: 'audio', label: 'Audio' },
+            ].map((option) => {
+              const selected = historyFilter === option.value;
+              return (
+                <TouchableOpacity key={option.value} onPress={() => setHistoryFilter(option.value)} accessibilityRole="radio" accessibilityLabel={`Show ${option.label.toLowerCase()} call history`} accessibilityState={{ checked: selected }} style={{ minHeight: 44, paddingHorizontal: spacing.md, borderRadius: 14, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? hexToRgba(colors.primary, 0.18) : colors.surface, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}>
+                  <Text style={[typography.caption, { color: selected ? colors.primary : colors.textSecondary, fontWeight: selected ? '900' : '700' }]}>{option.label}</Text>
+                  {typeof option.count === 'number' ? <Text style={[typography.small, { color: selected ? colors.primary : colors.textSecondary, fontWeight: '800' }]}>{option.count}</Text> : null}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
           {loading ? <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} /> : null}</View></View>}
         renderItem={({ item }) => {
-          const missed = item.status === 'missed' || (item.status === 'ringing' && Date.parse(item.expires_at) <= Date.now());
+          const missed = isMissedCall(item);
             const userId = item.direction === 'incoming' ? item.callee_id : item.caller_id;
             const peerUserId = item.direction === 'incoming' ? item.caller_id : item.callee_id;
             const label = getCallHistoryLabel(item, userId);
@@ -180,8 +210,8 @@ export default function CallHistoryScreen({ navigation }) {
               <View style={{ width: 64, height: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.15), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.32) }}>
                 <Ionicons name="call-outline" size={30} color={colors.primary} />
               </View>
-              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Your next hello is one tap away</Text>
-              <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', maxWidth: 260 }]}>Audio and video calls will appear here, including missed calls and call durations.</Text>
+              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{calls.length > 0 ? 'No calls in this view' : 'Your next hello is one tap away'}</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', maxWidth: 260 }]}>{calls.length > 0 ? 'Choose another filter to see more of your call history.' : 'Audio and video calls will appear here, including missed calls and call durations.'}</Text>
             </GlassCard> : null}
         ListFooterComponent={<View>{refreshing ? <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.md }} /> : null}
           {!loading && calls.length > 0 ? <Text style={[typography.small, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>Deleting a record hides it only from your history</Text> : null}
