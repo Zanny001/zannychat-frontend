@@ -12,7 +12,7 @@ import Knot from './Knot';
 // Screens reached with a back button (Chat, New chat, Settings) pass
 // their own title instead — repeating the app logo next to a
 // contact's name would just be noise.
-export default function Header({ title, onBack, right, subtitle, brand = false, onTitlePress }) {
+export default function Header({ title, onBack, right, subtitle, eyebrow, brand = false, onTitlePress }) {
   const { colors, mood, spacing, typography, layout, resolvedMode } = useTheme();
   // Blur is decorative; keep a crisp tinted fallback on Android 10/11.
   const supportsBackdropBlur = Platform.OS !== 'android' || Number(Platform.Version) >= 31;
@@ -38,7 +38,7 @@ export default function Header({ title, onBack, right, subtitle, brand = false, 
               hitSlop={10}
               style={({ pressed }) => [
                 styles.backButton,
-                { marginRight: spacing.sm },
+                { marginRight: spacing.sm, backgroundColor: colors.surface, borderColor: colors.border },
                 pressed && { backgroundColor: hexToRgba(colors.primary, 0.12) },
               ]}
               accessibilityLabel="Go back"
@@ -60,6 +60,11 @@ export default function Header({ title, onBack, right, subtitle, brand = false, 
               accessibilityRole={onTitlePress ? 'button' : undefined}
               accessibilityLabel={onTitlePress ? `View ${title} profile` : undefined}
             >
+              {eyebrow ? (
+                <Text style={[typography.small, styles.eyebrowText, { color: colors.gold || colors.primary }]} numberOfLines={1} ellipsizeMode="tail">
+                  {eyebrow}
+                </Text>
+              ) : null}
               <Text accessibilityRole="header" style={[typography.heading, styles.titleText, { color: colors.textPrimary }]} numberOfLines={1} ellipsizeMode="tail">
                 {title}
               </Text>
@@ -85,8 +90,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   left: { flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0, marginRight: 8 },
-  backButton: { minWidth: 48, minHeight: 48, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  backButton: { minWidth: 48, minHeight: 48, borderRadius: 16, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   titlePressed: { opacity: 0.72 },
+  eyebrowText: { fontSize: 9, lineHeight: 13, letterSpacing: 1.15, fontWeight: '800' },
   titleContent: { flex: 1, minWidth: 0 },
   titleText: { flexShrink: 1, minWidth: 0 },
   subtitleText: { flexShrink: 1, minWidth: 0 },
