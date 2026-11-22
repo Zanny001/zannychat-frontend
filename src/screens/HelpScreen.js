@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking, Alert, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
@@ -36,6 +36,8 @@ const FAQ = [
 export default function HelpScreen({ navigation }) {
   const { colors, spacing, typography, layout } = useTheme();
   const [openIndex, setOpenIndex] = useState(null);
+  const [faqSearch, setFaqSearch] = useState('');
+  const visibleFaq = FAQ.map((item, index) => ({ item, index })).filter(({ item }) => !faqSearch.trim() || (item.q + ' ' + item.a).toLowerCase().includes(faqSearch.trim().toLowerCase()));
   const version = Constants.expoConfig?.version || '1.0.0';
 
   async function handleContact() {
@@ -54,8 +56,30 @@ export default function HelpScreen({ navigation }) {
   return (
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Help" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
-        {FAQ.map((item, index) => {
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
+        <GlassCard glow contentStyle={{ gap: spacing.md, paddingVertical: spacing.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            <View style={{ width: 56, height: 56, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+              <Ionicons name="sparkles-outline" size={27} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+              <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.15 }]}>HERE WHEN YOU NEED US</Text>
+              <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 21 }]}>A little help goes a long way.</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>{FAQ.length} quick answers · ZannyChat v{version}</Text>
+            </View>
+          </View>
+          <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 20 }]}>Find clear answers about your account, conversations, privacy and the features that make ZannyChat yours.</Text>
+        </GlassCard>
+        <View style={{ minHeight: 50, flexDirection: 'row', alignItems: 'center', borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.md }}>
+          <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+          <TextInput value={faqSearch} onChangeText={(value) => { setFaqSearch(value); setOpenIndex(null); }} placeholder="Search help topics or answers" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search help topics and answers" returnKeyType="search" style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, paddingVertical: spacing.sm, paddingLeft: spacing.sm }]} />
+          {faqSearch ? <TouchableOpacity onPress={() => { setFaqSearch(''); setOpenIndex(null); }} accessibilityRole="button" accessibilityLabel="Clear help search" style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xs }}>
+          <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.1 }]}>COMMON QUESTIONS</Text>
+          <Text style={[typography.small, { color: colors.textSecondary }]}>{visibleFaq.length} of {FAQ.length}</Text>
+        </View>
+        {visibleFaq.map(({ item, index }) => {
           const open = openIndex === index;
           return (
             <GlassCard key={index} style={{ marginBottom: spacing.sm }} noPadding intensity={26}>
@@ -83,6 +107,12 @@ export default function HelpScreen({ navigation }) {
           );
         })}
 
+        {visibleFaq.length === 0 ? <GlassCard contentStyle={{ padding: spacing.lg, alignItems: 'center', gap: spacing.sm }}>
+          <Ionicons name="search-outline" size={26} color={colors.textSecondary} />
+          <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>No matching help topics</Text>
+          <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>Try another word or clear your search to browse all answers.</Text>
+          <TouchableOpacity onPress={() => setFaqSearch('')} accessibilityRole="button" accessibilityLabel="Clear help search" style={{ minHeight: 48, justifyContent: 'center', paddingHorizontal: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Clear search</Text></TouchableOpacity>
+        </GlassCard> : null}
         <TouchableOpacity onPress={handleContact} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Contact ZannyChat support by email" style={{ minHeight: 52, justifyContent: 'center' }}>
           <GlassCard contentStyle={styles.contactRow} intensity={26}>
             <Ionicons name="mail-outline" size={20} color={colors.accent} />
