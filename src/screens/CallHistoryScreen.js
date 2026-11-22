@@ -145,7 +145,7 @@ export default function CallHistoryScreen({ navigation }) {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
             {[['all', 'All'], ['missed', 'Missed'], ['audio', 'Audio'], ['video', 'Video'], ['group', 'Group']].map(([value, label]) => {
               const selected = callFilter === value;
-              return <TouchableOpacity key={value} onPress={() => setCallFilter(value)} accessibilityRole="button" accessibilityState={{ selected }} accessibilityLabel={label + ' calls'} style={{ minHeight: 42, justifyContent: 'center', paddingHorizontal: spacing.md, borderRadius: 999, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? hexToRgba(colors.primary, 0.14) : colors.surface }}>
+              return <TouchableOpacity key={value} onPress={() => setCallFilter(value)} accessibilityRole="button" accessibilityState={{ selected }} accessibilityLabel={label + ' calls'} style={{ minHeight: 48, justifyContent: 'center', paddingHorizontal: spacing.md, borderRadius: 999, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? hexToRgba(colors.primary, 0.14) : colors.surface }}>
                 <Text style={[typography.caption, { color: selected ? colors.primary : colors.textSecondary, fontWeight: selected ? '800' : '600' }]}>{label}</Text>
               </TouchableOpacity>;
             })}
