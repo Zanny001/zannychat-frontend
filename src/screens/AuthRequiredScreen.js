@@ -43,11 +43,18 @@ export default function AuthRequiredScreen({ navigation, route }) {
   return (
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={[styles.container, { paddingHorizontal: spacing.lg, paddingVertical: spacing.xl || spacing.lg, maxWidth: layout.formMaxWidth } ]}>
-        <Text style={[typography.caption, styles.brand, { color: colors.primary }]}>ZANNYCHAT</Text>
-        <Text style={[typography.title, styles.title, { color: colors.textPrimary }]}>{validLink ? copy.title : 'This link is incomplete'}</Text>
-        <Text style={[typography.body, styles.body, { color: colors.textSecondary }]}>
-          {validLink ? copy.body : 'Ask the sender to share a fresh link, then open it again.'}
-        </Text>
+        <GlassCard glow intensity={22} contentStyle={{ padding: spacing.lg, gap: spacing.md }}>
+          <View style={{ width: 58, height: 58, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+            <Ionicons name={validLink ? linkIcon : 'link-outline'} size={27} color={colors.primary} />
+          </View>
+          <Text style={[typography.caption, styles.brand, { color: colors.primary }]}>ZANNYCHAT · SECURE LINK</Text>
+          <Text style={[typography.title, styles.title, { color: colors.textPrimary }]}>{validLink ? copy.title : 'This link is incomplete'}</Text>
+          <Text style={[typography.body, styles.body, { color: colors.textSecondary }]}>{validLink ? copy.body : 'Ask the sender to share a fresh link, then open it again.'}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, padding: spacing.md, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }}>
+            <Ionicons name="shield-checkmark-outline" size={19} color={colors.accent} />
+            <Text style={[typography.caption, { color: colors.textSecondary, flex: 1, minWidth: 0, lineHeight: 19 }]}>Your link is only used to resume the requested action after authentication.</Text>
+          </View>
+        </GlassCard>
         {validLink ? (
           <>
             <TouchableOpacity
