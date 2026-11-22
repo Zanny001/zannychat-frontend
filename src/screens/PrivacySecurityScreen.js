@@ -302,6 +302,30 @@ export default function PrivacySecurityScreen({ navigation }) {
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Privacy & security" onBack={() => navigation.goBack()} />
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
+        <GlassCard glow intensity={24} style={{ marginBottom: spacing.md, borderRadius: 24, borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.28) }} contentStyle={{ padding: spacing.lg, gap: spacing.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            <View style={{ width: 52, height: 52, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.16), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.3) }}>
+              <Ionicons name="shield-checkmark-outline" size={25} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+              <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.3 }]}>ZANNYCHAT · TRUST CENTER</Text>
+              <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 21 }]}>Your privacy, clearly explained.</Text>
+            </View>
+          </View>
+          <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>Review the controls you can use today, understand the limits of message protection, and make informed choices about your account.</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
+            {[
+              { icon: 'checkmark-circle-outline', label: getPrivacyCheckupItems().length + ' checkpoints' },
+              { icon: 'lock-closed-outline', label: 'Account controls' },
+              { icon: 'information-circle-outline', label: 'Honest privacy limits' },
+            ].map((item) => (
+              <View key={item.label} style={{ minHeight: 34, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: spacing.sm, borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }}>
+                <Ionicons name={item.icon} size={15} color={colors.accent} />
+                <Text style={[typography.small, { color: colors.textSecondary, fontWeight: '700' }]}>{item.label}</Text>
+              </View>
+            ))}
+          </View>
+        </GlassCard>
         <GlassCard style={{ marginBottom: spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs }}>
             <Ionicons name="shield-checkmark-outline" size={20} color={colors.accent} />
