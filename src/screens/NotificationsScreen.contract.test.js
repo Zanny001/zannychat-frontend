@@ -51,3 +51,12 @@ test('notification preference storage failures are visible and recoverable', () 
 test('notification settings retry control meets the shared 48-point mobile target', () => {
   assert.match(screen, /retryButton: \{ minHeight: 48/);
 });
+
+test('notification settings use a Crown Aurora control-center hierarchy', () => {
+  assert.match(screen, /YOUR ATTENTION, YOUR RULES/);
+  assert.match(screen, /Stay in the loop\./);
+  assert.match(screen, /DELIVERY & SOUND/);
+  assert.match(screen, /MAKE ROOM FOR QUIET/);
+  assert.match(screen, /CONVERSATION CONTROL/);
+  assert.match(screen, /Choose how ZannyChat reaches you/);
+});
