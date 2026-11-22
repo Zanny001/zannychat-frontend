@@ -85,3 +85,13 @@ test('privacy trust-center framing preserves honest non-end-to-end-encryption di
   assert.match(screen, /signed link is still a bearer link/i);
   assert.match(screen, /private storage bucket/i);
 });
+
+test('blocked-account controls support local name search and preserve unblock behavior', () => {
+  assert.match(screen, /const \[blockedSearch, setBlockedSearch\] = useState\(''\)/);
+  assert.match(screen, /const visibleBlocked = blocked\.filter/);
+  assert.match(screen, /Search blocked accounts by name/);
+  assert.match(screen, /Clear blocked account search/);
+  assert.match(screen, /visibleBlocked\.map\(\(entry\) =>/);
+  assert.match(screen, /No blocked accounts match this search/);
+  assert.match(screen, /await unblockUser\(entry\.userId\)/);
+});
