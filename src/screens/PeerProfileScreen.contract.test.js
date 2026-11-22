@@ -53,7 +53,7 @@ test('peer profile exposes direct voice and video calls for the selected contact
 
 test('peer profile call actions remain responsive and do not replace LIVE creator actions', () => {
   assert.ok(source.includes('flexWrap: \'wrap\''));
-  assert.ok(source.includes("if (fromLive)"));
+  assert.ok(source.includes("{fromLive ? ("));
   assert.ok(source.includes("label={followBusy ? 'Updating follow…'"));
   assert.ok(source.includes("label={alreadyViewingLive ? 'Return to LIVE' : 'Watch LIVE'}"));
   assert.ok(source.includes('minHeight: 76'));
