@@ -89,8 +89,18 @@ export default function QRContactScreen({ navigation, route }) {
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Connect by QR" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={{ padding: spacing.lg, alignItems: 'center', width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center' }}>
-        <Text style={[typography.heading, { color: colors.textPrimary, alignSelf: 'flex-start', marginBottom: spacing.xs }]}>Your contact QR</Text>
-        <Text style={[typography.caption, { color: colors.textSecondary, alignSelf: 'flex-start', marginBottom: spacing.md, lineHeight: 20 }]}>Let someone scan this code to start a chat. Only your public profile ID is encoded; never share a recovery link or session token.</Text>
+        <GlassCard glow style={{ width: '100%', marginBottom: spacing.md, borderRadius: 26, borderWidth: 1, borderColor: colors.border }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            <View style={{ width: 54, height: 54, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+              <Ionicons name="qr-code" size={27} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+              <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.25 }]}>YOUR IDENTITY, IN ONE SCAN</Text>
+              <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 21 }]}>Make the introduction effortless.</Text>
+            </View>
+          </View>
+          <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 20 }]}>Share your personal ZannyChat code or scan someone else's to start a conversation. The code contains only your public profile ID — never a recovery link or session token.</Text>
+        </GlassCard>
         <GlassCard style={{ width: '100%', alignItems: 'center', marginBottom: spacing.lg }}>
           {liveReady && user?.id ? (
             <View style={styles.qrWrap}><QRCode value={buildContactQr(user.id)} size={208} backgroundColor="#FFFFFF" color="#15111C" /></View>
@@ -106,7 +116,7 @@ export default function QRContactScreen({ navigation, route }) {
         <GlassCard style={{ width: '100%' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm }}>
             <Ionicons name="scan-outline" size={20} color={colors.accent} />
-            <Text style={[typography.heading, { color: colors.textPrimary, marginLeft: spacing.sm }]}>Scan a contact</Text>
+            <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm }}><Text style={[typography.heading, { color: colors.textPrimary }]}>Meet someone new</Text><Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>Point your camera at their ZannyChat QR</Text></View>
           </View>
           {scanning ? (
             <View style={styles.cameraFrame}>
