@@ -34,3 +34,20 @@ test('saved message empty state responds to active content-type filters', () => 
   assert.match(screen, /query \|\| kindFilter !== 'all' \? 'No matching bookmarks'/);
   assert.match(screen, /Try another filter or clear your search/);
 });
+
+
+test('saved messages library has a distinct collection hero with live count and privacy cue', () => {
+  assert.match(screen, /Your personal collection/);
+  assert.match(screen, /\{items\.length\}/);
+  assert.match(screen, /PRIVATE TO THIS DEVICE/);
+  assert.match(screen, /\{visible\.length\} matching/);
+  assert.match(screen, /ListHeaderComponent=/);
+});
+
+test('saved message cards make the original conversation the clear primary return action', () => {
+  assert.match(screen, /Return to conversation/);
+  assert.match(screen, /borderLeftWidth: 2, borderLeftColor: colors\.primary/);
+  assert.match(screen, /accessibilityLabel="Open saved message in conversation"/);
+  assert.match(screen, /accessibilityLabel="Remove saved message"/);
+  assert.match(screen, /Open the conversation to access the original/);
+});
