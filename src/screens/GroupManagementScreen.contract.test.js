@@ -74,7 +74,3 @@ test('group management exposes direct voice and video calling for the current gr
 test('group member management uses clear community context', () => {
   assert.ok(source.includes('COMMUNITY & MEMBERS'));
 });
-
-test('group member management uses clear community context', () => {
-  assert.ok(source.includes('COMMUNITY & MEMBERS'));
-});
