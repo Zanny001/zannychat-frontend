@@ -59,3 +59,13 @@ test('group creation uses the Crown Aurora welcome surface and preserves the rea
   assert.match(createGroup, /const canCreate = name\.trim\(\)\.length > 0 && selectedIds\.length >= MIN_OTHER_MEMBERS/);
   assert.match(createGroup, /createGroupConversation\(selectedIds, name\.trim\(\), memberProfiles\)/);
 });
+
+test('group management exposes direct voice and video calling for the current group conversation', () => {
+  assert.ok(screen.includes("navigation.navigate('GroupCall'"));
+  assert.ok(screen.includes("callType: 'audio'"));
+  assert.ok(screen.includes("callType: 'video'"));
+  assert.ok(screen.includes('Start a group voice call'));
+  assert.ok(screen.includes('Start a group video call'));
+  assert.ok(screen.includes('conversationId, conversationName:'));
+  assert.ok(screen.includes('minHeight: 50'));
+});
