@@ -218,3 +218,83 @@ Every feature release must include:
 - Production deployment for the merge SHA was still BUILDING at the checkpoint; verify before claiming production rollout.
 - Keep a distinct acceptance check for forced autoplay denial followed by the audio-unlock gesture. The user's successful call confirms normal two-way audio, not necessarily this edge case.
 - Still pending: Android voice-note playback/speed/seek acceptance and LIVE creator/viewer/guest lifecycle acceptance.
+
+
+## 12. Product-wide Crown Aurora quality charter — 2026-11-22
+
+This section supersedes older checkpoint statements above wherever they conflict with the current GitHub, CI and deployment evidence.
+
+### The next major programme: Crown Experience Transformation
+
+ZannyChat's next major product programme is a coordinated, product-wide transformation of its visual and interaction experience. This is not a request to add decorative effects to isolated screens. The objective is a coherent, recognisable, premium communication product in which every surface feels intentionally designed.
+
+**Permanent product rule:** every new feature, bug fix that changes a screen, and existing-screen redesign must meet the Crown Aurora quality bar. Visual quality is a release requirement alongside correctness, accessibility, privacy and performance—not a later polish phase.
+
+### Experience principles
+
+1. **Signature identity:** Crown Aurora uses a deep, composed foundation with purposeful violet/cyan expression and restrained crown-gold accents. Colour must communicate hierarchy and state, not overwhelm content.
+2. **Editorial hierarchy:** confident typography, clear spacing, balanced density, legible metadata and predictable alignment. Avoid oversized containers, cramped controls, noisy gradients and excessive card nesting.
+3. **Crafted surfaces:** consistent radii, borders, elevation, translucency and depth. Glass and glow are accents, not substitutes for contrast or structure.
+4. **Motion with purpose:** short, fluid transitions and feedback that clarify navigation and state. Respect reduced-motion preferences and keep older Android devices smooth.
+5. **Touch-first precision:** generous hit targets, stable layouts, no overlapping controls, safe-area awareness and comfortable one-handed use.
+6. **Complete states:** every screen must intentionally design loading, empty, populated, offline, error, disabled, pressed, selected, permission-denied and destructive-confirmation states where relevant.
+7. **Personal expression:** user-selected accents and appearance options must remain tasteful, accessible, persistent and consistent across screens.
+8. **Content leads:** messages, media, people and creator content remain the focus. Avoid UI chrome that competes with the conversation.
+9. **Accessible by default:** sufficient contrast, scalable text, screen-reader labels, keyboard support on web, focus visibility and reduced motion.
+10. **Performance is part of luxury:** bounded media, responsive transitions, no avoidable layout shifts, no unnecessary animation, and graceful behaviour on low/mid-range Android devices.
+
+### Scope — no screen left behind
+
+The transformation covers the complete registered application, not just Chats:
+- Main navigation and every primary destination.
+- Chats list, chat thread, composer, message actions, drafts, saved/pinned messages, folders and shared media.
+- New chat, contacts, search, discovery and channel experiences.
+- Profiles, identity cards, settings, privacy, account and personalisation.
+- Calls, incoming/outgoing call states, in-call controls and call history.
+- LIVE discovery, creator dashboard, preflight, viewer, guest, moderation and replay surfaces.
+- Updates/stories, groups, communities, notifications and supporting flows.
+
+The canonical screen inventory must be reconciled before declaring coverage complete. Every screen receives an explicit audit status; shared components do not count as proof that every screen has been reviewed.
+
+### Delivery method — broad vision, controlled engineering
+
+Work should be organised as coherent experience domains and vertical slices, not scattered micro-polish tickets. Each domain should include its complete screen family, shared components, interaction states, responsive behaviour, accessibility, tests and evidence. Cross-domain foundations should be reused rather than reimplemented.
+
+Recommended order:
+1. **Design foundation and inventory:** reconcile screen/module counts, map current navigation and identify shared primitives, theme tokens, typography, spacing and interaction patterns.
+2. **Core communication experience:** Chats, Chat, composer, message bubbles, media, search and contact discovery.
+3. **Identity and personalisation:** profiles, settings, appearance, privacy and account surfaces.
+4. **Real-time experience:** Calls and LIVE, including their complete pre-join, active, reconnecting, ended and failure states.
+5. **Social and discovery:** Updates, Channels/Explore, groups and community surfaces.
+6. **System-wide finish:** transitions, haptics, accessibility, responsive web, low-end Android performance and visual regression coverage.
+
+Reliability P0 work continues in parallel where safe. Do not delay urgent production fixes for visual work, and do not use visual work to conceal unresolved functional defects.
+
+### Mandatory acceptance scorecard
+
+A screen or feature is not complete until it passes all applicable checks:
+- Visual coherence with Crown Aurora and neighbouring screens.
+- Correct hierarchy, spacing, density, typography and moderate view/container sizing.
+- Responsive behaviour at narrow Android sizes and web breakpoints.
+- No overlap, clipping, jitter, unintended scroll traps or broken safe areas.
+- All primary and secondary controls perform their real actions.
+- Loading, empty, error, offline, disabled and success states are designed.
+- Accessibility, contrast, touch targets and reduced-motion behaviour pass.
+- Existing navigation, data contracts, permissions and user preferences remain intact.
+- Tests cover important interactions and regressions.
+- Real-device review is recorded for high-traffic or media-heavy screens.
+
+A screen may be labelled **implemented**, **automated-tested**, **deployed**, or **device-accepted** only when that exact status is supported by evidence. A preview or green CI run is not visual/device acceptance.
+
+### Current P0 release checkpoint
+
+- Main commit: `eabe8be04d9e1d26c1b54cf939d72e4f3d60a4b2`.
+- Advanced calling client CI on that commit completed successfully: dependency audit, client quality and bundle exposure audit all passed.
+- Vercel production deployment for that exact commit is READY and aliases include `https://zannychat.vercel.app`.
+- Two-participant audio call: user confirmed clear two-way audio; browser remote-audio recovery PR #301 is merged.
+- Still awaiting real-device acceptance: Android voice-note play/pause, speed, seek and duration; LIVE creator/viewer/guest lifecycle and post-end polling behaviour; the distinct forced-autoplay-denial/audio-unlock edge case.
+- These remaining checks must stay visible; production readiness does not imply every P0 device gate is accepted.
+
+### Cost and product discipline
+
+Maintain the ₦0/free-tier constraint unless the user explicitly approves a disclosed cost. Premium perception must come from design craft, performance and useful capability—not paid dependencies, fake counters, simulated transactions, or decorative features with no user value.
