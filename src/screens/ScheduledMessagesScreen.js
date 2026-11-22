@@ -19,6 +19,7 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
   const [scheduledFor, setScheduledFor] = useState(() => localDateTimeInput(new Date(Date.now() + 60 * 60 * 1000)));
   const [items, setItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [conversationSearch, setConversationSearch] = useState('');
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -85,6 +86,10 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
     return found?.participant?.name || found?.name || (id === conversationId ? conversation?.participant?.name || conversation?.name : null) || 'Conversation';
   };
   const canChooseConversation = !initialConversationId;
+  const visibleConversations = conversations.filter((row) => {
+    const query = conversationSearch.trim().toLowerCase();
+    return !query || conversationName(row.id).toLowerCase().includes(query);
+  });
   const filteredItems = items.filter((item) => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return true;
@@ -116,8 +121,14 @@ export default function ScheduledMessagesScreen({ navigation, route }) {
           </Text>
           {canChooseConversation && conversations.length > 0 ? (
             <View style={{ gap: spacing.xs }}>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>Conversation</Text>
-              {conversations.slice(0, 100).map((row) => {
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>Conversation · {visibleConversations.length} of {conversations.length}</Text>
+              <View style={{ minHeight: 46, flexDirection: 'row', alignItems: 'center', borderRadius: 13, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.sm }}>
+                <Ionicons name="search-outline" size={17} color={colors.textSecondary} />
+                <TextInput value={conversationSearch} onChangeText={setConversationSearch} placeholder="Find a conversation" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search conversations for scheduled message" returnKeyType="search" style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs }]} />
+                {conversationSearch ? <TouchableOpacity onPress={() => setConversationSearch('')} accessibilityRole="button" accessibilityLabel="Clear conversation search" style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={17} color={colors.textSecondary} /></TouchableOpacity> : null}
+              </View>
+              {visibleConversations.length === 0 ? <Text style={[typography.caption, { color: colors.textSecondary }]}>No matching conversations. Try another name or clear your search.</Text> : null}
+              {visibleConversations.map((row) => {
                 const active = row.id === conversationId;
                 return <TouchableOpacity key={row.id} onPress={() => setSelectedConversationId(row.id)} accessibilityRole="radio" accessibilityState={{ checked: active }} accessibilityLabel={`Schedule for ${conversationName(row.id)}`} style={{ padding: spacing.sm, borderRadius: radii.md, borderWidth: 1, borderColor: active ? colors.primary : colors.border, backgroundColor: active ? `${colors.primary}14` : 'transparent', flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <Ionicons name={active ? 'radio-button-on' : 'radio-button-off'} size={18} color={active ? colors.primary : colors.textSecondary} />
