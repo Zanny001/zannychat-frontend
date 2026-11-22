@@ -6,7 +6,7 @@ const source = readFileSync(new URL('./ScheduledMessagesScreen.js', import.meta.
 
 test('pending scheduled messages render through a virtualized list', () => {
   assert.ok(source.includes('<FlatList'));
-  assert.ok(source.includes('data={items}'));
+  assert.ok(source.includes('data={visibleItems}'));
   assert.ok(source.includes('keyExtractor='));
   assert.ok(source.includes('renderItem='));
   assert.ok(!source.includes('items.map((item) => ('));
