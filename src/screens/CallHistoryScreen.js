@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,6 +29,8 @@ export default function CallHistoryScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [deletingCallId, setDeletingCallId] = useState(null);
+  const [callFilter, setCallFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const load = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true); else setLoading(true);
     setError('');
@@ -73,6 +75,20 @@ export default function CallHistoryScreen({ navigation }) {
     });
   };
 
+  const visibleCalls = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return calls.filter((item) => {
+      const missed = item.status === 'missed' || (item.status === 'ringing' && Date.parse(item.expires_at) <= Date.now());
+      const matchesFilter = callFilter === 'all'
+        || (callFilter === 'missed' && missed)
+        || (callFilter === 'video' && item.call_type === 'video')
+        || (callFilter === 'audio' && item.call_type !== 'video')
+        || (callFilter === 'group' && Boolean(item.isGroupCall));
+      const searchable = [item.participantName, item.call_type, item.status, item.direction, item.isGroupCall ? 'group' : 'direct'].filter(Boolean).join(' ').toLowerCase();
+      return matchesFilter && (!query || searchable.includes(query));
+    });
+  }, [calls, callFilter, searchQuery]);
+
   const actions = [
     { title: 'Audio', subtitle: 'Start a voice call', icon: 'call-outline', accent: colors.primary, action: () => navigation.navigate('NewChat', { callType: 'audio', directoryFilter: 'all' }) },
     { title: 'Video', subtitle: 'Face to face', icon: 'videocam-outline', accent: colors.accent || colors.primary, action: () => navigation.navigate('NewChat', { callType: 'video', directoryFilter: 'all' }) },
@@ -84,7 +100,7 @@ export default function CallHistoryScreen({ navigation }) {
       <Header eyebrow="REAL-TIME CONNECTIONS" title="Calls" subtitle="Your moments, one connection away" />
       <FlatList
         style={{ flex: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
-        data={calls}
+        data={visibleCalls}
         keyExtractor={(item) => `${item.isGroupCall ? 'group' : 'direct'}:${item.id}`}
         showsVerticalScrollIndicator={false}
         initialNumToRender={12}
@@ -120,7 +136,20 @@ export default function CallHistoryScreen({ navigation }) {
           </View>
         </View>
 
-        <View style={{ gap: spacing.sm }}>
+        <View style={{ gap: spacing.md }}>
+          <View style={{ minHeight: 50, flexDirection: 'row', alignItems: 'center', borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.md }}>
+            <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+            <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder="Search people or call types" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search call history" returnKeyType="search" style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, paddingVertical: spacing.sm, paddingLeft: spacing.sm }]} />
+            {searchQuery ? <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear call history search" style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
+            {[['all', 'All'], ['missed', 'Missed'], ['audio', 'Audio'], ['video', 'Video'], ['group', 'Group']].map(([value, label]) => {
+              const selected = callFilter === value;
+              return <TouchableOpacity key={value} onPress={() => setCallFilter(value)} accessibilityRole="button" accessibilityState={{ selected }} accessibilityLabel={label + ' calls'} style={{ minHeight: 42, justifyContent: 'center', paddingHorizontal: spacing.md, borderRadius: 999, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? hexToRgba(colors.primary, 0.14) : colors.surface }}>
+                <Text style={[typography.caption, { color: selected ? colors.primary : colors.textSecondary, fontWeight: selected ? '800' : '600' }]}>{label}</Text>
+              </TouchableOpacity>;
+            })}
+          </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ gap: 2 }}>
               <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Recent calls</Text>
@@ -180,8 +209,8 @@ export default function CallHistoryScreen({ navigation }) {
               <View style={{ width: 64, height: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.15), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.32) }}>
                 <Ionicons name="call-outline" size={30} color={colors.primary} />
               </View>
-              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Your next hello is one tap away</Text>
-              <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', maxWidth: 260 }]}>Audio and video calls will appear here, including missed calls and call durations.</Text>
+              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{searchQuery.trim() || callFilter !== 'all' ? 'No matching calls' : 'Your next hello is one tap away'}</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', maxWidth: 260 }]}>{searchQuery.trim() || callFilter !== 'all' ? 'Try another filter or clear your search to see more of your call history.' : 'Audio and video calls will appear here, including missed calls and call durations.'}</Text>
             </GlassCard> : null}
         ListFooterComponent={<View>{refreshing ? <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.md }} /> : null}
           {!loading && calls.length > 0 ? <Text style={[typography.small, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>Deleting a record hides it only from your history</Text> : null}
