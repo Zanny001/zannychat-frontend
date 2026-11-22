@@ -116,9 +116,16 @@ export default function DraftsScreen({ navigation }) {
                     <Ionicons name="document-text-outline" size={22} color={colors.primary} />
                   </View>
                   <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.md }}>
-                    <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Pick up where you left off</Text>
-                    <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>Drafts stay on this device and do not sync across devices.</Text>
+                    <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Your message studio</Text>
+                    <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>Thoughts in progress, ready when you are. Drafts stay on this device.</Text>
                   </View>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.md, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                    <Ionicons name="lock-closed-outline" size={13} color={colors.textSecondary} />
+                    <Text style={[typography.caption, { color: colors.textSecondary }]}>PRIVATE TO THIS DEVICE</Text>
+                  </View>
+                  <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>{drafts.length} {drafts.length === 1 ? 'DRAFT' : 'DRAFTS'}</Text>
                 </View>
               </GlassCard>
               {error ? (
@@ -160,8 +167,16 @@ export default function DraftsScreen({ navigation }) {
                     <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: `${colors.accent}18`, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.accent} /></View>
                     <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.md }}>
                       <Text style={[typography.bodyStrong, { color: colors.textPrimary }]} numberOfLines={1}>{title}</Text>
-                      <Text style={[typography.body, { color: colors.textSecondary, marginTop: 5 }]} numberOfLines={3}>{draft.text}</Text>
-                      <Text style={[typography.caption, { color: colors.primary, marginTop: spacing.sm }]}>{updatedLabel(draft.updatedAt).toUpperCase()}  ·  CONTINUE DRAFT</Text>
+                      <View style={{ borderLeftWidth: 2, borderLeftColor: colors.accent, paddingLeft: spacing.sm, marginTop: spacing.sm }}>
+                        <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]} numberOfLines={3}>{draft.text}</Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.sm }}>
+                        <Text style={[typography.caption, { color: colors.textSecondary }]}>{updatedLabel(draft.updatedAt).toUpperCase()}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>CONTINUE</Text>
+                          <Ionicons name="arrow-forward" size={13} color={colors.primary} />
+                        </View>
+                      </View>
                     </View>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => confirmDelete(draft)} accessibilityRole="button" accessibilityLabel={`Delete draft for ${title}`} hitSlop={8} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', marginLeft: spacing.xs }}><Ionicons name="trash-outline" size={18} color={colors.danger} /></TouchableOpacity>

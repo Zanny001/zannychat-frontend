@@ -34,3 +34,18 @@ test('draft search keeps local storage, conversation resolution and safe deletio
   assert.match(screen, /await clearDraft\(draft\.key\)/);
   assert.match(screen, /navigation\.navigate\('Chat', \{ conversation \}\)/);
 });
+
+test('drafts library presents a private message-studio identity with a live draft count', () => {
+  assert.match(screen, /Your message studio/);
+  assert.match(screen, /PRIVATE TO THIS DEVICE/);
+  assert.ok(screen.includes('{drafts.length}'));
+  assert.match(screen, /Thoughts in progress, ready when you are/);
+});
+
+test('draft previews use a clear editorial hierarchy while preserving continue and delete actions', () => {
+  assert.ok(screen.includes('borderLeftWidth: 2, borderLeftColor: colors.accent'));
+  assert.match(screen, /CONTINUE/);
+  assert.match(screen, /Continue draft for/);
+  assert.match(screen, /Delete draft for/);
+  assert.ok(screen.includes('numberOfLines={3}'));
+});
