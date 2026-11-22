@@ -133,12 +133,20 @@ export default function ContactDiscoveryScreen({ navigation }) {
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Find friends" onBack={() => navigation.goBack()} />
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
-        <GlassCard contentStyle={{ gap: spacing.sm }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-            <View style={{ width: 46, height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface }}><Ionicons name="people-circle-outline" size={27} color={colors.primary} /></View>
-            <View style={{ flex: 1, minWidth: 0 }}><Text style={[typography.heading, { color: colors.textPrimary }]}>Find your people</Text><Text style={[typography.caption, { color: colors.textSecondary }]}>Private, opt-in phone matching</Text></View>
+        <GlassCard glow contentStyle={{ gap: spacing.md, paddingVertical: spacing.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            <View style={{ width: 54, height: 54, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}><Ionicons name="people-circle-outline" size={29} color={colors.primary} /></View>
+            <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+              <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.15 }]}>CONNECTIONS, ON YOUR TERMS</Text>
+              <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 21 }]}>Your circle starts here.</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>Private, opt-in phone matching</Text>
+            </View>
           </View>
-          <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>Choose specific phone numbers to match against registered ZannyChat members. Numbers are sent only when you tap Match, processed in memory on the secure backend, and never returned in results or saved to this device by this screen.</Text>
+          <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>Choose only the phone numbers you want to check. Nothing is matched until you tap the button. Selected numbers are processed in memory on the secure backend; raw numbers are never returned in results or saved by this screen.</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, alignSelf: 'flex-start', borderRadius: radii.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.md, paddingVertical: spacing.xs }}>
+            <Ionicons name="shield-checkmark-outline" size={15} color={colors.primary} />
+            <Text style={[typography.small, { color: colors.textSecondary }]}>You choose what gets checked</Text>
+          </View>
         </GlassCard>
 
         <GlassCard contentStyle={{ gap: spacing.sm }}>
