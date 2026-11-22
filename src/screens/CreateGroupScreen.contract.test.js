@@ -17,7 +17,7 @@ test('group creation provides local contact search and clear no-match recovery',
 test('group contact search does not change selection or the minimum group membership rule', () => {
   assert.match(screen, /const MIN_OTHER_MEMBERS = 2/);
   assert.match(screen, /selectedIds\.length >= MIN_OTHER_MEMBERS/);
-  assert.match(screen, /selectedIds\.includes\(contactId\)/);
+  assert.match(screen, /prev\.includes\(contactId\)/);
   assert.match(screen, /createGroupConversation\(selectedIds, name\.trim\(\), memberProfiles\)/);
   assert.match(screen, /accessibilityRole="checkbox"/);
 });
