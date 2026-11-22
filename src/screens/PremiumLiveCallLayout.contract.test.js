@@ -39,7 +39,7 @@ test('Native and web call invite actions are not undersized', () => {
   for (const name of ['CallScreen.js', 'CallScreen.web.js']) {
     const source = read(name);
     assert.match(source, /addPeopleButton: \{ width: 48, height: 48, minWidth: 48, minHeight: 48/);
-    assert.match(source, /control: \{ width: 68, height: 68/);
+    assert.match(source, /control: \{ width: 64, minWidth: 64, height: 68, minHeight: 64/);
   }
 });
 
@@ -47,7 +47,7 @@ test('Group call stages remain bounded instead of expanding into oversized panel
   const native = read('GroupCallScreen.js');
   const web = read('GroupCallScreen.web.js');
   assert.match(native, /tile: \{ flex: 1, minHeight: 190/);
-  assert.match(native, /control: \{ minWidth: 76, minHeight: 72/);
+  assert.match(native, /control: \{ minWidth: 68, minHeight: 68/);
   assert.match(web, /videoTile: \{ width: '47%', minWidth: 145, aspectRatio: 9 \/ 16, maxHeight: 330/);
   assert.match(web, /control: \{ minWidth: 74, minHeight: 58/);
 });
