@@ -40,3 +40,14 @@ test('participant roster remains a read-only presentation and does not bypass se
   assert.doesNotMatch(web, /\/group-calls\/.*\/mute/);
   assert.doesNotMatch(web, /\/group-calls\/.*\/remove/);
 });
+
+
+test('participant media changes trigger fresh roster renders on native and web', () => {
+  assert.match(native, /const refreshMediaState = \(\) => setParticipantMediaRevision/);
+  assert.match(native, /room\.on\(RoomEvent\.TrackMuted, refreshMediaState\)/);
+  assert.match(native, /room\.on\(RoomEvent\.TrackUnmuted, refreshMediaState\)/);
+  assert.match(web, /const onTrackMuted = \(publication, participant\) => \{/);
+  assert.match(web, /const onTrackUnmuted = \(publication, participant\) => \{/);
+  assert.match(web, /updateRemoteVideoMuteState\(publication, participant, true\);\s*refreshParticipants\(\);/);
+  assert.match(web, /updateRemoteVideoMuteState\(publication, participant, false\);\s*refreshParticipants\(\);/);
+});
