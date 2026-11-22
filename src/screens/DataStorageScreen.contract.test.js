@@ -26,3 +26,9 @@ test('Data & storage exposes session-only state and a retry action after persist
 test('Data & storage retry control meets the shared 48-point mobile target', () => {
   assert.match(read('./DataStorageScreen.js'), /retryButton: \{ minHeight: 48/);
 });
+
+test('Data & storage does not claim preferences are saved until device loading succeeds', () => {
+  const screen = read('./DataStorageScreen.js');
+  assert.match(screen, /persistenceError \? 'SESSION ONLY · NOT SAVED' : loaded \? 'PREFERENCES SAVED ON THIS DEVICE' : 'LOADING DEVICE PREFERENCES…'/);
+  assert.match(screen, /if \(active\) setLoaded\(true\)/);
+});
