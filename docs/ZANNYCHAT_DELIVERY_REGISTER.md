@@ -974,3 +974,13 @@ No production migration, SQL, data, storage, auth, infrastructure or cleanup job
 - LIVE creator/viewer/guest test on the deployed #300 release, including active guest-request polling, end/leave semantics and no post-teardown polling.
 
 No production database, Auth, Storage, backend configuration, or infrastructure mutation was made by these frontend changes.
+
+
+## 37. Browser two-way audio acceptance and merge — 2026-11-22 07:19 UTC
+
+- User completed a real audio-call test and explicitly confirmed that both participants could hear each other clearly in both directions.
+- PR #301 merged into main as `b4b9eee9eecc98e511d4b939376ce778f782465d`. It reapplies browser LiveKit remote audio attachment, audible autoplay configuration, autoplay-rejection recovery through the existing audio-unlock action, track-SID cleanup, and regression coverage on the current main baseline.
+- The exact PR head had passing advanced-calling client checks, premium/LIVE quality checks, dependency audit and bundle-exposure audit; its Vercel preview was READY.
+- The new production deployment for merge SHA `b4b9eee9eecc98e511d4b939376ce778f782465d` was BUILDING at this checkpoint. Verify READY state and production alias before calling it deployed.
+- Remaining calling nuance: the user confirmed clear two-way audio; a separate forced browser autoplay-denied then gesture-unlock scenario has not been explicitly confirmed by the user.
+- Voice-note playback/speed/seek acceptance and LIVE creator/viewer/guest lifecycle acceptance remain open.
