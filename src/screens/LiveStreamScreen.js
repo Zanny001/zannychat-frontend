@@ -518,6 +518,8 @@ export default function LiveStreamScreen({ route, navigation }) {
   const guestStatusRefreshInFlight = useRef(false);
   const guestRequestsRefreshInFlight = useRef(false);
   const replayRefreshInFlight = useRef(false);
+  const reactionRequestInFlight = useRef(false);
+  const lastReactionRequestAt = useRef(0);
   const studioParticipantsRefreshInFlight = useRef(false);
   const mediaVideoEnabled = Boolean(publisherMode && stream?.experience_mode !== 'audio_room');
   const [cameraEnabled, setCameraEnabled] = useState(mediaVideoEnabled);
@@ -919,15 +921,20 @@ export default function LiveStreamScreen({ route, navigation }) {
   };
 
   const react = async (reaction = 'heart') => {
-    if (!stream?.id) {
-      Alert.alert('Reaction not sent', 'The LIVE room is still connecting. Please try again.');
-      return;
-    }
+    if (!stream?.id || reactionRequestInFlight.current) return;
+    const now = Date.now();
+    // The server allows eight reactions per ten seconds. Keep client traffic
+    // below that ceiling and ignore double taps while a request is in flight.
+    if (now - lastReactionRequestAt.current < 1300) return;
+    reactionRequestInFlight.current = true;
+    lastReactionRequestAt.current = now;
     try {
       const result = await backendFetch(`/live/${stream.id}/react`, { method: 'POST', body: JSON.stringify({ reaction }) });
       if (result?.accepted) await refreshComments();
     } catch (e) {
       Alert.alert('Reaction not sent', e?.message || 'Please try again.');
+    } finally {
+      reactionRequestInFlight.current = false;
     }
   };
   const removeFloatingReaction = useCallback((reactionId) => {
