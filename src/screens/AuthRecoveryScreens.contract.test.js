@@ -15,7 +15,7 @@ test('password recovery uses a privacy-first Crown Aurora entry and generic subm
   assert.ok(recovery.includes('requestPasswordReset(normalizedEmail)'));
   assert.ok(recovery.includes('normalizeEmail(email)'));
   assert.ok(recovery.includes('isValidEmail(normalizedEmail)'));
-  assert.ok(recovery.includes('accessibilityLabel="Send recovery instructions"'));
+  assert.ok(recovery.includes("accessibilityLabel={loading ? 'Requesting password reset' : 'Send recovery instructions'}"));
   assert.ok(recovery.includes('minHeight: 54'));
 });
 
