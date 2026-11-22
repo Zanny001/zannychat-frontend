@@ -150,3 +150,22 @@ test('LIVE safety reports support local reason/detail search alongside status fi
   assert.ok(reports.includes('No matching reports'));
   assert.ok(reports.includes('data={visibleReports}'));
 });
+
+test('LIVE participant moderation supports local name and role search alongside role filters', () => {
+  assert.ok(moderation.includes("const [searchQuery, setSearchQuery] = useState('')"));
+  assert.ok(moderation.includes('const visibleParticipants = useMemo'));
+  assert.ok(moderation.includes("String(item.name || '') + ' ' + String(item.role || '')"));
+  assert.ok(moderation.includes('Search LIVE participants by name or role'));
+  assert.ok(moderation.includes('Clear participant search'));
+  assert.ok(moderation.includes('No matching participants'));
+  assert.ok(moderation.includes('data={visibleParticipants}'));
+});
+
+test('LIVE operations searches filter already-loaded queue data locally', () => {
+  assert.ok(guestQueue.includes('const visibleRequests = requests.filter'));
+  assert.ok(reports.includes('const visibleReports = useMemo'));
+  assert.ok(moderation.includes('const visibleParticipants = useMemo'));
+  assert.ok(guestQueue.includes('data={visibleRequests}'));
+  assert.ok(reports.includes('data={visibleReports}'));
+  assert.ok(moderation.includes('data={visibleParticipants}'));
+});
