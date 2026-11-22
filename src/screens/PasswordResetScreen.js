@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Linking, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { completePasswordReset } from '../services/api';
@@ -32,6 +33,8 @@ export default function PasswordResetScreen({ navigation, route }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [complete, setComplete] = useState(false);
+  const lengthValid = password.length >= 8 && password.length <= 128;
+  const passwordsMatch = password.length > 0 && password === confirmPassword;
 
   useEffect(() => {
     let mounted = true;
@@ -75,18 +78,34 @@ export default function PasswordResetScreen({ navigation, route }) {
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <View style={{ padding: spacing.lg, flex: 1, minWidth: 0, justifyContent: 'center', width: '100%', maxWidth: layout.formMaxWidth, alignSelf: 'center' }}>
-          <Knot size={40} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={7} />
-          <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.md, marginBottom: spacing.xs }]}>Choose a new password</Text>
-          <Text style={[typography.body, { color: colors.textSecondary, marginBottom: spacing.lg }]}>Set a new password for your ZannyChat account.</Text>
+          <Knot size={48} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={7} />
+          <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.5, marginTop: spacing.lg }]}>ZANNYCHAT · SECURE YOUR ACCOUNT</Text>
+          <Text style={[typography.title, { color: colors.textPrimary, marginTop: spacing.sm, marginBottom: spacing.xs }]}>A fresh start.</Text>
+          <Text style={[typography.body, { color: colors.textSecondary, marginBottom: spacing.lg }]}>Choose a new password that only you know. Your account security starts here.</Text>
           {!SUPABASE_ENABLED && <GlassCard intensity={20} style={{ marginBottom: spacing.md }}><Text style={[typography.caption, { color: colors.textSecondary }]}>Password reset is unavailable in mock mode. Configure a Supabase project to test this flow.</Text></GlassCard>}
           {!complete && <>
+            <GlassCard intensity={18} style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                <Ionicons name="shield-checkmark-outline" size={19} color={colors.accent} />
+                <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Password requirements</Text>
+              </View>
+              {[
+                { label: 'Between 8 and 128 characters', valid: lengthValid },
+                { label: 'Both entries match', valid: passwordsMatch },
+              ].map((rule) => (
+                <View key={rule.label} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 28 }}>
+                  <Ionicons name={rule.valid ? 'checkmark-circle' : 'ellipse-outline'} size={17} color={rule.valid ? colors.success : colors.textSecondary} />
+                  <Text style={[typography.caption, { color: rule.valid ? colors.textPrimary : colors.textSecondary }]}>{rule.label}</Text>
+                </View>
+              ))}
+            </GlassCard>
             <GlassInput value={password} onChangeText={setPassword} placeholder="New password (8+ characters)" accessibilityLabel="New password" textContentType="newPassword" autoComplete="new-password" secureTextEntry />
             <GlassInput value={confirmPassword} onChangeText={setConfirmPassword} placeholder="Confirm new password" accessibilityLabel="Confirm new password" textContentType="newPassword" autoComplete="new-password" secureTextEntry />
-            <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary, borderRadius: radii.pill, opacity: loading || !SUPABASE_ENABLED ? 0.55 : 1 }]} onPress={handleSave} disabled={loading || !SUPABASE_ENABLED} accessibilityRole="button" accessibilityLabel={loading ? 'Updating password' : 'Update password'} accessibilityState={{ disabled: loading || !SUPABASE_ENABLED, busy: loading }}>
+            <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary, borderRadius: radii.pill, minHeight: 54, opacity: loading || !SUPABASE_ENABLED ? 0.55 : 1 }]} onPress={handleSave} disabled={loading || !SUPABASE_ENABLED} accessibilityRole="button" accessibilityLabel={loading ? 'Updating password' : 'Update password'} accessibilityState={{ disabled: loading || !SUPABASE_ENABLED, busy: loading }}>
               <Text style={[styles.buttonText, { color: colors.onPrimary }]}>{loading ? 'Updating…' : 'Update password'}</Text>
             </TouchableOpacity>
           </>}
-          <TouchableOpacity style={{ marginTop: spacing.md, alignItems: 'center' }} onPress={() => navigation.navigate('Login')} accessibilityRole="button" accessibilityLabel="Return to sign in"><Text style={[typography.caption, { color: colors.textSecondary }]}>Back to <Text style={{ color: colors.primary, fontFamily: 'Manrope_700Bold' }}>sign in</Text></Text></TouchableOpacity>
+          <TouchableOpacity style={{ marginTop: spacing.md, minHeight: 48, alignItems: 'center', justifyContent: 'center' }} onPress={() => navigation.navigate('Login')} accessibilityRole="button" accessibilityLabel="Return to sign in"><Text style={[typography.caption, { color: colors.textSecondary }]}>Back to <Text style={{ color: colors.primary, fontFamily: 'Manrope_700Bold' }}>sign in</Text></Text></TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
