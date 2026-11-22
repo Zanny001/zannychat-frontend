@@ -29,3 +29,30 @@ test('session inventory refresh and retry actions meet the 48pt touch target', (
   assert.match(screen, /minHeight: 48, minWidth: 72/);
   assert.match(screen, /minHeight: 48, alignSelf: 'flex-start'/);
 });
+
+test('session inventory supports searchable mobile and desktop filters with live counts', () => {
+  assert.match(screen, /const \[sessionSearch, setSessionSearch\] = useState\(''\)/);
+  assert.match(screen, /const \[sessionFilter, setSessionFilter\] = useState\('all'\)/);
+  assert.match(screen, /const visibleSessions = otherSessions\.filter/);
+  assert.match(screen, /Search active sessions by device or browser/);
+  assert.match(screen, /Clear session search/);
+  assert.match(screen, /key: 'mobile', label: 'Mobile'/);
+  assert.match(screen, /key: 'desktop', label: 'Desktop'/);
+  assert.match(screen, /data/);
+  assert.match(screen, /sessionCounts\[option\.key\]/);
+});
+
+test('session search and filters do not alter account-wide sign-out or disclose sensitive session identifiers', () => {
+  assert.match(screen, /await signOutEverywhere\(\)/);
+  assert.match(screen, /await signOutThisDevice\(\)/);
+  assert.match(screen, /supabase\.rpc\('list_my_auth_sessions'\)/);
+  assert.doesNotMatch(screen, /item\.ip|item\.refresh_token|refresh_token_hmac/i);
+  assert.doesNotMatch(screen, /revoke_my_auth_session/);
+});
+
+test('session filters expose accessible selection states and comfortable touch targets', () => {
+  assert.match(screen, /accessibilityRole="radio"/);
+  assert.match(screen, /accessibilityState=\{\{ checked: selected \}\}/);
+  assert.match(screen, /minHeight: 44, flexDirection: 'row'/);
+  assert.match(screen, /accessibilityLabel="Search active sessions by device or browser"/);
+});
