@@ -129,3 +129,24 @@ test('LIVE safety report queue virtualizes report cards while preserving review 
   assert.ok(reports.includes("review(item.id, 'dismissed')"));
   assert.ok(reports.includes("review(item.id, 'resolved')"));
 });
+
+test('LIVE guest queue supports local viewer-name search without changing the approval capacity', () => {
+  assert.ok(guestQueue.includes("const [searchQuery, setSearchQuery] = useState('')"));
+  assert.ok(guestQueue.includes('const visibleRequests = requests.filter'));
+  assert.ok(guestQueue.includes('Search guest requests by viewer name'));
+  assert.ok(guestQueue.includes('Clear guest request search'));
+  assert.ok(guestQueue.includes('data={visibleRequests}'));
+  assert.ok(guestQueue.includes('Math.max(0, 5 - guestCount)'));
+  assert.ok(guestQueue.includes("status === 'accepted' && guestSlots <= 0"));
+  assert.ok(guestQueue.includes('No matching requests'));
+});
+
+test('LIVE safety reports support local reason/detail search alongside status filters', () => {
+  assert.ok(reports.includes("const [searchQuery, setSearchQuery] = useState('')"));
+  assert.ok(reports.includes('const visibleReports = useMemo'));
+  assert.ok(reports.includes("String(item.reason || '') + ' ' + String(item.details || '')"));
+  assert.ok(reports.includes('Search LIVE reports by reason or details'));
+  assert.ok(reports.includes('Clear LIVE report search'));
+  assert.ok(reports.includes('No matching reports'));
+  assert.ok(reports.includes('data={visibleReports}'));
+});
