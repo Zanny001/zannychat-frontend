@@ -39,3 +39,14 @@ test('profile navigation is grouped into clear personal, community and support d
   assert.ok(profile.includes('SUPPORT & STORAGE'));
   assert.ok(profile.includes('minHeight: 56'));
 });
+
+
+test('profile navigation rows use premium icon wells, descriptive hierarchy and comfortable targets', () => {
+  assert.ok(profile.includes('description="Colours, motion and comfortable reading"'));
+  assert.ok(profile.includes('description="Your private library of important moments"'));
+  assert.ok(profile.includes('styles.menuIconWell'));
+  assert.ok(profile.includes('styles.menuChevron'));
+  assert.ok(profile.includes('menuIconWell: { width: 42, height: 42'));
+  assert.ok(profile.includes('row: { flexDirection: \'row\', alignItems: \'center\', minHeight: 72'));
+  assert.ok(profile.includes('accessibilityHint={description ||'));
+});
