@@ -61,7 +61,7 @@ export default function Header({ title, onBack, right, subtitle, eyebrow, brand 
               accessibilityLabel={onTitlePress ? `View ${title} profile` : undefined}
             >
               {eyebrow ? (
-                <Text style={[typography.small, styles.eyebrowText, { color: colors.gold || colors.primary }]} numberOfLines={1} ellipsizeMode="tail">
+                <Text style={[typography.small, styles.eyebrowText, { color: colors.warning || colors.primary }]} numberOfLines={1} ellipsizeMode="tail">
                   {eyebrow}
                 </Text>
               ) : null}
