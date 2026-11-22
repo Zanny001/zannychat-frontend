@@ -346,7 +346,7 @@ export default function NewChatScreen({ navigation, route }) {
       <View style={{ flex: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
       {!isShareMode && (
         <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md, gap: spacing.sm, marginBottom: spacing.sm }}>
-          <Text style={[typography.title, { color: colors.textPrimary }]}>Find people on ZannyChat</Text>
+          <Text style={[typography.title, { color: colors.textPrimary }]}>Your people, one tap away.</Text>
           <Text style={[typography.caption, { color: colors.textSecondary }]}>Search registered members and start a private conversation instantly.</Text>
           <GlassCard noPadding glow intensity={26} tintAlpha={0.42}>
             <View style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md }}>
@@ -472,7 +472,9 @@ export default function NewChatScreen({ navigation, route }) {
             const isBusy = openingChatId !== null || sendingId !== null;
 
             return (
-              <View style={[styles.contactRow, { borderBottomColor: colors.borderSubtle }]}>
+              <View style={styles.contactCardWrap}>
+                <GlassCard noPadding glow={Boolean(item.online)} intensity={16} tintAlpha={0.38} borderRadius={16}>
+                  <View style={styles.contactRow}>
                 <TouchableOpacity
                   onPress={() => isShareMode ? shareContact(item) : startChat(item)}
                   activeOpacity={0.72}
@@ -490,9 +492,13 @@ export default function NewChatScreen({ navigation, route }) {
                   />
                   <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.sm, marginRight: spacing.xs }}>
                     <Text style={[typography.bodyStrong, { color: colors.textPrimary }]} numberOfLines={1}>{item.name}</Text>
-                    {item.username ? <Text style={[typography.caption, { color: colors.textSecondary }]} numberOfLines={1}>@{item.username}</Text> : null}
+                    <Text style={[typography.caption, { color: item.online ? colors.accent : colors.textSecondary }]} numberOfLines={1}>{item.online ? 'ONLINE NOW' : item.username ? `@${item.username}` : 'ON ZANNYCHAT'}</Text>
                   </View>
-                  {(isOpening || isSending) ? <ActivityIndicator size="small" color={colors.textSecondary} /> : null}
+                  {(isOpening || isSending) ? <ActivityIndicator size="small" color={colors.textSecondary} /> : (
+                    <View style={[styles.contactActionCue, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+                      <Ionicons name={requestedCallType === 'video' ? 'videocam-outline' : requestedCallType === 'audio' ? 'call-outline' : isShareMode ? 'share-outline' : 'chatbubble-ellipses-outline'} size={17} color={colors.accent} />
+                    </View>
+                  )}
                 </TouchableOpacity>
 
                 {!isShareMode ? (
@@ -508,6 +514,8 @@ export default function NewChatScreen({ navigation, route }) {
                     <Ionicons name={favoriteIds.includes(item.id) ? 'star' : 'star-outline'} size={20} color={favoriteIds.includes(item.id) ? colors.gold : colors.textSecondary} />
                   </TouchableOpacity>
                 ) : null}
+                  </View>
+                </GlassCard>
               </View>
             );
           }}
@@ -522,8 +530,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  contactRow: { minHeight: 76, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
+  contactCardWrap: { marginBottom: 10 },
+  contactRow: { minHeight: 76, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 9 },
   contactMain: { flex: 1, minWidth: 0, minHeight: 52, flexDirection: 'row', alignItems: 'center' },
+  contactActionCue: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   favoriteButton: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', marginLeft: 4 },
   qrRow: {
     flexDirection: 'row',
