@@ -8,6 +8,7 @@ import Avatar from '../components/Avatar';
 import GlassCard from '../components/GlassCard';
 import GlassInput from '../components/GlassInput';
 import { fetchContacts, createGroupConversation } from '../services/api';
+import { hexToRgba } from '../utils/color';
 
 // The backend requires 2+ other people for a group (see
 // zannychat-backend's POST /conversations/group) — a "group" of just
@@ -82,13 +83,31 @@ export default function CreateGroupScreen({ navigation }) {
         }
       />
 
-      <View style={{ padding: spacing.md }}>
-        <GlassInput value={name} onChangeText={setName} placeholder="Group name" accessibilityLabel="Group name" />
-        <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.xs }]}>
-          {selectedIds.length === 0
-            ? `Pick at least ${MIN_OTHER_MEMBERS} people`
-            : `${selectedIds.length} selected${selectedIds.length < MIN_OTHER_MEMBERS ? ` — need ${MIN_OTHER_MEMBERS - selectedIds.length} more` : ''}`}
-        </Text>
+      <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.xs, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
+        <GlassCard glow style={{ borderRadius: 24, borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.28), marginBottom: spacing.sm }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            <View style={{ width: 52, height: 52, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: hexToRgba(colors.primary, 0.16), borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.32) }}>
+              <Ionicons name="people" size={24} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+              <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.2 }]}>CREATE YOUR CIRCLE</Text>
+              <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 20, lineHeight: 25 }]}>Bring your people together.</Text>
+            </View>
+          </View>
+          <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 19 }]}>Give your group a name, choose your people and create a space that feels like yours.</Text>
+          <GlassInput value={name} onChangeText={setName} placeholder="Give your group a name" accessibilityLabel="Group name" />
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm }}>
+            <Text style={[typography.caption, { color: colors.textSecondary, flex: 1 }]}>
+              {selectedIds.length === 0
+                ? `Choose at least ${MIN_OTHER_MEMBERS} people to begin`
+                : `${selectedIds.length} people selected${selectedIds.length < MIN_OTHER_MEMBERS ? ` · ${MIN_OTHER_MEMBERS - selectedIds.length} more needed` : ''}`}
+            </Text>
+            <View style={{ paddingHorizontal: 11, paddingVertical: 7, borderRadius: 12, backgroundColor: hexToRgba(canCreate ? colors.primary : colors.textSecondary, 0.12), borderWidth: 1, borderColor: hexToRgba(canCreate ? colors.primary : colors.textSecondary, 0.24) }}>
+              <Text style={[typography.small, { color: canCreate ? colors.primary : colors.textSecondary, fontWeight: '900', letterSpacing: 0.5 }]}>{selectedIds.length} SELECTED</Text>
+            </View>
+          </View>
+        </GlassCard>
+        <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800', letterSpacing: 1, marginBottom: spacing.xs }]}>INVITE YOUR PEOPLE</Text>
       </View>
 
       <FlatList
