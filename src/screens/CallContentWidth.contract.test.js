@@ -54,3 +54,12 @@ test('group-call tiles and participant chips surface the active speaker without 
   assert.ok(files.group.includes('accessibilityLabel={`${participant.name'));
   assert.ok(files.group.includes('borderColor: item.participant.isSpeaking ? colors.accent'));
 });
+
+test('web active calls can flip between available front and rear cameras without restarting the call', () => {
+  const web = readFileSync(new URL('./CallScreen.web.js', import.meta.url), 'utf8');
+  assert.match(web, /const switchCamera = async/);
+  assert.match(web, /facingMode: \{ ideal: nextFacingMode \}/);
+  assert.match(web, /await sender\.replaceTrack\(nextTrack\)/);
+  assert.match(web, /control\('camera-reverse', 'Flip camera', switchCamera\)/);
+  assert.match(web, /previousTrack\.stop\(\)/);
+});
