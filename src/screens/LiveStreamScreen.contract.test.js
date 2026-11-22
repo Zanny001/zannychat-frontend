@@ -403,8 +403,8 @@ test('LIVE polling pauses in the background, avoids overlapping reads and uses g
   assert.ok(screen.includes('const isAppForeground = () => !AppState.currentState || AppState.currentState === \'active\''));
   assert.ok(screen.includes('if (endedRef.current || !stream?.id || !isAppForeground()) return;'));
   assert.ok(screen.includes('if (commentsRefreshInFlight.current) { commentsRefreshQueued.current = true; return; }'));
-  assert.ok(screen.includes('if (!active || !isAppForeground() || guestStatusRefreshInFlight.current) return;'));
-  assert.ok(screen.includes('if (!active || !isAppForeground() || guestRequestsRefreshInFlight.current) return;'));
+  assert.ok(screen.includes('if (!active || endedRef.current || !isAppForeground() || guestStatusRefreshInFlight.current) return;'));
+  assert.ok(screen.includes('if (!active || endedRef.current || !isAppForeground() || guestRequestsRefreshInFlight.current) return;'));
   assert.ok(screen.includes('if (!active || !isAppForeground() || studioParticipantsRefreshInFlight.current) return;'));
   assert.ok(screen.includes('setInterval(refreshComments, 30_000)'));
   assert.ok(screen.includes('setInterval(checkApproval, 6000)'));
