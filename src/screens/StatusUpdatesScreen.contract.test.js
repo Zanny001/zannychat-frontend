@@ -97,3 +97,18 @@ test('status media removal and privacy row actions meet the 48-point mobile targ
   assert.ok(screen.includes('Unmute statuses from ${statusUserNames[entry.muted_user_id] || \'this account\'}`} style={{ minHeight: 48'));
   assert.ok(screen.includes('Allow ${statusUserNames[entry.excluded_user_id] || \'this contact\'} to view your status`} style={{ minHeight: 48'));
 });
+
+test('stories can be searched locally by contact name or story text', () => {
+  assert.ok(screen.includes("const [statusSearch, setStatusSearch] = useState('')"));
+  assert.ok(screen.includes('const matchesStatusGroup = (group) =>'));
+  assert.ok(screen.includes('statusUserNames[ownerId]'));
+  assert.ok(screen.includes("group.statuses.map((item) => item.text || '')"));
+  assert.ok(screen.includes('Search stories by person or text'));
+  assert.ok(screen.includes('Clear story search'));
+  assert.ok(screen.includes('No matching stories yet.'));
+});
+
+test('story search resets when the authenticated account changes', () => {
+  assert.ok(screen.includes("setStatusSearch('')"));
+  assert.ok(screen.includes('setStatuses([])'));
+});
