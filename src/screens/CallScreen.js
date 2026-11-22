@@ -631,7 +631,7 @@ export default function CallScreen({ route, navigation }) {
         {phase !== 'Connected' && phase !== 'Unavailable' ? <ActivityIndicator style={{ marginTop: 18 }} color={foreground} /> : null}
       </View>
       <View style={[styles.bottom, { width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }]}>
-        <View style={styles.controlsRow}>
+        <View style={[styles.controlsRow, { backgroundColor: immersiveVideo ? 'rgba(12,12,22,0.72)' : hexToRgba(colors.surface, 0.82), borderColor: immersiveVideo ? 'rgba(255,255,255,0.12)' : colors.border }]}>
           {iconButton(speakerOn ? 'volume-high' : 'volume-low', speakerOn ? 'Speaker' : 'Earpiece', toggleSpeaker, speakerOn)}
           {iconButton(muted ? 'mic-off' : 'mic', muted ? 'Unmute' : 'Mute', toggleMute, muted)}
           {iconButton(cameraOff ? 'videocam-off' : 'videocam', cameraOff ? 'Switch to video' : 'Switch to audio', toggleCamera, cameraOff)}
@@ -679,8 +679,8 @@ const styles = StyleSheet.create({
   retryText: {},
   localVideo: { position: 'absolute', right: 16, top: 76, width: 112, height: 160, borderRadius: 18, overflow: 'hidden', zIndex: 2 },
   bottom: { paddingHorizontal: 22, paddingBottom: 28, alignItems: 'center' },
-  controlsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 28 },
-  control: { width: 68, height: 68, borderRadius: 22, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  controlsRow: { width: '100%', maxWidth: 340, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', columnGap: 8, rowGap: 8, padding: 10, borderRadius: 28, borderWidth: 1, marginBottom: 20 },
+  control: { width: 64, minWidth: 64, height: 68, minHeight: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center', gap: 4 },
   controlLabel: {},
   endButton: { width: 70, height: 70, borderRadius: 35, alignItems: 'center', justifyContent: 'center', shadowOpacity: 0.36, shadowRadius: 17, shadowOffset: { width: 0, height: 6 }, elevation: 7 },
 });
