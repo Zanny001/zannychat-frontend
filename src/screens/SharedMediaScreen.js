@@ -164,7 +164,22 @@ export default function SharedMediaScreen({ route, navigation }) {
         <GlassCard noPadding glow intensity={22} tintAlpha={0.42} style={{ marginTop: spacing.sm }}>
           <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder={`Search ${TABS.find((item) => item.key === tab)?.label.toLowerCase() || 'shared items'}…`} placeholderTextColor={colors.textSecondary} accessibilityLabel={`Search shared ${tab}`} returnKeyType="search" clearButtonMode="while-editing" style={[typography.body, { color: colors.textPrimary, minWidth: 0, width: '100%', minHeight: 48, paddingHorizontal: spacing.md, paddingVertical: spacing.sm }]} />
         </GlassCard>
-        <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>Recent shared items · private attachments use expiring access links.</Text>
+        <GlassCard glow style={{ marginTop: spacing.md, borderRadius: 24, borderWidth: 1, borderColor: colors.border }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            <View style={{ width: 50, height: 50, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+              <Ionicons name={TABS.find((item) => item.key === tab)?.icon || 'albums-outline'} size={23} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+              <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.2 }]}>A SHARED SPACE FOR THE GOOD STUFF</Text>
+              <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 19 }]}>{tab === 'photos' ? 'Moments worth revisiting.' : tab === 'files' ? 'Everything sent, in reach.' : 'Follow the conversation outward.'}</Text>
+            </View>
+            <View style={{ minWidth: 46, minHeight: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.xs }}>
+              <Text style={[typography.bodyStrong, { color: colors.primary }]}>{currentItems.length}</Text>
+              <Text style={[typography.small, { color: colors.textSecondary }]}>{tab}</Text>
+            </View>
+          </View>
+          <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 19 }]}>Browse {currentItems.length} {tab === 'photos' ? 'photos and images' : tab === 'files' ? 'files and voice notes' : 'shared links'} from this conversation. Private attachments may use expiring access links.</Text>
+        </GlassCard>
       </View>
 
       {loading ? (
