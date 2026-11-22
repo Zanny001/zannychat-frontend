@@ -41,9 +41,3 @@ test('channel discovery and selected-channel views have distinct Crown Aurora co
   assert.ok(source.includes('CHANNEL SPACE'));
   assert.ok(source.includes('<Header eyebrow={selected ? "CHANNEL SPACE" : "DISCOVER YOUR WORLD"}'));
 });
-
-test('channel discovery and selected-channel views have distinct Crown Aurora context', () => {
-  assert.ok(source.includes('DISCOVER YOUR WORLD'));
-  assert.ok(source.includes('CHANNEL SPACE'));
-  assert.ok(source.includes('<Header eyebrow={selected ? "CHANNEL SPACE" : "DISCOVER YOUR WORLD"}'));
-});
