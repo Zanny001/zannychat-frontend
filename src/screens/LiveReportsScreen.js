@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -123,8 +123,37 @@ export default function LiveReportsScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => refresh(true)} tintColor={colors.primary} />} contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, alignItems: 'center' }}>
-        <View style={{ width: '100%', maxWidth: layout.contentMaxWidth, gap: spacing.md }}>
+      <FlatList
+        data={visibleReports}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={({ item }) => {
+          const busy = busyReportId === item.id;
+          const terminal = ['resolved', 'dismissed'].includes(item.status);
+          return <GlassCard style={{ width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center', marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm }}>
+              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{titleCase(item.reason)}</Text>
+              <View style={{ paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, borderWidth: 1, borderColor: item.status === 'open' ? colors.warning : colors.border, backgroundColor: colors.surface }}>
+                <Text style={[typography.caption, { color: item.status === 'open' ? colors.warning : colors.textSecondary, fontWeight: '800' }]}>{titleCase(item.status)}</Text>
+              </View>
+            </View>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>Submitted {formatDate(item.created_at)}</Text>
+            {item.details ? <Text selectable style={[typography.body, { color: colors.textPrimary, lineHeight: 22 }]}>{item.details}</Text> : <Text style={[typography.caption, { color: colors.textSecondary }]}>No additional details were supplied.</Text>}
+            {!terminal ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+              {item.status === 'open' ? <TouchableOpacity disabled={busy} onPress={() => review(item.id, 'reviewing')} accessibilityRole="button" accessibilityLabel="Start reviewing LIVE report" style={{ flex: 1, minWidth: 110, minHeight: 48, borderRadius: 13, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: busy ? 0.6 : 1 }}>
+                <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: '800' }]}>Start review</Text>
+              </TouchableOpacity> : null}
+              <TouchableOpacity disabled={busy} onPress={() => review(item.id, 'dismissed')} accessibilityRole="button" accessibilityLabel="Dismiss LIVE report" style={{ flex: 1, minWidth: 100, minHeight: 48, borderRadius: 13, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: busy ? 0.6 : 1 }}>
+                <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800' }]}>Dismiss</Text>
+              </TouchableOpacity>
+              <TouchableOpacity disabled={busy} onPress={() => review(item.id, 'resolved')} accessibilityRole="button" accessibilityLabel="Resolve LIVE report" style={{ flex: 1, minWidth: 100, minHeight: 48, borderRadius: 13, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', opacity: busy ? 0.6 : 1 }}>
+                <Text style={[typography.caption, { color: colors.onPrimary, fontWeight: '900' }]}>{busy ? 'Updating…' : 'Resolve'}</Text>
+              </TouchableOpacity>
+            </View> : <Text style={[typography.caption, { color: colors.textSecondary }]}>Reviewed by an authorised LIVE moderator.</Text>}
+          </GlassCard>;
+        }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => refresh(true)} tintColor={colors.primary} />}
+        contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, alignItems: 'center', flexGrow: 1 }}
+        ListHeaderComponent={        <View style={{ width: '100%', maxWidth: layout.contentMaxWidth, gap: spacing.md }}>
           <LivePremiumHeader
             navigation={navigation}
             eyebrow="ZANNYCHAT · LIVE SAFETY"
@@ -163,39 +192,18 @@ export default function LiveReportsScreen({ route, navigation }) {
 
           {loading && !reports.length ? <View style={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary }]}>Loading safety reports…</Text></View> : null}
           {!!error ? <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text accessibilityRole="alert" style={[typography.body, { color: colors.danger }]}>{error}</Text><TouchableOpacity onPress={() => refresh()} accessibilityRole="button" accessibilityLabel="Retry loading LIVE reports" style={{ minHeight: 48, justifyContent: 'center' }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
-          {!loading && !error && visibleReports.length === 0 ? <GlassCard contentStyle={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}>
+
+
+
+        </View>}
+        ListEmptyComponent={!loading && !error ? <View style={{ width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
+          <GlassCard contentStyle={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}>
             <Ionicons name="shield-checkmark-outline" size={30} color={colors.textSecondary} />
             <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>No reports in this view</Text>
             <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', lineHeight: 20 }]}>The queue updates when a viewer reports this LIVE. Review each report promptly and consistently.</Text>
-          </GlassCard> : null}
-
-          {visibleReports.map((item) => {
-            const busy = busyReportId === item.id;
-            const terminal = ['resolved', 'dismissed'].includes(item.status);
-            return <GlassCard key={item.id} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm }}>
-                <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{titleCase(item.reason)}</Text>
-                <View style={{ paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10, borderWidth: 1, borderColor: item.status === 'open' ? colors.warning : colors.border, backgroundColor: colors.surface }}>
-                  <Text style={[typography.caption, { color: item.status === 'open' ? colors.warning : colors.textSecondary, fontWeight: '800' }]}>{titleCase(item.status)}</Text>
-                </View>
-              </View>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>Submitted {formatDate(item.created_at)}</Text>
-              {item.details ? <Text selectable style={[typography.body, { color: colors.textPrimary, lineHeight: 22 }]}>{item.details}</Text> : <Text style={[typography.caption, { color: colors.textSecondary }]}>No additional details were supplied.</Text>}
-              {!terminal ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-                {item.status === 'open' ? <TouchableOpacity disabled={busy} onPress={() => review(item.id, 'reviewing')} accessibilityRole="button" accessibilityLabel="Start reviewing LIVE report" style={{ flex: 1, minWidth: 110, minHeight: 48, borderRadius: 13, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: busy ? 0.6 : 1 }}>
-                  <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: '800' }]}>Start review</Text>
-                </TouchableOpacity> : null}
-                <TouchableOpacity disabled={busy} onPress={() => review(item.id, 'dismissed')} accessibilityRole="button" accessibilityLabel="Dismiss LIVE report" style={{ flex: 1, minWidth: 100, minHeight: 48, borderRadius: 13, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', opacity: busy ? 0.6 : 1 }}>
-                  <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800' }]}>Dismiss</Text>
-                </TouchableOpacity>
-                <TouchableOpacity disabled={busy} onPress={() => review(item.id, 'resolved')} accessibilityRole="button" accessibilityLabel="Resolve LIVE report" style={{ flex: 1, minWidth: 100, minHeight: 48, borderRadius: 13, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', opacity: busy ? 0.6 : 1 }}>
-                  <Text style={[typography.caption, { color: colors.onPrimary, fontWeight: '900' }]}>{busy ? 'Updating…' : 'Resolve'}</Text>
-                </TouchableOpacity>
-              </View> : <Text style={[typography.caption, { color: colors.textSecondary }]}>Reviewed by an authorised LIVE moderator.</Text>}
-            </GlassCard>;
-          })}
-        </View>
-      </ScrollView>
+          </GlassCard>
+        </View> : null}
+      />
     </SafeAreaView>
   );
 }
