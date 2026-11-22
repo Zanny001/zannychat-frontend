@@ -52,6 +52,8 @@ test('group creation uses the Crown Aurora welcome surface and preserves the rea
   assert.ok(createGroup.includes('Bring your people together.'));
   assert.ok(createGroup.includes('hexToRgba(colors.primary, 0.28)'));
   assert.ok(createGroup.includes('INVITE YOUR PEOPLE'));
+  assert.ok(createGroup.includes('glow={selected}'));
+  assert.ok(createGroup.includes('hexToRgba(colors.primary, 0.58)'));
   assert.ok(createGroup.includes('Give your group a name'));
   assert.match(createGroup, /const MIN_OTHER_MEMBERS = 2/);
   assert.match(createGroup, /const canCreate = name\.trim\(\)\.length > 0 && selectedIds\.length >= MIN_OTHER_MEMBERS/);
