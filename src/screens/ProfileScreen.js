@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, Pressable, ActivityIndicator, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, StyleSheet, ScrollView, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -20,6 +20,7 @@ export default function ProfileScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [profileError, setProfileError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
+  const [profileSearch, setProfileSearch] = useState('');
   const tabBarHeight = useBottomTabBarHeight();
 
   // Refresh on focus, ignore stale responses, and provide a retry path.
@@ -62,6 +63,21 @@ export default function ProfileScreen({ navigation }) {
       return () => { active = false; };
     }, [reloadKey])
   );
+
+  const matchesMenuItem = (label, description = '') => !profileSearch.trim() || (label + ' ' + description).toLowerCase().includes(profileSearch.trim().toLowerCase());
+  const hasProfileMatches = [
+    ['Appearance & theme', 'Colours, motion and comfortable reading'],
+    ['Privacy & security', 'Control who sees you and how your account is protected'],
+    ['Notifications', 'Choose the alerts that matter to you'],
+    ['Status updates', 'Share moments with your chosen audience'],
+    ['Channels', 'Discover conversations and communities'],
+    ['Saved messages', 'Your private library of important moments'],
+    ['Scheduled messages', 'Messages you have planned for later'],
+    ['Chat folders', 'Organize conversations your way'],
+    ['Join a group', 'Find a space to connect and collaborate'],
+    ['Data & storage', 'Manage media, downloads and storage use'],
+    ['Help', 'Guidance and support for ZannyChat'],
+  ].some(([label, description]) => matchesMenuItem(label, description));
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
@@ -124,39 +140,60 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </GlassCard>
         <LiveImpactCard impact={liveImpact} showEmpty />
-        <Text style={[typography.small, { color: colors.textSecondary, marginBottom: spacing.sm, marginLeft: 4, letterSpacing: 1.1 }]}>PERSONALIZE & PROTECT</Text>
-        <MenuRow icon="color-palette-outline" label="Appearance & theme" onPress={() => navigation.navigate('Settings')} />
-        <MenuRow icon="shield-checkmark-outline" label="Privacy & security" onPress={() => navigation.navigate('PrivacySecurity')} />
-        <MenuRow icon="notifications-outline" label="Notifications" onPress={() => navigation.navigate('Notifications')} />
-        <Text style={[typography.small, { color: colors.textSecondary, marginTop: spacing.lg, marginBottom: spacing.sm, marginLeft: 4, letterSpacing: 1.1 }]}>YOUR CONTENT & COMMUNITY</Text>
-        <MenuRow icon="aperture-outline" label="Status updates" onPress={() => navigation.navigate('StatusUpdates')} />
-        <MenuRow icon="megaphone-outline" label="Channels" onPress={() => navigation.navigate('Channels')} />
-        <MenuRow icon="bookmark-outline" label="Saved messages" onPress={() => navigation.navigate('SavedMessages')} />
-        <MenuRow icon="time-outline" label="Scheduled messages" onPress={() => navigation.navigate('ScheduledMessages')} />
-        <MenuRow icon="folder-outline" label="Chat folders" onPress={() => navigation.navigate('ChatFolders')} />
-        <MenuRow icon="people-outline" label="Join a group" onPress={() => navigation.navigate('JoinGroup')} />
-        <Text style={[typography.small, { color: colors.textSecondary, marginTop: spacing.lg, marginBottom: spacing.sm, marginLeft: 4, letterSpacing: 1.1 }]}>SUPPORT & STORAGE</Text>
-        <MenuRow icon="cloud-upload-outline" label="Data & storage" onPress={() => navigation.navigate('DataStorage')} />
-        <MenuRow icon="help-circle-outline" label="Help" onPress={() => navigation.navigate('Help')} />
+        <View style={{ minHeight: 50, flexDirection: 'row', alignItems: 'center', borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.md, marginBottom: spacing.md }}>
+          <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+          <TextInput value={profileSearch} onChangeText={setProfileSearch} placeholder="Find a profile setting or feature" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search profile settings and destinations" returnKeyType="search" style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, paddingVertical: spacing.sm, paddingLeft: spacing.sm }]} />
+          {profileSearch ? <Pressable onPress={() => setProfileSearch('')} accessibilityRole="button" accessibilityLabel="Clear profile search" style={({ pressed }) => [{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }, pressed && { opacity: 0.7 }]}><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></Pressable> : null}
+        </View>
+        {[['Appearance & theme', 'Colours, motion and comfortable reading'], ['Privacy & security', 'Control who sees you and how your account is protected'], ['Notifications', 'Choose the alerts that matter to you']].some(([label, description]) => matchesMenuItem(label, description)) ? <Text style={[typography.small, { color: colors.textSecondary, marginBottom: spacing.sm, marginLeft: 4, letterSpacing: 1.1 }]}>PERSONALIZE & PROTECT</Text> : null}
+        {matchesMenuItem('Appearance & theme', 'Colours, motion and comfortable reading') ? <MenuRow icon="color-palette-outline" label="Appearance & theme" description="Colours, motion and comfortable reading" onPress={() => navigation.navigate('Settings')} /> : null}
+        {matchesMenuItem('Privacy & security', 'Control who sees you and how your account is protected') ? <MenuRow icon="shield-checkmark-outline" label="Privacy & security" description="Control who sees you and how your account is protected" onPress={() => navigation.navigate('PrivacySecurity')} /> : null}
+        {matchesMenuItem('Notifications', 'Choose the alerts that matter to you') ? <MenuRow icon="notifications-outline" label="Notifications" description="Choose the alerts that matter to you" onPress={() => navigation.navigate('Notifications')} /> : null}
+        {[['Status updates', 'Share moments with your chosen audience'], ['Channels', 'Discover conversations and communities'], ['Saved messages', 'Your private library of important moments'], ['Scheduled messages', 'Messages you have planned for later'], ['Chat folders', 'Organize conversations your way'], ['Join a group', 'Find a space to connect and collaborate']].some(([label, description]) => matchesMenuItem(label, description)) ? <Text style={[typography.small, { color: colors.textSecondary, marginTop: spacing.lg, marginBottom: spacing.sm, marginLeft: 4, letterSpacing: 1.1 }]}>YOUR CONTENT & COMMUNITY</Text> : null}
+        {matchesMenuItem('Status updates', 'Share moments with your chosen audience') ? <MenuRow icon="aperture-outline" label="Status updates" description="Share moments with your chosen audience" onPress={() => navigation.navigate('StatusUpdates')} /> : null}
+        {matchesMenuItem('Channels', 'Discover conversations and communities') ? <MenuRow icon="megaphone-outline" label="Channels" description="Discover conversations and communities" onPress={() => navigation.navigate('Channels')} /> : null}
+        {matchesMenuItem('Saved messages', 'Your private library of important moments') ? <MenuRow icon="bookmark-outline" label="Saved messages" description="Your private library of important moments" onPress={() => navigation.navigate('SavedMessages')} /> : null}
+        {matchesMenuItem('Scheduled messages', 'Messages you have planned for later') ? <MenuRow icon="time-outline" label="Scheduled messages" onPress={() => navigation.navigate('ScheduledMessages')} description="Messages you have planned for later" /> : null}
+        {matchesMenuItem('Chat folders', 'Organize conversations your way') ? <MenuRow icon="folder-outline" label="Chat folders" description="Organize conversations your way" onPress={() => navigation.navigate('ChatFolders')} /> : null}
+        {matchesMenuItem('Join a group', 'Find a space to connect and collaborate') ? <MenuRow icon="people-outline" label="Join a group" description="Find a space to connect and collaborate" onPress={() => navigation.navigate('JoinGroup')} /> : null}
+        {[['Data & storage', 'Manage media, downloads and storage use'], ['Help', 'Guidance and support for ZannyChat']].some(([label, description]) => matchesMenuItem(label, description)) ? <Text style={[typography.small, { color: colors.textSecondary, marginTop: spacing.lg, marginBottom: spacing.sm, marginLeft: 4, letterSpacing: 1.1 }]}>SUPPORT & STORAGE</Text> : null}
+        {matchesMenuItem('Data & storage', 'Manage media, downloads and storage use') ? <MenuRow icon="cloud-upload-outline" label="Data & storage" description="Manage media, downloads and storage use" onPress={() => navigation.navigate('DataStorage')} /> : null}
+        {matchesMenuItem('Help', 'Guidance and support for ZannyChat') ? <MenuRow icon="help-circle-outline" label="Help" description="Guidance and support for ZannyChat" onPress={() => navigation.navigate('Help')} /> : null}
+        {profileSearch.trim() && !hasProfileMatches ? <GlassCard contentStyle={{ padding: spacing.lg, alignItems: 'center', gap: spacing.sm }}>
+          <Ionicons name="search-outline" size={26} color={colors.textSecondary} />
+          <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>No profile destinations found</Text>
+          <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>Try another word or clear your search to browse your profile.</Text>
+          <Pressable onPress={() => setProfileSearch('')} accessibilityRole="button" accessibilityLabel="Clear profile search" style={({ pressed }) => [{ minHeight: 48, justifyContent: 'center', paddingHorizontal: spacing.md }, pressed && { opacity: 0.7 }]}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Clear search</Text></Pressable>
+        </GlassCard> : null}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function MenuRow({ icon, label, onPress }) {
-  const { colors, spacing, typography } = useTheme();
+function MenuRow({ icon, label, description, onPress }) {
+  const { colors, spacing, typography, mood, radii } = useTheme();
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityHint={`Opens ${label.toLowerCase()}`}
-      style={({ pressed }) => pressed && { opacity: 0.76 }}
+      accessibilityHint={description || `Opens ${label.toLowerCase()}`}
+      style={({ pressed }) => [
+        styles.menuPressable,
+        pressed && { opacity: 0.78, transform: [{ scale: 0.992 }] },
+      ]}
     >
-      <GlassCard style={{ marginBottom: spacing.sm }} contentStyle={styles.row} intensity={26}>
-        <Ionicons name={icon} size={20} color={colors.accent} />
-        <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm, flex: 1 }]}>{label}</Text>
-        <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+      <GlassCard style={{ marginBottom: spacing.sm, borderRadius: radii.lg }} contentStyle={styles.row} intensity={30}>
+        <View style={[styles.menuIconWell, { backgroundColor: hexToRgba(mood.signal, 0.12), borderColor: hexToRgba(mood.signal, 0.2), borderRadius: radii.md }]}>
+          <Ionicons name={icon} size={20} color={mood.signal} />
+        </View>
+        <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.md }}>
+          <Text style={[typography.bodyStrong, { color: colors.textPrimary }]} numberOfLines={1}>{label}</Text>
+          {description ? <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]} numberOfLines={2}>{description}</Text> : null}
+        </View>
+        <View style={[styles.menuChevron, { borderColor: colors.border, backgroundColor: hexToRgba(colors.surface, 0.72) }]}>
+          <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+        </View>
       </GlassCard>
     </Pressable>
   );
@@ -171,7 +208,10 @@ const styles = StyleSheet.create({
   profileDivider: { height: StyleSheet.hairlineWidth, marginVertical: 18 },
   profileActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   profileAction: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 11, flex: 1, minWidth: 132 },
-  row: { flexDirection: 'row', alignItems: 'center', minHeight: 56, paddingHorizontal: 14, paddingVertical: 12 },
+  row: { flexDirection: 'row', alignItems: 'center', minHeight: 72, paddingHorizontal: 14, paddingVertical: 12 },
+  menuPressable: { borderRadius: 18 },
+  menuIconWell: { width: 42, height: 42, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  menuChevron: { width: 30, height: 30, borderWidth: 1, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
   editPill: {
     flexDirection: 'row',
     alignItems: 'center',
