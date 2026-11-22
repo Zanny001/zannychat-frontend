@@ -11,7 +11,7 @@ test('email verification opens with a Crown Aurora identity and a clear recipien
   assert.match(screen, /Verification email:/);
   assert.match(screen, /YOUR 6-DIGIT CODE/);
   assert.match(screen, /Check your inbox and spam folder/);
-  assert.match(screen, /GlassCard glow intensity=\\{22\\}/);
+  assert.match(screen, /GlassCard glow intensity=\{22\}/);
 });
 
 test('email verification keeps six-digit validation, one-time-code support and the existing service calls', () => {
