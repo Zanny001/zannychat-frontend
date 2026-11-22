@@ -131,6 +131,20 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
         <Text style={[styles.connectionText, { color: colors.textSecondary }]}>· {participants.length} connected</Text>
       </View>
 
+      <View style={styles.rosterStrip} accessibilityLabel={`Call participants, ${participants.length} connected`}>
+        <Text style={[styles.rosterEyebrow, typography.caption, { color: colors.textSecondary }]}>IN THE ROOM</Text>
+        <View style={styles.rosterChips}>
+          {participants.map((participant) => (
+            <View key={participant.identity} style={[styles.rosterChip, { backgroundColor: colors.surfaceAlt, borderColor: colors.border || colors.surfaceAlt }]}>
+              <View style={[styles.rosterPresence, { backgroundColor: colors.online }]} />
+              <Text style={[styles.rosterName, typography.small, { color: colors.textPrimary }]} numberOfLines={1}>
+                {participant.name || participant.identity}{participant.isLocal ? ' · You' : ''}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
       {(isVideo || tracks.length > 0) ? (
         <FlatList
           style={{ width: '100%', maxWidth: layout.mediaStageMaxWidth, alignSelf: 'center', flexGrow: 1 }}
@@ -491,6 +505,12 @@ const styles = StyleSheet.create({
   connectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, gap: 6 },
   connectionDot: { width: 7, height: 7, borderRadius: 4 },
   connectionText: { fontSize: 12, fontWeight: '600' },
+  rosterStrip: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: 10, gap: 7, width: '100%', maxWidth: 760, alignSelf: 'center' },
+  rosterEyebrow: { fontSize: 9, fontWeight: '800', letterSpacing: 1.2 },
+  rosterChips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 7 },
+  rosterChip: { maxWidth: '48%', minHeight: 30, flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: StyleSheet.hairlineWidth, borderRadius: 16, paddingHorizontal: 10, paddingVertical: 5 },
+  rosterPresence: { width: 6, height: 6, borderRadius: 3 },
+  rosterName: { maxWidth: 150, fontSize: 11, fontWeight: '700' },
   tiles: { padding: 8, gap: 8, flexGrow: 1 },
   tile: { flex: 1, minHeight: 190, margin: 4, borderRadius: 18, overflow: 'hidden' },
   video: { flex: 1, minHeight: 190 },
