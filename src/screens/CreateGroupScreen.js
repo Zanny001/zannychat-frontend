@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
@@ -51,6 +51,7 @@ export default function CreateGroupScreen({ navigation }) {
     );
   }
 
+  const selectedContacts = contacts.filter((contact) => selectedIds.includes(contact.id));
   const canCreate = name.trim().length > 0 && selectedIds.length >= MIN_OTHER_MEMBERS;
 
   async function handleCreate() {
@@ -106,6 +107,23 @@ export default function CreateGroupScreen({ navigation }) {
               <Text style={[typography.small, { color: canCreate ? colors.primary : colors.textSecondary, fontWeight: '900', letterSpacing: 0.5 }]}>{selectedIds.length} SELECTED</Text>
             </View>
           </View>
+          {selectedContacts.length > 0 ? (
+            <View style={{ gap: spacing.xs, marginTop: spacing.xs }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800', letterSpacing: 0.8 }]}>YOUR SELECTED PEOPLE</Text>
+                <Text style={[typography.small, { color: colors.textSecondary }]}>{selectedContacts.length} of {contacts.length}</Text>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.xs, paddingVertical: 2 }}>
+                {selectedContacts.map((contact) => (
+                  <TouchableOpacity key={contact.id} onPress={() => toggle(contact.id)} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel={`Remove ${contact.name} from group`} style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 7, paddingLeft: 7, paddingRight: 11, borderRadius: 15, borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.34), backgroundColor: hexToRgba(colors.primary, 0.11) }}>
+                    <Avatar name={contact.name} color={contact.avatarColor} imageUrl={contact.avatarUrl} size={30} />
+                    <Text numberOfLines={1} style={[typography.caption, { color: colors.textPrimary, fontWeight: '800', maxWidth: 112 }]}>{contact.name}</Text>
+                    <Ionicons name="close-circle" size={16} color={colors.primary} />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
         </GlassCard>
         <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800', letterSpacing: 1, marginBottom: spacing.xs }]}>INVITE YOUR PEOPLE</Text>
       </View>
