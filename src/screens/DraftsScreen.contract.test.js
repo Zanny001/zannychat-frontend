@@ -14,7 +14,7 @@ test('draft conversation lookup failures with saved drafts expose an accessible 
 test('drafts remain visible when conversation details fail to load', () => {
   assert.match(screen, /error && drafts\.length === 0/);
   assert.match(screen, /ListHeaderComponent=\{/);
-  assert.match(screen, /data=\{drafts\}/);
+  assert.match(screen, /data=\{filteredDrafts\}/);
 });
 
 test('draft library supports local search across message text and conversation names', () => {
