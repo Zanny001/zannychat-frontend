@@ -26,6 +26,7 @@ export default function ChatFoldersScreen({ navigation }) {
   const { colors, spacing, radii, typography, layout } = useTheme();
   const [userId, setUserId] = useState(null);
   const [folders, setFolders] = useState([]);
+  const [folderSearch, setFolderSearch] = useState('');
   const [name, setName] = useState('');
   const [rules, setRules] = useState(['unread']);
   const [excluded, setExcluded] = useState(['archived']);
@@ -52,6 +53,12 @@ export default function ChatFoldersScreen({ navigation }) {
     finally { setLoading(false); }
   }, []);
   useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
+
+  const visibleFolders = folders.filter((folder) => {
+    const query = folderSearch.trim().toLowerCase();
+    const searchable = [folder.name, ...(folder.rules || []), ...(folder.excluded || [])].join(' ').toLowerCase();
+    return !query || searchable.includes(query);
+  });
 
   const toggle = (list, setList, key) => setList((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]);
   const create = async () => {
@@ -112,7 +119,7 @@ export default function ChatFoldersScreen({ navigation }) {
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Chat folders" subtitle="Build your own chat filters" onBack={() => navigation.goBack()} />
       <FlatList
-        data={folders}
+        data={visibleFolders}
         keyExtractor={(folder) => String(folder.id)}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -156,7 +163,12 @@ export default function ChatFoldersScreen({ navigation }) {
           </TouchableOpacity>
           {editingId ? <TouchableOpacity onPress={cancelEdit} accessibilityRole="button" accessibilityLabel="Cancel chat folder editing" style={{ minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 }}><Text style={[typography.body, { color: colors.textSecondary }]}>Cancel editing</Text></TouchableOpacity> : null}
         </GlassCard>
-            <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.sm }]}>Your folders · {folders.length}</Text>
+            <Text style={[typography.heading, { color: colors.textPrimary, marginBottom: spacing.sm }]}>Your folders · {visibleFolders.length}{visibleFolders.length !== folders.length ? ' of ' + folders.length : ''}</Text>
+            {folders.length > 0 ? <View style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.sm, marginBottom: spacing.sm }}>
+              <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+              <TextInput value={folderSearch} onChangeText={setFolderSearch} placeholder="Search folders or rules" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search chat folders by name or rule" returnKeyType="search" style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs }]} />
+              {folderSearch ? <TouchableOpacity onPress={() => setFolderSearch('')} accessibilityRole="button" accessibilityLabel="Clear folder search" style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
+            </View> : null}
           </View>
         }
         renderItem={({ item: folder }) => (
@@ -167,7 +179,7 @@ export default function ChatFoldersScreen({ navigation }) {
             <TouchableOpacity onPress={() => remove(folder)} disabled={loadFailed || loading || saving} accessibilityState={{ disabled: loadFailed || loading || saving }} accessibilityRole="button" accessibilityLabel={`Delete ${folder.name} folder`} hitSlop={8} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="trash-outline" size={19} color={colors.danger} /></TouchableOpacity>
           </GlassCard>
         )}
-        ListEmptyComponent={loading ? <ActivityIndicator color={colors.primary} /> : loadFailed ? <Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger, marginBottom: spacing.md }]}>Your existing folders are hidden until device storage can be read safely.</Text> : <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>No custom folders yet. Create one to organize your chats.</Text>}
+        ListEmptyComponent={loading ? <ActivityIndicator color={colors.primary} /> : loadFailed ? <Text accessibilityRole="alert" style={[typography.caption, { color: colors.danger, marginBottom: spacing.md }]}>Your existing folders are hidden until device storage can be read safely.</Text> : folders.length > 0 ? <View style={{ paddingBottom: spacing.md, gap: spacing.xs }}><Text style={[typography.caption, { color: colors.textSecondary }]}>No folders match this search.</Text><TouchableOpacity onPress={() => setFolderSearch('')} accessibilityRole="button" accessibilityLabel="Clear folder search" style={{ minHeight: 48, justifyContent: 'center' }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Clear search</Text></TouchableOpacity></View> : <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>No custom folders yet. Create one to organize your chats.</Text>}
         ListFooterComponent={loading && folders.length ? <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing.md }} /> : null}
       />
     </SafeAreaView>
