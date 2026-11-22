@@ -147,6 +147,16 @@ ${invite.token}` });
         </View>
         <View style={{ height: 1, backgroundColor: colors.border }} />
         <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 19 }]}>{isAdmin ? 'Shape the space, welcome new people and keep your community organised. Changes are verified securely by ZannyChat.' : 'Explore your community, find people and manage your own membership. Group permissions remain protected by ZannyChat.'}</Text>
+        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+          <TouchableOpacity onPress={() => navigation.navigate('GroupCall', { conversationId, conversationName: groupMetadata.name || conversation?.participant?.name || 'Group', callType: 'audio' })} accessibilityRole="button" accessibilityLabel="Start a group voice call" style={{ flex: 1, minWidth: 0, minHeight: 50, borderRadius: radii.md, borderWidth: 1, borderColor: hexToRgba(colors.primary, 0.32), backgroundColor: hexToRgba(colors.primary, 0.12), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: spacing.xs }}>
+            <Ionicons name="call-outline" size={18} color={colors.primary} />
+            <Text style={[typography.caption, { color: colors.primary, fontWeight: '800' }]}>Voice call</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('GroupCall', { conversationId, conversationName: groupMetadata.name || conversation?.participant?.name || 'Group', callType: 'video' })} accessibilityRole="button" accessibilityLabel="Start a group video call" style={{ flex: 1, minWidth: 0, minHeight: 50, borderRadius: radii.md, borderWidth: 1, borderColor: hexToRgba(colors.accent || colors.primary, 0.32), backgroundColor: hexToRgba(colors.accent || colors.primary, 0.12), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: spacing.xs }}>
+            <Ionicons name="videocam-outline" size={18} color={colors.accent || colors.primary} />
+            <Text style={[typography.caption, { color: colors.accent || colors.primary, fontWeight: '800' }]}>Video call</Text>
+          </TouchableOpacity>
+        </View>
       </GlassCard>
       {isAdmin ? <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
         <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Group details</Text>
