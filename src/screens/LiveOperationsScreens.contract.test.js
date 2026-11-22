@@ -76,3 +76,23 @@ test('LIVE operations recovery actions each meet the 48-point mobile target', ()
   assert.ok(reports.includes('accessibilityLabel="Retry loading LIVE reports" style={{ minHeight: 48'));
   assert.ok(reports.includes('minHeight: 48, paddingHorizontal: spacing.md'));
 });
+
+test('LIVE participant moderation virtualizes large rosters without weakening role-based controls', () => {
+  assert.ok(moderation.includes('<FlatList'));
+  assert.ok(moderation.includes('data={visibleParticipants}'));
+  assert.ok(moderation.includes('keyExtractor={(item) => String(item.userId)}'));
+  assert.ok(moderation.includes('renderItem={({ item }) =>'));
+  assert.ok(!moderation.includes('participants.map('));
+  assert.ok(moderation.includes('ListHeaderComponent='));
+  assert.ok(moderation.includes('ListEmptyComponent='));
+  assert.ok(moderation.includes('refreshControl={<RefreshControl'));
+  assert.ok(moderation.includes("const [participantFilter, setParticipantFilter] = useState('all')"));
+  assert.ok(moderation.includes('data={visibleParticipants}'));
+  assert.ok(moderation.includes("participantFilter === 'viewers'"));
+  assert.ok(moderation.includes("participantFilter === 'guests'"));
+  assert.ok(moderation.includes("participantFilter === 'moderators'"));
+  assert.ok(moderation.includes("label: 'Stage guests'"));
+  assert.ok(moderation.includes('No participants in this view'));
+  assert.ok(moderation.includes("backendFetch(\u0060/live/\u0024{streamId}/guests/\u0024{item.userId}/mute\u0060"));
+  assert.ok(moderation.includes('makeModerator ? ' + String.fromCharCode(96) + '/live/${streamId}/moderators' + String.fromCharCode(96)));
+});
