@@ -14,7 +14,7 @@ test('upcoming events render in a virtualized list with stable event IDs', () =>
 
 test('event creation remains in the list header and preserves RSVP actions', () => {
   assert.ok(source.includes('ListHeaderComponent='));
-  assert.ok(source.includes('Create an event'));
+  assert.ok(source.includes('Create a shared moment'));
   assert.ok(source.includes('respondToConversationEvent'));
   assert.ok(source.includes('ListEmptyComponent='));
 });
