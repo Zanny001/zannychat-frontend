@@ -169,7 +169,23 @@ export default function SessionsScreen({ navigation }) {
             </View>
           ) : otherSessions.length === 0 ? (
             <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 21 }]}>No other active sessions were found for this account.</Text>
-          ) : otherSessions.map((item) => (
+          ) : (
+            <>
+              <View style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.sm, marginBottom: spacing.sm }}>
+                <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+                <TextInput value={sessionSearch} onChangeText={setSessionSearch} placeholder="Search device or browser" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search active sessions by device or browser" returnKeyType="search" style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs }]} />
+                {sessionSearch ? <TouchableOpacity onPress={() => setSessionSearch('')} accessibilityRole="button" accessibilityLabel="Clear session search" style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
+              </View>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.sm }}>
+                {[{ key: 'all', label: 'All devices' }, { key: 'mobile', label: 'Mobile' }, { key: 'desktop', label: 'Desktop' }].map((option) => {
+                  const selected = sessionFilter === option.key;
+                  return <TouchableOpacity key={option.key} onPress={() => setSessionFilter(option.key)} accessibilityRole="radio" accessibilityLabel={'Show ' + option.label.toLowerCase() + ' sessions'} accessibilityState={{ checked: selected }} style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: spacing.md, borderRadius: 13, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? hexToRgba(colors.primary, 0.14) : colors.surface }}>
+                    <Text style={[typography.caption, { color: selected ? colors.primary : colors.textSecondary, fontWeight: selected ? '900' : '700' }]}>{option.label}</Text>
+                    <Text style={[typography.small, { color: selected ? colors.primary : colors.textSecondary }]}>{sessionCounts[option.key]}</Text>
+                  </TouchableOpacity>;
+                })}
+              </View>
+              {visibleSessions.length === 0 ? <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 21, paddingVertical: spacing.md }]}>No devices match this search and filter. Try another device type or clear your search.</Text> : visibleSessions.map((item) => (
             <View key={item.session_id} style={{ flexDirection: 'row', alignItems: 'flex-start', paddingVertical: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }}>
               <View style={[styles.deviceIcon, { backgroundColor: hexToRgba(mood.thread, 0.12) }]}>
                 <Ionicons name="laptop-outline" size={22} color={mood.thread} />
@@ -185,6 +201,8 @@ export default function SessionsScreen({ navigation }) {
               </View>
             </View>
           ))}
+            </>
+          )}
         </GlassCard>
 
         <GlassCard style={{ marginBottom: spacing.md }}>
