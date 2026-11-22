@@ -140,6 +140,18 @@ function GroupRoomContent({ roomId, callType, onEnd, onAddPeople, canInvite, onP
               <Text style={[styles.rosterName, typography.small, { color: colors.textPrimary }]} numberOfLines={1}>
                 {participant.name || participant.identity}{participant.isLocal ? ' · You' : ''}
               </Text>
+              <Ionicons
+                name={participant.isMicrophoneEnabled === false ? 'mic-off-outline' : 'mic-outline'}
+                size={13}
+                color={participant.isMicrophoneEnabled === false ? colors.warning || colors.gold : colors.textSecondary}
+                accessibilityLabel={participant.isMicrophoneEnabled === false ? 'Microphone muted' : 'Microphone on'}
+              />
+              <Ionicons
+                name={participant.isCameraEnabled ? 'videocam-outline' : 'videocam-off-outline'}
+                size={13}
+                color={participant.isCameraEnabled ? colors.primary : colors.textSecondary}
+                accessibilityLabel={participant.isCameraEnabled ? 'Camera on' : 'Camera off'}
+              />
             </View>
           ))}
         </View>
