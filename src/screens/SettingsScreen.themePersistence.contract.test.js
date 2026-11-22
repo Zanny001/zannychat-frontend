@@ -41,3 +41,12 @@ test('theme preference reads cannot overwrite a newer user selection', () => {
 test('settings preference-warning dismiss control meets the shared 48-point target', () => {
   assert.match(settings, /minWidth: 48, minHeight: 48/);
 });
+
+test('settings opens with a live Crown Aurora personalization overview', () => {
+  assert.match(settings, /YOUR SPACE, YOUR SIGNATURE/);
+  assert.match(settings, /Make it feel like yours\./);
+  assert.match(settings, /Personalize the way ZannyChat looks and feels/);
+  assert.match(settings, /palettes\.find\(\(mood\) => mood\.key === paletteKey\)/);
+  assert.match(settings, /resolvedMode/);
+  assert.match(settings, /textScale === 'extraLarge'/);
+});

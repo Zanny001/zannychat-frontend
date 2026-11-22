@@ -56,7 +56,27 @@ export default function SettingsScreen({ navigation }) {
   return (
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <Header eyebrow="PERSONALIZATION" title="Appearance & theme" onBack={() => navigation.goBack()} />
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
+        <GlassCard glow contentStyle={{ gap: spacing.md, paddingVertical: spacing.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            <View style={{ width: 56, height: 56, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+              <Ionicons name="color-palette-outline" size={28} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+              <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.15 }]}>YOUR SPACE, YOUR SIGNATURE</Text>
+              <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 21 }]}>Make it feel like yours.</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>Personalize the way ZannyChat looks and feels.</Text>
+            </View>
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
+            {[{ icon: resolvedMode === 'dark' ? 'moon-outline' : 'sunny-outline', label: `${resolvedMode} mode` }, { icon: 'color-palette-outline', label: palettes.find((mood) => mood.key === paletteKey)?.label || 'Custom palette' }, { icon: 'text-outline', label: textScale === 'extraLarge' ? 'Extra large text' : `${textScale} text` }].map((item) => (
+              <View key={item.label} style={{ minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.sm }}>
+                <Ionicons name={item.icon} size={14} color={colors.primary} />
+                <Text style={[typography.small, { color: colors.textSecondary }]}>{item.label}</Text>
+              </View>
+            ))}
+          </View>
+        </GlassCard>
         {persistenceError ? (
           <View style={[styles.persistenceWarning, { backgroundColor: colors.surface, borderColor: colors.warning, borderRadius: radii.md, marginBottom: spacing.md }]}>
             <Ionicons name="alert-circle-outline" size={19} color={colors.warning} />
