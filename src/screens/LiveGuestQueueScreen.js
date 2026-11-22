@@ -203,8 +203,9 @@ export default function LiveGuestQueueScreen({ route, navigation }) {
         ListEmptyComponent={!loading && !error ? <View style={{ width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
           <GlassCard contentStyle={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}>
             <Ionicons name="people-outline" size={30} color={colors.textSecondary} />
-            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Your queue is clear</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', lineHeight: 20 }]}>New viewer requests will appear here while your LIVE allows guests.</Text>
+            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{searchQuery.trim() ? 'No matching requests' : 'Your queue is clear'}</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', lineHeight: 20 }]}>{searchQuery.trim() ? 'Try another viewer name, or clear your search.' : 'New viewer requests will appear here while your LIVE allows guests.'}</Text>
+            {searchQuery.trim() ? <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear guest request search" style={{ minHeight: 48, justifyContent: 'center', paddingHorizontal: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Clear search</Text></TouchableOpacity> : null}
           </GlassCard>
         </View> : null}
       />
