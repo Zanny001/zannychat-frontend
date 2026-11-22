@@ -64,6 +64,21 @@ export default function ProfileScreen({ navigation }) {
     }, [reloadKey])
   );
 
+  const matchesMenuItem = (label, description = '') => !profileSearch.trim() || (label + ' ' + description).toLowerCase().includes(profileSearch.trim().toLowerCase());
+  const hasProfileMatches = [
+    ['Appearance & theme', 'Colours, motion and comfortable reading'],
+    ['Privacy & security', 'Control who sees you and how your account is protected'],
+    ['Notifications', 'Choose the alerts that matter to you'],
+    ['Status updates', 'Share moments with your chosen audience'],
+    ['Channels', 'Discover conversations and communities'],
+    ['Saved messages', 'Your private library of important moments'],
+    ['Scheduled messages', 'Messages you have planned for later'],
+    ['Chat folders', 'Organize conversations your way'],
+    ['Join a group', 'Find a space to connect and collaborate'],
+    ['Data & storage', 'Manage media, downloads and storage use'],
+    ['Help', 'Guidance and support for ZannyChat'],
+  ].some(([label, description]) => matchesMenuItem(label, description));
+
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
       <Header eyebrow="YOUR IDENTITY" title="Profile" brand />
