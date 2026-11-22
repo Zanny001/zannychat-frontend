@@ -23,6 +23,7 @@ export default function DraftsScreen({ navigation }) {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [draftSearch, setDraftSearch] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -55,6 +56,15 @@ export default function DraftsScreen({ navigation }) {
   }, []);
 
   const conversationsById = useMemo(() => new Map(conversations.map((item) => [item.id, item])), [conversations]);
+  const visibleDrafts = useMemo(() => {
+    const query = draftSearch.trim().toLowerCase();
+    if (!query) return drafts;
+    return drafts.filter((draft) => {
+      const conversation = conversationsById.get(draft.conversationId);
+      const title = conversation?.participant?.name || conversation?.name || '';
+      return [draft.text, title].join(' ').toLowerCase().includes(query);
+    });
+  }, [drafts, conversationsById, draftSearch]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -90,7 +100,7 @@ export default function DraftsScreen({ navigation }) {
         </GlassCard>
       ) : (
         <FlatList
-          data={drafts}
+          data={visibleDrafts}
           keyExtractor={(draft) => String(draft.id)}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -121,13 +131,23 @@ export default function DraftsScreen({ navigation }) {
                   ) : null}
                 </View>
               ) : null}
+              {drafts.length > 0 ? <>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>{visibleDrafts.length} of {drafts.length} drafts</Text>
+                </View>
+                <View style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.sm, marginBottom: spacing.sm }}>
+                  <Ionicons name="search-outline" size={17} color={colors.textSecondary} />
+                  <TextInput value={draftSearch} onChangeText={setDraftSearch} placeholder="Search draft text or conversation" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search drafts" returnKeyType="search" style={[typography.body, { flex: 1, minWidth: 0, color: colors.textPrimary, paddingVertical: spacing.sm, paddingLeft: spacing.sm }]} />
+                  {draftSearch ? <TouchableOpacity onPress={() => setDraftSearch('')} accessibilityRole="button" accessibilityLabel="Clear draft search" style={{ minWidth: 40, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
+                </View>
+              </> : null}
             </View>
           }
           ListEmptyComponent={
             <View style={{ alignItems: 'center', paddingHorizontal: spacing.xl, paddingVertical: spacing.xxl }}>
               <View style={{ width: 68, height: 68, borderRadius: 24, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="checkmark-done-outline" size={30} color={colors.textSecondary} /></View>
-              <Text style={[typography.heading, { color: colors.textPrimary, marginTop: spacing.md }]}>All caught up</Text>
-              <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>Unsent messages you write will appear here automatically.</Text>
+              <Text style={[typography.heading, { color: colors.textPrimary, marginTop: spacing.md }]}>{draftSearch.trim() ? 'No matching drafts' : 'All caught up'}</Text>
+              <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>{draftSearch.trim() ? 'Try another search or clear your query.' : 'Unsent messages you write will appear here automatically.'}</Text>
             </View>
           }
           renderItem={({ item: draft }) => {
