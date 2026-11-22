@@ -73,6 +73,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
   const [video, setVideo] = useState(null);
   const [statuses, setStatuses] = useState([]);
   const [statusSearch, setStatusSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [myProfile, setMyProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -121,8 +122,16 @@ export default function StatusUpdatesScreen({ navigation, route }) {
     const storyText = group.statuses.map((item) => item.text || '').join(' ');
     return (name + ' ' + storyText).toLowerCase().includes(query);
   };
-  const visibleFriendStatusGroups = friendStatusGroups.filter(matchesStatusGroup);
-  const visibleGroupedStatuses = groupedStatuses.filter((group) => group.latest?.is_own || matchesStatusGroup(group));
+  const matchesStatusFilter = (group) => {
+    if (statusFilter === 'all') return true;
+    if (statusFilter === 'unseen') return unreadStatusCount(group.statuses, seenStatusIds, false) > 0;
+    if (statusFilter === 'photos') return group.statuses.some((item) => item.media_kind === 'image');
+    if (statusFilter === 'videos') return group.statuses.some((item) => item.media_kind === 'video');
+    if (statusFilter === 'text') return group.statuses.some((item) => Boolean(String(item.text || '').trim()));
+    return true;
+  };
+  const visibleFriendStatusGroups = friendStatusGroups.filter((group) => matchesStatusGroup(group) && matchesStatusFilter(group));
+  const visibleGroupedStatuses = groupedStatuses.filter((group) => group.latest?.is_own || (matchesStatusGroup(group) && matchesStatusFilter(group)));
   const discoverStatuses = statuses.filter((item) => !item.is_own && ['image', 'video'].includes(item.media_kind)).slice(0, 8);
   const statusComposerReady = Boolean(myProfile?.id) && statusDraftReady;
 
@@ -188,6 +197,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
     setError('');
     setStatuses([]);
     setStatusSearch('');
+    setStatusFilter('all');
     setReactions({});
     setReactingStatusIds([]);
     reactionLocksRef.current.clear();
@@ -662,7 +672,14 @@ export default function StatusUpdatesScreen({ navigation, route }) {
             <TextInput value={statusSearch} onChangeText={setStatusSearch} placeholder="Search stories by person or text" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search stories by person or text" returnKeyType="search" style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, paddingVertical: spacing.sm, paddingLeft: spacing.sm }]} />
             {statusSearch ? <TouchableOpacity onPress={() => setStatusSearch('')} accessibilityRole="button" accessibilityLabel="Clear story search" style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
           </View>
-          
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.md }}>
+            {[['all', 'All'], ['unseen', 'Unseen'], ['photos', 'Photos'], ['videos', 'Videos'], ['text', 'Text']].map(([value, label]) => {
+              const selected = statusFilter === value;
+              return <TouchableOpacity key={value} onPress={() => setStatusFilter(value)} accessibilityRole="button" accessibilityState={{ selected }} accessibilityLabel={'Show ' + label.toLowerCase() + ' stories'} style={{ minHeight: 48, justifyContent: 'center', paddingHorizontal: spacing.md, borderRadius: 999, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.surfaceAlt : colors.surface }}>
+                <Text style={[typography.caption, { color: selected ? colors.primary : colors.textSecondary, fontWeight: selected ? '800' : '600' }]}>{label}</Text>
+              </TouchableOpacity>;
+            })}
+          </View>
       <View style={{ marginBottom: spacing.md }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm }}>
           <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Friends</Text>
@@ -712,7 +729,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
               </TouchableOpacity>
             );
             }}
-            ListEmptyComponent={<View style={{ justifyContent: 'center', paddingHorizontal: spacing.sm }}><Text style={[typography.caption, { color: colors.textSecondary }]}>{statusSearch.trim() ? 'No friends match this search.' : 'Your contacts’ stories will appear here.'}</Text></View>}
+            ListEmptyComponent={<View style={{ justifyContent: 'center', paddingHorizontal: spacing.sm }}><Text style={[typography.caption, { color: colors.textSecondary }]}>{statusSearch.trim() || statusFilter !== 'all' ? 'No stories match these filters.' : 'Your contacts’ stories will appear here.'}</Text></View>}
           />
       </View>
       <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
@@ -783,7 +800,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
       ListEmptyComponent={
         loading ? <View style={{ padding: spacing.xl, alignItems: 'center' }}><ActivityIndicator color={colors.primary} /></View>
           : error ? null
-          : <View style={{ paddingVertical: spacing.xl, alignItems: 'center' }}><Ionicons name="aperture-outline" size={34} color={colors.textSecondary} /><Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.sm, textAlign: 'center' }]}>{statusSearch.trim() ? 'No matching stories yet. Try another person or phrase, or clear your search.' : 'No active statuses yet. Publish a short update above.'}</Text></View>
+          : <View style={{ paddingVertical: spacing.xl, alignItems: 'center' }}><Ionicons name="aperture-outline" size={34} color={colors.textSecondary} /><Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.sm, textAlign: 'center' }]}>{statusSearch.trim() || statusFilter !== 'all' ? 'No matching stories yet. Try another filter or clear your search.' : 'No active statuses yet. Publish a short update above.'}</Text></View>
       }
       ListFooterComponent={loading && groupedStatuses.length ? <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing.md }} /> : null}
     />
