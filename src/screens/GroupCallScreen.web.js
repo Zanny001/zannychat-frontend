@@ -116,8 +116,14 @@ export default function GroupCallScreenWeb({ route, navigation }) {
           : entry
       )));
     };
-    const onTrackMuted = (publication, participant) => updateRemoteVideoMuteState(publication, participant, true);
-    const onTrackUnmuted = (publication, participant) => updateRemoteVideoMuteState(publication, participant, false);
+    const onTrackMuted = (publication, participant) => {
+      updateRemoteVideoMuteState(publication, participant, true);
+      refreshParticipants();
+    };
+    const onTrackUnmuted = (publication, participant) => {
+      updateRemoteVideoMuteState(publication, participant, false);
+      refreshParticipants();
+    };
     const onTrackUnsubscribed = (track) => {
       const detached = track.detach();
       (Array.isArray(detached) ? detached : [detached]).filter(Boolean).forEach((element) => element.remove?.());
@@ -430,6 +436,18 @@ export default function GroupCallScreenWeb({ route, navigation }) {
                 <Text style={[typography.small, styles.rosterName, { color: colors.textPrimary }]} numberOfLines={1}>
                   {participant?.name || identity}{identity === roomRef.current?.localParticipant?.identity ? ' · You' : ''}
                 </Text>
+                <Ionicons
+                  name={participant?.isMicrophoneEnabled === false ? 'mic-off-outline' : 'mic-outline'}
+                  size={13}
+                  color={participant?.isMicrophoneEnabled === false ? colors.warning || colors.gold : colors.textSecondary}
+                  accessibilityLabel={participant?.isMicrophoneEnabled === false ? 'Microphone muted' : 'Microphone on'}
+                />
+                <Ionicons
+                  name={participant?.isCameraEnabled ? 'videocam-outline' : 'videocam-off-outline'}
+                  size={13}
+                  color={participant?.isCameraEnabled ? colors.primary : colors.textSecondary}
+                  accessibilityLabel={participant?.isCameraEnabled ? 'Camera on' : 'Camera off'}
+                />
               </View>
             );
           })}
