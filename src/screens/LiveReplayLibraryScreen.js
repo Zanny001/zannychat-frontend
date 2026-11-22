@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -41,6 +41,7 @@ export default function LiveReplayLibraryScreen({ navigation }) {
   const [replays, setReplays] = useState([]);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -106,12 +107,16 @@ export default function LiveReplayLibraryScreen({ navigation }) {
   }, [refresh]));
 
   const visibleReplays = useMemo(() => {
-    if (filter === 'all') return replays;
-    if (filter === 'mine') return replays.filter((item) => item.creatorId === currentUserId);
-    if (filter === 'processing') return replays.filter((item) => PENDING.has(item.status));
-    if (filter === 'failed') return replays.filter((item) => !PENDING.has(item.status) && item.status !== 'ready');
-    return replays.filter((item) => item.status === filter);
-  }, [currentUserId, filter, replays]);
+    const query = searchQuery.trim().toLowerCase();
+    const searched = query ? replays.filter((item) => [
+      item.streamTitle, item.title, item.creatorName, item.creator_name,
+    ].filter(Boolean).join(' ').toLowerCase().includes(query)) : replays;
+    if (filter === 'all') return searched;
+    if (filter === 'mine') return searched.filter((item) => item.creatorId === currentUserId);
+    if (filter === 'processing') return searched.filter((item) => PENDING.has(item.status));
+    if (filter === 'failed') return searched.filter((item) => !PENDING.has(item.status) && item.status !== 'ready');
+    return searched.filter((item) => item.status === filter);
+  }, [currentUserId, filter, replays, searchQuery]);
 
   const readyCount = replays.filter((item) => item.status === 'ready').length;
   const processingCount = replays.filter((item) => PENDING.has(item.status)).length;
@@ -224,6 +229,11 @@ export default function LiveReplayLibraryScreen({ navigation }) {
                 </View>
               </View>
             </GlassCard>
+            <View style={{ minHeight: 50, flexDirection: 'row', alignItems: 'center', borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.md }}>
+              <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+              <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder="Search recordings or creators" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search LIVE replays by title or creator" returnKeyType="search" style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, paddingVertical: spacing.sm, paddingLeft: spacing.sm }]} />
+              {searchQuery ? <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear replay search" style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
+            </View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
               {FILTERS.map((option) => {
                 const selected = filter === option.value;
@@ -243,8 +253,8 @@ export default function LiveReplayLibraryScreen({ navigation }) {
             <View style={{ width: 62, height: 62, borderRadius: 21, backgroundColor: hexToRgba(colors.primary, 0.10), alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="film-outline" size={29} color={colors.primary} />
             </View>
-            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>No replays in this view</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', lineHeight: 20 }]}>{filter === 'all' ? 'When a LIVE recording is ready, it will appear here.' : 'Try another filter to see more of your recordings.'}</Text>
+            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{searchQuery.trim() ? 'No matching recordings' : 'No replays in this view'}</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', lineHeight: 20 }]}>{searchQuery.trim() ? 'Try a different title or creator name, or clear your search.' : filter === 'all' ? 'When a LIVE recording is ready, it will appear here.' : 'Try another filter to see more of your recordings.'}</Text>
           </GlassCard>
         ) : null}
       />

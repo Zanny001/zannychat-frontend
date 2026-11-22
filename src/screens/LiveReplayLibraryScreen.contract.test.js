@@ -63,3 +63,21 @@ test('LIVE replay library watch, filter and recovery controls meet the 48-point 
   assert.ok(screen.includes('accessibilityLabel="Retry loading replay library" style={{ minHeight: 48'));
   assert.ok(screen.includes('style={{ minHeight: 48, paddingHorizontal: spacing.md'));
 });
+
+test('LIVE replay library supports local title and creator search alongside status filters', () => {
+  assert.ok(screen.includes("const [searchQuery, setSearchQuery] = useState('')"));
+  assert.ok(screen.includes('Search LIVE replays by title or creator'));
+  assert.ok(screen.includes('item.streamTitle, item.title, item.creatorName, item.creator_name'));
+  assert.ok(screen.includes('const searched = query ? replays.filter'));
+  assert.ok(screen.includes('searched.filter((item) => item.status === filter)'));
+  assert.ok(screen.includes('Clear replay search'));
+  assert.ok(screen.includes('No matching recordings'));
+});
+
+test('replay search is local-only and does not change account scoping or playback authorization', () => {
+  assert.ok(screen.includes('const visibleReplays = useMemo'));
+  assert.ok(screen.includes('data={visibleReplays}'));
+  assert.ok(screen.includes("backendFetch('/live/replays')"));
+  assert.ok(screen.includes("item.status === 'ready'"));
+  assert.ok(screen.includes('item.creatorId !== activeUserIdRef.current'));
+});
