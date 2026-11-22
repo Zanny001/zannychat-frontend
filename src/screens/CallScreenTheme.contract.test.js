@@ -33,13 +33,17 @@ test('incoming call actions retain accessible labels and a generous touch target
   const source = screen('IncomingCallScreen.js');
   assert.match(source, /accessibilityLabel="Decline call"/);
   assert.match(source, /accessibilityLabel="Answer call"/);
-  assert.match(source, /width: 84, height: 84/);
+  assert.match(source, /width: 88, height: 88/);
+  assert.match(source, /borderRadius: 30/);
+  assert.match(source, /borderColor: colors\.border/);
 });
 
 test('outgoing call cancellation remains an accessible, generously sized action', () => {
   const source = screen('OutgoingCallScreen.js');
   assert.match(source, /accessibilityLabel="Cancel outgoing call"/);
-  assert.match(source, /width: 72, height: 72/);
+  assert.match(source, /width: 80, height: 80/);
+  assert.match(source, /borderRadius: 30/);
+  assert.match(source, /borderColor: colors\.border/);
 });
 
 test('active call screens share the premium type scale on native and web', () => {
