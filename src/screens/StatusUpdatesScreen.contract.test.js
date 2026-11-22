@@ -112,3 +112,26 @@ test('story search resets when the authenticated account changes', () => {
   assert.ok(screen.includes("setStatusSearch('')"));
   assert.ok(screen.includes('setStatuses([])'));
 });
+
+test('Stories discovery filters contacts by unseen, photo, video and text updates', () => {
+  assert.ok(screen.includes("const [statusFilter, setStatusFilter] = useState('all')"));
+  assert.ok(screen.includes('const matchesStatusFilter = (group) =>'));
+  assert.ok(screen.includes("statusFilter === 'unseen'"));
+  assert.ok(screen.includes("statusFilter === 'photos'"));
+  assert.ok(screen.includes("statusFilter === 'videos'"));
+  assert.ok(screen.includes("statusFilter === 'text'"));
+  assert.ok(screen.includes("['all', 'All'], ['unseen', 'Unseen'], ['photos', 'Photos'], ['videos', 'Videos'], ['text', 'Text']"));
+  assert.ok(screen.includes('data={visibleFriendStatusGroups}'));
+  assert.ok(screen.includes('data={visibleGroupedStatuses}'));
+});
+
+test('Stories discovery filters expose selected semantics and comfortable touch targets', () => {
+  assert.ok(screen.includes('accessibilityState={{ selected }}'));
+  assert.ok(screen.includes("accessibilityLabel={'Show ' + label.toLowerCase() + ' stories'}"));
+  assert.ok(screen.includes('minHeight: 48, justifyContent: \'center\''));
+  assert.ok(screen.includes('No stories match these filters.'));
+});
+
+test('Stories discovery resets its content filter when the authenticated account changes', () => {
+  assert.ok(screen.includes("setStatusFilter('all')"));
+});
