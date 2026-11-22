@@ -13,7 +13,7 @@ test('pending scheduled messages render through a virtualized list', () => {
 });
 
 test('schedule composer, handled keyboard taps and recovery states remain present', () => {
-  assert.ok(source.includes('New scheduled message'));
+  assert.ok(source.includes('Compose for later'));
   assert.ok(source.includes('keyboardShouldPersistTaps="handled"'));
   assert.ok(source.includes('ListEmptyComponent='));
   assert.ok(source.includes('Refresh scheduled messages'));
