@@ -34,3 +34,18 @@ test('pinned library no-match state accounts for both search text and content-ty
   assert.match(screen, /query \|\| kindFilter !== 'all' \? 'No matching pins'/);
   assert.match(screen, /Try another filter or clear your search/);
 });
+
+
+test('pinned library introduces saved highlights with a live visible count', () => {
+  assert.match(screen, /YOUR PERSONAL HIGHLIGHTS/);
+  assert.match(screen, /Keep the important close\\./);
+  assert.match(screen, /\\{visible\\.length\\}/);
+  assert.match(screen, /jump straight back to its original conversation/);
+});
+
+test('pinned library empty state explains how to save and recover important moments', () => {
+  assert.match(screen, /No pinned messages yet/);
+  assert.match(screen, /pin it from the conversation/);
+  assert.match(screen, /clear your search to see every saved message/);
+  assert.match(screen, /navigation\\.navigate\\('Chat'/);
+});
