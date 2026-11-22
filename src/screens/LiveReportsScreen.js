@@ -15,6 +15,7 @@ const FILTERS = [
   { value: 'open', label: 'Open' },
   { value: 'reviewing', label: 'Reviewing' },
   { value: 'resolved', label: 'Resolved' },
+  { value: 'dismissed', label: 'Dismissed' },
 ];
 
 function formatDate(value) {
@@ -119,6 +120,7 @@ export default function LiveReportsScreen({ route, navigation }) {
     open: reports.filter((item) => item.status === 'open').length,
     reviewing: reports.filter((item) => item.status === 'reviewing').length,
     resolved: reports.filter((item) => item.status === 'resolved').length,
+    dismissed: reports.filter((item) => item.status === 'dismissed').length,
   }), [reports]);
 
   return (
@@ -139,7 +141,7 @@ export default function LiveReportsScreen({ route, navigation }) {
           <GlassCard contentStyle={{ padding: spacing.lg, gap: spacing.sm }}>
             <Text style={[typography.caption, { color: colors.textSecondary }]}>REPORT QUEUE · {streamTitle}</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-              {[['Open', counts.open], ['Reviewing', counts.reviewing], ['Resolved', counts.resolved]].map(([label, value]) => (
+              {[['Open', counts.open], ['Reviewing', counts.reviewing], ['Resolved', counts.resolved], ['Dismissed', counts.dismissed]].map(([label, value]) => (
                 <View key={label} style={{ flex: 1, minWidth: 92, padding: spacing.sm, borderRadius: radii.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
                   <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 22 }]}>{value}</Text>
                   <Text style={[typography.caption, { color: colors.textSecondary }]}>{label}</Text>
