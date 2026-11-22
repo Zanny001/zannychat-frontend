@@ -24,3 +24,20 @@ test('Help support contact remains configured-only and reports unavailable mail 
   assert.match(screen, /mailto:\$\{supportEmail\}/);
   assert.match(screen, /No mail app/);
 });
+
+test('Help supports local search across FAQ questions and answers with a clear empty state', () => {
+  assert.match(screen, /Search help topics and answers/);
+  assert.match(screen, /const visibleFaq = FAQ\.map/);
+  assert.match(screen, /\(item\.q \+ ' ' \+ item\.a\)\.toLowerCase\(\)/);
+  assert.match(screen, /visibleFaq\.map\(\(\{ item, index \}\)/);
+  assert.match(screen, /No matching help topics/);
+  assert.match(screen, /Clear help search/);
+  assert.match(screen, /visibleFaq\.length/);
+});
+
+test('Help search preserves FAQ expansion state by original question index and keeps support available', () => {
+  assert.match(screen, /setOpenIndex\(null\)/);
+  assert.match(screen, /accessibilityState=\{\{ expanded: open \}\}/);
+  assert.match(screen, /onPress=\{handleContact\}/);
+  assert.match(screen, /EXPO_PUBLIC_SUPPORT_EMAIL/);
+});
