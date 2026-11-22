@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { startGoogleOAuth } from '../services/googleAuth';
 import { View, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import GlassCard from '../components/GlassCard';
 
 import { useTheme } from '../theme/ThemeContext';
 import { signUpWithEmail } from '../services/api';
@@ -117,37 +119,18 @@ export default function SignupScreen({ navigation }) {
             },
           ]}
         >
-          <Knot
-            size={40}
-            signalColor={mood.signal}
-            threadColor={mood.thread}
-            strokeWidth={7}
-          />
-
-          <Text
-            style={[
-              typography.title,
-              {
-                color: colors.textPrimary,
-                marginTop: spacing.md,
-                marginBottom: spacing.xs,
-              },
-            ]}
-          >
-            Create your account
-          </Text>
-
-          <Text
-            style={[
-              typography.body,
-              {
-                color: colors.textSecondary,
-                marginBottom: spacing.lg,
-              },
-            ]}
-          >
-            Join ZannyChat in under a minute.
-          </Text>
+          <GlassCard glow style={{ marginBottom: spacing.md, borderRadius: 24 }} contentStyle={{ padding: spacing.md, gap: spacing.sm }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+              <View style={{ width: 58, height: 58, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+                <Knot size={36} signalColor={mood.signal} threadColor={mood.thread} strokeWidth={6} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+                <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.2 }]}>YOUR NEXT CHAPTER STARTS HERE</Text>
+                <Text style={[typography.title, { color: colors.textPrimary }]}>Find your people.</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>Create your place in the conversation.</Text>
+              </View>
+            </View>
+          </GlassCard>
 
           <TouchableOpacity
             style={[styles.button, { backgroundColor: colors.background, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.primary, opacity: loading ? 0.65 : 1 }]}
@@ -158,6 +141,7 @@ export default function SignupScreen({ navigation }) {
             accessibilityState={{ disabled: loading, busy: loading }}
             activeOpacity={0.75}
           >
+            <Ionicons name="logo-google" size={17} color={colors.textPrimary} style={{ marginRight: 9 }} />
             <Text style={[styles.buttonText, { color: colors.textPrimary }]}>Continue with Google</Text>
           </TouchableOpacity>
           <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginVertical: spacing.sm }]}>or sign up with email</Text>
@@ -230,7 +214,7 @@ export default function SignupScreen({ navigation }) {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={{ marginTop: spacing.md, alignItems: 'center' }}
+            style={{ marginTop: spacing.md, minHeight: 48, justifyContent: 'center', alignItems: 'center' }}
             onPress={() => navigation.navigate('Login')}
             accessibilityRole="button"
             accessibilityLabel="Go to sign in"
@@ -271,7 +255,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   button: {
-    paddingVertical: 16,
+    minHeight: 54,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
   },
