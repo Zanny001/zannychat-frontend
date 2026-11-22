@@ -68,6 +68,33 @@ export default function SavedMessagesScreen({ navigation }) {
       ) : (
         <FlatList
           data={visible}
+          ListHeaderComponent={
+            <GlassCard glow intensity={22} tintAlpha={0.34} style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.md }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ width: 46, height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: `${colors.primary}20`, borderWidth: 1, borderColor: `${colors.primary}35` }}>
+                  <Ionicons name="bookmark" size={22} color={colors.primary} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.md }}>
+                  <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Your personal collection</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 3 }]}>Keep the moments and details worth finding again.</Text>
+                </View>
+                <View style={{ minWidth: 48, alignItems: 'flex-end' }}>
+                  <Text style={[typography.heading, { color: colors.primary }]}>{items.length}</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>SAVED</Text>
+                </View>
+              </View>
+              <View style={{ height: 1, backgroundColor: colors.border }} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                {query.trim()
+                  ? <Text style={[typography.caption, { color: colors.textSecondary }]}>{visible.length} matching {visible.length === 1 ? 'message' : 'messages'}</Text>
+                  : <Text style={[typography.caption, { color: colors.textSecondary }]}>PRIVATE TO THIS DEVICE</Text>}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                  <Ionicons name="lock-closed-outline" size={13} color={colors.textSecondary} />
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>PRIVATE</Text>
+                </View>
+              </View>
+            </GlassCard>
+          }
           keyExtractor={(item) => String(item.id)}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -85,10 +112,20 @@ export default function SavedMessagesScreen({ navigation }) {
                 </View>
                 <TouchableOpacity onPress={() => remove(item)} accessibilityRole="button" accessibilityLabel="Remove saved message" hitSlop={8} style={{ minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="bookmark" size={19} color={colors.accent} /></TouchableOpacity>
               </View>
-              {item.text ? <Text style={[typography.body, { color: colors.textPrimary }]}>{item.text}</Text> : null}
-              {item.attachment ? <Text style={[typography.caption, { color: colors.textSecondary }]}><Ionicons name="attach-outline" size={13} /> {item.attachment.name || (item.attachment.type === 'voice' ? 'Voice note' : 'Attachment')} · Open the conversation to access the original</Text> : null}
-              <TouchableOpacity onPress={() => navigation.navigate('Chat', { conversation: item.conversation, targetMessageId: item.messageId })} accessibilityRole="button" accessibilityLabel="Open saved message in conversation" style={{ minHeight: 48, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
-                <Text style={[typography.small, { color: colors.primary, fontWeight: '700' }]}>Open conversation</Text><Ionicons name="arrow-forward" size={15} color={colors.primary} style={{ marginLeft: 5 }} />
+              {item.text ? (
+                <View style={{ borderLeftWidth: 2, borderLeftColor: colors.primary, paddingLeft: spacing.md, paddingVertical: spacing.xs }}>
+                  <Text style={[typography.body, { color: colors.textPrimary, lineHeight: 23 }]}>{item.text}</Text>
+                </View>
+              ) : null}
+              {item.attachment ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', padding: spacing.sm, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }}>
+                  <Ionicons name="attach-outline" size={16} color={colors.primary} />
+                  <Text style={[typography.caption, { color: colors.textSecondary, marginLeft: spacing.xs, flex: 1 }]}>{item.attachment.name || (item.attachment.type === 'voice' ? 'Voice note' : 'Attachment')} · Open the conversation to access the original</Text>
+                </View>
+              ) : null}
+              <TouchableOpacity onPress={() => navigation.navigate('Chat', { conversation: item.conversation, targetMessageId: item.messageId })} accessibilityRole="button" accessibilityLabel="Open saved message in conversation" style={{ minHeight: 48, alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, borderRadius: radii.md, backgroundColor: `${colors.primary}12` }}>
+                <Text style={[typography.small, { color: colors.primary, fontWeight: '800' }]}>Return to conversation</Text>
+                <Ionicons name="arrow-up-right" size={17} color={colors.primary} />
               </TouchableOpacity>
             </GlassCard>
           )}
