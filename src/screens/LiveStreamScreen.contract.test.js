@@ -401,10 +401,10 @@ test('web Creator Studio can appoint and remove moderators with creator-only sta
 
 test('LIVE polling pauses in the background, avoids overlapping reads and uses gentler intervals', () => {
   assert.ok(screen.includes('const isAppForeground = () => !AppState.currentState || AppState.currentState === \'active\''));
-  assert.ok(screen.includes('if (!stream?.id || !isAppForeground()) return;'));
+  assert.ok(screen.includes('if (endedRef.current || !stream?.id || !isAppForeground()) return;'));
   assert.ok(screen.includes('if (commentsRefreshInFlight.current) { commentsRefreshQueued.current = true; return; }'));
-  assert.ok(screen.includes('if (!active || !isAppForeground() || guestStatusRefreshInFlight.current) return;'));
-  assert.ok(screen.includes('if (!active || !isAppForeground() || guestRequestsRefreshInFlight.current) return;'));
+  assert.ok(screen.includes('if (!active || endedRef.current || !isAppForeground() || guestStatusRefreshInFlight.current) return;'));
+  assert.ok(screen.includes('if (!active || endedRef.current || !isAppForeground() || guestRequestsRefreshInFlight.current) return;'));
   assert.ok(screen.includes('if (!active || !isAppForeground() || studioParticipantsRefreshInFlight.current) return;'));
   assert.ok(screen.includes('setInterval(refreshComments, 30_000)'));
   assert.ok(screen.includes('setInterval(checkApproval, 6000)'));
@@ -416,7 +416,7 @@ test('LIVE polling pauses in the background, avoids overlapping reads and uses g
 test('web LIVE polling pauses in hidden tabs and prevents overlapping reads', () => {
   const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.ok(web.includes("const isDocumentVisible = () => typeof document === 'undefined' || document.visibilityState !== 'hidden'"));
-  assert.ok(web.includes('if (!stream?.id || !isDocumentVisible()) return;'));
+  assert.ok(web.includes('if (endedRef.current || !stream?.id || !isDocumentVisible()) return;'));
   assert.ok(web.includes('if (commentsRefreshInFlight.current) { commentsRefreshQueued.current = true; return; }'));
   assert.ok(web.includes('!isDocumentVisible() || guestStatusRefreshInFlight.current'));
   assert.ok(web.includes('!isDocumentVisible() || guestRequestsRefreshInFlight.current'));
@@ -637,4 +637,15 @@ test('creator end action keeps an explicit readable END LIVE label on native and
   const web = fs.readFileSync(new URL('./LiveStreamScreen.web.js', import.meta.url), 'utf8');
   assert.ok(web.includes("label={creatorMode ? 'END LIVE' : 'LEAVE'}"));
   assert.ok(web.includes("accessibilityLabel={creatorMode ? 'End LIVE broadcast' : 'Leave LIVE stream'}"));
+});
+
+
+test('native and web LIVE polling stops issuing requests and applying responses after room teardown', () => {
+  for (const source of [screen, webScreen]) {
+    assert.ok(source.includes('if (endedRef.current || !stream?.id'));
+    assert.ok(source.includes('if (endedRef.current) return;'));
+    assert.ok(source.includes('if (!active || endedRef.current || !is'));
+    assert.ok(source.includes('if (active && !endedRef.current)'));
+    assert.ok(source.includes('if (!active || endedRef.current) return;'));
+  }
 });
