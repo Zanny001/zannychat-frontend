@@ -20,3 +20,18 @@ test('Shared Media tab controls expose selected state and accessible labels', ()
   assert.ok(screen.includes('accessibilityState={{ selected: active }}'));
   assert.match(screen, /accessibilityLabel=/);
 });
+
+test('Shared Media overview reflects the active category and its live item count', () => {
+  assert.match(screen, /A SHARED SPACE FOR THE GOOD STUFF/);
+  assert.match(screen, /Moments worth revisiting\./);
+  assert.match(screen, /Everything sent, in reach\./);
+  assert.match(screen, /Follow the conversation outward\./);
+  assert.match(screen, /\{currentItems\.length\}/);
+  assert.match(screen, /Private attachments may use expiring access links/);
+});
+
+test('Shared Media overview remains derived from classified conversation data', () => {
+  assert.match(screen, /const content = useMemo\(\(\) => classifySharedContent\(messages\)/);
+  assert.match(screen, /const currentItems = content\[tab\] \|\| \[\]/);
+  assert.match(screen, /filterSharedItems\(currentItems, searchQuery\)/);
+});
