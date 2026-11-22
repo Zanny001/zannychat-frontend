@@ -447,7 +447,7 @@ export default function GroupCallScreenWeb({ route, navigation }) {
         </TouchableOpacity>
       ) : null}
 
-      <View style={[styles.controls, { borderTopColor: colors.border }]}>
+      <View style={[styles.controls, { backgroundColor: hexToRgba(colors.surface, 0.86), borderColor: colors.border }]}>
         <TouchableOpacity onPress={toggleMute} accessibilityRole="button" accessibilityLabel={muted ? 'Unmute microphone' : 'Mute microphone'} style={[styles.control, { backgroundColor: muted ? colors.primary : colors.surface, borderColor: colors.border }]}>
           <Ionicons name={muted ? 'mic-off' : 'mic'} size={21} color={muted ? colors.onPrimary : colors.textPrimary} />
           <Text style={[typography.small, { color: muted ? colors.onPrimary : colors.textPrimary }]}>{muted ? 'Unmute' : 'Mute'}</Text>
@@ -499,6 +499,6 @@ const styles = StyleSheet.create({
   audioOrb: { width: 116, height: 116, borderRadius: 58, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   hiddenAudio: { width: 0, height: 0, overflow: 'hidden' },
   audioUnlock: { alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 11, borderRadius: 13, marginBottom: 8 },
-  controls: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: 10, paddingHorizontal: 12, paddingVertical: 14, borderTopWidth: StyleSheet.hairlineWidth },
-  control: { minWidth: 74, minHeight: 58, borderRadius: 15, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 7 },
+  controls: { width: '100%', maxWidth: 680, alignSelf: 'center', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: 9, marginHorizontal: 12, marginBottom: 14, paddingHorizontal: 12, paddingVertical: 14, borderWidth: 1, borderRadius: 28 },
+  control: { minWidth: 68, minHeight: 64, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 7 },
 });
