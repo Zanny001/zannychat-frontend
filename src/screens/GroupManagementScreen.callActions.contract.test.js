@@ -17,6 +17,6 @@ test('group management offers direct audio and video call entry points', () => {
 test('group call entry points use the existing conversation-scoped LiveKit join flow', () => {
   assert.match(screen, /conversationId, conversationName: groupMetadata\.name/);
   assert.match(groupCall, /body: JSON\.stringify\(\{ conversationId, callType \}\)/);
-  assert.match(groupCall, /backendFetch\('\/group-calls\/join'/);
-  assert.match(groupCall, /conversationId/);
+  assert.match(groupCall, /backendFetch\('\/group-calls'/);
+  assert.match(groupCall, /backendFetch\(`\/group-calls\/\$\{roomId\}\/join`/);
 });
