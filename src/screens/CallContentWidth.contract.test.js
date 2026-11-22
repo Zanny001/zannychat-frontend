@@ -33,7 +33,7 @@ test('group video stage and control dock use separate media and content measures
 test('native and web active-call controls use a contained responsive premium dock', () => {
   for (const name of ['CallScreen.js', 'CallScreen.web.js']) {
     const source = readFileSync(new URL(`./${name}`, import.meta.url), 'utf8');
-    assert.match(source, /maxWidth: 340/);
+    assert.match(source, /maxWidth: layout\.contentMaxWidth/);
     assert.match(source, /flexWrap: 'wrap'/);
     assert.match(source, /borderRadius: 28/);
     assert.match(source, /minHeight: 64/);
