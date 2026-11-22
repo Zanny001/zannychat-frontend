@@ -20,6 +20,15 @@ function sessionDeviceLabel(userAgent) {
   return [os, browser].filter(Boolean).join(' · ') || 'Other device';
 }
 
+function isMobileSession(userAgent) {
+  return /Android|iPhone|iPad|iPod/i.test(String(userAgent || ''));
+}
+
+function isDesktopSession(userAgent) {
+  const value = String(userAgent || '');
+  return !isMobileSession(value) && /Windows|Mac OS X|Macintosh|Linux/i.test(value);
+}
+
 function formatSessionDate(value) {
   if (!value) return 'Activity time unavailable';
   const date = new Date(value);
@@ -100,14 +109,14 @@ export default function SessionsScreen({ navigation }) {
   }
 
   const otherSessions = sessions.filter((item) => !item.is_current);
-  const sessionCounts = { all: otherSessions.length, mobile: otherSessions.filter((item) => /Android|iPhone|iPad|iPod/i.test(String(item.user_agent || ''))).length, desktop: otherSessions.filter((item) => /Windows|Mac OS X|Macintosh|Linux/i.test(String(item.user_agent || ''))).length };
+  const sessionCounts = { all: otherSessions.length, mobile: otherSessions.filter((item) => isMobileSession(item.user_agent)).length, desktop: otherSessions.filter((item) => isDesktopSession(item.user_agent)).length };
   const visibleSessions = otherSessions.filter((item) => {
     const userAgent = String(item.user_agent || '');
     const label = sessionDeviceLabel(userAgent);
     const query = sessionSearch.trim().toLowerCase();
     if (query && !(label + ' ' + userAgent).toLowerCase().includes(query)) return false;
-    if (sessionFilter === 'mobile') return /Android|iPhone|iPad|iPod/i.test(userAgent);
-    if (sessionFilter === 'desktop') return /Windows|Mac OS X|Macintosh|Linux/i.test(userAgent);
+    if (sessionFilter === 'mobile') return isMobileSession(userAgent);
+    if (sessionFilter === 'desktop') return isDesktopSession(userAgent);
     return true;
   });
   const deviceName = Device.modelName || Device.deviceName || 'This device';
