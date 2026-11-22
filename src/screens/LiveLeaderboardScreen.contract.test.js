@@ -40,3 +40,34 @@ test('LIVE leaderboard is reachable from LIVE Hub and every action has an access
   assert.ok(premiumHeader.includes('accessibilityLabel={backLabel}'));
   assert.ok(premiumHeader.includes('accessibilityLabel={refreshLabel}'));
 });
+
+test('LIVE leaderboard supports local creator-name search without changing published ranks', () => {
+  assert.ok(leaderboard.includes("const [searchQuery, setSearchQuery] = useState('')"));
+  assert.ok(leaderboard.includes('Search LIVE creators by name'));
+  assert.ok(leaderboard.includes('const visibleEntries = useMemo'));
+  assert.ok(leaderboard.includes("entries.filter((entry) => String(entry.name || '').toLowerCase().includes(query))"));
+  assert.ok(leaderboard.includes('data={visibleEntries}'));
+  assert.ok(leaderboard.includes('renderItem={({ item: entry }) =>'));
+  assert.ok(leaderboard.includes('{entry.rank}'));
+  assert.ok(leaderboard.includes('No creator matches that name'));
+  assert.ok(leaderboard.includes('Clear creator search'));
+});
+
+test('LIVE leaderboard search stays local to the authenticated public ranking response', () => {
+  assert.ok(leaderboard.includes("backendFetch('/live/leaderboard?period=all_time&limit=50')"));
+  assert.ok(leaderboard.includes('Only profiles visible to everyone are ranked.'));
+  assert.ok(leaderboard.includes('Private, contacts-only and blocked creators are excluded.'));
+  assert.ok(!leaderboard.includes('backendFetch(`/live/leaderboard?'));
+});
+
+test('LIVE leaderboard virtualizes creator rows while retaining refresh, header and privacy context', () => {
+  assert.ok(leaderboard.includes('<FlatList'));
+  assert.ok(leaderboard.includes('keyExtractor={(entry) => String(entry.creatorId)}'));
+  assert.ok(leaderboard.includes('initialNumToRender={12}'));
+  assert.ok(leaderboard.includes('maxToRenderPerBatch={12}'));
+  assert.ok(leaderboard.includes('windowSize={7}'));
+  assert.ok(leaderboard.includes('ListHeaderComponent='));
+  assert.ok(leaderboard.includes('ListFooterComponent='));
+  assert.ok(leaderboard.includes('refreshControl={<RefreshControl'));
+  assert.equal(leaderboard.includes('<ScrollView'), false);
+});
