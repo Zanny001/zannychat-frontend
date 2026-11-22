@@ -18,6 +18,7 @@ export default function EventsScreen({ navigation, route }) {
   const [startsAt, setStartsAt] = useState('');
   const [location, setLocation] = useState('');
   const [events, setEvents] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [currentUserId, setCurrentUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -98,6 +99,12 @@ export default function EventsScreen({ navigation, route }) {
     }
   };
 
+  const visibleEvents = events.filter((event) => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return true;
+    return [event.title, event.location, event.description].filter(Boolean).join(' ').toLowerCase().includes(query);
+  });
+
   const fieldStyle = [typography.body, {
     color: colors.textPrimary,
     backgroundColor: colors.surface,
@@ -113,7 +120,7 @@ export default function EventsScreen({ navigation, route }) {
       <Header eyebrow="MAKE IT A MOMENT" title="Events" subtitle="Bring your conversations into real life" onBack={() => navigation.goBack()} />
       <FlatList
         style={{ flex: 1 }}
-        data={events}
+        data={visibleEvents}
         keyExtractor={(event) => String(event.id)}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -123,6 +130,12 @@ export default function EventsScreen({ navigation, route }) {
         contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || spacing.xl, flexGrow: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
         ListHeaderComponent={
           <View>
+            <View style={{ minHeight: 50, flexDirection: 'row', alignItems: 'center', borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.md, marginBottom: spacing.md }}>
+              <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+              <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder="Search loaded events" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search loaded events by title, location or details" returnKeyType="search" style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, paddingVertical: spacing.sm, paddingLeft: spacing.sm }]} />
+              {searchQuery ? <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear event search" style={{ width: 40, height: 44, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="close-circle" size={18} color={colors.textSecondary} /></TouchableOpacity> : null}
+            </View>
+            <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.sm }]}>{visibleEvents.length} of {events.length} loaded events · Search updates as you load more</Text>
             <GlassCard glow style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.md }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                 <View style={{ width: 42, height: 42, borderRadius: 15, backgroundColor: `${colors.primary}18`, borderWidth: 1, borderColor: `${colors.primary}35`, alignItems: 'center', justifyContent: 'center' }}>
@@ -218,7 +231,7 @@ export default function EventsScreen({ navigation, route }) {
         ListEmptyComponent={
           loading ? <ActivityIndicator color={colors.primary} style={{ padding: spacing.xl }} />
             : error ? <View style={{ padding: spacing.md }}><Text style={[typography.body, { color: colors.textSecondary }]}>{error}</Text><TouchableOpacity onPress={refresh} accessibilityRole="button" accessibilityLabel="Retry loading events" style={{ minHeight: 48, justifyContent: 'center' }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></View>
-            : <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', paddingVertical: spacing.lg }]}>No upcoming events in this conversation.</Text>
+            : <View style={{ alignItems: 'center', paddingVertical: spacing.lg, gap: spacing.xs }}><Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{searchQuery.trim() ? 'No matching loaded events' : 'No upcoming events in this conversation.'}</Text>{searchQuery.trim() ? <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel="Clear event search" style={{ minHeight: 48, justifyContent: 'center', paddingHorizontal: spacing.md }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Clear search</Text></TouchableOpacity> : null}</View>
         }
         ListFooterComponent={hasMore ? (
           <TouchableOpacity onPress={loadMore} disabled={loadingMore} accessibilityRole="button" accessibilityLabel="Load more upcoming events" accessibilityState={{ disabled: loadingMore, busy: loadingMore }} style={{ minHeight: 48, marginVertical: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}>
