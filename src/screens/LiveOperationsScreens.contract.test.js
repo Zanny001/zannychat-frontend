@@ -91,7 +91,7 @@ test('LIVE participant moderation virtualizes large rosters without weakening ro
   assert.ok(moderation.includes("participantFilter === 'viewers'"));
   assert.ok(moderation.includes("participantFilter === 'guests'"));
   assert.ok(moderation.includes("participantFilter === 'moderators'"));
-  assert.ok(moderation.includes('Show stage guests'));
+  assert.ok(moderation.includes("label: 'Stage guests'"));
   assert.ok(moderation.includes('No participants in this view'));
   assert.ok(moderation.includes("backendFetch(\u0060/live/\u0024{streamId}/guests/\u0024{item.userId}/mute\u0060"));
   assert.ok(moderation.includes('makeModerator ? ' + String.fromCharCode(96) + '/live/${streamId}/moderators' + String.fromCharCode(96)));
