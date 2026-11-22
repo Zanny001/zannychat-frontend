@@ -85,7 +85,9 @@ export default function SavedMessagesScreen({ navigation }) {
               </View>
               <View style={{ height: 1, backgroundColor: colors.border }} />
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text style={[typography.caption, { color: colors.textSecondary }]}>{query.trim() ? `${visible.length} matching ${visible.length === 1 ? 'message' : 'messages'}` : 'PRIVATE TO THIS DEVICE'}</Text>
+                {query.trim()
+                  ? <Text style={[typography.caption, { color: colors.textSecondary }]}>{visible.length} matching {visible.length === 1 ? 'message' : 'messages'}</Text>
+                  : <Text style={[typography.caption, { color: colors.textSecondary }]}>PRIVATE TO THIS DEVICE</Text>}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                   <Ionicons name="lock-closed-outline" size={13} color={colors.textSecondary} />
                   <Text style={[typography.caption, { color: colors.textSecondary }]}>PRIVATE</Text>
