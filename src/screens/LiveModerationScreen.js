@@ -15,6 +15,7 @@ export default function LiveModerationScreen({ route, navigation }) {
   const streamId = route.params?.streamId || null;
   const streamTitle = route.params?.title || 'LIVE stage';
   const [participants, setParticipants] = useState([]);
+  const [participantFilter, setParticipantFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busyUserId, setBusyUserId] = useState(null);
@@ -68,6 +69,13 @@ export default function LiveModerationScreen({ route, navigation }) {
     });
     return () => data?.subscription?.unsubscribe?.();
   }, [refresh]);
+
+  const visibleParticipants = useMemo(() => {
+    if (participantFilter === 'viewers') return participants.filter((item) => item.joined && item.role === 'viewer');
+    if (participantFilter === 'guests') return participants.filter((item) => item.joined && item.role === 'guest');
+    if (participantFilter === 'moderators') return participants.filter((item) => item.moderator);
+    return participants;
+  }, [participantFilter, participants]);
 
   const counts = useMemo(() => ({
     viewers: participants.filter((item) => item.joined && item.role === 'viewer').length,
@@ -148,7 +156,7 @@ export default function LiveModerationScreen({ route, navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <FlatList
-        data={participants}
+        data={visibleParticipants}
         keyExtractor={(item) => String(item.userId)}
         renderItem={({ item }) => {
           const busy = busyUserId === item.userId;
@@ -228,9 +236,25 @@ export default function LiveModerationScreen({ route, navigation }) {
             </View>
           </GlassCard>
 
-          <View style={{ gap: 3 }}>
-            <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 18 }]}>People in this LIVE</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>Controls are limited by your creator permissions and each participant's current role.</Text>
+          <View style={{ gap: spacing.sm }}>
+            <View style={{ gap: 3 }}>
+              <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 18 }]}>People in this LIVE</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>Controls are limited by your creator permissions and each participant's current role.</Text>
+            </View>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
+              {[
+                { value: 'all', label: 'Everyone', count: participants.length },
+                { value: 'viewers', label: 'Viewers', count: counts.viewers },
+                { value: 'guests', label: 'Stage guests', count: counts.guests },
+                { value: 'moderators', label: 'Moderators', count: counts.moderators },
+              ].map((option) => {
+                const selected = participantFilter === option.value;
+                return <TouchableOpacity key={option.value} onPress={() => setParticipantFilter(option.value)} accessibilityRole="radio" accessibilityLabel={`Show ${option.label.toLowerCase()}`} accessibilityState={{ checked: selected }} style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: spacing.md, borderRadius: 14, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? hexToRgba(colors.primary, 0.16) : colors.surface }}>
+                  <Text style={[typography.caption, { color: selected ? colors.primary : colors.textSecondary, fontWeight: selected ? '900' : '700' }]}>{option.label}</Text>
+                  <Text style={[typography.small, { color: selected ? colors.primary : colors.textSecondary }]}>{option.count}</Text>
+                </TouchableOpacity>;
+              })}
+            </View>
           </View>
 
           {loading && !participants.length ? <View style={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary }]}>Loading participants…</Text></View> : null}
@@ -242,8 +266,8 @@ export default function LiveModerationScreen({ route, navigation }) {
         ListEmptyComponent={!loading && !error ? <View style={{ width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
           <GlassCard contentStyle={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}>
             <Ionicons name="people-outline" size={30} color={colors.textSecondary} />
-            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>No participants to manage</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>Joined viewers, stage guests and appointed moderators will appear here.</Text>
+            <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>{participants.length ? 'No participants in this view' : 'No participants to manage'}</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>{participants.length ? 'Choose another role filter to see more people.' : 'Joined viewers, stage guests and appointed moderators will appear here.'}</Text>
           </GlassCard>
         </View> : null}
       />
