@@ -139,6 +139,7 @@ export default function PrivacySecurityScreen({ navigation }) {
         authProviderRequestRef.current += 1;
         blockedRequestRef.current += 1;
         setBlocked([]);
+        setBlockedSearch('');
         setAuthProviders({ email: false, google: false });
         setGoogleReauthVerifiedUserId(null);
         setGoogleReauthMismatch(false);
