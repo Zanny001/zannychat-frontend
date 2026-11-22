@@ -54,7 +54,21 @@ export default function HelpScreen({ navigation }) {
   return (
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Help" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
+        <GlassCard glow contentStyle={{ gap: spacing.md, paddingVertical: spacing.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            <View style={{ width: 56, height: 56, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+              <Ionicons name="sparkles-outline" size={27} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+              <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.15 }]}>HERE WHEN YOU NEED US</Text>
+              <Text style={[typography.heading, { color: colors.textPrimary, fontSize: 21 }]}>A little help goes a long way.</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>{FAQ.length} quick answers · ZannyChat v{version}</Text>
+            </View>
+          </View>
+          <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 20 }]}>Find clear answers about your account, conversations, privacy and the features that make ZannyChat yours.</Text>
+        </GlassCard>
+        <Text style={[typography.caption, { color: colors.primary, fontWeight: '900', letterSpacing: 1.1, paddingHorizontal: spacing.xs }]}>COMMON QUESTIONS</Text>
         {FAQ.map((item, index) => {
           const open = openIndex === index;
           return (
