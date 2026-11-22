@@ -96,7 +96,29 @@ export default function LiveLeaderboardScreen({ navigation }) {
       setRefreshing(false);
       if (nextUserId) Promise.resolve().then(() => refresh());
     });
-    return (
+    return () => data?.subscription?.unsubscribe?.();
+  }, [refresh]);
+
+  useFocusEffect(useCallback(() => {
+    refresh();
+    return () => { refreshRequestRef.current += 1; };
+  }, [refresh]));
+
+  const openCreatorProfile = (entry) => {
+    if (!entry?.creatorId) return;
+    navigation.navigate('LiveCreatorProfile', {
+      participant: {
+        id: entry.creatorId,
+        name: entry.name || 'ZannyChat creator',
+        avatarColor: entry.avatarColor || undefined,
+      },
+      fromLive: true,
+      isFollowing: followingIds.includes(entry.creatorId),
+      isCurrentUser: entry.creatorId === currentUserId,
+    });
+  };
+
+  return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <FlatList
         data={visibleEntries}
@@ -109,33 +131,16 @@ export default function LiveLeaderboardScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => refresh(true)} tintColor={colors.primary} />}
         contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl || 32, flexGrow: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}
         ListHeaderComponent={<View style={{ width: '100%', gap: spacing.md }}>
-          <LivePremiumHeader
-            navigation={navigation}
-            eyebrow="ZANNYCHAT · LIVE COMMUNITY"
-            backLabel="Back to LIVE Hub"
-            title="Creator leaderboard"
-            subtitle="Community impact, ranked fairly"
-            icon="trophy-outline"
-            onRefresh={() => refresh()}
-            refreshLabel="Refresh leaderboard"
-          />
-
+          <LivePremiumHeader navigation={navigation} eyebrow="ZANNYCHAT · LIVE COMMUNITY" backLabel="Back to LIVE Hub" title="Creator leaderboard" subtitle="Community impact, ranked fairly" icon="trophy-outline" onRefresh={() => refresh()} refreshLabel="Refresh leaderboard" />
           <GlassCard glow contentStyle={{ padding: spacing.lg, gap: spacing.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              <View style={{ width: 48, height: 48, borderRadius: 16, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="trophy" size={24} color={colors.primary} />
-              </View>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 18 }]}>All-time creator impact</Text>
-                <Text style={[typography.caption, { color: colors.textSecondary }]}>Public creators ranked by verified LIVE impact score</Text>
-              </View>
+              <View style={{ width: 48, height: 48, borderRadius: 16, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="trophy" size={24} color={colors.primary} /></View>
+              <View style={{ flex: 1, minWidth: 0 }}><Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 18 }]}>All-time creator impact</Text><Text style={[typography.caption, { color: colors.textSecondary }]}>Public creators ranked by verified LIVE impact score</Text></View>
             </View>
             {generatedAt ? <Text style={[typography.caption, { color: colors.textSecondary }]}>Updated {formatDate(generatedAt)}</Text> : null}
           </GlassCard>
-
           {loading && !entries.length ? <View style={{ padding: spacing.xl, alignItems: 'center', gap: spacing.sm }}><ActivityIndicator color={colors.primary} /><Text style={[typography.caption, { color: colors.textSecondary }]}>Loading creator rankings…</Text></View> : null}
           {!!error ? <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.sm }}><Text accessibilityRole="alert" style={[typography.body, { color: colors.danger }]}>{error}</Text><TouchableOpacity onPress={() => refresh()} accessibilityRole="button" accessibilityLabel="Retry loading LIVE leaderboard" style={{ minHeight: 48, justifyContent: 'center' }}><Text style={[typography.bodyStrong, { color: colors.primary }]}>Try again</Text></TouchableOpacity></GlassCard> : null}
-
           {entries.length ? <View style={{ minHeight: 50, flexDirection: 'row', alignItems: 'center', borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.md }}>
             <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
             <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder="Find a creator by name" placeholderTextColor={colors.textSecondary} accessibilityLabel="Search LIVE creators by name" returnKeyType="search" style={[typography.body, { color: colors.textPrimary, flex: 1, minWidth: 0, paddingVertical: spacing.sm, paddingLeft: spacing.sm }]} />
@@ -145,12 +150,8 @@ export default function LiveLeaderboardScreen({ navigation }) {
         renderItem={({ item: entry }) => (
           <TouchableOpacity onPress={() => openCreatorProfile(entry)} accessibilityRole="button" accessibilityLabel={'Open ' + entry.name + ' creator profile, rank ' + entry.rank} style={{ width: '100%', marginTop: spacing.sm }}>
             <GlassCard contentStyle={{ padding: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={[typography.bodyStrong, { color: colors.primary, fontSize: 16 }]}>{entry.rank}</Text>
-              </View>
-              <View style={{ width: 44, height: 44, borderRadius: 15, backgroundColor: entry.avatarColor || colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 17 }]}>{String(entry.name || 'C').slice(0, 1).toUpperCase()}</Text>
-              </View>
+              <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}><Text style={[typography.bodyStrong, { color: colors.primary, fontSize: 16 }]}>{entry.rank}</Text></View>
+              <View style={{ width: 44, height: 44, borderRadius: 15, backgroundColor: entry.avatarColor || colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}><Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 17 }]}>{String(entry.name || 'C').slice(0, 1).toUpperCase()}</Text></View>
               <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
                 <Text numberOfLines={1} style={[typography.bodyStrong, { color: colors.textPrimary }]}>{entry.name || 'LIVE Creator'}</Text>
                 <Text style={[typography.caption, { color: colors.textSecondary }]}>Impact {formatNumber(entry.impactScore)} · {formatNumber(entry.totalReactions)} reactions</Text>
@@ -172,14 +173,12 @@ export default function LiveLeaderboardScreen({ navigation }) {
         </GlassCard> : null}
         ListFooterComponent={<View style={{ width: '100%', marginTop: spacing.md }}>
           <GlassCard contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              <Ionicons name="shield-checkmark-outline" size={19} color={colors.primary} />
-              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Fair and privacy-aware rankings</Text>
-            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}><Ionicons name="shield-checkmark-outline" size={19} color={colors.primary} /><Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Fair and privacy-aware rankings</Text></View>
             <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 20 }]}>Only profiles visible to everyone are ranked. Private, contacts-only and blocked creators are excluded. All-time rankings are shown because weekly and monthly score history is not yet available.</Text>
           </GlassCard>
         </View>}
       />
     </SafeAreaView>
   );
+}
 }
