@@ -65,7 +65,7 @@ export default function ProfileScreen({ navigation }) {
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
-      <Header title="Profile" brand />
+      <Header eyebrow="YOUR IDENTITY" title="Profile" brand />
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: tabBarHeight + spacing.lg, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' }}>
         {profileError ? (
           <GlassCard style={{ marginBottom: spacing.md }} contentStyle={{ padding: spacing.md, gap: spacing.xs }}>
@@ -128,12 +128,14 @@ export default function ProfileScreen({ navigation }) {
         <MenuRow icon="color-palette-outline" label="Appearance & theme" onPress={() => navigation.navigate('Settings')} />
         <MenuRow icon="shield-checkmark-outline" label="Privacy & security" onPress={() => navigation.navigate('PrivacySecurity')} />
         <MenuRow icon="notifications-outline" label="Notifications" onPress={() => navigation.navigate('Notifications')} />
+        <Text style={[typography.small, { color: colors.textSecondary, marginTop: spacing.lg, marginBottom: spacing.sm, marginLeft: 4, letterSpacing: 1.1 }]}>YOUR CONTENT & COMMUNITY</Text>
         <MenuRow icon="aperture-outline" label="Status updates" onPress={() => navigation.navigate('StatusUpdates')} />
         <MenuRow icon="megaphone-outline" label="Channels" onPress={() => navigation.navigate('Channels')} />
         <MenuRow icon="bookmark-outline" label="Saved messages" onPress={() => navigation.navigate('SavedMessages')} />
         <MenuRow icon="time-outline" label="Scheduled messages" onPress={() => navigation.navigate('ScheduledMessages')} />
         <MenuRow icon="folder-outline" label="Chat folders" onPress={() => navigation.navigate('ChatFolders')} />
         <MenuRow icon="people-outline" label="Join a group" onPress={() => navigation.navigate('JoinGroup')} />
+        <Text style={[typography.small, { color: colors.textSecondary, marginTop: spacing.lg, marginBottom: spacing.sm, marginLeft: 4, letterSpacing: 1.1 }]}>SUPPORT & STORAGE</Text>
         <MenuRow icon="cloud-upload-outline" label="Data & storage" onPress={() => navigation.navigate('DataStorage')} />
         <MenuRow icon="help-circle-outline" label="Help" onPress={() => navigation.navigate('Help')} />
       </ScrollView>
@@ -169,7 +171,7 @@ const styles = StyleSheet.create({
   profileDivider: { height: StyleSheet.hairlineWidth, marginVertical: 18 },
   profileActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   profileAction: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 11, flex: 1, minWidth: 132 },
-  row: { flexDirection: 'row', alignItems: 'center' },
+  row: { flexDirection: 'row', alignItems: 'center', minHeight: 56, paddingHorizontal: 14, paddingVertical: 12 },
   editPill: {
     flexDirection: 'row',
     alignItems: 'center',
