@@ -197,6 +197,7 @@ export default function StatusUpdatesScreen({ navigation, route }) {
     setError('');
     setStatuses([]);
     setStatusSearch('');
+    setStatusFilter('all');
     setReactions({});
     setReactingStatusIds([]);
     reactionLocksRef.current.clear();
