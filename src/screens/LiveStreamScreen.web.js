@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, PanResponder, Share, ScrollView, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Dimensions, PanResponder, ScrollView, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   cancelAnimation,
@@ -791,10 +791,20 @@ export default function LiveStreamScreen({ route, navigation }) {
   const shareLiveStream = async () => {
     if (!stream?.id) return;
     const url = `https://zannychat.vercel.app/LiveStream?streamId=${encodeURIComponent(stream.id)}`;
+    const shareData = { title: stream.title || 'ZannyChat LIVE', text: `Join my LIVE on ZannyChat: ${url}`, url };
     try {
-      await Share.share({ title: stream.title || 'ZannyChat LIVE', message: `Join my LIVE on ZannyChat: ${url}`, url });
+      if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+        await navigator.share(shareData);
+        return;
+      }
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        setStageNotice('LIVE link copied to clipboard.');
+        return;
+      }
+      setError('Sharing is unavailable in this browser. Open the LIVE link from the address bar to share it.');
     } catch (err) {
-      setError(err?.message || 'Could not share this LIVE stream.');
+      if (err?.name !== 'AbortError') setError(err?.message || 'Could not share this LIVE stream.');
     }
   };
 
