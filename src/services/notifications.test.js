@@ -16,7 +16,7 @@ test('Creator LIVE push taps open LIVE discovery and carry the stream notificati
   assert.ok(liveHub.includes("['live_stream_started', 'live_invitation', 'live_guest_request', 'live_guest_invitation', 'live_event_started', 'live_pk_challenge', 'live_pk_accepted'].includes(type)"));
   assert.ok(liveHub.includes("item.invitation_type === 'guest' ? 'Join stage' : 'Join'"));
   assert.ok(liveHub.includes("type === 'live_guest_decision' && notification.status === 'accepted'"));
-  assert.ok(liveHub.includes("joinLive({ id: streamId })"));
+  assert.ok(liveHub.includes("joinLive({ id: streamId }, ['live_pk_challenge', 'live_pk_accepted'].includes(type))"));
 });
 
 test('incoming call notifications expose Answer and Decline actions', () => {
