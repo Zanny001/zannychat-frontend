@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, PanResponder, ScrollView, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Dimensions, PanResponder, Share, ScrollView, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   cancelAnimation,
@@ -788,6 +788,16 @@ export default function LiveStreamScreen({ route, navigation }) {
     try { await backendFetch(`/live/${stream.id}/report`, { method: 'POST', body: JSON.stringify({ reason: value }) }); setStatus('Report submitted'); }
     catch (err) { setError(err?.message || 'Report not sent.'); }
   };
+  const shareLiveStream = async () => {
+    if (!stream?.id) return;
+    const url = `https://zannychat.vercel.app/LiveStream?streamId=${encodeURIComponent(stream.id)}`;
+    try {
+      await Share.share({ title: stream.title || 'ZannyChat LIVE', message: `Join my LIVE on ZannyChat: ${url}`, url });
+    } catch (err) {
+      setError(err?.message || 'Could not share this LIVE stream.');
+    }
+  };
+
   const requestGuest = async () => {
     try { await backendFetch(`/live/${stream.id}/guest-requests`, { method: 'POST' }); setGuestStatus('requested'); }
     catch (err) { setError(err?.message || 'Could not request guest access.'); }
@@ -1106,6 +1116,7 @@ export default function LiveStreamScreen({ route, navigation }) {
 
     {showOverlayMenu && <View style={{ position: 'absolute', top: 76 + insets.top, right: 14, width: 230, padding: 10, borderRadius: 18, backgroundColor: 'rgba(12,11,24,0.96)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)', gap: 7, zIndex: 20 }}>
       <Action colors={colors} label={commentsVisible ? 'Hide comments' : 'Show comments'} onPress={() => { setCommentsVisible((value) => !value); setShowOverlayMenu(false); }} />
+      <Action colors={colors} label="Share LIVE" onPress={() => { shareLiveStream(); setShowOverlayMenu(false); }} />
       {publisherMode && experienceMode !== 'audio_room' && connection?.mediaMode !== 'audio' && <Action colors={colors} label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={() => { toggleCamera(); setShowOverlayMenu(false); }} />}
       {publisherMode && <Action colors={colors} label={mic ? 'Mute microphone' : 'Unmute microphone'} onPress={() => { toggleMic(); setShowOverlayMenu(false); }} />}
       {!creatorMode && <Action colors={colors} label="Creator profile" accessibilityLabel="Open LIVE creator profile" onPress={() => { navigation.navigate('LiveCreatorProfile', { participant: { id: stream.creator_id, name: route.params?.creatorName || stream.creator_name || 'LIVE Creator', avatarColor: route.params?.creatorAvatarColor || stream.creator_avatar_color }, fromLive: true, currentLiveStreamId: stream.id, alreadyViewingLive: true, isCurrentUser: false }); setShowOverlayMenu(false); }} />}
