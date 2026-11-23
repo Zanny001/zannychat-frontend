@@ -708,3 +708,11 @@ test('native LIVE room quality control applies LiveKit remote publication qualit
   assert.ok(screen.includes("publication.setVideoQuality(quality)"));
   assert.ok(screen.includes("label={`Quality · ${qualityMode.toUpperCase()}`}"));
 });
+
+
+test('native guest-request approvals let viewers choose video or audio before joining', () => {
+  assert.ok(screen.includes("Alert.alert('Join LIVE stage'"));
+  assert.ok(screen.includes("onJoinGuest?.('video')"));
+  assert.ok(screen.includes("onJoinGuest?.('audio')"));
+  assert.ok(screen.includes("Choose audio or video to join LIVE as guest"));
+});
