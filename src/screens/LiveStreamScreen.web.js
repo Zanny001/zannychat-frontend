@@ -1156,7 +1156,7 @@ export default function LiveStreamScreen({ route, navigation }) {
     {!!stageNotice && <View pointerEvents="box-none" style={{ position: 'absolute', top: insets.top + 118, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(30,70,90,0.86)' }}><Text accessibilityRole="status" style={{ color: '#FFFFFF', fontSize: 12 }}>{stageNotice}</Text></View>}
     {guestStatus === 'pending' && !publisherMode ? <View style={{ position: 'absolute', zIndex: 30, top: insets.top + 164, left: 16, right: 16, padding: 13, borderRadius: 16, backgroundColor: 'rgba(12,11,28,0.96)', borderWidth: 1, borderColor: 'rgba(190,160,255,0.65)' }}>
       <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '900' }}>LIVE guest invitation</Text>
-      <Text style={{ color: '#E6E2F4', fontSize: 12, marginTop: 4 }}>The creator invited you to join the stage. Choose whether to join before your camera or microphone is enabled.</Text>
+      <Text style={{ color: '#E6E2F4', fontSize: 12, marginTop: 4 }}>{stream?.creator_name || route.params?.creatorName || 'The LIVE creator'} invited you to join the stage. Choose whether to join before your camera or microphone is enabled.</Text>
       <View style={{ flexDirection: 'row', gap: 9, marginTop: 11 }}>
         <Action colors={colors} label="Video Join" onPress={() => decideGuestInvitation('accepted', 'video')} />
         <Action colors={colors} label="Audio Join" onPress={() => decideGuestInvitation('accepted', 'audio')} />
