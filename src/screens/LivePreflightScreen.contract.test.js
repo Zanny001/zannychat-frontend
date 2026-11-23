@@ -6,7 +6,7 @@ const hub = fs.readFileSync(new URL('./LiveHubScreen.js', import.meta.url), 'utf
 const preflight = fs.readFileSync(new URL('./LivePreflightScreen.js', import.meta.url), 'utf8');
 const navigator = fs.readFileSync(new URL('../navigation/AppNavigator.js', import.meta.url), 'utf8');
 const appConfig = JSON.parse(fs.readFileSync(new URL('../../app.json', import.meta.url), 'utf8'));
-const backendClient = fs.readFileSync(new URL('../services/backendClient.js', import.meta.url), 'utf8');
+const backendTransport = fs.readFileSync(new URL('../services/backendTransport.js', import.meta.url), 'utf8');
 
 test('LIVE Hub sends creator setup to the dedicated pre-flight route', () => {
   const start = hub.indexOf('const startLive = () => {');
@@ -109,7 +109,7 @@ test('LIVE pre-flight camera switch and permission-settings recovery actions mee
 
 
 test('duplicate creator stream conflicts recover the existing active broadcast instead of failing creation', () => {
-  assert.ok(backendClient.includes('requestError.status = response.status'));
+  assert.ok(backendTransport.includes('requestError.status = response.status'));
   assert.ok(preflight.includes("startError?.status === 409"));
   assert.ok(preflight.includes('/live/creators/me/profile'));
   assert.ok(preflight.includes('getActiveCreatorStreamId(profile)'));
