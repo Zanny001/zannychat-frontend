@@ -149,6 +149,16 @@ export default function LiveWalletScreen({ navigation }) {
           </View>
         </Surface>
 
+        <TouchableOpacity onPress={() => navigation.navigate('LiveCreatorEarnings')} accessibilityRole="button" accessibilityLabel="Open creator earnings"
+          style={{ minHeight: 54, borderRadius: 17, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: 15, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Ionicons name="trending-up-outline" size={20} color={colors.primary} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: colors.textPrimary, fontWeight: '900' }}>Creator Earnings</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>Separate cash rewards and payout history</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+        </TouchableOpacity>
+
         <View style={{ gap: 8 }}>
           <Text style={[typography.heading, { color: colors.textPrimary, fontWeight: '900' }]}>Sparks Store</Text>
           <Text style={[typography.caption, { color: colors.textSecondary }]}>Choose a package. The price and Sparks amount come directly from ZannyChat's server catalogue.</Text>
