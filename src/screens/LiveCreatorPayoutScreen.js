@@ -158,7 +158,9 @@ export default function LiveCreatorPayoutScreen({ navigation }) {
                 ? 'Identity verification is required before withdrawals can be activated.'
                 : eligibility?.reason === 'CREATOR_REWARD_POLICY_NOT_CONFIGURED'
                   ? 'Creator reward and withdrawal terms have not been activated yet.'
-                  : 'Payout services are not active yet. No withdrawal can be submitted.'}
+                  : eligibility?.reason === 'PAYOUT_TRANSFER_APPROVAL_REQUIRED'
+                    ? 'Automated payouts are waiting for the Paystack transfer-approval setting to be securely configured.'
+                    : 'Payout services are not active yet. No withdrawal can be submitted.'}
           </Text>
           {eligibility?.minimumWithdrawalMinor ? <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 7 }]}>Minimum withdrawal: {formatNaira(eligibility.minimumWithdrawalMinor)}</Text> : null}
         </Surface>
