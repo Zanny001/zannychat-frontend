@@ -33,7 +33,7 @@ function PanelAction({ label, onPress, disabled = false, selected = false, color
   );
 }
 
-export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onClose, navigation }) {
+export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onClose, navigation, feedSignal = 0 }) {
   const { colors } = useTheme();
   const [loading, setLoading] = useState(true);
   const [giftBusy, setGiftBusy] = useState(false);
@@ -102,6 +102,12 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
     const timer = setInterval(() => { refreshBattle(); refreshGiftFeed(); }, 5000);
     return () => clearInterval(timer);
   }, [loadPanel, refreshBattle, refreshGiftFeed]);
+
+  useEffect(() => {
+    if (!Number.isFinite(feedSignal)) return;
+    void refreshGiftFeed();
+    void refreshBattle();
+  }, [feedSignal, refreshGiftFeed, refreshBattle]);
 
   useEffect(() => {
     const clock = setInterval(() => setBattleClock(Date.now()), 1000);
