@@ -1183,7 +1183,10 @@ export default function LiveStreamScreen({ route, navigation }) {
       {creatorMode && stream.allow_guests && <Action colors={colors} label={`Guest requests (${guestRequests.length})`} onPress={() => { setPanel(panel === 'guestRequests' ? '' : 'guestRequests'); setShowOverlayMenu(false); }} />}
       {creatorMode && !replayEnabled && <View accessibilityRole="summary" style={{ paddingHorizontal: 12, paddingVertical: 9, borderRadius: 12, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border }}><Text style={{ color: colors.textPrimary, fontSize: 11, fontWeight: '800' }}>{replayAvailability === 'checking' ? 'Checking replay setup…' : replayAvailability === 'unavailable' ? 'Replay setup could not be checked' : 'Replay recording unavailable'}</Text><Text style={{ color: colors.textSecondary, fontSize: 10, maxWidth: 220 }}>{replayAvailability === 'unavailable' ? 'Try again later. Your LIVE broadcast is unaffected.' : replayAvailability === 'checking' ? 'Please wait' : 'Replay recording is not enabled for this server.'}</Text></View>}
       {moderatorMode && <Action colors={colors} label="Safety reports" onPress={() => { loadReports(); setShowOverlayMenu(false); }} />}
-      {!publisherMode && stream.allow_guests && <Action colors={colors} label={guestApproved ? 'Join the stage' : guestStatus === 'requested' ? 'Request pending' : 'Request to join'} disabled={guestStatus === 'requested'} onPress={() => { guestApproved ? joinGuest() : requestGuest(); setShowOverlayMenu(false); }} />}
+      {!publisherMode && stream.allow_guests && guestApproved ? <>
+        <Action colors={colors} label="Video Join" onPress={() => { joinGuest('video'); setShowOverlayMenu(false); }} />
+        <Action colors={colors} label="Audio Join" onPress={() => { joinGuest('audio'); setShowOverlayMenu(false); }} />
+      </> : !publisherMode && stream.allow_guests ? <Action colors={colors} label={guestStatus === 'requested' ? 'Request pending' : 'Request to join'} disabled={guestStatus === 'requested'} onPress={() => { requestGuest(); setShowOverlayMenu(false); }} /> : null}
       {!creatorMode && <Action colors={colors} label="Report LIVE" onPress={() => { report(); setShowOverlayMenu(false); }} />}
       <Action colors={colors} label="Close menu" onPress={() => setShowOverlayMenu(false)} />
     </View>}
