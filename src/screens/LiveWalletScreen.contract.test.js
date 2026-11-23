@@ -35,7 +35,7 @@ test('Sparks purchase UI stays disabled until server configuration and a real pa
 });
 
 test('Sparks wallet service uses authenticated backend endpoints, not client-side balance mutation', () => {
-  assert.ok(service.includes("backendFetch('/live/purchases/packages')"));
+  assert.ok(service.includes("backendFetch('/live/purchases/packages?provider='"));
   assert.ok(service.includes("backendFetch('/live/purchases/history')"));
   assert.ok(service.includes("backendFetch('/live/purchases/initialize'"));
   assert.ok(service.includes('JSON.stringify({ packageId })'));
