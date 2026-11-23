@@ -39,7 +39,7 @@ test('PK interface uses server-owned battle lifecycle and displays real server s
   assert.ok(panel.includes('battle.canStart'));
   assert.ok(panel.includes('Accept challenge'));
   assert.ok(panel.includes('Decline'));
-  assert.ok(panel.includes('gift transactions'));
+  assert.ok(panel.includes('committed gifts sent to either battle participant'));
   assert.ok(panel.includes('Reactions do not count'));
   assert.ok(panel.includes('finishLiveBattle(battle.id)'));
 });
