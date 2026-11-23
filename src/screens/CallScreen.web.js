@@ -690,7 +690,7 @@ export default function CallScreenWeb({ route, navigation }) {
         {phase !== 'Connected' && phase !== 'Unavailable' && !isTerminalCallStatus(call?.status) ? <ActivityIndicator style={{ marginTop: 18 }} color={immersiveVideo ? '#FFFFFF' : colors.primary} /> : null}
       </View>
       <View style={styles.bottom}>
-        <View style={[styles.controlsRow, { backgroundColor: immersiveVideo ? 'rgba(12,12,22,0.72)' : colors.surface, borderColor: immersiveVideo ? 'rgba(255,255,255,0.12)' : colors.border }]}>
+        <View style={[styles.controlsRow, { maxWidth: layout.contentMaxWidth, backgroundColor: immersiveVideo ? 'rgba(12,12,22,0.72)' : colors.surface, borderColor: immersiveVideo ? 'rgba(255,255,255,0.12)' : colors.border }]}>
           {control(muted ? 'mic-off' : 'mic', muted ? 'Unmute' : 'Mute', toggleMute, muted)}
           {control(cameraOff ? 'videocam-off' : 'videocam', cameraOff ? 'Switch to video' : 'Switch to audio', toggleCamera, cameraOff)}
           {activeCallType === 'video' ? control('camera-reverse', 'Flip camera', switchCamera) : null}
@@ -734,7 +734,7 @@ const styles = StyleSheet.create({
   networkNotice: { textAlign: 'center', marginTop: 12, maxWidth: 320 },
   error: { textAlign: 'center', marginTop: 16, maxWidth: 320 },
   bottom: { paddingHorizontal: 22, paddingBottom: 28, alignItems: 'center' },
-  controlsRow: { width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', columnGap: 8, rowGap: 8, padding: 10, borderRadius: 28, borderWidth: 1, marginBottom: 20 },
+  controlsRow: { width: '100%', maxWidth: 340, alignSelf: 'center', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', columnGap: 8, rowGap: 8, padding: 10, borderRadius: 28, borderWidth: 1, marginBottom: 20 },
   control: { width: 64, minWidth: 64, height: 68, minHeight: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center', gap: 4 },
   controlLabel: {},
   endButton: { width: 70, height: 70, borderRadius: 35, backgroundColor: '#E4475A', alignItems: 'center', justifyContent: 'center' },
