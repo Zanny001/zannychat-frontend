@@ -255,7 +255,8 @@ test('web LIVE guest invitation supports explicit video or audio-only admission'
 
 test('web LIVE room exposes a share action with the stream deep link', () => {
   assert.ok(web.includes('navigator.share(shareData)'));
-  assert.ok(web.includes('navigator.clipboard?.writeText(url)'));
+  assert.ok(web.includes('navigator.clipboard?.writeText'));
+  assert.ok(web.includes('await navigator.clipboard.writeText(url)'));
   assert.ok(web.includes('https://zannychat.vercel.app/LiveStream?streamId='));
   assert.ok(web.includes('label="Share LIVE"'));
 });
