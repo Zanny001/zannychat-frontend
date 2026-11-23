@@ -20,7 +20,7 @@
 | Unique root route names | 56 | Four names have two conditional declarations |
 | Repeated route names | 4 | QRContact, JoinGroup, LiveStream, LiveReplay |
 | Primary tab destinations | 6 | Chats, Calls, LIVE, Updates, Channels, Profile |
-| Imported screen modules | 56 | Some modules are reused by multiple route contexts |
+| Imported screen modules | 59 | Some modules are reused by multiple route contexts |
 | Screen JavaScript files in `src/screens` | 62 | Includes platform-specific web variants |
 | Backend route modules imported by `src/index.js` | 26 | Current backend entry-point inventory |
 
