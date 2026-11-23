@@ -677,3 +677,9 @@ test('native LIVE room exposes a real share action with the stream deep link', (
   assert.ok(screen.includes('label="Share LIVE"'));
   assert.ok(screen.includes('onShare={shareLiveStream}'));
 });
+
+
+test('native LIVE room exposes a named clean mode that hides the chat overlay', () => {
+  assert.ok(screen.includes("label={showComments ? 'Clean mode' : 'Exit clean mode'}"));
+  assert.ok(screen.includes("setShowComments((value) => !value)"));
+});
