@@ -56,6 +56,15 @@ export function createLiveBattle({ streamId, opponentId, durationSeconds = 300 }
   });
 }
 
+
+export function acceptLiveBattle(battleId) {
+  return backendFetch('/live/battles/' + encodeURIComponent(battleId) + '/accept', { method: 'POST' });
+}
+
+export function declineLiveBattle(battleId) {
+  return backendFetch('/live/battles/' + encodeURIComponent(battleId) + '/decline', { method: 'POST' });
+}
+
 export function startLiveBattle(battleId) {
   return backendFetch('/live/battles/' + encodeURIComponent(battleId) + '/start', { method: 'POST' });
 }
