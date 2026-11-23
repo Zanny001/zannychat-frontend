@@ -57,6 +57,10 @@ export default function LiveWalletScreen({ navigation }) {
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
+    // Fail closed: a failed catalogue refresh must never leave stale packages
+    // or a previously enabled checkout action visible.
+    setBackendPurchasable(false);
+    setPackages([]);
     const results = await Promise.allSettled([
       getLiveGiftWallet(),
       getLivePurchasePackages(),
