@@ -68,6 +68,7 @@
     "expo-callkit-telecom": "1.0.1",
     "@livekit/react-native": "3.1.0",
     "@livekit/react-native-expo-plugin": "1.1.0",
-    "livekit-client": "2.23.0"
+    "livekit-client": "2.23.0",
+    "expo-iap": "^6.5.1"
   }
 }
