@@ -50,6 +50,7 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
   const [targetLanguage, setTargetLanguage] = useState('English');
   const [translatedText, setTranslatedText] = useState('');
   const [notice, setNotice] = useState('');
+  const [battleClock, setBattleClock] = useState(Date.now());
 
   const refreshBattle = useCallback(async () => {
     try {
@@ -81,11 +82,14 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
     setLoading(false);
   }, [streamId, creatorMode]);
 
-  useEffect(() => {
-    loadPanel();
-    const timer = setInterval(refreshBattle, 5000);
+  useEffect(() => {\n    loadPanel();\n    const timer = setInterval(refreshBattle, 5000);
     return () => clearInterval(timer);
   }, [loadPanel, refreshBattle]);
+
+  useEffect(() => {
+    const clock = setInterval(() => setBattleClock(Date.now()), 1000);
+    return () => clearInterval(clock);
+  }, []);
 
   const guestRecipients = useMemo(() => participants
     .filter((item) => item?.joined && item?.role === 'guest' && typeof item?.userId === 'string')
@@ -210,6 +214,8 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
 
   const opponentName = guestRecipients.find((item) => item.id === battle?.creator_b_id)?.name || 'Stage guest';
   const winnerLabel = !battle?.winner_id ? 'Tie · no winner' : battle.winner_id === battle.creator_a_id ? 'Host wins' : opponentName + ' wins';
+  const battleSecondsRemaining = battle?.ends_at ? Math.max(0, Math.ceil((Date.parse(battle.ends_at) - battleClock) / 1000)) : null;
+  const battleCountdown = battleSecondsRemaining === null ? '' : String(Math.floor(battleSecondsRemaining / 60)).padStart(2, '0') + ':' + String(battleSecondsRemaining % 60).padStart(2, '0');
 
   return (
     <View style={{ position: 'absolute', zIndex: 50, top: 82, left: 14, right: 14, bottom: 88, maxWidth: 430, alignSelf: 'flex-end', padding: 14, borderRadius: 22, backgroundColor: 'rgba(10,10,24,0.98)', borderWidth: 1, borderColor: 'rgba(168,138,255,0.48)' }}>
@@ -255,7 +261,7 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
                 <View style={{ flex: 1, alignItems: 'flex-end' }}><Text style={{ color: '#C9B9FF', fontSize: 10 }}>{opponentName.toUpperCase()}</Text><Text style={{ color: '#FFFFFF', fontSize: 22, fontWeight: '900' }}>{Number(battle.score_b || 0).toLocaleString()}</Text></View>
               </View>
               {battle.status === 'ended' ? <Text style={{ color: '#E5D9FF', fontSize: 11, fontWeight: '800', marginTop: 6 }}>{winnerLabel}</Text> : null}
-              {battle.status === 'live' && battle.ends_at ? <Text style={{ color: '#CBB9FF', fontSize: 10, marginTop: 5 }}>Ends {new Date(battle.ends_at).toLocaleTimeString()}</Text> : null}
+              {battle.status === 'live' && battle.ends_at ? <Text accessibilityRole="timer" style={{ color: battleSecondsRemaining === 0 ? '#FFB3C2' : '#CBB9FF', fontSize: 11, fontWeight: '900', marginTop: 5 }}>TIME LEFT · {battleCountdown}</Text> : null}
               {battle.status === 'pending' && battle.canAccept ? <View style={{ flexDirection: 'row', gap: 7, marginTop: 8 }}><PanelAction label={battleBusy ? 'Please wait…' : 'Accept challenge'} onPress={handleAcceptBattle} disabled={battleBusy} colors={colors} /><PanelAction label="Decline" tone="danger" onPress={handleDeclineBattle} disabled={battleBusy} colors={colors} /></View> : null}
               {battle.status === 'pending' && !battle.canAccept ? <Text style={{ color: '#D8D0EA', fontSize: 10, marginTop: 7 }}>Waiting for the invited stage guest to accept or decline.</Text> : null}
               {battle.status === 'accepted' && battle.canStart ? <PanelAction label={battleBusy ? 'Starting…' : 'Start battle'} onPress={handleStartBattle} disabled={battleBusy} colors={colors} /> : null}
