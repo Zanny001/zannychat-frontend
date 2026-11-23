@@ -9,7 +9,7 @@ const navigator = fs.readFileSync(new URL('../navigation/AppNavigator.js', impor
 
 test('Sparks wallet renders real server-backed balances, package catalogue and purchase history', () => {
   assert.ok(screen.includes('getLiveGiftWallet()'));
-  assert.ok(screen.includes('getLivePurchasePackages()'));
+  assert.ok(screen.includes('getLivePurchasePackages(Platform.OS'));
   assert.ok(screen.includes('getLivePurchaseHistory()'));
   assert.ok(screen.includes('getLiveGiftHistory(12)'));
   assert.ok(screen.includes('purchasedSparks'));
