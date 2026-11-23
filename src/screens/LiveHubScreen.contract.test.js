@@ -222,7 +222,7 @@ test('LIVE discovery cards use supported Ionicons glyph names', () => {
 
 test('LIVE PK challenge push notifications reopen the invited stream and surface the consent panel', () => {
   assert.ok(screen.includes("'live_pk_challenge'"));
-  assert.ok(screen.includes("type === 'live_pk_challenge'"));
+  assert.ok(screen.includes("['live_pk_challenge', 'live_pk_accepted'].includes(type)"));
   assert.ok(screen.includes('openLiveEconomy'));
   assert.ok(screen.includes('joinLive({ id: streamId }, type === \'live_pk_challenge\')'));
   assert.ok(screen.includes("'live_pk_accepted'"));
