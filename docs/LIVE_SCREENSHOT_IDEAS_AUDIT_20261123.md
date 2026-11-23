@@ -127,3 +127,31 @@ Read-only checks against the configured Supabase project confirmed:
 The previously reported LIVE reaction failure is not yet root-caused: the backend maps unexpected impact RPC/service errors to the generic `Could not send LIVE reaction` response. Current Render application logs are needed to identify the exact error code. The Render connector currently requires the user to confirm the workspace before log inspection.
 
 The reaction route also has an 8-per-10-second server limit, validates the seven supported reaction keys, verifies active stream membership, and calls the impact RPC. The native client throttles to at most one request per 1.3 seconds (about 7.7 per 10 seconds), below the server limit under normal single-client use. The route returns the generic 503 only for unexpected RPC/service failures; this makes the Render error log essential for root-cause analysis rather than changing the throttle speculatively.
+
+## 6. Follow-up defects found during the production/source audit (2026-11-23)
+
+Two integration gaps were found after the initial implementation and corrected in the companion backend branches:
+
+- **Pending guest invitation inbox:** the existing `GET /live/invitations` route selected pending and accepted rows but only returned pending viewer invitations and accepted guest invitations. A pending guest invitation therefore could not be surfaced through that inbox. The consent branch now returns pending guest invitations as well, with a regression contract.
+- **Public Not Interested filtering:** the first feedback branch filtered followed LIVE streams but did not apply the preference to the main public `GET /live/` discovery feed. The branch now applies block and Not Interested filters to both feeds, fetches a larger candidate set before filtering, and caps the returned list at 50. A regression contract covers both routes.
+
+These fixes are committed to the same companion backend PRs; they are not yet production changes.
+
+## 7. Production replay evidence — investigation still open
+
+Read-only production checks on 2026-11-23 found:
+
+- Render reports replay credentials configured and Egress API authentication successful.
+- The backend logs contain two successful replay-start responses (HTTP 201) in the available seven-day window and multiple Egress webhook requests returning HTTP 200.
+- Supabase currently reports zero rows in `live_stream_replays`, while `live_replay_quota` shows 101 seconds used and zero reserved seconds.
+- The replay cleanup worker intentionally deletes ready/failed/processing/deleted replay rows after their `expires_at` timestamp. The current empty table alone therefore does not prove that Egress never worked.
+- The exact relationship between those historical starts, webhook finalization outcomes, storage objects, and row expiry is not yet established. Do not label replay production-ready until a fresh recording is created, finalized, retained, and played from a second account/device.
+
+A single production client diagnostic reported `ReferenceError`; the telemetry available in Render does not include enough detail to attribute that error to replay playback. Treat it as an unclassified client runtime error, not a confirmed replay root cause.
+
+## 8. Release gates updated
+
+- Backend PR #192 must pass exact-head CI after the pending-invitation inbox correction.
+- Backend PR #193 passed Backend quality and Advanced calling checks after public-feed filtering was added.
+- Frontend PR #372 has successful Advanced calling and LIVE quality workflows; its Vercel check is blocked by a build-rate limit, while the Netlify deploy preview succeeded.
+- No production database migration or deployment has been performed for these changes.
