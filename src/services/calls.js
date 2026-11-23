@@ -157,6 +157,9 @@ export async function listCallHistory(limit = 100) {
   try {
     const groupResult = await backendFetch(`/group-calls/history?limit=${Math.max(1, Math.min(Number(limit) || 100, 200))}`);
     const groupCalls = Array.isArray(groupResult?.calls) ? groupResult.calls : [];
+    // Account identity can change while the parallel history/profile requests are in flight.
+    // Never publish a previous account's rows into the newly signed-in account's UI.
+    if (await getCallUserId() !== userId) return [];
     return [
       ...directCalls.filter((call) => !hiddenDirect.has(call.id)),
       ...groupCalls.filter((call) => !hiddenGroup.has(call.id)),
@@ -165,6 +168,7 @@ export async function listCallHistory(limit = 100) {
       .slice(0, Math.max(1, Math.min(Number(limit) || 100, 200)));
   } catch (error) {
     console.warn('[calls] group call history unavailable:', error?.message || error);
+    if (await getCallUserId() !== userId) return [];
     return directCalls.filter((call) => !hiddenDirect.has(call.id));
   }
 }
