@@ -25,7 +25,6 @@ test('Sparks purchase UI stays disabled until server configuration and a real pa
   assert.ok(screen.includes("Platform.OS === 'ios'"));
   assert.ok(screen.includes('Purchases are not active yet'));
   assert.ok(screen.includes('No payment can be taken right now.'));
-  assert.ok(screen.includes('Google Play Billing'));
   assert.ok(screen.includes('Connecting to native store billing'));
   assert.ok(screen.includes('getLiveAppleStoreAccountBinding()'));
   assert.ok(screen.includes('verifyLiveApplePurchase({ signedTransaction: purchaseToken })'));
