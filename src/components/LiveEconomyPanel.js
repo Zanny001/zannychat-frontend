@@ -26,14 +26,14 @@ function PanelAction({ label, onPress, disabled = false, selected = false, color
     : selected ? 'rgba(157,120,255,0.28)' : 'rgba(255,255,255,0.07)';
   const borderColor = tone === 'danger' ? 'rgba(255,120,145,0.48)' : selected ? '#A88AFF' : 'rgba(255,255,255,0.16)';
   return (
-    <TouchableOpacity onPress={onPress} disabled={disabled} accessibilityRole="button" accessibilityState={{ disabled, selected }}
+    <TouchableOpacity onPress={onPress} disabled={disabled} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled, selected }}
       style={{ minHeight: 42, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor, backgroundColor, opacity: disabled ? 0.45 : 1 }}>
       <Text style={{ color: tone === 'danger' ? '#FFB3C2' : colors.textPrimary, fontSize: 11, fontWeight: '800', textAlign: 'center' }}>{label}</Text>
     </TouchableOpacity>
   );
 }
 
-export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onClose }) {
+export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onClose, navigation }) {
   const { colors } = useTheme();
   const [loading, setLoading] = useState(true);
   const [giftBusy, setGiftBusy] = useState(false);
@@ -258,9 +258,12 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
           <View style={{ padding: 12, borderRadius: 16, backgroundColor: 'rgba(150,120,255,0.12)', borderWidth: 1, borderColor: 'rgba(180,155,255,0.24)' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text style={{ color: '#F6F1FF', fontSize: 13, fontWeight: '900' }}>Gift studio</Text>
-              <Text style={{ color: '#DCCBFF', fontSize: 12, fontWeight: '900' }}>{Number(wallet?.balanceSparks || 0).toLocaleString()} Sparks</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+                <Text style={{ color: '#DCCBFF', fontSize: 12, fontWeight: '900' }}>{Number(wallet?.balanceSparks || 0).toLocaleString()} Sparks</Text>
+                <PanelAction label="Wallet & Store" onPress={() => navigation?.navigate('LiveWallet')} colors={colors} />
+              </View>
             </View>
-            <Text style={{ color: '#BEB4D7', fontSize: 10, marginTop: 4 }}>Promotional credits only · no purchase, cash value, or cash-out</Text>
+            <Text style={{ color: '#BEB4D7', fontSize: 10, marginTop: 4 }}>Purchased and promotional Sparks are tracked separately. Only purchased Sparks spent on gifts can create eligible creator rewards; PK points are not cash.</Text>
             {recipients.length > 1 ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 9 }}>
               {recipients.map((item) => <PanelAction key={item.id} label={'To ' + item.name} selected={selectedRecipientId === item.id} onPress={() => setRecipientId(item.id)} colors={colors} />)}
             </View> : <Text style={{ color: '#D8D0EA', fontSize: 10, marginTop: 8 }}>{recipients[0] ? 'Recipient: ' + recipients[0].name : creatorMode ? 'Invite and admit a guest before sending stage gifts.' : 'Creator recipient is unavailable.'}</Text>}
@@ -274,7 +277,7 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
               </TouchableOpacity>)}
               {!catalog.length ? <Text style={{ color: '#D8D0EA', fontSize: 11 }}>Gift catalogue unavailable until the LIVE economy service is deployed.</Text> : null}
             </View>
-            {wallet?.balanceSparks === 0 ? <Text style={{ color: '#E4D8FF', fontSize: 10, marginTop: 8 }}>Your balance is zero. Sparks are only added through authorised server-side promotions; there is no purchase or top-up screen.</Text> : null}
+            {wallet?.balanceSparks === 0 ? <Text style={{ color: '#E4D8FF', fontSize: 10, marginTop: 8 }}>Your Sparks balance is zero. Open Wallet & Store to check available packages and secure checkout options.</Text> : null}
           </View>
 
           <View style={{ padding: 12, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.045)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
