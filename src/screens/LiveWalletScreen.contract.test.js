@@ -75,3 +75,11 @@ test('creator payout screen uses server verification and never stores full bank 
   assert.ok(earningsScreen.includes("navigation.navigate('LiveCreatorPayout')"));
   assert.ok(navigator.includes("name=\"LiveCreatorPayout\" component={LiveCreatorPayoutRoute}"));
 });
+
+test('verified purchase receipts are owner-scoped, short-lived and accessible from purchase history', () => {
+  assert.ok(screen.includes('getLivePurchaseReceipt'));
+  assert.ok(screen.includes('item.receiptAvailable'));
+  assert.ok(screen.includes('openReceipt(item.id)'));
+  assert.ok(screen.includes('View receipt'));
+  assert.ok(service.includes("backendFetch('/live/purchases/' + encodeURIComponent(purchaseId) + '/receipt')"));
+});

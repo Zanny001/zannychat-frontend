@@ -8,6 +8,7 @@ import {
   getLiveGiftHistory,
   getLiveGiftWallet,
   getLivePurchaseHistory,
+  getLivePurchaseReceipt,
   getLivePurchasePackages,
   initializeLivePurchase,
 } from '../services/liveEconomyService';
@@ -49,6 +50,7 @@ export default function LiveWalletScreen({ navigation }) {
   const [giftHistory, setGiftHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyPackage, setBusyPackage] = useState('');
+  const [busyReceipt, setBusyReceipt] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
@@ -95,6 +97,25 @@ export default function LiveWalletScreen({ navigation }) {
       setError(purchaseError?.message || 'Could not open secure checkout.');
     } finally {
       setBusyPackage('');
+    }
+  };
+
+  const openReceipt = async (purchaseId) => {
+    if (busyReceipt) return;
+    setBusyReceipt(purchaseId);
+    setError('');
+    setNotice('');
+    try {
+      const result = await getLivePurchaseReceipt(purchaseId);
+      if (!result?.downloadUrl || !/^https:\/\//i.test(result.downloadUrl)) {
+        throw new Error('A secure receipt link is not available yet.');
+      }
+      await Linking.openURL(result.downloadUrl);
+      setNotice('Receipt ' + (result.receiptNumber || '') + ' opened. The secure link expires shortly.');
+    } catch (receiptError) {
+      setError(receiptError?.message || 'Could not open the purchase receipt.');
+    } finally {
+      setBusyReceipt('');
     }
   };
 
@@ -232,6 +253,16 @@ export default function LiveWalletScreen({ navigation }) {
                   <Text style={[typography.caption, { color: item.status === 'paid' ? (colors.success || colors.primary) : colors.textSecondary, marginTop: 3 }]}>{item.status.toUpperCase()}</Text>
                 </View>
               </View>
+              {item.receiptAvailable ? (
+                <TouchableOpacity onPress={() => openReceipt(item.id)} disabled={Boolean(busyReceipt)}
+                  accessibilityRole="button" accessibilityLabel={'Open receipt for ' + Number(item.sparks).toLocaleString() + ' Sparks'}
+                  style={{ marginTop: 12, minHeight: 40, borderRadius: 12, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  {busyReceipt === item.id ? <ActivityIndicator color={colors.primary} /> : <Ionicons name="document-text-outline" size={17} color={colors.primary} />}
+                  <Text style={{ color: colors.primary, fontWeight: '800' }}>View receipt {item.receiptNumber ? '· ' + item.receiptNumber : ''}</Text>
+                </TouchableOpacity>
+              ) : item.status === 'paid' ? (
+                <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 10 }]}>Your verified receipt is being prepared.</Text>
+              ) : null}
             </Surface>
           ))}
         </View>
