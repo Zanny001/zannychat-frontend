@@ -53,5 +53,5 @@ test('creator earnings dashboard is separately reachable from Sparks wallet and 
   assert.ok(earnings.includes('pendingMinor'));
   assert.ok(earnings.includes('earningEnabled'));
   assert.ok(earnings.includes('identity verification'));
-  assert.ok(navigator.includes("name=\\\"LiveCreatorEarnings\\\" component={LiveCreatorEarningsRoute}"));
+  assert.ok(navigator.includes("name=\"LiveCreatorEarnings\" component={LiveCreatorEarningsRoute}"));
 });
