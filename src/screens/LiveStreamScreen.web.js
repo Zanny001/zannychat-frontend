@@ -12,7 +12,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import { Room, RoomEvent, Track } from 'livekit-client';
+import { Room, RoomEvent, Track, VideoQuality } from 'livekit-client';
 import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
 import { hexToRgba } from '../utils/color';
@@ -226,6 +226,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [participants, setParticipants] = useState([]);
   const [panel, setPanel] = useState('');
   const [showOverlayMenu, setShowOverlayMenu] = useState(false);
+  const [qualityMode, setQualityMode] = useState('auto');
   const [commentsVisible, setCommentsVisible] = useState(true);
   const [focusedStageIdentity, setFocusedStageIdentity] = useState('');
 
@@ -831,6 +832,30 @@ export default function LiveStreamScreen({ route, navigation }) {
     }
   };
 
+  const applyVideoQuality = (mode) => {
+    const quality = mode === 'low' ? VideoQuality.LOW : mode === 'medium' ? VideoQuality.MEDIUM : VideoQuality.HIGH;
+    roomRef.current?.remoteParticipants.forEach((participant) => {
+      participant.trackPublications.forEach((publication) => {
+        if (publication.kind === Track.Kind.Video && typeof publication.setVideoQuality === 'function') {
+          publication.setVideoQuality(quality);
+        }
+      });
+    });
+    setQualityMode(mode);
+  };
+
+  useEffect(() => {
+    const room = roomRef.current;
+    if (!room) return undefined;
+    const onTrackSubscribed = (_track, publication) => {
+      if (publication?.kind !== Track.Kind.Video || typeof publication.setVideoQuality !== 'function') return;
+      const quality = qualityMode === 'low' ? VideoQuality.LOW : qualityMode === 'medium' ? VideoQuality.MEDIUM : VideoQuality.HIGH;
+      publication.setVideoQuality(quality);
+    };
+    room.on(RoomEvent.TrackSubscribed, onTrackSubscribed);
+    return () => room.off(RoomEvent.TrackSubscribed, onTrackSubscribed);
+  }, [qualityMode, connection?.token]);
+
   const requestGuest = async () => {
     try { await backendFetch(`/live/${stream.id}/guest-requests`, { method: 'POST' }); setGuestStatus('requested'); }
     catch (err) { setError(err?.message || 'Could not request guest access.'); }
@@ -1150,6 +1175,7 @@ export default function LiveStreamScreen({ route, navigation }) {
     {showOverlayMenu && <View style={{ position: 'absolute', top: 76 + insets.top, right: 14, width: 230, padding: 10, borderRadius: 18, backgroundColor: 'rgba(12,11,24,0.96)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)', gap: 7, zIndex: 20 }}>
       <Action colors={colors} label={commentsVisible ? 'Clean mode' : 'Exit clean mode'} onPress={() => { setCommentsVisible((value) => !value); setShowOverlayMenu(false); }} />
       <Action colors={colors} label="Share LIVE" onPress={() => { shareLiveStream(); setShowOverlayMenu(false); }} />
+      <Action colors={colors} label={`Quality · ${qualityMode.toUpperCase()}`} onPress={() => { const modes = ['auto', 'low', 'medium', 'high']; applyVideoQuality(modes[(modes.indexOf(qualityMode) + 1) % modes.length]); setShowOverlayMenu(false); }} />
       {!creatorMode && <Action colors={colors} label="Not interested" onPress={() => { markNotInterested(); setShowOverlayMenu(false); }} />}
       {!creatorMode && <Action colors={colors} label="Block creator" onPress={() => { confirmBlockCreator(); setShowOverlayMenu(false); }} danger />}
       {publisherMode && experienceMode !== 'audio_room' && connection?.mediaMode !== 'audio' && <Action colors={colors} label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={() => { toggleCamera(); setShowOverlayMenu(false); }} />}
