@@ -235,47 +235,47 @@ test('web LIVE imports the Ionicons component used by the replay header control'
 
 
 test('web LIVE guest invitations require explicit accept or reject before joining the stage', () => {
-  assert.ok(webScreen.includes("/guest-invitation"));
-  assert.ok(webScreen.includes("guestStatus === 'pending'"));
-  assert.ok(webScreen.includes("decideGuestInvitation('accepted')"));
-  assert.ok(webScreen.includes("decideGuestInvitation('declined')"));
-  assert.ok(webScreen.includes("Accept invitation"));
-  assert.ok(webScreen.includes("await joinGuest()"));
+  assert.ok(web.includes("/guest-invitation"));
+  assert.ok(web.includes("guestStatus === 'pending'"));
+  assert.ok(web.includes("decideGuestInvitation('accepted')"));
+  assert.ok(web.includes("decideGuestInvitation('declined')"));
+  assert.ok(web.includes("Accept invitation"));
+  assert.ok(web.includes("await joinGuest()"));
 });
 
 
 test('web LIVE guest invitation supports explicit video or audio-only admission', () => {
-  assert.ok(webScreen.includes("decideGuestInvitation('accepted', 'video')"));
-  assert.ok(webScreen.includes("decideGuestInvitation('accepted', 'audio')"));
-  assert.ok(webScreen.includes("body: JSON.stringify({ mediaMode })"));
-  assert.ok(webScreen.includes("connection?.mediaMode !== 'audio'"));
+  assert.ok(web.includes("decideGuestInvitation('accepted', 'video')"));
+  assert.ok(web.includes("decideGuestInvitation('accepted', 'audio')"));
+  assert.ok(web.includes("body: JSON.stringify({ mediaMode })"));
+  assert.ok(web.includes("connection?.mediaMode !== 'audio'"));
 });
 
 
 test('web LIVE room exposes a share action with the stream deep link', () => {
-  assert.ok(webScreen.includes('navigator.share(shareData)'));
-  assert.ok(webScreen.includes('navigator.clipboard?.writeText(url)'));
-  assert.ok(webScreen.includes('https://zannychat.vercel.app/LiveStream?streamId='));
-  assert.ok(webScreen.includes('label="Share LIVE"'));
+  assert.ok(web.includes('navigator.share(shareData)'));
+  assert.ok(web.includes('navigator.clipboard?.writeText(url)'));
+  assert.ok(web.includes('https://zannychat.vercel.app/LiveStream?streamId='));
+  assert.ok(web.includes('label="Share LIVE"'));
 });
 
 
 test('web LIVE room exposes a named clean mode that hides the chat overlay', () => {
-  assert.ok(webScreen.includes("label={commentsVisible ? 'Clean mode' : 'Exit clean mode'}"));
-  assert.ok(webScreen.includes("setCommentsVisible((value) => !value)"));
+  assert.ok(web.includes("label={commentsVisible ? 'Clean mode' : 'Exit clean mode'}"));
+  assert.ok(web.includes("setCommentsVisible((value) => !value)"));
 });
 
 
 test('web LIVE room lets viewers suppress future recommendations from the current creator', () => {
-  assert.ok(webScreen.includes("/not-interested"));
-  assert.ok(webScreen.includes("label=\"Not interested\""));
-  assert.ok(webScreen.includes("We will show fewer LIVE streams from this creator."));
+  assert.ok(web.includes("/not-interested"));
+  assert.ok(web.includes("label=\"Not interested\""));
+  assert.ok(web.includes("We will show fewer LIVE streams from this creator."));
 });
 
 
 test('web LIVE room exposes an account-level block action that leaves the active stream', () => {
-  assert.ok(webScreen.includes("import { blockUser, getCurrentUser } from '../services/api'"));
-  assert.ok(webScreen.includes("label=\"Block creator\""));
-  assert.ok(webScreen.includes("await blockUser(stream.creator_id)"));
-  assert.ok(webScreen.includes("await leave()"));
+  assert.ok(web.includes("import { blockUser, getCurrentUser } from '../services/api'"));
+  assert.ok(web.includes("label=\"Block creator\""));
+  assert.ok(web.includes("await blockUser(stream.creator_id)"));
+  assert.ok(web.includes("await leave()"));
 });
