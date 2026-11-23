@@ -18,9 +18,9 @@ test('LIVE gift UI reads server catalogue and wallet and never creates client-si
   assert.ok(service.includes('idempotencyKey: makeIdempotencyKey()'));
 });
 
-test('LIVE gifts are sent to a joined stage creator or guest and attach active PK idempotently', () => {
+test('LIVE gifts send without client-controlled battle attribution; the server decides PK scoring', () => {
   assert.ok(panel.includes("item?.joined && item?.role === 'guest'"));
-  assert.ok(panel.includes('battleId: battle?.status === \'live\' ? battle.id : null'));
+  assert.ok(panel.includes('quantity: 1'));
   assert.ok(service.includes("backendFetch('/live/gifts/history?limit='"));
 });
 
