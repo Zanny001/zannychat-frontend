@@ -120,7 +120,7 @@ For each reproduction, trace the full user journey through UI event, client stat
 Read-only checks against the configured Supabase project confirmed:
 
 - `live_stream_invites` already accepts `pending`, `requested`, `accepted`, `declined`, and `revoked`; the guest-consent implementation does not need a schema migration.
-- `public.record_live_creator_impact(uuid, uuid, text)` exists as a SECURITY DEFINER function with an empty search path. Its implementation checks active stream state and joined participant status before recording a reaction.
+- `public.record_live_creator_impact(uuid, uuid, text)` exists as a SECURITY DEFINER function with an empty search path. Its implementation checks active stream state and joined participant status before recording a reaction. The production tables contain 84 reaction rows (58 in the last 24 hours, 83 in the last 7 days) and 3 creator-impact rows, so the path has succeeded for some requests; the reported failure may be intermittent or participant-specific.
 - The private `live-replays` storage bucket exists, but it currently contains **0 objects**; `live_stream_replays` currently contains **0 rows**. This confirms no replay artefacts are present, but does not establish whether Render's Egress/storage environment is currently enabled.
 - `public.live_stream_feedback` does not exist in production and migration `20261123090000` is not recorded as applied. This is expected until PR #193 is reviewed and the migration is separately approved/applied.
 
