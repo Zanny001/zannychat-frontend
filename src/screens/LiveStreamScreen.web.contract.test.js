@@ -242,3 +242,11 @@ test('web LIVE guest invitations require explicit accept or reject before joinin
   assert.ok(webScreen.includes("Accept invitation"));
   assert.ok(webScreen.includes("await joinGuest()"));
 });
+
+
+test('web LIVE guest invitation supports explicit video or audio-only admission', () => {
+  assert.ok(webScreen.includes("decideGuestInvitation('accepted', 'video')"));
+  assert.ok(webScreen.includes("decideGuestInvitation('accepted', 'audio')"));
+  assert.ok(webScreen.includes("body: JSON.stringify({ mediaMode })"));
+  assert.ok(webScreen.includes("connection?.mediaMode !== 'audio'"));
+});
