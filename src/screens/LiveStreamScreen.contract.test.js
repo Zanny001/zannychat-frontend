@@ -660,3 +660,12 @@ test('direct LIVE guest invitations require explicit accept or reject before joi
   assert.ok(screen.includes("Reject LIVE guest invitation"));
   assert.ok(screen.includes("await joinAsGuest()"));
 });
+
+
+test('LIVE guest invitation supports explicit video or audio-only admission', () => {
+  assert.ok(screen.includes("decideGuestInvitation('accepted', 'video')"));
+  assert.ok(screen.includes("decideGuestInvitation('accepted', 'audio')"));
+  assert.ok(screen.includes("body: JSON.stringify({ mediaMode })"));
+  assert.ok(screen.includes("connection?.mediaMode !== 'audio'"));
+  assert.ok(screen.includes("mediaMode={connection?.mediaMode || 'video'}"));
+});
