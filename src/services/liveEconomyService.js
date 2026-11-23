@@ -84,6 +84,10 @@ export function getLivePurchaseHistory() {
   return backendFetch('/live/purchases/history');
 }
 
+export function getLivePurchaseReceipt(purchaseId) {
+  return backendFetch('/live/purchases/' + encodeURIComponent(purchaseId) + '/receipt');
+}
+
 export function initializeLivePurchase(packageId) {
   return backendFetch('/live/purchases/initialize', {
     method: 'POST',
