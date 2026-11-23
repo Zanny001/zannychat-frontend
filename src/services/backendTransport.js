@@ -1,4 +1,4 @@
-import { withTimeout } from '../utils/withTimeout';
+import { withTimeout } from '../utils/withTimeout.js';
 
 const DEFAULT_BACKEND_REQUEST_TIMEOUT_MS = 20000;
 const SESSION_RESTORE_TIMEOUT_MS = 8000;
