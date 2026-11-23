@@ -1,83 +1,19 @@
 import { supabase, SUPABASE_ENABLED } from './supabaseClient';
 import { debugLog } from '../utils/diagnostics';
+import { createBackendTransport } from './backendTransport';
 
-// Backend access is opt-in. A fresh checkout with no .env stays in mock
-// mode and never contacts a shared hosted backend by accident.
+// Keep environment and platform-specific dependencies at the composition
+// boundary. The transport itself is dependency-injected and independently tested.
 const BACKEND_URL = (process.env.EXPO_PUBLIC_BACKEND_URL || '').replace(/\/$/, '');
 
 export const BACKEND_ENABLED = Boolean(BACKEND_URL);
 
-// Calls the backend with the current Supabase session's access token
-// attached, so requireAuth on the server can verify who's asking.
-export async function backendFetch(path, options = {}) {
-  const perfStartedAt = Date.now();
-  let sessionMs = 0;
-  let status = 'no-response';
+const transport = createBackendTransport({
+  backendUrl: BACKEND_URL,
+  supabase,
+  supabaseEnabled: SUPABASE_ENABLED,
+  debugLog,
+});
 
-  try {
-    if (!BACKEND_ENABLED) {
-      throw new Error('EXPO_PUBLIC_BACKEND_URL is not set');
-    }
-
-    let token;
-    if (SUPABASE_ENABLED) {
-      const sessionStartedAt = Date.now();
-      const { data } = await supabase.auth.getSession();
-      sessionMs = Date.now() - sessionStartedAt;
-      token = data?.session?.access_token;
-    }
-
-    const requestStartedAt = Date.now();
-    const response = await fetch(`${BACKEND_URL}${path}`, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(options.headers || {}),
-      },
-    });
-    status = response.status;
-
-    const body = await response.json().catch(() => ({}));
-
-    debugLog('[Perf][backendFetch]', {
-      path,
-      sessionMs,
-      responseAndBodyMs: Date.now() - requestStartedAt,
-      totalMs: Date.now() - perfStartedAt,
-      status,
-    });
-
-    if (!response.ok) {
-      const requestError = new Error(body.error || `Request failed with status ${response.status}`);
-      requestError.status = response.status;
-      throw requestError;
-    }
-    return body;
-  } catch (error) {
-    debugLog('[Perf][backendFetch] failed', {
-      path,
-      sessionMs,
-      totalMs: Date.now() - perfStartedAt,
-      status,
-    });
-    throw error;
-  }
-}
-
-// Hits /health directly — no auth token, since that route doesn't
-// require one. Used by the Connections panel in Settings to show real
-// status instead of just "a URL is set", and returns null rather than
-// throwing so a slow/unreachable backend never breaks the screen that
-// calls it.
-export async function checkBackendHealth() {
-  if (!BACKEND_ENABLED) return null;
-  try {
-    const response = await fetch(`${BACKEND_URL}/health`);
-    if (!response.ok) return { reachable: false };
-    const body = await response.json();
-    return { reachable: true, ...body };
-  } catch (err) {
-    return { reachable: false };
-  }
-}
+export const backendFetch = transport.backendFetch;
+export const checkBackendHealth = transport.checkBackendHealth;
