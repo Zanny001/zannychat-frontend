@@ -13,15 +13,17 @@ test('native and web LIVE clients consume only versioned feed invalidation packe
     assert.match(source, /RoomEvent\.DataReceived/);
     assert.match(source, /RoomEvent\.Reconnected/);
   }
-  assert.match(native, /onRealtimeFeedSignal=\{refreshComments\}/);
+  assert.match(native, /onRealtimeFeedSignal=\{handleRealtimeFeedSignal\}/);
   assert.match(native, /onRealtimeFeedSignal\?\./);
 });
 
 test('LIVE feed invalidations trigger authenticated refresh while polling remains a slower fallback', () => {
   assert.match(native, /if \(isLiveFeedInvalidation\(payload, topic\)\) onRealtimeFeedSignal\?\.\(\)/);
-  assert.match(web, /if \(isLiveFeedInvalidation\(payload, topic\)\) refreshComments\(\)/);
+  assert.match(web, /if \(isLiveFeedInvalidation\(payload, topic\)\) handleFeedSignal\(\)/);
   assert.match(native, /setInterval\(refreshComments, 30_000\)/);
+  assert.match(native, /setLiveFeedSignal\(\(value\) => value \+ 1\)/);
   assert.match(web, /setInterval\(refreshComments, 30_000\)/);
+  assert.match(web, /setLiveFeedSignal\(\(value\) => value \+ 1\)/);
   assert.match(native, /backendFetch\(`\/live\/\$\{stream\.id\}\/comments`\)/);
   assert.match(web, /backendFetch\(`\/live\/\$\{stream\.id\}\/comments`\)/);
 });
