@@ -29,12 +29,10 @@ export async function withTimeout(operation, {
   const controller = new AbortController();
   let timeoutId;
   let abortListener;
-  let timedOut = false;
 
   const operationPromise = Promise.resolve().then(() => operation(controller.signal));
   const timeoutPromise = new Promise((_, reject) => {
     timeoutId = setTimeout(() => {
-      timedOut = true;
       const error = new Error(`${label} timed out after ${duration}ms.`);
       error.name = 'TimeoutError';
       error.code = 'ETIMEDOUT';
@@ -66,8 +64,5 @@ export async function withTimeout(operation, {
   } finally {
     clearTimeout(timeoutId);
     if (abortListener) signal.removeEventListener('abort', abortListener);
-    // The signal is already aborted on timeout; this flag documents that
-    // timeout errors are deliberately not rewritten as caller cancellations.
-    void timedOut;
   }
 }
