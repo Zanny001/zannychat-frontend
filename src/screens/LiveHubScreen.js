@@ -330,7 +330,7 @@ export default function LiveHubScreen({ navigation, route }) {
     });
   };
 
-  const joinLive = async (stream) => {
+  const joinLive = async (stream, openLiveEconomy = false) => {
     if (!stream?.id) return;
     // Pass a stable stream ID plus non-sensitive creator display hints only.
     // LiveStreamScreen obtains a fresh viewer-authorized token after navigation.
@@ -339,6 +339,7 @@ export default function LiveHubScreen({ navigation, route }) {
       creatorMode: false,
       creatorName: stream.creator_name || stream.name || null,
       creatorAvatarColor: stream.avatarColor || stream.avatar_color || null,
+      openLiveEconomy,
     });
   };
 
@@ -402,11 +403,11 @@ export default function LiveHubScreen({ navigation, route }) {
     }
 
     const shouldJoin = streamId && (
-      ['live_stream_started', 'live_invitation', 'live_guest_request', 'live_guest_invitation', 'live_event_started'].includes(type)
+      ['live_stream_started', 'live_invitation', 'live_guest_request', 'live_guest_invitation', 'live_event_started', 'live_pk_challenge', 'live_pk_accepted'].includes(type)
       || (type === 'live_guest_decision' && notification.status === 'accepted')
     );
     if (shouldJoin) {
-      joinLive({ id: streamId });
+      joinLive({ id: streamId }, ['live_pk_challenge', 'live_pk_accepted'].includes(type));
     } else {
       refresh();
     }
