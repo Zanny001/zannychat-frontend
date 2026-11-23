@@ -12,6 +12,8 @@ import {
   getLivePurchasePackages,
   initializeLivePurchase,
   getLiveStoreAccountBinding,
+  getLiveAppleStoreAccountBinding,
+  verifyLiveApplePurchase,
   verifyLiveNativePurchase,
 } from '../services/liveEconomyService';
 import {
@@ -66,6 +68,7 @@ export default function LiveWalletScreen({ navigation }) {
   const [storeConnected, setStoreConnected] = useState(false);
   const [storeProducts, setStoreProducts] = useState([]);
   const [obfuscatedAccountId, setObfuscatedAccountId] = useState('');
+  const [appAccountToken, setAppAccountToken] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -76,7 +79,7 @@ export default function LiveWalletScreen({ navigation }) {
     setPackages([]);
     const results = await Promise.allSettled([
       getLiveGiftWallet(),
-      getLivePurchasePackages(Platform.OS === 'android' ? 'google_play' : 'paystack'),
+      getLivePurchasePackages(Platform.OS === 'android' ? 'google_play' : (Platform.OS === 'ios' ? 'apple_iap' : 'paystack')),
       getLivePurchaseHistory(),
       getLiveGiftHistory(12),
     ]);
@@ -97,19 +100,21 @@ export default function LiveWalletScreen({ navigation }) {
     return undefined;
   }, [load]));
 
-  const handleNativePurchase = useCallback(async (purchase) => {
+  const handleStorePurchase = useCallback(async (purchase) => {
     const packageId = String(purchase?.productId || '');
     const purchaseToken = String(purchase?.purchaseToken || '');
     if (!packageId || !purchaseToken) {
-      setError('Google Play returned incomplete purchase evidence. Your transaction has not been finalized.');
+      setError('The app store returned incomplete signed purchase evidence. Your transaction has not been finalized.');
       return;
     }
     if (!packages.some((item) => item.package_id === packageId)) {
-      setError('This Google Play product is not in the active ZannyChat Sparks catalogue.');
+      setError('This store product is not in the active ZannyChat Sparks catalogue.');
       return;
     }
     try {
-      const verified = await verifyLiveNativePurchase({ packageId, purchaseToken });
+      const verified = Platform.OS === 'ios'
+        ? await verifyLiveApplePurchase({ signedTransaction: purchaseToken })
+        : await verifyLiveNativePurchase({ packageId, purchaseToken });
       if (!verified?.verified || !verified?.credited) {
         throw new Error('ZannyChat could not verify this purchase. No Sparks were added.');
       }
@@ -117,11 +122,11 @@ export default function LiveWalletScreen({ navigation }) {
         await finishLiveStorePurchase(purchase);
         setNotice(Number(verified.sparks).toLocaleString() + ' Sparks were verified and added to your wallet.');
       } catch (_) {
-        setNotice('Your Sparks were verified and added. Google Play transaction finalization is pending; refresh this wallet to retry safely.');
+        setNotice('Your Sparks were verified and added. ' + (Platform.OS === 'ios' ? 'Apple' : 'Google Play') + ' transaction finalization is pending; refresh this wallet to retry safely.');
       }
       await load();
     } catch (purchaseError) {
-      setError(purchaseError?.message || 'Google Play could not verify this purchase. Your transaction remains available for a safe retry.');
+      setError(purchaseError?.message || 'The store could not verify this purchase. Your transaction remains available for a safe retry.');
     } finally {
       setBusyPackage('');
     }
@@ -130,19 +135,27 @@ export default function LiveWalletScreen({ navigation }) {
   const packageSkus = packages.map((item) => item.package_id).join('|');
 
   useEffect(() => {
-    if (Platform.OS !== 'android' || !backendPurchasable || !packageSkus) return undefined;
+    if ((Platform.OS !== 'android' && Platform.OS !== 'ios') || !backendPurchasable || !packageSkus) return undefined;
     let active = true;
     (async () => {
-      const binding = await getLiveStoreAccountBinding();
-      if (!binding?.obfuscatedAccountId) throw new Error('Secure store account binding is unavailable.');
-      if (!active) return;
-      setObfuscatedAccountId(binding.obfuscatedAccountId);
+      const binding = Platform.OS === 'ios'
+        ? await getLiveAppleStoreAccountBinding()
+        : await getLiveStoreAccountBinding();
+      if (Platform.OS === 'ios') {
+        if (!binding?.appAccountToken) throw new Error('Secure Apple account binding is unavailable.');
+        if (!active) return;
+        setAppAccountToken(binding.appAccountToken);
+      } else {
+        if (!binding?.obfuscatedAccountId) throw new Error('Secure Google Play account binding is unavailable.');
+        if (!active) return;
+        setObfuscatedAccountId(binding.obfuscatedAccountId);
+      }
       await connectLiveStoreBilling({
-        onPurchase: handleNativePurchase,
+        onPurchase: handleStorePurchase,
         onError: (storeError) => {
           setBusyPackage('');
-          if (storeError?.code === 'user-cancelled') return;
-          setError(storeError?.message || 'Google Play Billing reported a purchase error.');
+          if (storeError?.code === 'user-cancelled' || storeError?.code === 'E_USER_CANCELLED') return;
+          setError(storeError?.message || 'The app store reported a purchase error.');
         },
       });
       if (!active) return;
@@ -153,18 +166,18 @@ export default function LiveWalletScreen({ navigation }) {
       const pendingPurchases = await recoverLiveStorePurchases();
       for (const pendingPurchase of pendingPurchases) {
         if (!active) break;
-        await handleNativePurchase(pendingPurchase);
+        await handleStorePurchase(pendingPurchase);
       }
     })().catch((storeError) => {
       if (!active) return;
       setStoreConnected(false);
-      setError(storeError?.message || 'Google Play Billing is not available on this device.');
+      setError(storeError?.message || 'Native store billing is not available on this device.');
     });
     return () => {
       active = false;
       clearLiveStoreBillingCallbacks();
     };
-  }, [backendPurchasable, packageSkus, handleNativePurchase]);
+  }, [backendPurchasable, packageSkus, handleStorePurchase]);
 
   const buyPackage = async (packageId) => {
     if (!canPurchase || busyPackage) return;
@@ -172,9 +185,9 @@ export default function LiveWalletScreen({ navigation }) {
     setError('');
     setNotice('');
     try {
-      if (Platform.OS === 'android') {
-        await requestLiveStorePurchase({ sku: packageId, obfuscatedAccountId });
-        setNotice('Google Play checkout opened. Sparks are added only after ZannyChat verifies the completed store transaction.');
+      if (Platform.OS === 'android' || Platform.OS === 'ios') {
+        await requestLiveStorePurchase(Platform.OS === 'ios' ? { sku: packageId, appAccountToken } : { sku: packageId, obfuscatedAccountId });
+        setNotice((Platform.OS === 'ios' ? 'Apple' : 'Google Play') + ' checkout opened. Sparks are added only after ZannyChat verifies the completed store transaction.');
       } else {
         const result = await initializeLivePurchase(packageId);
         if (!result?.checkoutUrl || !/^https:\/\//i.test(result.checkoutUrl)) {
@@ -188,7 +201,7 @@ export default function LiveWalletScreen({ navigation }) {
       setBusyPackage('');
       setError(purchaseError?.message || 'Could not start the secure purchase.');
     } finally {
-      if (Platform.OS !== 'android') setBusyPackage('');
+      if (Platform.OS !== 'android' && Platform.OS !== 'ios') setBusyPackage('');
     }
   };
 
@@ -211,7 +224,7 @@ export default function LiveWalletScreen({ navigation }) {
     }
   };
 
-  const canPurchase = backendPurchasable && (Platform.OS === 'web' || (Platform.OS === 'android' && storeConnected && Boolean(obfuscatedAccountId)));
+  const canPurchase = backendPurchasable && (Platform.OS === 'web' || (Platform.OS === 'android' && storeConnected && Boolean(obfuscatedAccountId)) || (Platform.OS === 'ios' && storeConnected && Boolean(appAccountToken)));
   const purchased = Number(wallet?.purchasedSparks || 0);
   const promotional = Number(wallet?.promotionalSparks || 0);
   const legacy = Number(wallet?.legacySparks || 0);
@@ -288,22 +301,12 @@ export default function LiveWalletScreen({ navigation }) {
                 </View>
               </View>
             </Surface>
-          ) : Platform.OS === 'ios' ? (
+          ) : (Platform.OS === 'android' || Platform.OS === 'ios') && !storeConnected ? (
             <Surface colors={colors}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Ionicons name="shield-checkmark-outline" size={22} color={colors.primary} />
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.textPrimary, fontWeight: '900' }}>Apple billing is being prepared</Text>
-                  <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4 }]}>Sparks are digital currency. iPhone purchases will use Apple In-App Purchase after StoreKit transaction verification and App Store product setup are complete. External Paystack checkout is not offered inside the mobile app.</Text>
-                </View>
-              </View>
-            </Surface>
-          ) : Platform.OS === 'android' && !storeConnected ? (
-            <Surface colors={colors}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Ionicons name="shield-checkmark-outline" size={22} color={colors.primary} />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.textPrimary, fontWeight: '900' }}>Connecting to Google Play Billing</Text>
+                  <Text style={{ color: colors.textPrimary, fontWeight: '900' }}>Connecting to native store billing</Text>
                   <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4 }]}>Purchases remain disabled until the store connection and server verification are ready.</Text>
                 </View>
               </View>
@@ -320,9 +323,9 @@ export default function LiveWalletScreen({ navigation }) {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: '900' }}>{Number(item.sparks).toLocaleString()} Sparks</Text>
-                  <Text style={[typography.caption, { color: colors.textSecondary }]}>{Platform.OS === 'android' ? (storeProducts.find((product) => product.id === item.package_id)?.displayPrice || formatNaira(item.amount_minor)) : formatNaira(item.amount_minor)}</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>{(Platform.OS === 'android' || Platform.OS === 'ios') ? (storeProducts.find((product) => product.id === item.package_id)?.displayPrice || formatNaira(item.amount_minor)) : formatNaira(item.amount_minor)}</Text>
                 </View>
-                <TouchableOpacity onPress={() => buyPackage(item.package_id)} disabled={!canPurchase || Boolean(busyPackage) || (Platform.OS === 'android' && !storeProducts.some((product) => product.id === item.package_id))}
+                <TouchableOpacity onPress={() => buyPackage(item.package_id)} disabled={!canPurchase || Boolean(busyPackage) || ((Platform.OS === 'android' || Platform.OS === 'ios') && !storeProducts.some((product) => product.id === item.package_id))}
                   accessibilityRole="button" accessibilityLabel={'Buy ' + item.sparks + ' Sparks'}
                   style={{ minWidth: 92, minHeight: 42, paddingHorizontal: 14, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary, opacity: busyPackage && busyPackage !== item.package_id ? 0.55 : 1 }}>
                   {busyPackage === item.package_id ? <ActivityIndicator color="#FFFFFF" /> : <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>Buy</Text>}

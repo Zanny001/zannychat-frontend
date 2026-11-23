@@ -25,10 +25,10 @@ test('Sparks purchase UI stays disabled until server configuration and a real pa
   assert.ok(screen.includes("Platform.OS === 'ios'"));
   assert.ok(screen.includes('Purchases are not active yet'));
   assert.ok(screen.includes('No payment can be taken right now.'));
-  assert.ok(screen.includes('Google Play Billing'));
-  assert.ok(screen.includes('Apple In-App Purchase'));
-  assert.ok(screen.includes('Connecting to Google Play Billing'));
-  assert.ok(screen.includes('External Paystack checkout is not offered inside the mobile app.'));
+  assert.ok(screen.includes('Connecting to native store billing'));
+  assert.ok(screen.includes('getLiveAppleStoreAccountBinding()'));
+  assert.ok(screen.includes('verifyLiveApplePurchase({ signedTransaction: purchaseToken })'));
+  assert.ok(screen.includes('appAccountToken'));
   assert.ok(screen.includes('initializeLivePurchase(packageId)'));
   assert.ok(screen.includes('Linking.openURL(result.checkoutUrl)'));
   assert.ok(screen.includes('credited only after the payment provider confirms'));
@@ -110,6 +110,21 @@ test('Android Sparks store purchases are linked to the signed-in account and ver
 test('native purchase APIs use the authenticated backend and platform-specific store catalogue', () => {
   assert.ok(service.includes('/live/purchases/native/account-binding'));
   assert.ok(service.includes('/live/purchases/native/verify'));
-  assert.ok(screen.includes("Platform.OS === 'android' ? 'google_play' : 'paystack'"));
-  assert.ok(screen.includes("Platform.OS === 'android' ? (storeProducts.find"));
+  assert.ok(screen.includes("Platform.OS === 'android' ? 'google_play' : (Platform.OS === 'ios' ? 'apple_iap' : 'paystack')"));
+  assert.ok(screen.includes("(Platform.OS === 'android' || Platform.OS === 'ios') ? (storeProducts.find"));
+});
+
+
+test('iOS Sparks purchases use StoreKit signed transactions and account binding before finalization', () => {
+  const ios = fs.readFileSync(new URL('../services/liveStoreBilling.ios.js', import.meta.url), 'utf8');
+  assert.ok(ios.includes("apple: {"));
+  assert.ok(ios.includes('appAccountToken'));
+  assert.ok(screen.includes('purchase?.purchaseToken') || screen.includes('purchaseToken = String(purchase?.purchaseToken'));
+  assert.ok(ios.includes('finishTransaction({ purchase, isConsumable: true })'));
+  assert.ok(ios.includes('purchaseUpdatedListener'));
+  assert.ok(ios.includes('purchaseErrorListener'));
+  assert.ok(ios.includes('getAvailablePurchases'));
+  assert.ok(service.includes('/live/purchases/apple/account-binding'));
+  assert.ok(service.includes('/live/purchases/apple/verify'));
+  assert.ok(screen.indexOf('verifyLiveApplePurchase({ signedTransaction: purchaseToken })') < screen.indexOf('finishLiveStorePurchase(purchase)'));
 });

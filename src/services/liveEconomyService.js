@@ -84,6 +84,17 @@ export function getLiveStoreAccountBinding() {
   return backendFetch('/live/purchases/native/account-binding');
 }
 
+export function getLiveAppleStoreAccountBinding() {
+  return backendFetch('/live/purchases/apple/account-binding');
+}
+
+export function verifyLiveApplePurchase({ signedTransaction }) {
+  return backendFetch('/live/purchases/apple/verify', {
+    method: 'POST',
+    body: JSON.stringify({ signedTransaction }),
+  });
+}
+
 export function verifyLiveNativePurchase({ packageId, purchaseToken }) {
   return backendFetch('/live/purchases/native/verify', {
     method: 'POST',
