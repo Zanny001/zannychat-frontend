@@ -15,7 +15,7 @@ const FALLBACK_ICE_SERVERS = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stu
 
 export default function CallScreenWeb({ route, navigation }) {
   const params = route.params || {};
-  const { colors, typography, resolvedMode } = useTheme();
+  const { colors, typography, resolvedMode, layout } = useTheme();
   const { call: initialCall, callId, conversationId, callType = 'audio', isCaller = false, participantName = 'ZannyChat contact', avatarColor } = params;
   const initial = initialCall || { id: callId, conversation_id: conversationId, call_type: callType, status: 'accepted' };
   const [call, setCall] = useState(initial);
@@ -734,7 +734,7 @@ const styles = StyleSheet.create({
   networkNotice: { textAlign: 'center', marginTop: 12, maxWidth: 320 },
   error: { textAlign: 'center', marginTop: 16, maxWidth: 320 },
   bottom: { paddingHorizontal: 22, paddingBottom: 28, alignItems: 'center' },
-  controlsRow: { width: '100%', maxWidth: 340, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', columnGap: 8, rowGap: 8, padding: 10, borderRadius: 28, borderWidth: 1, marginBottom: 20 },
+  controlsRow: { width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', columnGap: 8, rowGap: 8, padding: 10, borderRadius: 28, borderWidth: 1, marginBottom: 20 },
   control: { width: 64, minWidth: 64, height: 68, minHeight: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center', gap: 4 },
   controlLabel: {},
   endButton: { width: 70, height: 70, borderRadius: 35, backgroundColor: '#E4475A', alignItems: 'center', justifyContent: 'center' },
