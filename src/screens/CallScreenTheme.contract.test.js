@@ -57,3 +57,12 @@ test('active call screens share the premium type scale on native and web', () =>
     assert.match(source, /typography\.small/, `${name} status and control labels`);
   }
 });
+
+
+test('web call module-level styles do not reference component-scoped layout values', () => {
+  const source = screen('CallScreen.web.js');
+  const styles = source.match(/const styles = StyleSheet\.create\(\{([\s\S]*?)\n\}\);/);
+  assert.ok(styles, 'web call screen must define its styles');
+  assert.doesNotMatch(styles[1], /\blayout\./, 'module-level styles must not access component-local layout');
+  assert.match(styles[1], /error: \{[^}]*maxWidth: 290/);
+});
