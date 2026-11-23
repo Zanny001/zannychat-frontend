@@ -140,6 +140,19 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
     }
   };
 
+  const handleStartBattle = async () => {
+    if (!battle?.id || battleBusy) return;
+    setBattleBusy(true);
+    try {
+      const result = await startLiveBattle(battle.id);
+      setBattle(result?.battle || battle);
+    } catch (error) {
+      setNotice(error?.message || 'Could not start the PK battle.');
+    } finally {
+      setBattleBusy(false);
+    }
+  };
+
   const handleFinishBattle = async () => {
     if (!battle?.id || battleBusy) return;
     setBattleBusy(true);
@@ -217,7 +230,9 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
               </View>
               {battle.status === 'ended' ? <Text style={{ color: '#E5D9FF', fontSize: 11, fontWeight: '800', marginTop: 6 }}>{winnerLabel}</Text> : null}
               {battle.status === 'live' && battle.ends_at ? <Text style={{ color: '#CBB9FF', fontSize: 10, marginTop: 5 }}>Ends {new Date(battle.ends_at).toLocaleTimeString()}</Text> : null}
+              {creatorMode && battle.status === 'pending' ? <PanelAction label={battleBusy ? 'Starting…' : 'Start battle'} onPress={handleStartBattle} disabled={battleBusy} colors={colors} /> : null}
               {creatorMode && battle.status === 'live' ? <PanelAction label="End battle" tone="danger" onPress={handleFinishBattle} disabled={battleBusy} colors={colors} /> : null}
+              {creatorMode && battle.status === 'ended' ? <PanelAction label="Start another PK battle" onPress={() => setBattle(null)} colors={colors} /> : null}
             </View> : creatorMode ? <>
               <Text style={{ color: '#D8D0EA', fontSize: 10, marginTop: 8 }}>{opponents.length ? 'Choose an approved guest already on your stage.' : 'PK requires an approved guest publisher on the same LIVE stage.'}</Text>
               {opponents.map((item) => <PanelAction key={item.id} label={'Challenge ' + item.name} selected={selectedBattleOpponentId === item.id} onPress={() => setOpponentId(item.id)} colors={colors} />)}
@@ -244,7 +259,7 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
             <Text style={{ color: '#F6F1FF', fontSize: 12, fontWeight: '900' }}>Recent Sparks activity</Text>
             {history.slice(0, 6).map((entry) => <View key={entry.id} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5 }}>
               <Text style={{ color: '#BEB4D7', fontSize: 10 }}>{entry.entry_type} · {entry.note || entry.reference_type || 'LIVE'}</Text>
-              <Text style={{ color: '#E9E0FF', fontSize: 10, fontWeight: '800' }}>{entry.amount_sparks > 0 ? '+' : ''}{entry.amount_sparks} Sparks</Text>
+              <Text style={{ color: '#E9E0FF', fontSize: 10, fontWeight: '800' }}>{entry.entry_type === 'spend' ? '−' : '+'}{entry.amount_sparks} Sparks</Text>
             </View>)}
           </View> : null}
           {notice ? <Text accessibilityRole="status" style={{ color: '#E6D8FF', fontSize: 11, padding: 8, borderRadius: 10, backgroundColor: 'rgba(150,120,255,0.12)' }}>{notice}</Text> : null}
