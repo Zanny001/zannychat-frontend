@@ -68,7 +68,7 @@ Required work:
 | Watching Optimization | Adaptive stream and dynacast are already enabled | Add explanatory state or preferences only if they change actual subscription behaviour |
 | Gift Settings | No corresponding in-room settings flow found | Audit gift catalogue, wallet/ledger, pricing, moderation, and purchase safeguards before adding |
 | Report | Existing LIVE reporting and moderation routes | Verify viewer and moderator journeys end to end |
-| Block | No direct block action found in the current LIVE room controls | Connect to the existing account-block system with bidirectional privacy and immediate room removal |
+| Block | Native/web Block Creator action uses the existing account-level block API and exits the active LIVE session | Verify blocked creator cannot be rediscovered, rejoined, or surfaced through another LIVE entry point |
 | Not Interested | New server-managed creator suppression preference and discovery filter are in PR #193; native/web room action is in PR #372 | Verify persistence, privacy, and discovery behaviour on two accounts |
 | Translation | No LIVE translation control or transcript pipeline found | Define captions/transcription, supported languages, consent, privacy, latency, and cost |
 | Clean Mode | Existing hide-chat toggle, now named Clean Mode in the current branch | Verify all overlays, reactions, and accessibility labels behave consistently |
