@@ -51,7 +51,7 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
   const [targetLanguage, setTargetLanguage] = useState('English');
   const [translatedText, setTranslatedText] = useState('');
   const [notice, setNotice] = useState('');
-  const giftRequestKeyRef = useRef(null);
+  const giftRequestKeysRef = useRef(new Map());
   const [battleClock, setBattleClock] = useState(Date.now());
 
   const refreshBattle = useCallback(async () => {
@@ -108,8 +108,8 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
     setGiftBusy(true);
     setNotice('');
     const requestIdentity = streamId + ':' + selectedRecipientId + ':' + gift.gift_id;
-    if (!giftRequestKeyRef.current || giftRequestKeyRef.current.identity !== requestIdentity) {
-      giftRequestKeyRef.current = { identity: requestIdentity, key: createLiveGiftIdempotencyKey() };
+    if (!giftRequestKeysRef.current.has(requestIdentity)) {
+      giftRequestKeysRef.current.set(requestIdentity, createLiveGiftIdempotencyKey());
     }
     try {
       const result = await sendLiveGift({
@@ -117,9 +117,9 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
         recipientId: selectedRecipientId,
         giftId: gift.gift_id,
         quantity: 1,
-        idempotencyKey: giftRequestKeyRef.current.key,
+        idempotencyKey: giftRequestKeysRef.current.get(requestIdentity),
       });
-      giftRequestKeyRef.current = null;
+      giftRequestKeysRef.current.delete(requestIdentity);
       setWallet((current) => ({ ...(current || {}), balanceSparks: result.balanceSparks }));
       setNotice('Sent ' + gift.display_name + ' · +' + gift.scorePoints + ' PK points when a battle is active.');
       try {
