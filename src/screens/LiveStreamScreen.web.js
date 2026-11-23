@@ -1291,7 +1291,7 @@ export default function LiveStreamScreen({ route, navigation }) {
         </>}
       </ScrollView>
     </View>}
-    {economyOpen && <LiveEconomyPanel streamId={stream.id} creatorId={stream.creator_id} creatorMode={creatorMode} onClose={() => setEconomyOpen(false)} />}
+    {economyOpen && <LiveEconomyPanel streamId={stream.id} creatorId={stream.creator_id} creatorMode={creatorMode} navigation={navigation} onClose={() => setEconomyOpen(false)} />}
     {busy && <View pointerEvents="none" style={{ position: 'absolute', top: '50%', alignSelf: 'center' }}><ActivityIndicator color="#FFFFFF" /></View>}
   </View>;
 }
