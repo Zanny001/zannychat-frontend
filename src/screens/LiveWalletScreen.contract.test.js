@@ -85,7 +85,9 @@ test('verified purchase receipts are owner-scoped, short-lived and accessible fr
 });
 
 test('a failed catalogue refresh clears stale purchase availability and packages', () => {
-  const load = screen.slice(screen.indexOf('const load = useCallback'), screen.indexOf('useFocusEffect'));
+  const start = screen.indexOf('const load = useCallback');
+  const end = screen.indexOf('useFocusEffect(useCallback', start);
+  const load = screen.slice(start, end);
   assert.ok(load.includes('setBackendPurchasable(false)'));
   assert.ok(load.includes('setPackages([])'));
   assert.ok(load.indexOf('setBackendPurchasable(false)') < load.indexOf('Promise.allSettled'));
