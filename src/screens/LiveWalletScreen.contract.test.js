@@ -1,0 +1,43 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+
+const screen = fs.readFileSync(new URL('./LiveWalletScreen.js', import.meta.url), 'utf8');
+const service = fs.readFileSync(new URL('../services/liveEconomyService.js', import.meta.url), 'utf8');
+const hub = fs.readFileSync(new URL('./LiveHubScreen.js', import.meta.url), 'utf8');
+const navigator = fs.readFileSync(new URL('../navigation/AppNavigator.js', import.meta.url), 'utf8');
+
+test('Sparks wallet renders real server-backed balances, package catalogue and purchase history', () => {
+  assert.ok(screen.includes('getLiveGiftWallet()'));
+  assert.ok(screen.includes('getLivePurchasePackages()'));
+  assert.ok(screen.includes('getLivePurchaseHistory()'));
+  assert.ok(screen.includes('getLiveGiftHistory(12)'));
+  assert.ok(screen.includes('purchasedSparks'));
+  assert.ok(screen.includes('promotionalSparks'));
+  assert.ok(screen.includes('legacySparks'));
+  assert.ok(screen.includes('item.amount_minor'));
+  assert.ok(screen.includes('item.status.toUpperCase()'));
+});
+
+test('Sparks purchase UI stays disabled until server configuration and a real package exist', () => {
+  assert.ok(screen.includes('!purchasable'));
+  assert.ok(screen.includes('Purchases are not active yet'));
+  assert.ok(screen.includes('No payment can be taken right now.'));
+  assert.ok(screen.includes('initializeLivePurchase(packageId)'));
+  assert.ok(screen.includes('Linking.openURL(result.checkoutUrl)'));
+  assert.ok(screen.includes('credited only after the payment provider confirms'));
+});
+
+test('Sparks wallet service uses authenticated backend endpoints, not client-side balance mutation', () => {
+  assert.ok(service.includes("backendFetch('/live/purchases/packages')"));
+  assert.ok(service.includes("backendFetch('/live/purchases/history')"));
+  assert.ok(service.includes("backendFetch('/live/purchases/initialize'"));
+  assert.ok(service.includes('JSON.stringify({ packageId })'));
+  assert.ok(!service.includes('grantLiveSparks'));
+});
+
+test('Sparks wallet is reachable from LIVE hub navigation', () => {
+  assert.ok(hub.includes("navigation.navigate('LiveWallet')"));
+  assert.ok(navigator.includes("import LiveWalletScreen from '../screens/LiveWalletScreen'"));
+  assert.ok(navigator.includes("name=\"LiveWallet\" component={LiveWalletRoute}"));
+});
