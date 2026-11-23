@@ -15,7 +15,7 @@ const FALLBACK_ICE_SERVERS = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stu
 
 export default function CallScreenWeb({ route, navigation }) {
   const params = route.params || {};
-  const { colors, typography, resolvedMode, layout } = useTheme();
+  const { colors, typography, resolvedMode } = useTheme();
   const { call: initialCall, callId, conversationId, callType = 'audio', isCaller = false, participantName = 'ZannyChat contact', avatarColor } = params;
   const initial = initialCall || { id: callId, conversation_id: conversationId, call_type: callType, status: 'accepted' };
   const [call, setCall] = useState(initial);
