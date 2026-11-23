@@ -229,6 +229,11 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [panel, setPanel] = useState('');
   const [showOverlayMenu, setShowOverlayMenu] = useState(false);
   const [economyOpen, setEconomyOpen] = useState(false);
+  useEffect(() => {
+    if (!route.params?.openLiveEconomy) return;
+    setEconomyOpen(true);
+    navigation.setParams?.({ openLiveEconomy: undefined });
+  }, [route.params?.openLiveEconomy, navigation]);
   const [qualityMode, setQualityMode] = useState('auto');
   const qualityModeRef = useRef('auto');
   qualityModeRef.current = qualityMode;
