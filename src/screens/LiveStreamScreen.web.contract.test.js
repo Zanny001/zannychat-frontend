@@ -305,3 +305,8 @@ test('web LIVE room exposes a browser audio-output picker with safe fallback', (
   assert.ok(web.includes('label="Audio output"'));
   assert.ok(web.includes('Use your device sound settings.'));
 });
+
+
+test('web guest invitation prompt identifies the inviting creator when available', () => {
+  assert.ok(web.includes("stream?.creator_name || route.params?.creatorName || 'The LIVE creator'"));
+});
