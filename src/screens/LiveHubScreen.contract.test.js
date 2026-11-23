@@ -218,3 +218,12 @@ test('LIVE discovery cards use supported Ionicons glyph names', () => {
   assert.ok(!screen.includes('arrow-up-right'));
   assert.ok(screen.includes('arrow-forward'));
 });
+
+
+test('LIVE PK challenge push notifications reopen the invited stream and surface the consent panel', () => {
+  assert.ok(screen.includes("'live_pk_challenge'"));
+  assert.ok(screen.includes("['live_pk_challenge', 'live_pk_accepted'].includes(type)"));
+  assert.ok(screen.includes('openLiveEconomy'));
+  assert.ok(screen.includes("joinLive({ id: streamId }, ['live_pk_challenge', 'live_pk_accepted'].includes(type))"));
+  assert.ok(screen.includes("'live_pk_accepted'"));
+});

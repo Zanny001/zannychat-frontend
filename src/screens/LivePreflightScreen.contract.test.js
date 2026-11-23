@@ -10,7 +10,7 @@ const backendClient = fs.readFileSync(new URL('../services/backendClient.js', im
 
 test('LIVE Hub sends creator setup to the dedicated pre-flight route', () => {
   const start = hub.indexOf('const startLive = () => {');
-  const end = hub.indexOf('const joinLive = async (stream) => {', start);
+  const end = hub.indexOf('const joinLive = async (stream, openLiveEconomy = false) => {', start);
   assert.ok(start >= 0 && end > start);
   const startFlow = hub.slice(start, end);
   assert.ok(startFlow.includes("navigation.navigate('LivePreflight'"));
