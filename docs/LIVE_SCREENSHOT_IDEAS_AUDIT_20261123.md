@@ -155,3 +155,14 @@ A single production client diagnostic reported `ReferenceError`; the telemetry a
 - Backend PR #193 passed Backend quality and Advanced calling checks after public-feed filtering was added.
 - Frontend PR #372 has successful Advanced calling and LIVE quality workflows; its Vercel check is blocked by a build-rate limit, while the Netlify deploy preview succeeded.
 - No production database migration or deployment has been performed for these changes.
+
+## 9. Browser LIVE minimization (2026-11-23)
+
+- Added a browser Picture-in-Picture action to the web LIVE room menu.
+- The action uses the attached LIVE video element, feature-detects PiP support, checks video readiness, and handles user cancellation/permission errors without disconnecting the room.
+- Added a web contract test for supported and unsupported browser paths.
+- Native Android/iOS background PiP is not claimed as implemented; it requires platform-specific native capability/configuration and real-device verification.
+
+## 10. PK Battle scoring dependency
+
+A read-only production schema inspection found no public gift catalogue, wallet, or gift-transaction tables among the current LIVE/wallet-related tables. Therefore a gift-funded PK score cannot safely be implemented by inventing a client-side score or writing into unrelated financial tables. The PK feature remains gated on identifying the actual gift/ledger service or defining a dedicated server-authoritative battle score source. The score must be idempotent, auditable, resistant to duplicate/replayed events, and must never mutate wallet balances as a side effect of score updates.
