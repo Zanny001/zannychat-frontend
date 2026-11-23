@@ -144,6 +144,7 @@
           "microphonePermission": "ZannyChat uses the microphone when you record voice messages, make calls or host and join LIVE sessions."
         }
       ],
+      "expo-iap",
       "expo-web-browser",
       "expo-sharing",
       [

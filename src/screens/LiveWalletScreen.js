@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -11,7 +11,17 @@ import {
   getLivePurchaseReceipt,
   getLivePurchasePackages,
   initializeLivePurchase,
+  getLiveStoreAccountBinding,
+  verifyLiveNativePurchase,
 } from '../services/liveEconomyService';
+import {
+  connectLiveStoreBilling,
+  fetchLiveStoreProducts,
+  requestLiveStorePurchase,
+  finishLiveStorePurchase,
+  recoverLiveStorePurchases,
+  clearLiveStoreBillingCallbacks,
+} from '../services/liveStoreBilling';
 
 function formatNaira(amountMinor) {
   const amount = Number(amountMinor);
@@ -53,6 +63,9 @@ export default function LiveWalletScreen({ navigation }) {
   const [busyReceipt, setBusyReceipt] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [storeConnected, setStoreConnected] = useState(false);
+  const [storeProducts, setStoreProducts] = useState([]);
+  const [obfuscatedAccountId, setObfuscatedAccountId] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -63,7 +76,7 @@ export default function LiveWalletScreen({ navigation }) {
     setPackages([]);
     const results = await Promise.allSettled([
       getLiveGiftWallet(),
-      getLivePurchasePackages(),
+      getLivePurchasePackages(Platform.OS === 'android' ? 'google_play' : 'paystack'),
       getLivePurchaseHistory(),
       getLiveGiftHistory(12),
     ]);
@@ -84,23 +97,98 @@ export default function LiveWalletScreen({ navigation }) {
     return undefined;
   }, [load]));
 
+  const handleNativePurchase = useCallback(async (purchase) => {
+    const packageId = String(purchase?.productId || '');
+    const purchaseToken = String(purchase?.purchaseToken || '');
+    if (!packageId || !purchaseToken) {
+      setError('Google Play returned incomplete purchase evidence. Your transaction has not been finalized.');
+      return;
+    }
+    if (!packages.some((item) => item.package_id === packageId)) {
+      setError('This Google Play product is not in the active ZannyChat Sparks catalogue.');
+      return;
+    }
+    try {
+      const verified = await verifyLiveNativePurchase({ packageId, purchaseToken });
+      if (!verified?.verified || !verified?.credited) {
+        throw new Error('ZannyChat could not verify this purchase. No Sparks were added.');
+      }
+      try {
+        await finishLiveStorePurchase(purchase);
+        setNotice(Number(verified.sparks).toLocaleString() + ' Sparks were verified and added to your wallet.');
+      } catch (_) {
+        setNotice('Your Sparks were verified and added. Google Play transaction finalization is pending; refresh this wallet to retry safely.');
+      }
+      await load();
+    } catch (purchaseError) {
+      setError(purchaseError?.message || 'Google Play could not verify this purchase. Your transaction remains available for a safe retry.');
+    } finally {
+      setBusyPackage('');
+    }
+  }, [packages, load]);
+
+  const packageSkus = packages.map((item) => item.package_id).join('|');
+
+  useEffect(() => {
+    if (Platform.OS !== 'android' || !backendPurchasable || !packageSkus) return undefined;
+    let active = true;
+    (async () => {
+      const binding = await getLiveStoreAccountBinding();
+      if (!binding?.obfuscatedAccountId) throw new Error('Secure store account binding is unavailable.');
+      if (!active) return;
+      setObfuscatedAccountId(binding.obfuscatedAccountId);
+      await connectLiveStoreBilling({
+        onPurchase: handleNativePurchase,
+        onError: (storeError) => {
+          setBusyPackage('');
+          if (storeError?.code === 'user-cancelled') return;
+          setError(storeError?.message || 'Google Play Billing reported a purchase error.');
+        },
+      });
+      if (!active) return;
+      setStoreConnected(true);
+      const products = await fetchLiveStoreProducts(packageSkus.split('|'));
+      if (!active) return;
+      setStoreProducts(products);
+      const pendingPurchases = await recoverLiveStorePurchases();
+      for (const pendingPurchase of pendingPurchases) {
+        if (!active) break;
+        await handleNativePurchase(pendingPurchase);
+      }
+    })().catch((storeError) => {
+      if (!active) return;
+      setStoreConnected(false);
+      setError(storeError?.message || 'Google Play Billing is not available on this device.');
+    });
+    return () => {
+      active = false;
+      clearLiveStoreBillingCallbacks();
+    };
+  }, [backendPurchasable, packageSkus, handleNativePurchase]);
+
   const buyPackage = async (packageId) => {
     if (!canPurchase || busyPackage) return;
     setBusyPackage(packageId);
     setError('');
     setNotice('');
     try {
-      const result = await initializeLivePurchase(packageId);
-      if (!result?.checkoutUrl || !/^https:\/\//i.test(result.checkoutUrl)) {
-        throw new Error('The payment provider did not return a secure checkout link.');
+      if (Platform.OS === 'android') {
+        await requestLiveStorePurchase({ sku: packageId, obfuscatedAccountId });
+        setNotice('Google Play checkout opened. Sparks are added only after ZannyChat verifies the completed store transaction.');
+      } else {
+        const result = await initializeLivePurchase(packageId);
+        if (!result?.checkoutUrl || !/^https:\/\//i.test(result.checkoutUrl)) {
+          throw new Error('The payment provider did not return a secure checkout link.');
+        }
+        await Linking.openURL(result.checkoutUrl);
+        setNotice('Checkout opened. Sparks are credited only after the payment provider confirms your payment.');
+        await load();
       }
-      await Linking.openURL(result.checkoutUrl);
-      setNotice('Checkout opened. Sparks are credited only after the payment provider confirms your payment.');
-      await load();
     } catch (purchaseError) {
-      setError(purchaseError?.message || 'Could not open secure checkout.');
-    } finally {
       setBusyPackage('');
+      setError(purchaseError?.message || 'Could not start the secure purchase.');
+    } finally {
+      if (Platform.OS !== 'android') setBusyPackage('');
     }
   };
 
@@ -123,7 +211,7 @@ export default function LiveWalletScreen({ navigation }) {
     }
   };
 
-  const canPurchase = backendPurchasable && Platform.OS === 'web';
+  const canPurchase = backendPurchasable && (Platform.OS === 'web' || (Platform.OS === 'android' && storeConnected && Boolean(obfuscatedAccountId)));
   const purchased = Number(wallet?.purchasedSparks || 0);
   const promotional = Number(wallet?.promotionalSparks || 0);
   const legacy = Number(wallet?.legacySparks || 0);
@@ -200,13 +288,23 @@ export default function LiveWalletScreen({ navigation }) {
                 </View>
               </View>
             </Surface>
-          ) : Platform.OS !== 'web' ? (
+          ) : Platform.OS === 'ios' ? (
             <Surface colors={colors}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Ionicons name="shield-checkmark-outline" size={22} color={colors.primary} />
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.textPrimary, fontWeight: '900' }}>Mobile in-app billing is not connected yet</Text>
-                  <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4 }]}>Sparks are digital currency. Android purchases must use Google Play Billing and iPhone purchases must use Apple In-App Purchase. External Paystack checkout is not offered inside the mobile app.</Text>
+                  <Text style={{ color: colors.textPrimary, fontWeight: '900' }}>Apple billing is being prepared</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4 }]}>Sparks are digital currency. iPhone purchases will use Apple In-App Purchase after StoreKit transaction verification and App Store product setup are complete. External Paystack checkout is not offered inside the mobile app.</Text>
+                </View>
+              </View>
+            </Surface>
+          ) : Platform.OS === 'android' && !storeConnected ? (
+            <Surface colors={colors}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Ionicons name="shield-checkmark-outline" size={22} color={colors.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colors.textPrimary, fontWeight: '900' }}>Connecting to Google Play Billing</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4 }]}>Purchases remain disabled until the store connection and server verification are ready.</Text>
                 </View>
               </View>
             </Surface>
@@ -222,9 +320,9 @@ export default function LiveWalletScreen({ navigation }) {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: '900' }}>{Number(item.sparks).toLocaleString()} Sparks</Text>
-                  <Text style={[typography.caption, { color: colors.textSecondary }]}>{formatNaira(item.amount_minor)}</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>{Platform.OS === 'android' ? (storeProducts.find((product) => product.id === item.package_id)?.displayPrice || formatNaira(item.amount_minor)) : formatNaira(item.amount_minor)}</Text>
                 </View>
-                <TouchableOpacity onPress={() => buyPackage(item.package_id)} disabled={!canPurchase || Boolean(busyPackage)}
+                <TouchableOpacity onPress={() => buyPackage(item.package_id)} disabled={!canPurchase || Boolean(busyPackage) || (Platform.OS === 'android' && !storeProducts.some((product) => product.id === item.package_id))}
                   accessibilityRole="button" accessibilityLabel={'Buy ' + item.sparks + ' Sparks'}
                   style={{ minWidth: 92, minHeight: 42, paddingHorizontal: 14, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary, opacity: busyPackage && busyPackage !== item.package_id ? 0.55 : 1 }}>
                   {busyPackage === item.package_id ? <ActivityIndicator color="#FFFFFF" /> : <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>Buy</Text>}

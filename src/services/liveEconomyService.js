@@ -76,8 +76,19 @@ export function finishLiveBattle(battleId) {
   return backendFetch('/live/battles/' + encodeURIComponent(battleId) + '/finish', { method: 'POST' });
 }
 
-export function getLivePurchasePackages() {
-  return backendFetch('/live/purchases/packages');
+export function getLivePurchasePackages(provider = 'paystack') {
+  return backendFetch('/live/purchases/packages?provider=' + encodeURIComponent(provider));
+}
+
+export function getLiveStoreAccountBinding() {
+  return backendFetch('/live/purchases/native/account-binding');
+}
+
+export function verifyLiveNativePurchase({ packageId, purchaseToken }) {
+  return backendFetch('/live/purchases/native/verify', {
+    method: 'POST',
+    body: JSON.stringify({ packageId, purchaseToken }),
+  });
 }
 
 export function getLivePurchaseHistory() {
