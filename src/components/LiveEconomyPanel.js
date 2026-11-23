@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import {
   acceptLiveBattle,
   createLiveBattle,
+  createLiveGiftIdempotencyKey,
   declineLiveBattle,
   finishLiveBattle,
   getCurrentLiveBattle,
@@ -50,6 +51,7 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
   const [targetLanguage, setTargetLanguage] = useState('English');
   const [translatedText, setTranslatedText] = useState('');
   const [notice, setNotice] = useState('');
+  const giftRequestKeyRef = useRef(null);
   const [battleClock, setBattleClock] = useState(Date.now());
 
   const refreshBattle = useCallback(async () => {
@@ -105,13 +107,19 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
     if (!selectedRecipientId || giftBusy) return;
     setGiftBusy(true);
     setNotice('');
+    const requestIdentity = streamId + ':' + selectedRecipientId + ':' + gift.gift_id;
+    if (!giftRequestKeyRef.current || giftRequestKeyRef.current.identity !== requestIdentity) {
+      giftRequestKeyRef.current = { identity: requestIdentity, key: createLiveGiftIdempotencyKey() };
+    }
     try {
       const result = await sendLiveGift({
         streamId,
         recipientId: selectedRecipientId,
         giftId: gift.gift_id,
         quantity: 1,
+        idempotencyKey: giftRequestKeyRef.current.key,
       });
+      giftRequestKeyRef.current = null;
       setWallet((current) => ({ ...(current || {}), balanceSparks: result.balanceSparks }));
       setNotice('Sent ' + gift.display_name + ' · +' + gift.scorePoints + ' PK points when a battle is active.');
       const [nextWallet, nextHistory] = await Promise.all([getLiveGiftWallet(), getLiveGiftHistory(12)]);
