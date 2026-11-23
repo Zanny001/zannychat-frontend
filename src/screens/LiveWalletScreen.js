@@ -150,7 +150,7 @@ export default function LiveWalletScreen({ navigation }) {
         </Surface>
 
         <View style={{ gap: 8 }}>
-          <Text style={[typography.subtitle, { color: colors.textPrimary, fontWeight: '900' }]}>Sparks Store</Text>
+          <Text style={[typography.heading, { color: colors.textPrimary, fontWeight: '900' }]}>Sparks Store</Text>
           <Text style={[typography.caption, { color: colors.textSecondary }]}>Choose a package. The price and Sparks amount come directly from ZannyChat's server catalogue.</Text>
           {!purchasable ? (
             <Surface colors={colors}>
@@ -196,7 +196,7 @@ export default function LiveWalletScreen({ navigation }) {
         </Surface> : null}
 
         <View style={{ gap: 8 }}>
-          <Text style={[typography.subtitle, { color: colors.textPrimary, fontWeight: '900' }]}>Purchase history</Text>
+          <Text style={[typography.heading, { color: colors.textPrimary, fontWeight: '900' }]}>Purchase history</Text>
           {loading ? <ActivityIndicator color={colors.primary} /> : purchaseHistory.length === 0 ? (
             <Surface colors={colors}><Text style={{ color: colors.textSecondary }}>No purchases recorded yet.</Text></Surface>
           ) : purchaseHistory.map((item) => (
@@ -216,7 +216,7 @@ export default function LiveWalletScreen({ navigation }) {
         </View>
 
         <View style={{ gap: 8 }}>
-          <Text style={[typography.subtitle, { color: colors.textPrimary, fontWeight: '900' }]}>Gift spending</Text>
+          <Text style={[typography.heading, { color: colors.textPrimary, fontWeight: '900' }]}>Gift spending</Text>
           {giftHistory.length === 0 ? (
             <Surface colors={colors}><Text style={{ color: colors.textSecondary }}>Your confirmed LIVE gift transactions will appear here.</Text></Surface>
           ) : giftHistory.map((item) => (
