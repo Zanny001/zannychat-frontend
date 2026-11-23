@@ -122,6 +122,8 @@ export default function LiveWalletScreen({ navigation }) {
       await load();
     } catch (purchaseError) {
       setError(purchaseError?.message || 'Google Play could not verify this purchase. Your transaction remains available for a safe retry.');
+    } finally {
+      setBusyPackage('');
     }
   }, [packages, load]);
 
@@ -138,6 +140,7 @@ export default function LiveWalletScreen({ navigation }) {
       await connectLiveStoreBilling({
         onPurchase: handleNativePurchase,
         onError: (storeError) => {
+          setBusyPackage('');
           if (storeError?.code === 'user-cancelled') return;
           setError(storeError?.message || 'Google Play Billing reported a purchase error.');
         },
@@ -182,9 +185,10 @@ export default function LiveWalletScreen({ navigation }) {
         await load();
       }
     } catch (purchaseError) {
+      setBusyPackage('');
       setError(purchaseError?.message || 'Could not start the secure purchase.');
     } finally {
-      setBusyPackage('');
+      if (Platform.OS !== 'android') setBusyPackage('');
     }
   };
 
