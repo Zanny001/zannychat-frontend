@@ -144,7 +144,7 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
     try {
       const result = await acceptLiveBattle(battle.id);
       setBattle(result?.battle || battle);
-      setNotice('PK challenge accepted. The host can now start the match.');
+      setNotice(result?.battle?.status === 'cancelled' ? 'This PK challenge expired or the LIVE ended.' : 'PK challenge accepted. The host can now start the match.');
     } catch (error) {
       setNotice(error?.message || 'Could not accept the PK challenge.');
     } finally {
@@ -274,7 +274,7 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
 
           <View style={{ padding: 12, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.045)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
             <Text style={{ color: '#F6F1FF', fontSize: 13, fontWeight: '900' }}>Translation</Text>
-            <Text style={{ color: '#BEB4D7', fontSize: 10, marginTop: 4 }}>On-demand translation of text you provide. Live microphone transcription is not enabled.</Text>
+            <Text style={{ color: '#BEB4D7', fontSize: 10, marginTop: 4 }}>On-demand translation of text you provide. Submitted text is sent to the configured AI provider; avoid sensitive details. Live microphone transcription is not enabled.</Text>
             <TextInput value={targetLanguage} onChangeText={setTargetLanguage} placeholder="Target language" placeholderTextColor="#948AA8" accessibilityLabel="Translation target language"
               style={{ color: '#FFFFFF', backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)', paddingHorizontal: 10, paddingVertical: 9, marginTop: 8 }} />
             <TextInput value={sourceText} onChangeText={setSourceText} multiline maxLength={1800} placeholder="Paste or type a transcript segment to translate…" placeholderTextColor="#948AA8" accessibilityLabel="Transcript text segment to translate"
