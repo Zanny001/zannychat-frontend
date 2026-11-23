@@ -403,11 +403,11 @@ export default function LiveHubScreen({ navigation, route }) {
     }
 
     const shouldJoin = streamId && (
-      ['live_stream_started', 'live_invitation', 'live_guest_request', 'live_guest_invitation', 'live_event_started', 'live_pk_challenge'].includes(type)
+      ['live_stream_started', 'live_invitation', 'live_guest_request', 'live_guest_invitation', 'live_event_started', 'live_pk_challenge', 'live_pk_accepted'].includes(type)
       || (type === 'live_guest_decision' && notification.status === 'accepted')
     );
     if (shouldJoin) {
-      joinLive({ id: streamId }, type === 'live_pk_challenge');
+      joinLive({ id: streamId }, ['live_pk_challenge', 'live_pk_accepted'].includes(type));
     } else {
       refresh();
     }
