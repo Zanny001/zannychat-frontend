@@ -213,6 +213,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const commentsRefreshInFlight = useRef(false);
   const commentsRefreshQueued = useRef(false);
   const guestStatusRefreshInFlight = useRef(false);
+  const guestDecisionInFlight = useRef(false);
   const guestRequestsRefreshInFlight = useRef(false);
   const replayRefreshInFlight = useRef(false);
   const studioParticipantsRefreshInFlight = useRef(false);
@@ -800,6 +801,24 @@ export default function LiveStreamScreen({ route, navigation }) {
       setConnection(next);
     } catch (err) { setError(err?.message || 'Could not join as guest.'); }
   };
+
+  const decideGuestInvitation = async (status) => {
+    if (!stream?.id || guestDecisionInFlight.current || !['accepted', 'declined'].includes(status)) return;
+    guestDecisionInFlight.current = true;
+    try {
+      const result = await backendFetch(`/live/${stream.id}/guest-invitation`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+      setGuestStatus(result?.status || status);
+      setGuestApproved(status === 'accepted');
+      if (status === 'accepted') await joinGuest();
+    } catch (err) {
+      setError(err?.message || (status === 'accepted' ? 'Could not accept LIVE invitation.' : 'Could not decline LIVE invitation.'));
+    } finally {
+      guestDecisionInFlight.current = false;
+    }
+  };
   const hideComment = async (id) => {
     try { await backendFetch(`/live/${stream.id}/comments/${id}/hide`, { method: 'POST' }); setComments((items) => items.filter((item) => item.id !== id)); }
     catch (err) { setError(err?.message || 'Could not hide comment.'); }
@@ -1052,7 +1071,14 @@ export default function LiveStreamScreen({ route, navigation }) {
 
     {!!error && <View pointerEvents="box-none" style={{ position: 'absolute', top: insets.top + 78, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(100,20,35,0.86)' }}><Text accessibilityRole="alert" style={{ color: '#FFFFFF', fontSize: 12 }}>{error}</Text></View>}
     {!!stageNotice && <View pointerEvents="box-none" style={{ position: 'absolute', top: insets.top + 118, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(30,70,90,0.86)' }}><Text accessibilityRole="status" style={{ color: '#FFFFFF', fontSize: 12 }}>{stageNotice}</Text></View>}
-    {guestApproved && !publisherMode && <View pointerEvents="box-none" style={{ position: 'absolute', top: insets.top + 164, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(30,70,90,0.88)' }}><Text accessibilityRole="status" style={{ color: '#FFFFFF', fontSize: 12 }}>The creator invited you to the LIVE stage. Use the menu to join.</Text></View>}
+    {guestStatus === 'pending' && !publisherMode ? <View style={{ position: 'absolute', zIndex: 30, top: insets.top + 164, left: 16, right: 16, padding: 13, borderRadius: 16, backgroundColor: 'rgba(12,11,28,0.96)', borderWidth: 1, borderColor: 'rgba(190,160,255,0.65)' }}>
+      <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '900' }}>LIVE guest invitation</Text>
+      <Text style={{ color: '#E6E2F4', fontSize: 12, marginTop: 4 }}>The creator invited you to join the stage. Choose whether to join before your camera or microphone is enabled.</Text>
+      <View style={{ flexDirection: 'row', gap: 9, marginTop: 11 }}>
+        <Action colors={colors} label="Accept invitation" onPress={() => decideGuestInvitation('accepted')} />
+        <Action colors={colors} label="Reject" onPress={() => decideGuestInvitation('declined')} danger />
+      </View>
+    </View> : guestApproved && !publisherMode ? <View pointerEvents="box-none" style={{ position: 'absolute', top: insets.top + 164, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(30,70,90,0.88)' }}><Text accessibilityRole="status" style={{ color: '#FFFFFF', fontSize: 12 }}>Your invitation is accepted. Join the stage when you are ready.</Text></View> : null}
 
     <View pointerEvents="box-none" style={{ position: 'absolute', left: 14, bottom: 96 + insets.bottom, width: 'min(390px, 70%)', maxHeight: '42%', gap: 8 }}>
       {commentsVisible && comments.slice(-4).map((item) => <View key={item.id} style={{ alignSelf: 'flex-start', maxWidth: '100%', flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingHorizontal: 11, paddingVertical: 8, borderRadius: 14, backgroundColor: 'rgba(5,5,11,0.68)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
