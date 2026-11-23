@@ -122,9 +122,13 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
       giftRequestKeyRef.current = null;
       setWallet((current) => ({ ...(current || {}), balanceSparks: result.balanceSparks }));
       setNotice('Sent ' + gift.display_name + ' · +' + gift.scorePoints + ' PK points when a battle is active.');
-      const [nextWallet, nextHistory] = await Promise.all([getLiveGiftWallet(), getLiveGiftHistory(12)]);
-      setWallet(nextWallet);
-      setHistory(Array.isArray(nextHistory?.entries) ? nextHistory.entries : []);
+      try {
+        const [nextWallet, nextHistory] = await Promise.all([getLiveGiftWallet(), getLiveGiftHistory(12)]);
+        setWallet(nextWallet);
+        setHistory(Array.isArray(nextHistory?.entries) ? nextHistory.entries : []);
+      } catch (refreshError) {
+        setNotice('Gift sent successfully. Your updated balance and history will refresh when the service responds.');
+      }
       if (battle?.status === 'live') await refreshBattle();
     } catch (error) {
       setNotice(error?.message || 'The gift could not be sent. Your balance was not changed.');
