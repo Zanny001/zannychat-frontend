@@ -111,7 +111,6 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
         recipientId: selectedRecipientId,
         giftId: gift.gift_id,
         quantity: 1,
-        battleId: battle?.status === 'live' ? battle.id : null,
       });
       setWallet((current) => ({ ...(current || {}), balanceSparks: result.balanceSparks }));
       setNotice('Sent ' + gift.display_name + ' · +' + gift.scorePoints + ' PK points when a battle is active.');
