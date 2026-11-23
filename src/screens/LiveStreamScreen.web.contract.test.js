@@ -250,3 +250,10 @@ test('web LIVE guest invitation supports explicit video or audio-only admission'
   assert.ok(webScreen.includes("body: JSON.stringify({ mediaMode })"));
   assert.ok(webScreen.includes("connection?.mediaMode !== 'audio'"));
 });
+
+
+test('web LIVE room exposes a share action with the stream deep link', () => {
+  assert.ok(webScreen.includes('Share.share('));
+  assert.ok(webScreen.includes('https://zannychat.vercel.app/LiveStream?streamId='));
+  assert.ok(webScreen.includes('label="Share LIVE"'));
+});
