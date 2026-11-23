@@ -176,7 +176,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [demotedToViewer, setDemotedToViewer] = useState(false);
   const [stageNotice, setStageNotice] = useState('');
   const publisherMode = Boolean(creatorMode || (connection?.role === 'guest' && connection?.canPublish && !demotedToViewer));
-  const mediaVideoEnabled = Boolean(publisherMode && experienceMode !== 'audio_room');
+  const mediaVideoEnabled = Boolean(publisherMode && experienceMode !== 'audio_room' && connection?.mediaMode !== 'audio' && connection?.mediaMode !== 'audio');
   const moderatorMode = Boolean(creatorMode || connection?.canModerate);
   const roomRef = useRef(null);
   const publisherModeRef = useRef(publisherMode);
@@ -792,9 +792,12 @@ export default function LiveStreamScreen({ route, navigation }) {
     try { await backendFetch(`/live/${stream.id}/guest-requests`, { method: 'POST' }); setGuestStatus('requested'); }
     catch (err) { setError(err?.message || 'Could not request guest access.'); }
   };
-  const joinGuest = async () => {
+  const joinGuest = async (mediaMode = 'video') => {
     try {
-      const next = await backendFetch(`/live/${stream.id}/join`, { method: 'POST' });
+      const next = await backendFetch(`/live/${stream.id}/join`, {
+        method: 'POST',
+        body: JSON.stringify({ mediaMode }),
+      });
       if (next?.role !== 'guest' || !next?.canPublish) throw new Error('Guest access has not been approved.');
       setDemotedToViewer(false);
       setStageNotice('');
@@ -802,7 +805,7 @@ export default function LiveStreamScreen({ route, navigation }) {
     } catch (err) { setError(err?.message || 'Could not join as guest.'); }
   };
 
-  const decideGuestInvitation = async (status) => {
+  const decideGuestInvitation = async (status, mediaMode = 'video') => {
     if (!stream?.id || guestDecisionInFlight.current || !['accepted', 'declined'].includes(status)) return;
     guestDecisionInFlight.current = true;
     try {
@@ -812,7 +815,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       });
       setGuestStatus(result?.status || status);
       setGuestApproved(status === 'accepted');
-      if (status === 'accepted') await joinGuest();
+      if (status === 'accepted') await joinGuest(mediaMode);
     } catch (err) {
       setError(err?.message || (status === 'accepted' ? 'Could not accept LIVE invitation.' : 'Could not decline LIVE invitation.'));
     } finally {
@@ -987,7 +990,7 @@ export default function LiveStreamScreen({ route, navigation }) {
 
   return <View style={{ flex: 1, minHeight: '100%', backgroundColor: '#05050B', position: 'relative', overflow: 'hidden' }}>
     <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#05050B' }}>
-      {publisherMode && experienceMode !== 'audio_room' ? (
+      {publisherMode && experienceMode !== 'audio_room' && connection?.mediaMode !== 'audio' ? (
         experienceMode === 'video_chat' ? <><LiveCategoryBackdrop category={category} title={stream.title} mode={experienceMode} /><FloatingLocalVideoTile containerRef={localRef} colors={colors} role={creatorMode ? 'HOST' : 'GUEST'} /></> : <>
           <View ref={localRef} collapsable={false} style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#090914' }} />
           {!camera && <View pointerEvents="none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: '#111019' }}><Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 18 }}>Camera off</Text><Text style={{ color: 'rgba(255,255,255,0.68)', marginTop: 6 }}>Your voice is still live</Text></View>}
@@ -1075,7 +1078,8 @@ export default function LiveStreamScreen({ route, navigation }) {
       <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '900' }}>LIVE guest invitation</Text>
       <Text style={{ color: '#E6E2F4', fontSize: 12, marginTop: 4 }}>The creator invited you to join the stage. Choose whether to join before your camera or microphone is enabled.</Text>
       <View style={{ flexDirection: 'row', gap: 9, marginTop: 11 }}>
-        <Action colors={colors} label="Accept invitation" onPress={() => decideGuestInvitation('accepted')} />
+        <Action colors={colors} label="Video Join" onPress={() => decideGuestInvitation('accepted', 'video')} />
+        <Action colors={colors} label="Audio Join" onPress={() => decideGuestInvitation('accepted', 'audio')} />
         <Action colors={colors} label="Reject" onPress={() => decideGuestInvitation('declined')} danger />
       </View>
     </View> : guestApproved && !publisherMode ? <View pointerEvents="box-none" style={{ position: 'absolute', top: insets.top + 164, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(30,70,90,0.88)' }}><Text accessibilityRole="status" style={{ color: '#FFFFFF', fontSize: 12 }}>Your invitation is accepted. Join the stage when you are ready.</Text></View> : null}
@@ -1102,7 +1106,7 @@ export default function LiveStreamScreen({ route, navigation }) {
 
     {showOverlayMenu && <View style={{ position: 'absolute', top: 76 + insets.top, right: 14, width: 230, padding: 10, borderRadius: 18, backgroundColor: 'rgba(12,11,24,0.96)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)', gap: 7, zIndex: 20 }}>
       <Action colors={colors} label={commentsVisible ? 'Hide comments' : 'Show comments'} onPress={() => { setCommentsVisible((value) => !value); setShowOverlayMenu(false); }} />
-      {publisherMode && experienceMode !== 'audio_room' && <Action colors={colors} label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={() => { toggleCamera(); setShowOverlayMenu(false); }} />}
+      {publisherMode && experienceMode !== 'audio_room' && connection?.mediaMode !== 'audio' && <Action colors={colors} label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={() => { toggleCamera(); setShowOverlayMenu(false); }} />}
       {publisherMode && <Action colors={colors} label={mic ? 'Mute microphone' : 'Unmute microphone'} onPress={() => { toggleMic(); setShowOverlayMenu(false); }} />}
       {!creatorMode && <Action colors={colors} label="Creator profile" accessibilityLabel="Open LIVE creator profile" onPress={() => { navigation.navigate('LiveCreatorProfile', { participant: { id: stream.creator_id, name: route.params?.creatorName || stream.creator_name || 'LIVE Creator', avatarColor: route.params?.creatorAvatarColor || stream.creator_avatar_color }, fromLive: true, currentLiveStreamId: stream.id, alreadyViewingLive: true, isCurrentUser: false }); setShowOverlayMenu(false); }} />}
       {creatorMode && stream.allow_guests && <Action colors={colors} label="Creator Studio" onPress={() => { loadParticipants(); setShowOverlayMenu(false); }} />}
