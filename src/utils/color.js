@@ -1,11 +1,18 @@
-// Converts a "#RRGGBB" hex color to an "rgba(r, g, b, a)" string. Used
-// throughout the glass system to tint a blur toward the active mood's
-// surface color instead of a fixed gray.
+// Converts a hex color to an rgba() string. Invalid input fails closed to
+// transparent rather than throwing during render in shared UI components.
 export function hexToRgba(hex, alpha = 1) {
-  const clean = hex.replace('#', '');
-  const bigint = parseInt(clean.length === 3 ? clean.replace(/./g, (c) => c + c) : clean, 16);
+  const clean = typeof hex === 'string' ? hex.trim().replace(/^#/, '') : '';
+  const expanded = clean.length === 3
+    ? clean.split('').map((channel) => channel + channel).join('')
+    : clean;
+  if (!/^[0-9a-fA-F]{6}$/.test(expanded)) return 'rgba(0, 0, 0, 0)';
+
+  const bigint = Number.parseInt(expanded, 16);
   const r = (bigint >> 16) & 255;
   const g = (bigint >> 8) & 255;
   const b = bigint & 255;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  const safeAlpha = Number.isFinite(Number(alpha))
+    ? Math.min(1, Math.max(0, Number(alpha)))
+    : 1;
+  return `rgba(${r}, ${g}, ${b}, ${safeAlpha})`;
 }
