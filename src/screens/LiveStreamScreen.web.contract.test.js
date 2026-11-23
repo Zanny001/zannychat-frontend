@@ -232,3 +232,13 @@ test('web LIVE imports the Ionicons component used by the replay header control'
   assert.ok(web.includes("import { Ionicons } from '@expo/vector-icons';"));
   assert.ok(web.includes('<Ionicons name={replay?.status'));
 });
+
+
+test('web LIVE guest invitations require explicit accept or reject before joining the stage', () => {
+  assert.ok(webScreen.includes("/guest-invitation"));
+  assert.ok(webScreen.includes("guestStatus === 'pending'"));
+  assert.ok(webScreen.includes("decideGuestInvitation('accepted')"));
+  assert.ok(webScreen.includes("decideGuestInvitation('declined')"));
+  assert.ok(webScreen.includes("Accept invitation"));
+  assert.ok(webScreen.includes("await joinGuest()"));
+});
