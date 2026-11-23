@@ -30,3 +30,13 @@ test('gift studio explains purchased Sparks and creator rewards without claiming
 test('compact panel actions expose accessible names', () => {
   assert.ok(panel.includes('accessibilityLabel={label}'));
 });
+
+test('LIVE gift and PK panels refresh immediately on authenticated room feed invalidations', () => {
+  assert.ok(nativeStream.includes('setLiveFeedSignal((value) => value + 1)'));
+  assert.ok(nativeStream.includes('onRealtimeFeedSignal={handleRealtimeFeedSignal}'));
+  assert.ok(webStream.includes('setLiveFeedSignal((value) => value + 1)'));
+  assert.ok(webStream.includes('isLiveFeedInvalidation(payload, topic)'));
+  assert.ok(panel.includes('feedSignal = 0'));
+  assert.ok(panel.includes('void refreshGiftFeed()'));
+  assert.ok(panel.includes('void refreshBattle()'));
+});
