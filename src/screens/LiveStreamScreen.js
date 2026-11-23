@@ -516,6 +516,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const commentsRefreshInFlight = useRef(false);
   const commentsRefreshQueued = useRef(false);
   const guestStatusRefreshInFlight = useRef(false);
+  const guestDecisionInFlight = useRef(false);
   const guestRequestsRefreshInFlight = useRef(false);
   const replayRefreshInFlight = useRef(false);
   const reactionRequestInFlight = useRef(false);
@@ -1040,6 +1041,24 @@ export default function LiveStreamScreen({ route, navigation }) {
     } catch (e) { Alert.alert('Could not join as guest', e?.message || 'Please try again.'); }
   };
 
+  const decideGuestInvitation = async (status) => {
+    if (!stream?.id || guestDecisionInFlight.current || !['accepted', 'declined'].includes(status)) return;
+    guestDecisionInFlight.current = true;
+    try {
+      const result = await backendFetch(`/live/${stream.id}/guest-invitation`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+      setGuestRequestStatus(result?.status || status);
+      setGuestApproved(status === 'accepted');
+      if (status === 'accepted') await joinAsGuest();
+    } catch (e) {
+      Alert.alert(status === 'accepted' ? 'Could not accept invitation' : 'Could not decline invitation', e?.message || 'Please refresh LIVE and try again.');
+    } finally {
+      guestDecisionInFlight.current = false;
+    }
+  };
+
   const reviewGuestRequest = async (userId, status) => {
     try {
       await backendFetch(`/live/${stream.id}/guest-requests/${userId}`, {
@@ -1198,7 +1217,20 @@ export default function LiveStreamScreen({ route, navigation }) {
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       {error ? <Text accessibilityRole="alert" style={{ position: 'absolute', zIndex: 40, top: Math.max(insets.top + 72, Platform.OS === 'android' ? 88 : 104), left: 14, right: 14, color: '#FFFFFF', backgroundColor: 'rgba(110,18,34,0.82)', padding: 9, borderRadius: 12 }}>{error}</Text> : null}
       {stageNotice ? <Text accessibilityRole="status" style={{ position: 'absolute', zIndex: 39, top: Math.max(insets.top + 118, Platform.OS === 'android' ? 134 : 150), left: 14, right: 14, color: '#FFFFFF', backgroundColor: 'rgba(20,55,92,0.82)', padding: 9, borderRadius: 12 }}>{stageNotice}</Text> : null}
-      {guestApproved && !publisherMode ? <Text accessibilityRole="status" style={{ position: 'absolute', zIndex: 38, top: Math.max(insets.top + 164, Platform.OS === 'android' ? 180 : 196), left: 14, right: 14, color: '#FFFFFF', backgroundColor: 'rgba(20,55,92,0.86)', padding: 10, borderRadius: 12 }}>You are invited on stage. Use the join control below when you are ready.</Text> : null}
+      {guestRequestStatus === 'pending' && !publisherMode ? (
+        <View style={{ position: 'absolute', zIndex: 42, top: Math.max(insets.top + 164, Platform.OS === 'android' ? 180 : 196), left: 14, right: 14, padding: 13, borderRadius: 16, backgroundColor: 'rgba(12,11,28,0.96)', borderWidth: 1, borderColor: 'rgba(190,160,255,0.65)' }}>
+          <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '900' }}>LIVE guest invitation</Text>
+          <Text style={{ color: '#E6E2F4', fontSize: 12, marginTop: 4 }}>The creator invited you to join the stage. Choose whether to join before your camera or microphone is enabled.</Text>
+          <View style={{ flexDirection: 'row', gap: 9, marginTop: 11 }}>
+            <TouchableOpacity onPress={() => decideGuestInvitation('accepted')} accessibilityRole="button" accessibilityLabel="Accept LIVE guest invitation" style={{ flex: 1, minHeight: 46, borderRadius: 12, backgroundColor: '#20D9C5', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#07131B', fontSize: 12, fontWeight: '900' }}>Accept</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => decideGuestInvitation('declined')} accessibilityRole="button" accessibilityLabel="Reject LIVE guest invitation" style={{ flex: 1, minHeight: 46, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '800' }}>Reject</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : guestApproved && !publisherMode ? <Text accessibilityRole="status" style={{ position: 'absolute', zIndex: 38, top: Math.max(insets.top + 164, Platform.OS === 'android' ? 180 : 196), left: 14, right: 14, color: '#FFFFFF', backgroundColor: 'rgba(20,55,92,0.86)', padding: 10, borderRadius: 12 }}>Your invitation is accepted. Join the stage when you are ready.</Text> : null}
       <LiveKitRoom key={connection.token} serverUrl={connection.livekitUrl} token={connection.token} connect={true} audio={publisherMode} video={mediaVideoEnabled} options={{ adaptiveStream: true, dynacast: true }} connectOptions={{ autoSubscribe: true }}>
         <LiveMedia streamId={stream.id} creatorId={stream.creator_id} creatorMode={creatorMode} timeoutLabel={timeoutLabel} timeoutWarning={timeoutWarning} timeoutExpired={timeoutRemainingMs === 0} onOpenCreatorProfile={openCreatorProfile} onOpenGuestQueue={openGuestQueue} onOpenModeration={openModeration} onOpenReports={openReportsWorkspace} publisherMode={publisherMode} experienceMode={stream.experience_mode || 'broadcast'} category={stream.category || 'social'} cameraEnabled={cameraEnabled} microphoneEnabled={microphoneEnabled} onToggleCamera={toggleCamera} onToggleMicrophone={toggleMicrophone} moderatorMode={moderatorMode} canManageGuests={canManageGuests} canRequestGuest={canRequestGuest} guestRequests={guestRequests} showGuestRequests={showGuestRequests} title={stream.title} comments={comments} reports={reports} showReports={showReports} participants={participants} showParticipants={showParticipants} draft={draft} setDraft={setDraft} onComment={sendComment} onReact={react} onRealtimeFeedSignal={refreshComments} floatingReactions={floatingReactions} onRemoveFloatingReaction={removeFloatingReaction} onReport={report} onHide={hideComment} onEnd={creatorMode ? confirmEnd : leave} onRequestGuest={requestGuest} guestApproved={guestApproved} guestRequestStatus={guestRequestStatus} onJoinGuest={joinAsGuest} onToggleGuestRequests={() => { setShowReports(false); setShowParticipants(false); showGuestRequests ? setShowGuestRequests(false) : loadGuestRequests(); }} onReviewGuestRequest={reviewGuestRequest} onToggleReports={() => { setShowParticipants(false); setShowGuestRequests(false); showReports ? setShowReports(false) : loadReports(); }} onReviewReport={reviewReport} onToggleParticipants={() => { setShowReports(false); setShowGuestRequests(false); showParticipants ? setShowParticipants(false) : loadParticipants(); }} onSetModerator={setModerator} onInviteGuest={inviteGuest} onMuteGuest={muteGuest} onRemoveGuest={removeGuest} onRemoveParticipant={removeParticipant} onSpotlightGuest={spotlightGuest} onDemoteToViewer={handleDemotedToViewer} replayEnabled={replayEnabled} replayAvailability={replayAvailability} replayStatus={replay?.status || 'none'} replayBusy={replayBusy} onStartReplay={confirmStartReplay} onStopReplay={stopReplay} onViewReplay={viewReplay} busy={busy} />
       </LiveKitRoom>
