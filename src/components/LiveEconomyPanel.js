@@ -265,7 +265,7 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
 
           <View style={{ padding: 12, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.045)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
             <Text style={{ color: '#F6F1FF', fontSize: 13, fontWeight: '900' }}>PK arena</Text>
-            <Text style={{ color: '#BEB4D7', fontSize: 10, marginTop: 4 }}>Scores come only from completed gift transactions. Reactions do not count.</Text>
+            <Text style={{ color: '#BEB4D7', fontSize: 10, marginTop: 4 }}>Scores come only from committed gifts sent to either battle participant. Reactions do not count.</Text>
             {battle ? <View style={{ marginTop: 9, padding: 10, borderRadius: 12, backgroundColor: 'rgba(135,100,255,0.12)' }}>
               <Text style={{ color: '#F4EEFF', fontWeight: '900', fontSize: 11 }}>{battle.status === 'live' ? 'LIVE BATTLE' : battle.status === 'ended' ? 'BATTLE RESULT' : battle.status === 'accepted' ? 'CHALLENGE ACCEPTED' : battle.status === 'cancelled' ? 'CHALLENGE CLOSED' : 'CHALLENGE PENDING'}</Text>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 7 }}>
