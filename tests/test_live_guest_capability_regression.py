@@ -19,7 +19,8 @@ class LiveGuestCapabilityRegressionTests(unittest.TestCase):
         source = (ROOT / "src/screens/LiveStreamScreen.js").read_text(encoding="utf-8")
         self.assertIn("connection?.role === 'guest' && connection?.canPublish === true", source)
         self.assertIn("audio={publisherMode} video={mediaVideoEnabled}", source)
-        self.assertIn("const mediaVideoEnabled = Boolean(publisherMode && stream?.experience_mode !== 'audio_room');", source)
+        self.assertIn("const mediaVideoEnabled = Boolean(publisherMode && stream?.experience_mode !== 'audio_room' && connection?.mediaMode !== 'audio');", source)
+        self.assertIn("mediaMode={connection?.mediaMode || 'video'}", source)
 
 
 if __name__ == "__main__":
