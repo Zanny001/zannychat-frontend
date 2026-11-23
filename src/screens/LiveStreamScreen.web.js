@@ -839,6 +839,23 @@ export default function LiveStreamScreen({ route, navigation }) {
     }
   };
 
+  const chooseWebAudioOutput = async () => {
+    try {
+      if (typeof navigator === 'undefined' || typeof navigator.mediaDevices?.selectAudioOutput !== 'function') {
+        setStageNotice('This browser does not provide an audio-output picker. Use your device sound settings.');
+        return;
+      }
+      const device = await navigator.mediaDevices.selectAudioOutput();
+      if (!device?.deviceId) return;
+      await roomRef.current?.switchActiveDevice('audiooutput', device.deviceId);
+      setStageNotice('LIVE audio output changed to ' + (device.label || 'the selected device') + '.');
+    } catch (err) {
+      if (err?.name !== 'NotAllowedError' && err?.name !== 'AbortError') {
+        setError(err?.message || 'Could not change LIVE audio output.');
+      }
+    }
+  };
+
   const applyVideoQuality = (mode) => {
     const quality = mode === 'low' ? VideoQuality.LOW : mode === 'medium' ? VideoQuality.MEDIUM : VideoQuality.HIGH;
     roomRef.current?.remoteParticipants.forEach((participant) => {
@@ -1171,6 +1188,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       <Action colors={colors} label={commentsVisible ? 'Clean mode' : 'Exit clean mode'} onPress={() => { setCommentsVisible((value) => !value); setShowOverlayMenu(false); }} />
       <Action colors={colors} label="Share LIVE" onPress={() => { shareLiveStream(); setShowOverlayMenu(false); }} />
       <Action colors={colors} label={`Quality · ${qualityMode.toUpperCase()}`} onPress={() => { const modes = ['auto', 'low', 'medium', 'high']; applyVideoQuality(modes[(modes.indexOf(qualityMode) + 1) % modes.length]); setShowOverlayMenu(false); }} />
+      <Action colors={colors} label="Audio output" onPress={() => { chooseWebAudioOutput(); setShowOverlayMenu(false); }} />
       {!creatorMode && <Action colors={colors} label="Not interested" onPress={() => { markNotInterested(); setShowOverlayMenu(false); }} />}
       {!creatorMode && <Action colors={colors} label="Block creator" onPress={() => { confirmBlockCreator(); setShowOverlayMenu(false); }} danger />}
       {publisherMode && experienceMode !== 'audio_room' && connection?.mediaMode !== 'audio' && <Action colors={colors} label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={() => { toggleCamera(); setShowOverlayMenu(false); }} />}
