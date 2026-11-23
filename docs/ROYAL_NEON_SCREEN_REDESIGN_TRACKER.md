@@ -1,6 +1,6 @@
 # Royal Neon 5D screen redesign tracker
 
-Source of truth: the current `src/navigation/AppNavigator.js` route declarations. The root stack contains 43 routes; the Main tab navigator contains six tab destinations. `Channels` is shared between navigators, giving 48 unique navigation experiences.
+Source of truth: the current `src/navigation/AppNavigator.js` route declarations. Rechecked 23 Nov 2026: 60 root-stack screen declarations resolve to 56 unique root route names; four route names (QRContact, JoinGroup, LiveStream and LiveReplay) are intentionally declared in guest-placeholder and authenticated route groups. The Main tab navigator has six primary destinations: Chats, Calls, LIVE, Updates, Channels and Profile. These nested tabs are not interchangeable with root-stack routes; `Channels` reuses its screen module across navigation contexts. The source tree has 62 screen JavaScript files, including platform-specific web variants. See [Architecture, UI/UX and Production Audit](./ARCHITECTURE_UX_PRODUCTION_AUDIT_20261123.md) for the complete qualification and open gates.
 
 ## Current deployment status — 21 Nov 2026
 
