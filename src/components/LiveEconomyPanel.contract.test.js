@@ -18,6 +18,7 @@ test('LIVE gift UI reads server catalogue and wallet and never creates client-si
   assert.ok(service.includes('idempotencyKey = createLiveGiftIdempotencyKey()'));
   assert.ok(panel.includes('giftRequestKeysRef.current.get(requestIdentity)'));
   assert.ok(panel.includes('giftRequestKeysRef.current.delete(requestIdentity)'));
+  assert.ok(panel.includes('gift.score_points + \' PK points'));
 });
 
 test('LIVE gifts send without client-controlled battle attribution; the server decides PK scoring', () => {
