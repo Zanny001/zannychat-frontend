@@ -11,6 +11,7 @@ import {
   getLiveBattle,
   getLiveGiftCatalog,
   getLiveGiftHistory,
+  getLiveGiftStreamFeed,
   getLiveGiftWallet,
   getLiveTranslationStatus,
   sendLiveGift,
@@ -40,7 +41,8 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
   const [translationBusy, setTranslationBusy] = useState(false);
   const [catalog, setCatalog] = useState([]);
   const [wallet, setWallet] = useState(null);
-  const [history, setHistory] = useState([]);\n  const [giftFeed, setGiftFeed] = useState([]);
+  const [history, setHistory] = useState([]);
+  const [giftFeed, setGiftFeed] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [battle, setBattle] = useState(null);
   const [translationStatus, setTranslationStatus] = useState(null);
@@ -54,7 +56,16 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
   const giftRequestKeysRef = useRef(new Map());
   const [battleClock, setBattleClock] = useState(Date.now());
 
-  const refreshGiftFeed = useCallback(async () => {\n    try {\n      const result = await getLiveGiftStreamFeed(streamId);\n      setGiftFeed(Array.isArray(result?.events) ? result.events : []);\n    } catch {\n      // Keep the last confirmed server feed visible during transient network failures.\n    }\n  }, [streamId]);\n\n  const refreshBattle = useCallback(async () => {
+  const refreshGiftFeed = useCallback(async () => {
+    try {
+      const result = await getLiveGiftStreamFeed(streamId);
+      setGiftFeed(Array.isArray(result?.events) ? result.events : []);
+    } catch {
+      // Keep the last confirmed server feed visible during transient network failures.
+    }
+  }, [streamId]);
+
+  const refreshBattle = useCallback(async () => {
     try {
       const result = await getCurrentLiveBattle(streamId);
       setBattle(result?.battle || null);
@@ -78,7 +89,8 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
     if (ledger.status === 'fulfilled') setHistory(Array.isArray(ledger.value?.entries) ? ledger.value.entries : []);
     if (translation.status === 'fulfilled') setTranslationStatus(translation.value);
     if (currentBattle.status === 'fulfilled') setBattle(currentBattle.value?.battle || null);
-    if (stage.status === 'fulfilled') setParticipants(Array.isArray(stage.value?.participants) ? stage.value.participants : []);\n    if (feed.status === 'fulfilled') setGiftFeed(Array.isArray(feed.value?.events) ? feed.value.events : []);
+    if (stage.status === 'fulfilled') setParticipants(Array.isArray(stage.value?.participants) ? stage.value.participants : []);
+    if (feed.status === 'fulfilled') setGiftFeed(Array.isArray(feed.value?.events) ? feed.value.events : []);
     const failed = [gifts, balance, ledger, translation, currentBattle, feed].find((result) => result.status === 'rejected');
     if (failed) setNotice(failed.reason?.message || 'Some LIVE tools could not be loaded. Retry when the server is available.');
     setLoading(false);
@@ -129,7 +141,8 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
       } catch (refreshError) {
         setNotice('Gift sent successfully. Your updated balance and history will refresh when the service responds.');
       }
-      await refreshGiftFeed();\n      if (battle?.status === 'live') await refreshBattle();
+      await refreshGiftFeed();
+      if (battle?.status === 'live') await refreshBattle();
     } catch (error) {
       setNotice(error?.message || 'The gift could not be sent. Your balance was not changed.');
     } finally {
