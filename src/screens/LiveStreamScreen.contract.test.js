@@ -699,3 +699,12 @@ test('native LIVE room exposes an account-level block action that leaves the act
   assert.ok(screen.includes("await blockUser(stream.creator_id)"));
   assert.ok(screen.includes("await leave()"));
 });
+
+
+test('native LIVE room quality control applies LiveKit remote publication quality caps', () => {
+  assert.ok(screen.includes("VideoQuality.LOW"));
+  assert.ok(screen.includes("VideoQuality.MEDIUM"));
+  assert.ok(screen.includes("VideoQuality.HIGH"));
+  assert.ok(screen.includes("publication.setVideoQuality(quality)"));
+  assert.ok(screen.includes("label={`Quality · ${qualityMode.toUpperCase()}`}"));
+});
