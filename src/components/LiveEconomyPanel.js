@@ -121,7 +121,7 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
       });
       giftRequestKeysRef.current.delete(requestIdentity);
       setWallet((current) => ({ ...(current || {}), balanceSparks: result.balanceSparks }));
-      setNotice('Sent ' + gift.display_name + ' · +' + gift.scorePoints + ' PK points when a battle is active.');
+      setNotice('Sent ' + gift.display_name + ' · +' + gift.score_points + ' PK points when a battle is active.');
       try {
         const [nextWallet, nextHistory] = await Promise.all([getLiveGiftWallet(), getLiveGiftHistory(12)]);
         setWallet(nextWallet);
