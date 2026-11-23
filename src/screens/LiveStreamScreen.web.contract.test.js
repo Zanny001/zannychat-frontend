@@ -288,3 +288,11 @@ test('web LIVE room quality control applies LiveKit remote publication quality c
   assert.ok(web.includes("publication.setVideoQuality(quality)"));
   assert.ok(web.includes("label={`Quality · ${qualityMode.toUpperCase()}`}"));
 });
+
+
+test('web guest-request approvals let viewers choose video or audio before joining', () => {
+  assert.ok(web.includes('label="Video Join"'));
+  assert.ok(web.includes('label="Audio Join"'));
+  assert.ok(web.includes("joinGuest('video')"));
+  assert.ok(web.includes("joinGuest('audio')"));
+});
