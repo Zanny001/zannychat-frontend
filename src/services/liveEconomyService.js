@@ -75,3 +75,22 @@ export function startLiveBattle(battleId) {
 export function finishLiveBattle(battleId) {
   return backendFetch('/live/battles/' + encodeURIComponent(battleId) + '/finish', { method: 'POST' });
 }
+
+export function getLivePurchasePackages() {
+  return backendFetch('/live/purchases/packages');
+}
+
+export function getLivePurchaseHistory() {
+  return backendFetch('/live/purchases/history');
+}
+
+export function initializeLivePurchase(packageId) {
+  return backendFetch('/live/purchases/initialize', {
+    method: 'POST',
+    body: JSON.stringify({ packageId }),
+  });
+}
+
+export function getLivePurchaseStatus(purchaseId) {
+  return backendFetch('/live/purchases/' + encodeURIComponent(purchaseId));
+}
