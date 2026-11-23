@@ -169,7 +169,7 @@ export default function LiveCreatorPayoutScreen({ navigation }) {
           <View style={{ gap: 10 }}>
             <Text style={[typography.heading, { color: colors.textPrimary, fontWeight: '900' }]}>Bank account</Text>
             {verifiedBeneficiaries.length ? verifiedBeneficiaries.map((item) => (
-              <TouchableOpacity key={item.id} onPress={() => setSelectedBeneficiaryId(item.id)} accessibilityRole="radio" accessibilityState={{ checked: selectedBeneficiaryId === item.id }}
+              <TouchableOpacity key={item.id} onPress={() => setSelectedBeneficiaryId(item.id)} accessibilityRole="radio" accessibilityLabel={'Select ' + item.bank_name + ' account ending ' + item.account_last4} accessibilityState={{ checked: selectedBeneficiaryId === item.id }}
                 style={{ borderRadius: 16, padding: 13, borderWidth: 1, borderColor: selectedBeneficiaryId === item.id ? colors.primary : colors.border, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Ionicons name={selectedBeneficiaryId === item.id ? 'radio-button-on' : 'radio-button-off'} size={20} color={colors.primary} />
                 <View style={{ flex: 1 }}>
@@ -187,7 +187,7 @@ export default function LiveCreatorPayoutScreen({ navigation }) {
               <View style={{ gap: 6, maxHeight: 190 }}>
                 <ScrollView nestedScrollEnabled>
                   {banks.map((bank) => (
-                    <TouchableOpacity key={bank.code} onPress={() => setBankCode(String(bank.code))} accessibilityRole="radio" accessibilityState={{ checked: bankCode === String(bank.code) }}
+                    <TouchableOpacity key={bank.code} onPress={() => setBankCode(String(bank.code))} accessibilityRole="radio" accessibilityLabel={'Select ' + bank.name} accessibilityState={{ checked: bankCode === String(bank.code) }}
                       style={{ paddingVertical: 9, paddingHorizontal: 10, borderRadius: 10, backgroundColor: bankCode === String(bank.code) ? colors.primary + '20' : 'transparent' }}>
                       <Text style={{ color: colors.textPrimary, fontWeight: bankCode === String(bank.code) ? '900' : '600' }}>{bank.name}</Text>
                     </TouchableOpacity>
@@ -198,7 +198,7 @@ export default function LiveCreatorPayoutScreen({ navigation }) {
                 placeholder="10-digit account number" placeholderTextColor={colors.textSecondary}
                 keyboardType="number-pad" maxLength={10}
                 style={{ minHeight: 48, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 12, color: colors.textPrimary, backgroundColor: colors.background }} />
-              <TouchableOpacity onPress={saveBank} disabled={savingBank || !bankCode || accountNumber.length !== 10}
+              <TouchableOpacity onPress={saveBank} accessibilityRole="button" accessibilityLabel="Verify and save bank account" disabled={savingBank || !bankCode || accountNumber.length !== 10}
                 style={{ minHeight: 46, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary, opacity: savingBank || !bankCode || accountNumber.length !== 10 ? 0.5 : 1 }}>
                 {savingBank ? <ActivityIndicator color="#FFFFFF" /> : <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>Verify and save bank</Text>}
               </TouchableOpacity>
@@ -217,7 +217,7 @@ export default function LiveCreatorPayoutScreen({ navigation }) {
             <TextInput value={amountNaira} onChangeText={setAmountNaira} placeholder="Amount in NGN" placeholderTextColor={colors.textSecondary}
               keyboardType="decimal-pad"
               style={{ minHeight: 48, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 12, color: colors.textPrimary, backgroundColor: colors.background }} />
-            <TouchableOpacity onPress={confirmWithdrawal} disabled={withdrawing || !selectedBeneficiaryId}
+            <TouchableOpacity onPress={confirmWithdrawal} accessibilityRole="button" accessibilityLabel="Review withdrawal request" disabled={withdrawing || !selectedBeneficiaryId}
               style={{ minHeight: 48, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary, opacity: withdrawing || !selectedBeneficiaryId ? 0.5 : 1 }}>
               {withdrawing ? <ActivityIndicator color="#FFFFFF" /> : <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>Review withdrawal</Text>}
             </TouchableOpacity>
