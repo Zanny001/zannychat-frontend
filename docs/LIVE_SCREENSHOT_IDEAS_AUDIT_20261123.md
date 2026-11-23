@@ -33,10 +33,12 @@ The screenshots are visual references. They do not specify PK scoring rules, gif
 | Video Join / Audio Join | Guest join accepts an explicit media mode; audio-only token is microphone-only; camera controls are hidden for audio-only guests | Native/web CI; test camera permission denied, audio route, and no camera publication |
 | Share LIVE | Native and web room tools share a URL containing the actual stream ID | Verify Android/iOS share sheets, browser share behaviour, and authenticated return-to-stream |
 | Clean Mode | Existing hide-chat behaviour is explicitly exposed as Clean Mode | Verify comments/reactions are hidden and restored without changing server state |
+| Not Interested | Viewer action and private creator-level suppression preference are being added | Backend migration, endpoint, discovery filtering, and native/web action require CI and preview validation |
 
 Related PRs:
 - Frontend: https://github.com/Zanny001/zannychat-frontend/pull/372
-- Backend: https://github.com/Zanny001/zannychat-backend/pull/192
+- Backend (guest consent and media mode): https://github.com/Zanny001/zannychat-backend/pull/192
+- Backend (Not Interested persistence and discovery filter): https://github.com/Zanny001/zannychat-backend/pull/193
 
 The backend PR passed its Backend quality and Advanced calling backend checks on the current revision. The frontend PR's exact-head checks and Vercel preview remain release gates. Neither PR is merged or deployed.
 
@@ -67,7 +69,7 @@ Required work:
 | Gift Settings | No corresponding in-room settings flow found | Audit gift catalogue, wallet/ledger, pricing, moderation, and purchase safeguards before adding |
 | Report | Existing LIVE reporting and moderation routes | Verify viewer and moderator journeys end to end |
 | Block | No direct block action found in the current LIVE room controls | Connect to the existing account-block system with bidirectional privacy and immediate room removal |
-| Not Interested | No in-room or LIVE discovery suppression action found | Define creator/stream suppression semantics and persistence |
+| Not Interested | New server-managed creator suppression preference and discovery filter are in PR #193; native/web room action is in PR #372 | Verify persistence, privacy, and discovery behaviour on two accounts |
 | Translation | No LIVE translation control or transcript pipeline found | Define captions/transcription, supported languages, consent, privacy, latency, and cost |
 | Clean Mode | Existing hide-chat toggle, now named Clean Mode in the current branch | Verify all overlays, reactions, and accessibility labels behave consistently |
 
