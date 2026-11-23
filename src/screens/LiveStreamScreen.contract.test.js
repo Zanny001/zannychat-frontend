@@ -683,3 +683,11 @@ test('native LIVE room exposes a named clean mode that hides the chat overlay', 
   assert.ok(screen.includes("label={showComments ? 'Clean mode' : 'Exit clean mode'}"));
   assert.ok(screen.includes("setShowComments((value) => !value)"));
 });
+
+
+test('native LIVE room lets viewers suppress future recommendations from the current creator', () => {
+  assert.ok(screen.includes("/not-interested"));
+  assert.ok(screen.includes("label=\"Not interested\""));
+  assert.ok(screen.includes("onNotInterested={markNotInterested}"));
+  assert.ok(screen.includes("We will show fewer LIVE streams from this creator."));
+});
