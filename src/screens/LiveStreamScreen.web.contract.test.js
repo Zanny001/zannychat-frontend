@@ -237,7 +237,7 @@ test('web LIVE imports the Ionicons component used by the replay header control'
 test('web LIVE guest invitations require explicit accept or reject before joining the stage', () => {
   assert.ok(web.includes("/guest-invitation"));
   assert.ok(web.includes("guestStatus === 'pending'"));
-  assert.ok(web.includes("decideGuestInvitation('accepted')"));
+  assert.ok(web.includes("decideGuestInvitation('accepted', 'video')"));
   assert.ok(web.includes("decideGuestInvitation('declined')"));
   assert.ok(web.includes('label="Video Join"'));
   assert.ok(web.includes('label="Audio Join"'));
