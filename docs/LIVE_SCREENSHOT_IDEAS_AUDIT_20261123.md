@@ -60,7 +60,7 @@ Required work:
 
 | Tool in source | Current evidence | Remaining work |
 |---|---|---|
-| Connect | Existing LIVE room connection and audio-output controls | Clarify whether this means audio route, creator follow, or a separate connection action |
+| Connect | Native system audio-route picker and browser audio-output picker are available from LIVE room tools | Verify Bluetooth/headset switching and browser support; clarify whether the screenshot intended a different connection action |
 | Share | Added to the current native/web implementation branch | Validate share-sheet behaviour and the destination deep link |
 | Recorder | Existing replay start/stop flow | Verify server configuration, recording permissions, processing/recovery, and retention |
 | Minimize | No in-room minimize / PiP action found | Design platform-specific PiP/background behaviour; do not claim support until verified |
