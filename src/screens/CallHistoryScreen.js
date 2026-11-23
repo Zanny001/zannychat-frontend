@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -31,14 +31,32 @@ export default function CallHistoryScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [deletingCallId, setDeletingCallId] = useState(null);
+  const historyRequestIdRef = useRef(0);
+  const screenFocusedRef = useRef(false);
   const load = useCallback(async (refresh = false) => {
+    const requestId = ++historyRequestIdRef.current;
     if (refresh) setRefreshing(true); else setLoading(true);
     setError('');
-    try { setCalls(await listCallHistory()); }
-    catch (e) { setError(e?.message || 'Call history could not be loaded.'); }
-    finally { setLoading(false); setRefreshing(false); }
+    try {
+      const history = await listCallHistory();
+      if (screenFocusedRef.current && requestId === historyRequestIdRef.current) setCalls(history);
+    } catch (e) {
+      if (screenFocusedRef.current && requestId === historyRequestIdRef.current) setError(e?.message || 'Call history could not be loaded.');
+    } finally {
+      if (screenFocusedRef.current && requestId === historyRequestIdRef.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    }
   }, []);
-  useFocusEffect(useCallback(() => { load(); return undefined; }, [load]));
+  useFocusEffect(useCallback(() => {
+    screenFocusedRef.current = true;
+    load();
+    return () => {
+      screenFocusedRef.current = false;
+      historyRequestIdRef.current += 1;
+    };
+  }, [load]));
 
 
   const isMissedCall = (item) => item.status === 'missed' || (item.status === 'ringing' && Number.isFinite(Date.parse(item.expires_at)) && Date.parse(item.expires_at) <= Date.now());
@@ -80,6 +98,10 @@ export default function CallHistoryScreen({ navigation }) {
         conversationName: item.participantName || 'Group',
         callType,
       });
+      return;
+    }
+    if (!peerId) {
+      showAppAlert('Contact unavailable', 'This call record no longer has a contact to call.');
       return;
     }
     navigation.navigate('NewChat', {
@@ -183,7 +205,6 @@ export default function CallHistoryScreen({ navigation }) {
           {loading ? <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} /> : null}</View></View>}
         renderItem={({ item }) => {
           const missed = isMissedCall(item);
-            const userId = item.direction === 'incoming' ? item.callee_id : item.caller_id;
             const peerUserId = item.direction === 'incoming' ? item.caller_id : item.callee_id;
             const label = getCallHistoryLabel(item, userId);
             const isVideo = item.call_type === 'video';
