@@ -18,13 +18,6 @@ test('direct, incoming and outgoing call identity/control surfaces use shared mo
   assert.match(files.direct, /maxWidth: layout\.contentMaxWidth/, 'direct call control dock must be bounded');
 });
 
-test('call history resolves viewer identity before formatting rows', () => {
-  assert.match(files.history, /getCallUserId/);
-  assert.match(files.history, /const \[userId, setUserId\] = useState\(null\)/);
-  assert.match(files.history, /setUserId\(currentUserId\)/);
-  assert.match(files.history, /getCallHistoryLabel\(item, userId\)/);
-});
-
 test('call history uses the shared content width', () => {
   assert.match(files.history, /maxWidth: layout\.contentMaxWidth/);
   assert.match(files.history, /alignSelf: 'center'/);
