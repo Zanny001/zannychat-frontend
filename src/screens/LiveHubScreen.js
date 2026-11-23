@@ -451,6 +451,9 @@ export default function LiveHubScreen({ navigation, route }) {
                 <TouchableOpacity onPress={() => navigation.navigate('LiveEvents')} accessibilityRole="button" accessibilityLabel="Open scheduled LIVE Events" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="calendar-outline" size={19} color={colors.primary} />
                 </TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.navigate('LiveWallet')} accessibilityRole="button" accessibilityLabel="Open Sparks wallet" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="flash-outline" size={19} color={colors.primary} />
+                </TouchableOpacity>
                 <TouchableOpacity onPress={() => navigation.navigate('LiveSettings')} accessibilityRole="button" accessibilityLabel="Open LIVE settings" style={{ width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="options-outline" size={19} color={colors.textSecondary} />
                 </TouchableOpacity>
