@@ -94,3 +94,11 @@ export function initializeLivePurchase(packageId) {
 export function getLivePurchaseStatus(purchaseId) {
   return backendFetch('/live/purchases/' + encodeURIComponent(purchaseId));
 }
+
+export function getLiveCreatorEarningsSummary() {
+  return backendFetch('/live/creator-earnings/summary');
+}
+
+export function getLiveCreatorEarningsHistory() {
+  return backendFetch('/live/creator-earnings/history');
+}
