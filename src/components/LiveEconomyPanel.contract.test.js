@@ -11,8 +11,9 @@ test('LIVE gift UI reads server catalogue and wallet and never creates client-si
   assert.ok(panel.includes('getLiveGiftCatalog()'));
   assert.ok(panel.includes('getLiveGiftWallet()'));
   assert.ok(panel.includes('Number(wallet?.balanceSparks || 0)'));
-  assert.ok(panel.includes('authorised server-side promotions'));
-  assert.ok(panel.includes('no purchase, cash value, or cash-out'));
+  assert.ok(panel.includes('Only purchased Sparks spent on gifts can create eligible creator rewards'));
+  assert.ok(panel.includes('Wallet & Store'));
+  assert.ok(panel.includes('Open Wallet & Store to check available packages'));
   assert.equal(panel.includes('setWallet({ balanceSparks: Number(wallet'), false);
   assert.ok(service.includes("backendFetch('/live/gifts/send'"));
   assert.ok(service.includes('idempotencyKey = createLiveGiftIdempotencyKey()'));
