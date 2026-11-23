@@ -125,3 +125,5 @@ Read-only checks against the configured Supabase project confirmed:
 - `public.live_stream_feedback` does not exist in production and migration `20261123090000` is not recorded as applied. This is expected until PR #193 is reviewed and the migration is separately approved/applied.
 
 The previously reported LIVE reaction failure is not yet root-caused: the backend maps unexpected impact RPC/service errors to the generic `Could not send LIVE reaction` response. Current Render application logs are needed to identify the exact error code. The Render connector currently requires the user to confirm the workspace before log inspection.
+
+The reaction route also has an 8-per-10-second server limit, validates the seven supported reaction keys, verifies active stream membership, and calls the impact RPC. The native client throttles to at most one request per 1.3 seconds (about 7.7 per 10 seconds), below the server limit under normal single-client use. The route returns the generic 503 only for unexpected RPC/service failures; this makes the Render error log essential for root-cause analysis rather than changing the throttle speculatively.
