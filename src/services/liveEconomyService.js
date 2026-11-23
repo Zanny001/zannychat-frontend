@@ -12,6 +12,10 @@ export function getLiveGiftWallet() {
   return backendFetch('/live/gifts/wallet');
 }
 
+export function getLiveGiftStreamFeed(streamId) {
+  return backendFetch('/live/gifts/stream/' + encodeURIComponent(streamId) + '/recent');
+}
+
 export function getLiveGiftHistory(limit = 12) {
   return backendFetch('/live/gifts/history?limit=' + encodeURIComponent(String(limit)));
 }

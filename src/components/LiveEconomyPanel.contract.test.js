@@ -63,3 +63,16 @@ test('native and web LIVE rooms both expose the same gifts, PK and translation p
   assert.ok(web.includes('Gifts · PK · Translate'));
   assert.ok(web.includes('economyOpen && <LiveEconomyPanel'));
 });
+
+
+test('LIVE stage gift moments are read from the authenticated server feed, never fabricated locally', () => {
+  assert.ok(service.includes("backendFetch('/live/gifts/stream/'"));
+  assert.ok(panel.includes('getLiveGiftStreamFeed(streamId)'));
+  assert.ok(panel.includes('setGiftFeed(Array.isArray(result?.events) ? result.events : [])'));
+  assert.ok(panel.includes('LIVE gift moments'));
+  assert.ok(panel.includes('event.senderName'));
+  assert.ok(panel.includes('event.recipientName'));
+  assert.ok(panel.includes('event.scorePoints'));
+  assert.ok(panel.includes('No gifts have been sent in this LIVE yet.'));
+  assert.ok(panel.includes('setInterval(() => { refreshBattle(); refreshGiftFeed(); }, 5000)'));
+});

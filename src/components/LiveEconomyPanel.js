@@ -11,6 +11,7 @@ import {
   getLiveBattle,
   getLiveGiftCatalog,
   getLiveGiftHistory,
+  getLiveGiftStreamFeed,
   getLiveGiftWallet,
   getLiveTranslationStatus,
   sendLiveGift,
@@ -41,6 +42,7 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
   const [catalog, setCatalog] = useState([]);
   const [wallet, setWallet] = useState(null);
   const [history, setHistory] = useState([]);
+  const [giftFeed, setGiftFeed] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [battle, setBattle] = useState(null);
   const [translationStatus, setTranslationStatus] = useState(null);
@@ -54,6 +56,15 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
   const giftRequestKeysRef = useRef(new Map());
   const [battleClock, setBattleClock] = useState(Date.now());
 
+  const refreshGiftFeed = useCallback(async () => {
+    try {
+      const result = await getLiveGiftStreamFeed(streamId);
+      setGiftFeed(Array.isArray(result?.events) ? result.events : []);
+    } catch {
+      // Keep the last confirmed server feed visible during transient network failures.
+    }
+  }, [streamId]);
+
   const refreshBattle = useCallback(async () => {
     try {
       const result = await getCurrentLiveBattle(streamId);
@@ -65,13 +76,14 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
 
   const loadPanel = useCallback(async () => {
     setLoading(true);
-    const [gifts, balance, ledger, translation, currentBattle, stage] = await Promise.allSettled([
+    const [gifts, balance, ledger, translation, currentBattle, stage, feed] = await Promise.allSettled([
       getLiveGiftCatalog(),
       getLiveGiftWallet(),
       getLiveGiftHistory(12),
       getLiveTranslationStatus(),
       getCurrentLiveBattle(streamId),
       creatorMode ? backendFetch('/live/' + encodeURIComponent(streamId) + '/participants') : Promise.resolve({ participants: [] }),
+      getLiveGiftStreamFeed(streamId),
     ]);
     if (gifts.status === 'fulfilled') setCatalog(Array.isArray(gifts.value?.gifts) ? gifts.value.gifts : []);
     if (balance.status === 'fulfilled') setWallet(balance.value);
@@ -79,16 +91,17 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
     if (translation.status === 'fulfilled') setTranslationStatus(translation.value);
     if (currentBattle.status === 'fulfilled') setBattle(currentBattle.value?.battle || null);
     if (stage.status === 'fulfilled') setParticipants(Array.isArray(stage.value?.participants) ? stage.value.participants : []);
-    const failed = [gifts, balance, ledger, translation, currentBattle].find((result) => result.status === 'rejected');
+    if (feed.status === 'fulfilled') setGiftFeed(Array.isArray(feed.value?.events) ? feed.value.events : []);
+    const failed = [gifts, balance, ledger, translation, currentBattle, feed].find((result) => result.status === 'rejected');
     if (failed) setNotice(failed.reason?.message || 'Some LIVE tools could not be loaded. Retry when the server is available.');
     setLoading(false);
   }, [streamId, creatorMode]);
 
   useEffect(() => {
     loadPanel();
-    const timer = setInterval(refreshBattle, 5000);
+    const timer = setInterval(() => { refreshBattle(); refreshGiftFeed(); }, 5000);
     return () => clearInterval(timer);
-  }, [loadPanel, refreshBattle]);
+  }, [loadPanel, refreshBattle, refreshGiftFeed]);
 
   useEffect(() => {
     const clock = setInterval(() => setBattleClock(Date.now()), 1000);
@@ -129,6 +142,7 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
       } catch (refreshError) {
         setNotice('Gift sent successfully. Your updated balance and history will refresh when the service responds.');
       }
+      await refreshGiftFeed();
       if (battle?.status === 'live') await refreshBattle();
     } catch (error) {
       setNotice(error?.message || 'The gift could not be sent. Your balance was not changed.');
@@ -301,6 +315,19 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
             <PanelAction label={translationBusy ? 'Translating…' : translationStatus?.enabled ? 'Translate text segment' : 'Translation unavailable'} onPress={handleTranslate} disabled={!translationStatus?.enabled || translationBusy || !sourceText.trim() || !targetLanguage.trim()} colors={colors} />
             {!translationStatus?.enabled ? <Text style={{ color: '#E4D8FF', fontSize: 10, marginTop: 7 }}>Provider-backed translation is disabled until the operator enables it and configures a provider. No fake captions are shown.</Text> : null}
             {translatedText ? <View style={{ padding: 10, borderRadius: 11, backgroundColor: 'rgba(110,225,205,0.08)', marginTop: 8 }}><Text style={{ color: '#B5F1E4', fontSize: 9, fontWeight: '900' }}>PROVIDER TRANSLATION · {targetLanguage.toUpperCase()}</Text><Text style={{ color: '#FFFFFF', fontSize: 12, marginTop: 5 }}>{translatedText}</Text></View> : null}
+          </View>
+
+
+          <View style={{ padding: 12, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.035)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.10)' }}>
+            <Text style={{ color: '#F6F1FF', fontSize: 12, fontWeight: '900' }}>LIVE gift moments</Text>
+            {giftFeed.length ? giftFeed.slice(0, 5).map((event) => <View key={event.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6, gap: 8 }}>
+              <Text style={{ fontSize: 19 }}>{event.emoji || '🎁'}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#F4EEFF', fontSize: 10, fontWeight: '800' }}>{event.senderName} → {event.recipientName}</Text>
+                <Text style={{ color: '#BEB4D7', fontSize: 9 }}>{event.giftName}{Number(event.quantity) > 1 ? ' ×' + event.quantity : ''}</Text>
+              </View>
+              <Text style={{ color: '#DCCBFF', fontSize: 10, fontWeight: '900' }}>+{Number(event.scorePoints || 0).toLocaleString()} pts</Text>
+            </View>) : <Text style={{ color: '#BEB4D7', fontSize: 10, marginTop: 6 }}>No gifts have been sent in this LIVE yet.</Text>}
           </View>
 
           {history.length ? <View style={{ padding: 12, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.035)' }}>
