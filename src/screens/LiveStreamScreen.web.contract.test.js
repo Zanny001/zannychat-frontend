@@ -314,7 +314,7 @@ test('web guest invitation prompt identifies the inviting creator when available
 
 test('web LIVE room exposes a feature-detected browser picture-in-picture minimize action', () => {
   assert.ok(web.includes('document.pictureInPictureEnabled'));
-  assert.ok(web.includes('document.querySelector(\'video\')'));
+  assert.ok(web.includes("document.querySelector('video[data-zanny-live-pip=\"true\"]')"));
   assert.ok(web.includes('activeVideo.requestPictureInPicture()'));
   assert.ok(web.includes('document.exitPictureInPicture()'));
   assert.ok(web.includes('label="Minimize LIVE · Picture-in-picture"'));
