@@ -12,11 +12,11 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import { Room, RoomEvent, Track } from 'livekit-client';
+import { Room, RoomEvent, Track, VideoQuality } from 'livekit-client';
 import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
 import { hexToRgba } from '../utils/color';
-import { getCurrentUser } from '../services/api';
+import { blockUser, getCurrentUser } from '../services/api';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
 import LiveCategoryBackdrop from '../components/LiveCategoryBackdrop';
@@ -122,6 +122,7 @@ function RemoteVideoTile({ track, participant, colors, creatorId, spotlight = fa
   })).current;
   useEffect(() => {
     const element = track.attach(); element.autoplay = true; element.playsInline = true; element.style.width = '100%'; element.style.height = '100%'; element.style.objectFit = 'cover';
+    if (element instanceof HTMLVideoElement && mainStage) element.dataset.zannyLivePip = 'true';
     containerRef.current?.replaceChildren(element);
     return () => { track.detach(element); containerRef.current?.replaceChildren(); };
   }, [track]);
@@ -176,7 +177,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [demotedToViewer, setDemotedToViewer] = useState(false);
   const [stageNotice, setStageNotice] = useState('');
   const publisherMode = Boolean(creatorMode || (connection?.role === 'guest' && connection?.canPublish && !demotedToViewer));
-  const mediaVideoEnabled = Boolean(publisherMode && experienceMode !== 'audio_room');
+  const mediaVideoEnabled = Boolean(publisherMode && experienceMode !== 'audio_room' && connection?.mediaMode !== 'audio');
   const moderatorMode = Boolean(creatorMode || connection?.canModerate);
   const roomRef = useRef(null);
   const publisherModeRef = useRef(publisherMode);
@@ -213,6 +214,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const commentsRefreshInFlight = useRef(false);
   const commentsRefreshQueued = useRef(false);
   const guestStatusRefreshInFlight = useRef(false);
+  const guestDecisionInFlight = useRef(false);
   const guestRequestsRefreshInFlight = useRef(false);
   const replayRefreshInFlight = useRef(false);
   const studioParticipantsRefreshInFlight = useRef(false);
@@ -225,6 +227,9 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [participants, setParticipants] = useState([]);
   const [panel, setPanel] = useState('');
   const [showOverlayMenu, setShowOverlayMenu] = useState(false);
+  const [qualityMode, setQualityMode] = useState('auto');
+  const qualityModeRef = useRef('auto');
+  qualityModeRef.current = qualityMode;
   const [commentsVisible, setCommentsVisible] = useState(true);
   const [focusedStageIdentity, setFocusedStageIdentity] = useState('');
 
@@ -400,6 +405,11 @@ export default function LiveStreamScreen({ route, navigation }) {
       target.appendChild(element);
     };
     const onSubscribed = (track, publication, participant) => {
+      if (publication?.kind === Track.Kind.Video && typeof publication.setVideoQuality === 'function') {
+        const currentMode = qualityModeRef.current;
+        const quality = currentMode === 'low' ? VideoQuality.LOW : currentMode === 'medium' ? VideoQuality.MEDIUM : VideoQuality.HIGH;
+        publication.setVideoQuality(quality);
+      }
       if (track.kind === Track.Kind.Video) {
         setRemoteVideoTracks((current) => current.some((item) => item.track.sid === track.sid)
           ? current
@@ -452,6 +462,8 @@ export default function LiveStreamScreen({ route, navigation }) {
       if (publication.source === Track.Source.Camera && publication.videoTrack && localRef.current) {
         localRef.current.replaceChildren();
         attach(publication.videoTrack, localRef.current);
+        const localVideo = localRef.current.querySelector('video');
+        if (localVideo) localVideo.dataset.zannyLivePip = 'true';
       }
     };
 
@@ -787,18 +799,140 @@ export default function LiveStreamScreen({ route, navigation }) {
     try { await backendFetch(`/live/${stream.id}/report`, { method: 'POST', body: JSON.stringify({ reason: value }) }); setStatus('Report submitted'); }
     catch (err) { setError(err?.message || 'Report not sent.'); }
   };
+  const confirmBlockCreator = async () => {
+    if (!stream?.creator_id || creatorMode) return;
+    const confirmed = typeof window !== 'undefined'
+      && window.confirm('Block this LIVE creator? This ends your current LIVE session and prevents future access to their content.');
+    if (!confirmed) return;
+    try {
+      await blockUser(stream.creator_id);
+      await leave();
+    } catch (err) {
+      setError(err?.message || 'Could not block this LIVE creator.');
+    }
+  };
+
+  const markNotInterested = async () => {
+    if (!stream?.id || creatorMode) return;
+    try {
+      await backendFetch(`/live/${stream.id}/not-interested`, { method: 'POST' });
+      setStageNotice('We will show fewer LIVE streams from this creator.');
+    } catch (err) {
+      setError(err?.message || 'Could not update LIVE recommendations.');
+    }
+  };
+
+  const shareLiveStream = async () => {
+    if (!stream?.id) return;
+    const url = `https://zannychat.vercel.app/LiveStream?streamId=${encodeURIComponent(stream.id)}`;
+    const shareData = { title: stream.title || 'ZannyChat LIVE', text: `Join my LIVE on ZannyChat: ${url}`, url };
+    try {
+      if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+        await navigator.share(shareData);
+        return;
+      }
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        setStageNotice('LIVE link copied to clipboard.');
+        return;
+      }
+      setError('Sharing is unavailable in this browser. Open the LIVE link from the address bar to share it.');
+    } catch (err) {
+      if (err?.name !== 'AbortError') setError(err?.message || 'Could not share this LIVE stream.');
+    }
+  };
+
+  const enterPictureInPicture = async () => {
+    try {
+      if (typeof document === 'undefined' || typeof document.pictureInPictureEnabled !== 'boolean' || !document.pictureInPictureEnabled) {
+        setStageNotice('Picture-in-picture is not supported by this browser. Keep LIVE open in its current tab.');
+        return;
+      }
+      const activeVideo = document.querySelector('video[data-zanny-live-pip="true"]');
+      if (!activeVideo || activeVideo.readyState < 2) {
+        setStageNotice('LIVE video is not ready for picture-in-picture yet.');
+        return;
+      }
+      if (document.pictureInPictureElement === activeVideo) {
+        await document.exitPictureInPicture();
+        return;
+      }
+      if (typeof activeVideo.requestPictureInPicture !== 'function') {
+        setStageNotice('Picture-in-picture is unavailable for this video in the current browser.');
+        return;
+      }
+      await activeVideo.requestPictureInPicture();
+      setStageNotice('LIVE is playing in picture-in-picture. Return to this tab to restore the full room.');
+      setShowOverlayMenu(false);
+    } catch (err) {
+      if (err?.name !== 'NotAllowedError' && err?.name !== 'AbortError') {
+        setError(err?.message || 'Could not open LIVE picture-in-picture.');
+      }
+    }
+  };
+
+  const chooseWebAudioOutput = async () => {
+    try {
+      if (typeof navigator === 'undefined' || typeof navigator.mediaDevices?.selectAudioOutput !== 'function') {
+        setStageNotice('This browser does not provide an audio-output picker. Use your device sound settings.');
+        return;
+      }
+      const device = await navigator.mediaDevices.selectAudioOutput();
+      if (!device?.deviceId) return;
+      await roomRef.current?.switchActiveDevice('audiooutput', device.deviceId);
+      setStageNotice('LIVE audio output changed to ' + (device.label || 'the selected device') + '.');
+    } catch (err) {
+      if (err?.name !== 'NotAllowedError' && err?.name !== 'AbortError') {
+        setError(err?.message || 'Could not change LIVE audio output.');
+      }
+    }
+  };
+
+  const applyVideoQuality = (mode) => {
+    const quality = mode === 'low' ? VideoQuality.LOW : mode === 'medium' ? VideoQuality.MEDIUM : VideoQuality.HIGH;
+    roomRef.current?.remoteParticipants.forEach((participant) => {
+      participant.trackPublications.forEach((publication) => {
+        if (publication.kind === Track.Kind.Video && typeof publication.setVideoQuality === 'function') {
+          publication.setVideoQuality(quality);
+        }
+      });
+    });
+    setQualityMode(mode);
+  };
+
   const requestGuest = async () => {
     try { await backendFetch(`/live/${stream.id}/guest-requests`, { method: 'POST' }); setGuestStatus('requested'); }
     catch (err) { setError(err?.message || 'Could not request guest access.'); }
   };
-  const joinGuest = async () => {
+  const joinGuest = async (mediaMode = 'video') => {
     try {
-      const next = await backendFetch(`/live/${stream.id}/join`, { method: 'POST' });
+      const next = await backendFetch(`/live/${stream.id}/join`, {
+        method: 'POST',
+        body: JSON.stringify({ mediaMode }),
+      });
       if (next?.role !== 'guest' || !next?.canPublish) throw new Error('Guest access has not been approved.');
       setDemotedToViewer(false);
       setStageNotice('');
       setConnection(next);
     } catch (err) { setError(err?.message || 'Could not join as guest.'); }
+  };
+
+  const decideGuestInvitation = async (status, mediaMode = 'video') => {
+    if (!stream?.id || guestDecisionInFlight.current || !['accepted', 'declined'].includes(status)) return;
+    guestDecisionInFlight.current = true;
+    try {
+      const result = await backendFetch(`/live/${stream.id}/guest-invitation`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+      setGuestStatus(result?.status || status);
+      setGuestApproved(status === 'accepted');
+      if (status === 'accepted') await joinGuest(mediaMode);
+    } catch (err) {
+      setError(err?.message || (status === 'accepted' ? 'Could not accept LIVE invitation.' : 'Could not decline LIVE invitation.'));
+    } finally {
+      guestDecisionInFlight.current = false;
+    }
   };
   const hideComment = async (id) => {
     try { await backendFetch(`/live/${stream.id}/comments/${id}/hide`, { method: 'POST' }); setComments((items) => items.filter((item) => item.id !== id)); }
@@ -968,7 +1102,7 @@ export default function LiveStreamScreen({ route, navigation }) {
 
   return <View style={{ flex: 1, minHeight: '100%', backgroundColor: '#05050B', position: 'relative', overflow: 'hidden' }}>
     <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#05050B' }}>
-      {publisherMode && experienceMode !== 'audio_room' ? (
+      {publisherMode && experienceMode !== 'audio_room' && connection?.mediaMode !== 'audio' ? (
         experienceMode === 'video_chat' ? <><LiveCategoryBackdrop category={category} title={stream.title} mode={experienceMode} /><FloatingLocalVideoTile containerRef={localRef} colors={colors} role={creatorMode ? 'HOST' : 'GUEST'} /></> : <>
           <View ref={localRef} collapsable={false} style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#090914' }} />
           {!camera && <View pointerEvents="none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: '#111019' }}><Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 18 }}>Camera off</Text><Text style={{ color: 'rgba(255,255,255,0.68)', marginTop: 6 }}>Your voice is still live</Text></View>}
@@ -1052,7 +1186,15 @@ export default function LiveStreamScreen({ route, navigation }) {
 
     {!!error && <View pointerEvents="box-none" style={{ position: 'absolute', top: insets.top + 78, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(100,20,35,0.86)' }}><Text accessibilityRole="alert" style={{ color: '#FFFFFF', fontSize: 12 }}>{error}</Text></View>}
     {!!stageNotice && <View pointerEvents="box-none" style={{ position: 'absolute', top: insets.top + 118, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(30,70,90,0.86)' }}><Text accessibilityRole="status" style={{ color: '#FFFFFF', fontSize: 12 }}>{stageNotice}</Text></View>}
-    {guestApproved && !publisherMode && <View pointerEvents="box-none" style={{ position: 'absolute', top: insets.top + 164, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(30,70,90,0.88)' }}><Text accessibilityRole="status" style={{ color: '#FFFFFF', fontSize: 12 }}>The creator invited you to the LIVE stage. Use the menu to join.</Text></View>}
+    {guestStatus === 'pending' && !publisherMode ? <View style={{ position: 'absolute', zIndex: 30, top: insets.top + 164, left: 16, right: 16, padding: 13, borderRadius: 16, backgroundColor: 'rgba(12,11,28,0.96)', borderWidth: 1, borderColor: 'rgba(190,160,255,0.65)' }}>
+      <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '900' }}>LIVE guest invitation</Text>
+      <Text style={{ color: '#E6E2F4', fontSize: 12, marginTop: 4 }}>{stream?.creator_name || route.params?.creatorName || 'The LIVE creator'} invited you to join the stage. Choose whether to join before your camera or microphone is enabled.</Text>
+      <View style={{ flexDirection: 'row', gap: 9, marginTop: 11 }}>
+        <Action colors={colors} label="Video Join" onPress={() => decideGuestInvitation('accepted', 'video')} />
+        <Action colors={colors} label="Audio Join" onPress={() => decideGuestInvitation('accepted', 'audio')} />
+        <Action colors={colors} label="Reject" onPress={() => decideGuestInvitation('declined')} danger />
+      </View>
+    </View> : guestApproved && !publisherMode ? <View pointerEvents="box-none" style={{ position: 'absolute', top: insets.top + 164, left: 16, right: 16, padding: 10, borderRadius: 12, backgroundColor: 'rgba(30,70,90,0.88)' }}><Text accessibilityRole="status" style={{ color: '#FFFFFF', fontSize: 12 }}>Your invitation is accepted. Join the stage when you are ready.</Text></View> : null}
 
     <View pointerEvents="box-none" style={{ position: 'absolute', left: 14, bottom: 96 + insets.bottom, width: 'min(390px, 70%)', maxHeight: '42%', gap: 8 }}>
       {commentsVisible && comments.slice(-4).map((item) => <View key={item.id} style={{ alignSelf: 'flex-start', maxWidth: '100%', flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingHorizontal: 11, paddingVertical: 8, borderRadius: 14, backgroundColor: 'rgba(5,5,11,0.68)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
@@ -1075,8 +1217,14 @@ export default function LiveStreamScreen({ route, navigation }) {
     {audioBlocked && <View style={{ position: 'absolute', top: '45%', alignSelf: 'center' }}><Action colors={colors} label="Enable LIVE audio" onPress={() => roomRef.current?.startAudio().then(() => setAudioBlocked(false)).catch((err) => setError(err?.message || 'Audio playback is blocked.'))} /></View>}
 
     {showOverlayMenu && <View style={{ position: 'absolute', top: 76 + insets.top, right: 14, width: 230, padding: 10, borderRadius: 18, backgroundColor: 'rgba(12,11,24,0.96)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)', gap: 7, zIndex: 20 }}>
-      <Action colors={colors} label={commentsVisible ? 'Hide comments' : 'Show comments'} onPress={() => { setCommentsVisible((value) => !value); setShowOverlayMenu(false); }} />
-      {publisherMode && experienceMode !== 'audio_room' && <Action colors={colors} label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={() => { toggleCamera(); setShowOverlayMenu(false); }} />}
+      <Action colors={colors} label={commentsVisible ? 'Clean mode' : 'Exit clean mode'} onPress={() => { setCommentsVisible((value) => !value); setShowOverlayMenu(false); }} />
+      <Action colors={colors} label="Share LIVE" onPress={() => { shareLiveStream(); setShowOverlayMenu(false); }} />
+      <Action colors={colors} label="Minimize LIVE · Picture-in-picture" onPress={enterPictureInPicture} />
+      <Action colors={colors} label={`Quality · ${qualityMode.toUpperCase()}`} onPress={() => { const modes = ['auto', 'low', 'medium', 'high']; applyVideoQuality(modes[(modes.indexOf(qualityMode) + 1) % modes.length]); setShowOverlayMenu(false); }} />
+      <Action colors={colors} label="Audio output" onPress={() => { chooseWebAudioOutput(); setShowOverlayMenu(false); }} />
+      {!creatorMode && <Action colors={colors} label="Not interested" onPress={() => { markNotInterested(); setShowOverlayMenu(false); }} />}
+      {!creatorMode && <Action colors={colors} label="Block creator" onPress={() => { confirmBlockCreator(); setShowOverlayMenu(false); }} danger />}
+      {publisherMode && experienceMode !== 'audio_room' && connection?.mediaMode !== 'audio' && <Action colors={colors} label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={() => { toggleCamera(); setShowOverlayMenu(false); }} />}
       {publisherMode && <Action colors={colors} label={mic ? 'Mute microphone' : 'Unmute microphone'} onPress={() => { toggleMic(); setShowOverlayMenu(false); }} />}
       {!creatorMode && <Action colors={colors} label="Creator profile" accessibilityLabel="Open LIVE creator profile" onPress={() => { navigation.navigate('LiveCreatorProfile', { participant: { id: stream.creator_id, name: route.params?.creatorName || stream.creator_name || 'LIVE Creator', avatarColor: route.params?.creatorAvatarColor || stream.creator_avatar_color }, fromLive: true, currentLiveStreamId: stream.id, alreadyViewingLive: true, isCurrentUser: false }); setShowOverlayMenu(false); }} />}
       {creatorMode && stream.allow_guests && <Action colors={colors} label="Creator Studio" onPress={() => { loadParticipants(); setShowOverlayMenu(false); }} />}
@@ -1086,7 +1234,10 @@ export default function LiveStreamScreen({ route, navigation }) {
       {creatorMode && stream.allow_guests && <Action colors={colors} label={`Guest requests (${guestRequests.length})`} onPress={() => { setPanel(panel === 'guestRequests' ? '' : 'guestRequests'); setShowOverlayMenu(false); }} />}
       {creatorMode && !replayEnabled && <View accessibilityRole="summary" style={{ paddingHorizontal: 12, paddingVertical: 9, borderRadius: 12, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border }}><Text style={{ color: colors.textPrimary, fontSize: 11, fontWeight: '800' }}>{replayAvailability === 'checking' ? 'Checking replay setup…' : replayAvailability === 'unavailable' ? 'Replay setup could not be checked' : 'Replay recording unavailable'}</Text><Text style={{ color: colors.textSecondary, fontSize: 10, maxWidth: 220 }}>{replayAvailability === 'unavailable' ? 'Try again later. Your LIVE broadcast is unaffected.' : replayAvailability === 'checking' ? 'Please wait' : 'Replay recording is not enabled for this server.'}</Text></View>}
       {moderatorMode && <Action colors={colors} label="Safety reports" onPress={() => { loadReports(); setShowOverlayMenu(false); }} />}
-      {!publisherMode && stream.allow_guests && <Action colors={colors} label={guestApproved ? 'Join the stage' : guestStatus === 'requested' ? 'Request pending' : 'Request to join'} disabled={guestStatus === 'requested'} onPress={() => { guestApproved ? joinGuest() : requestGuest(); setShowOverlayMenu(false); }} />}
+      {!publisherMode && stream.allow_guests && guestApproved ? <>
+        <Action colors={colors} label="Video Join" onPress={() => { joinGuest('video'); setShowOverlayMenu(false); }} />
+        <Action colors={colors} label="Audio Join" onPress={() => { joinGuest('audio'); setShowOverlayMenu(false); }} />
+      </> : !publisherMode && stream.allow_guests ? <Action colors={colors} label={guestStatus === 'requested' ? 'Request pending' : 'Request to join'} disabled={guestStatus === 'requested'} onPress={() => { requestGuest(); setShowOverlayMenu(false); }} /> : null}
       {!creatorMode && <Action colors={colors} label="Report LIVE" onPress={() => { report(); setShowOverlayMenu(false); }} />}
       <Action colors={colors} label="Close menu" onPress={() => setShowOverlayMenu(false)} />
     </View>}

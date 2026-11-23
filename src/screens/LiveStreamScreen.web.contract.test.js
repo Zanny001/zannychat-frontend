@@ -232,3 +232,91 @@ test('web LIVE imports the Ionicons component used by the replay header control'
   assert.ok(web.includes("import { Ionicons } from '@expo/vector-icons';"));
   assert.ok(web.includes('<Ionicons name={replay?.status'));
 });
+
+
+test('web LIVE guest invitations require explicit accept or reject before joining the stage', () => {
+  assert.ok(web.includes("/guest-invitation"));
+  assert.ok(web.includes("guestStatus === 'pending'"));
+  assert.ok(web.includes("decideGuestInvitation('accepted', 'video')"));
+  assert.ok(web.includes("decideGuestInvitation('declined')"));
+  assert.ok(web.includes('label="Video Join"'));
+  assert.ok(web.includes('label="Audio Join"'));
+  assert.ok(web.includes("await joinGuest(mediaMode)"));
+});
+
+
+test('web LIVE guest invitation supports explicit video or audio-only admission', () => {
+  assert.ok(web.includes("decideGuestInvitation('accepted', 'video')"));
+  assert.ok(web.includes("decideGuestInvitation('accepted', 'audio')"));
+  assert.ok(web.includes("body: JSON.stringify({ mediaMode })"));
+  assert.ok(web.includes("connection?.mediaMode !== 'audio'"));
+});
+
+
+test('web LIVE room exposes a share action with the stream deep link', () => {
+  assert.ok(web.includes('navigator.share(shareData)'));
+  assert.ok(web.includes('navigator.clipboard?.writeText'));
+  assert.ok(web.includes('await navigator.clipboard.writeText(url)'));
+  assert.ok(web.includes('https://zannychat.vercel.app/LiveStream?streamId='));
+  assert.ok(web.includes('label="Share LIVE"'));
+});
+
+
+test('web LIVE room exposes a named clean mode that hides the chat overlay', () => {
+  assert.ok(web.includes("label={commentsVisible ? 'Clean mode' : 'Exit clean mode'}"));
+  assert.ok(web.includes("setCommentsVisible((value) => !value)"));
+});
+
+
+test('web LIVE room lets viewers suppress future recommendations from the current creator', () => {
+  assert.ok(web.includes("/not-interested"));
+  assert.ok(web.includes("label=\"Not interested\""));
+  assert.ok(web.includes("We will show fewer LIVE streams from this creator."));
+});
+
+
+test('web LIVE room exposes an account-level block action that leaves the active stream', () => {
+  assert.ok(web.includes("import { blockUser, getCurrentUser } from '../services/api'"));
+  assert.ok(web.includes("label=\"Block creator\""));
+  assert.ok(web.includes("await blockUser(stream.creator_id)"));
+  assert.ok(web.includes("await leave()"));
+});
+
+
+test('web LIVE room quality control applies LiveKit remote publication quality caps', () => {
+  assert.ok(web.includes("VideoQuality.LOW"));
+  assert.ok(web.includes("VideoQuality.MEDIUM"));
+  assert.ok(web.includes("VideoQuality.HIGH"));
+  assert.ok(web.includes("publication.setVideoQuality(quality)"));
+  assert.ok(web.includes("label={`Quality · ${qualityMode.toUpperCase()}`}"));
+});
+
+
+test('web guest-request approvals let viewers choose video or audio before joining', () => {
+  assert.ok(web.includes('label="Video Join"'));
+  assert.ok(web.includes('label="Audio Join"'));
+  assert.ok(web.includes("joinGuest('video')"));
+  assert.ok(web.includes("joinGuest('audio')"));
+});
+
+
+test('web LIVE room exposes a browser audio-output picker with safe fallback', () => {
+  assert.ok(web.includes('navigator.mediaDevices?.selectAudioOutput'));
+  assert.ok(web.includes("switchActiveDevice('audiooutput'"));
+  assert.ok(web.includes('label="Audio output"'));
+  assert.ok(web.includes('Use your device sound settings.'));
+});
+
+
+test('web guest invitation prompt identifies the inviting creator when available', () => {
+  assert.ok(web.includes("stream?.creator_name || route.params?.creatorName || 'The LIVE creator'"));
+});
+
+test('web LIVE room exposes a feature-detected browser picture-in-picture minimize action', () => {
+  assert.ok(web.includes('document.pictureInPictureEnabled'));
+  assert.ok(web.includes("document.querySelector('video[data-zanny-live-pip=\"true\"]')"));
+  assert.ok(web.includes('activeVideo.requestPictureInPicture()'));
+  assert.ok(web.includes('document.exitPictureInPicture()'));
+  assert.ok(web.includes('label="Minimize LIVE · Picture-in-picture"'));
+  assert.ok(web.includes('Picture-in-picture is not supported by this browser.'));
+});

@@ -649,3 +649,75 @@ test('native and web LIVE polling stops issuing requests and applying responses 
     assert.ok(source.includes('if (!active || endedRef.current) return;'));
   }
 });
+
+
+test('direct LIVE guest invitations require explicit accept or reject before joining the stage', () => {
+  assert.ok(screen.includes("/guest-invitation"));
+  assert.ok(screen.includes("guestRequestStatus === 'pending'"));
+  assert.ok(screen.includes("decideGuestInvitation('accepted', 'video')"));
+  assert.ok(screen.includes("decideGuestInvitation('declined')"));
+  assert.ok(screen.includes("Accept LIVE guest invitation"));
+  assert.ok(screen.includes("Reject LIVE guest invitation"));
+  assert.ok(screen.includes("await joinAsGuest(mediaMode)"));
+});
+
+
+test('LIVE guest invitation supports explicit video or audio-only admission', () => {
+  assert.ok(screen.includes("decideGuestInvitation('accepted', 'video')"));
+  assert.ok(screen.includes("decideGuestInvitation('accepted', 'audio')"));
+  assert.ok(screen.includes("body: JSON.stringify({ mediaMode })"));
+  assert.ok(screen.includes("connection?.mediaMode !== 'audio'"));
+  assert.ok(screen.includes("mediaMode={connection?.mediaMode || 'video'}"));
+});
+
+
+test('native LIVE room exposes a real share action with the stream deep link', () => {
+  assert.ok(screen.includes('Share.share('));
+  assert.ok(screen.includes('https://zannychat.vercel.app/LiveStream?streamId='));
+  assert.ok(screen.includes('label="Share LIVE"'));
+  assert.ok(screen.includes('onShare={shareLiveStream}'));
+});
+
+
+test('native LIVE room exposes a named clean mode that hides the chat overlay', () => {
+  assert.ok(screen.includes("label={showComments ? 'Clean mode' : 'Exit clean mode'}"));
+  assert.ok(screen.includes("setShowComments((value) => !value)"));
+});
+
+
+test('native LIVE room lets viewers suppress future recommendations from the current creator', () => {
+  assert.ok(screen.includes("/not-interested"));
+  assert.ok(screen.includes("label=\"Not interested\""));
+  assert.ok(screen.includes("onNotInterested={markNotInterested}"));
+  assert.ok(screen.includes("We will show fewer LIVE streams from this creator."));
+});
+
+
+test('native LIVE room exposes an account-level block action that leaves the active stream', () => {
+  assert.ok(screen.includes("import { blockUser, getCurrentUser } from '../services/api'"));
+  assert.ok(screen.includes("label=\"Block creator\""));
+  assert.ok(screen.includes("await blockUser(stream.creator_id)"));
+  assert.ok(screen.includes("await leave()"));
+});
+
+
+test('native LIVE room quality control applies LiveKit remote publication quality caps', () => {
+  assert.ok(screen.includes("VideoQuality.LOW"));
+  assert.ok(screen.includes("VideoQuality.MEDIUM"));
+  assert.ok(screen.includes("VideoQuality.HIGH"));
+  assert.ok(screen.includes("publication.setVideoQuality(quality)"));
+  assert.ok(screen.includes("label={`Quality · ${qualityMode.toUpperCase()}`}"));
+});
+
+
+test('native guest-request approvals let viewers choose video or audio before joining', () => {
+  assert.ok(screen.includes("Alert.alert('Join LIVE stage'"));
+  assert.ok(screen.includes("onJoinGuest?.('video')"));
+  assert.ok(screen.includes("onJoinGuest?.('audio')"));
+  assert.ok(screen.includes("Choose audio or video to join LIVE as guest"));
+});
+
+
+test('native guest invitation prompt identifies the inviting creator when available', () => {
+  assert.ok(screen.includes("stream?.creator_name || route.params?.creatorName || 'The LIVE creator'"));
+});
