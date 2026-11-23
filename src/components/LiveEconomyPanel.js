@@ -261,6 +261,7 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
                 <Text style={{ color: '#DCCBFF', fontSize: 12, fontWeight: '900' }}>{Number(wallet?.balanceSparks || 0).toLocaleString()} Sparks</Text>
                 <PanelAction label="Wallet & Store" onPress={() => navigation?.navigate('LiveWallet')} colors={colors} />
+                {creatorMode ? <PanelAction label="Creator earnings" onPress={() => navigation?.navigate('LiveCreatorEarnings')} colors={colors} /> : null}
               </View>
             </View>
             <Text style={{ color: '#BEB4D7', fontSize: 10, marginTop: 4 }}>Purchased and promotional Sparks are tracked separately. Only purchased Sparks spent on gifts can create eligible creator rewards; PK points are not cash.</Text>
