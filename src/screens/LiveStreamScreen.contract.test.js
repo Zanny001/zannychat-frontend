@@ -716,3 +716,8 @@ test('native guest-request approvals let viewers choose video or audio before jo
   assert.ok(screen.includes("onJoinGuest?.('audio')"));
   assert.ok(screen.includes("Choose audio or video to join LIVE as guest"));
 });
+
+
+test('native guest invitation prompt identifies the inviting creator when available', () => {
+  assert.ok(screen.includes("stream?.creator_name || route.params?.creatorName || 'The LIVE creator'"));
+});
