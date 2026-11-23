@@ -179,6 +179,12 @@ function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarn
     };
   }, [room, onRealtimeFeedSignal]);
 
+  const chooseGuestMode = () => Alert.alert('Join LIVE stage', 'Choose how you want to join.', [
+    { text: 'Video Join', onPress: () => onJoinGuest?.('video') },
+    { text: 'Audio Join', onPress: () => onJoinGuest?.('audio') },
+    { text: 'Cancel', style: 'cancel' },
+  ]);
+
   const applyVideoQuality = (mode) => {
     const quality = mode === 'low' ? VideoQuality.LOW : mode === 'medium' ? VideoQuality.MEDIUM : VideoQuality.HIGH;
     room.remoteParticipants.forEach((participant) => {
@@ -489,7 +495,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarn
           <TextInput value={draft} onChangeText={(v) => setDraft(v.slice(0, 500))} maxLength={500} placeholder="Say something kind…" placeholderTextColor={colors.textSecondary} style={{ flex: 1, minWidth: 0, backgroundColor: colors.surfaceAlt, color: colors.textPrimary, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 11 }} />
           <TouchableOpacity disabled={busy || !draft.trim()} onPress={onComment} accessibilityRole="button" accessibilityLabel="Send LIVE comment" style={{ backgroundColor: colors.primary, padding: 12, borderRadius: 14 }}><Ionicons name="send" size={19} color={colors.onPrimary} /></TouchableOpacity>
 
-          {!creatorMode && canRequestGuest && <TouchableOpacity disabled={busy || (guestRequestStatus === 'requested' && !guestApproved)} onPress={guestApproved ? onJoinGuest : onRequestGuest} accessibilityRole="button" accessibilityLabel={guestApproved ? 'Join LIVE as guest' : guestRequestStatus === 'requested' ? 'Guest request pending' : 'Request to join LIVE on stage'} style={{ backgroundColor: hexToRgba(colors.primary, 0.24), padding: 12, borderRadius: 14 }}><Ionicons name={guestApproved ? 'checkmark-circle-outline' : 'person-add-outline'} size={19} color={colors.onPrimary} /></TouchableOpacity>}
+          {!creatorMode && canRequestGuest && <TouchableOpacity disabled={busy || (guestRequestStatus === 'requested' && !guestApproved)} onPress={guestApproved ? chooseGuestMode : onRequestGuest} accessibilityRole="button" accessibilityLabel={guestApproved ? 'Choose audio or video to join LIVE as guest' : guestRequestStatus === 'requested' ? 'Guest request pending' : 'Request to join LIVE on stage'} style={{ backgroundColor: hexToRgba(colors.primary, 0.24), padding: 12, borderRadius: 14 }}><Ionicons name={guestApproved ? 'checkmark-circle-outline' : 'person-add-outline'} size={19} color={colors.onPrimary} /></TouchableOpacity>}
           {!creatorMode && <TouchableOpacity disabled={busy} onPress={onReport} accessibilityRole="button" accessibilityLabel="Report LIVE stream" style={{ backgroundColor: colors.surfaceAlt, padding: 12, borderRadius: 14 }}><Ionicons name="flag-outline" size={19} color={colors.textPrimary} /></TouchableOpacity>}
         </View>
       </View>
