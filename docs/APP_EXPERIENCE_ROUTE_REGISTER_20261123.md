@@ -109,6 +109,7 @@ Do not rename or reorder these six destinations as part of screen redesign witho
 | StatusUpdates | StatusUpdatesScreen | Status experience; same module as Updates tab |
 | Polls | PollsScreen | Poll creation and participation |
 | Events | EventsScreen | Conversation events |
+| CreateGroup | CreateGroupScreen | Group creation |
 | GroupManagement | GroupManagementScreen | Group administration |
 | JoinGroup | JoinGroupScreen | Authenticated group join flow |
 | Channels | ChannelsScreen | Shared module with Channels tab |
