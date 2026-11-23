@@ -55,3 +55,17 @@ test('creator earnings dashboard is separately reachable from Sparks wallet and 
   assert.ok(earnings.includes('identity verification'));
   assert.ok(navigator.includes("name=\"LiveCreatorEarnings\" component={LiveCreatorEarningsRoute}"));
 });
+
+test('creator payout screen uses server verification and never stores full bank account details', () => {
+  const payout = fs.readFileSync(new URL('./LiveCreatorPayoutScreen.js', import.meta.url), 'utf8');
+  assert.ok(payout.includes('getLiveCreatorPayoutEligibility()'));
+  assert.ok(payout.includes('getLiveCreatorPayoutBanks()'));
+  assert.ok(payout.includes('getLiveCreatorPayoutBeneficiaries()'));
+  assert.ok(payout.includes('requestLiveCreatorPayout({ beneficiaryId: selectedBeneficiaryId, amountMinor })'));
+  assert.ok(payout.includes('accountNumber.slice'));
+  assert.ok(payout.includes('PAYOUT_KYC_REQUIRED'));
+  assert.ok(payout.includes('No withdrawal can be submitted.'));
+  const earningsScreen = fs.readFileSync(new URL('./LiveCreatorEarningsScreen.js', import.meta.url), 'utf8');
+  assert.ok(earningsScreen.includes("navigation.navigate('LiveCreatorPayout')"));
+  assert.ok(navigator.includes("name=\"LiveCreatorPayout\" component={LiveCreatorPayoutRoute}"));
+});
