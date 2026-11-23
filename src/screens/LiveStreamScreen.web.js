@@ -231,6 +231,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [panel, setPanel] = useState('');
   const [showOverlayMenu, setShowOverlayMenu] = useState(false);
   const [economyOpen, setEconomyOpen] = useState(false);
+  const [liveFeedSignal, setLiveFeedSignal] = useState(0);
   useEffect(() => {
     if (!route.params?.openLiveEconomy) return;
     setEconomyOpen(true);
@@ -615,14 +616,18 @@ export default function LiveStreamScreen({ route, navigation }) {
     // `room` variable during render (which crashes the entire web app).
     const room = roomRef.current;
     if (!room || !stream?.id) return undefined;
+    const handleFeedSignal = () => {
+      setLiveFeedSignal((value) => value + 1);
+      void refreshComments();
+    };
     const onDataReceived = (payload, _participant, _kind, topic) => {
-      if (isLiveFeedInvalidation(payload, topic)) refreshComments();
+      if (isLiveFeedInvalidation(payload, topic)) handleFeedSignal();
     };
     room.on(RoomEvent.DataReceived, onDataReceived);
-    room.on(RoomEvent.Reconnected, refreshComments);
+    room.on(RoomEvent.Reconnected, handleFeedSignal);
     return () => {
       room.off(RoomEvent.DataReceived, onDataReceived);
-      room.off(RoomEvent.Reconnected, refreshComments);
+      room.off(RoomEvent.Reconnected, handleFeedSignal);
     };
   }, [stream?.id, connection?.token, refreshComments]);
 
@@ -1300,7 +1305,7 @@ export default function LiveStreamScreen({ route, navigation }) {
         </>}
       </ScrollView>
     </View>}
-    {economyOpen && <LiveEconomyPanel streamId={stream.id} creatorId={stream.creator_id} creatorMode={creatorMode} onClose={() => setEconomyOpen(false)} />}
+    {economyOpen && <LiveEconomyPanel streamId={stream.id} creatorId={stream.creator_id} creatorMode={creatorMode} navigation={navigation} feedSignal={liveFeedSignal} onClose={() => setEconomyOpen(false)} />}
     {busy && <View pointerEvents="none" style={{ position: 'absolute', top: '50%', alignSelf: 'center' }}><ActivityIndicator color="#FFFFFF" /></View>}
   </View>;
 }

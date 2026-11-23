@@ -21,7 +21,7 @@ test('all supporting LIVE routes are grouped together without changing their rou
   const expected = [
     'LivePreflight','LiveStream','LiveReplay','LiveCreatorStudio','LiveCreatorProfile',
     'LiveReplayLibrary','LiveGuestQueue','LiveModeration','LiveReports','LiveAnalytics',
-    'LivePostStreamSummary','LiveLeaderboard','LiveSettings','LiveEvents',
+    'LivePostStreamSummary','LiveLeaderboard','LiveSettings','LiveEvents','LiveWallet','LiveCreatorEarnings','LiveCreatorPayout',
   ];
   for (const route of expected) assert.ok(group.includes(`name="${route}"`), `Missing grouped route: ${route}`);
   assert.equal((group.match(/<RootStack\.Screen name=/g) || []).length, expected.length);
