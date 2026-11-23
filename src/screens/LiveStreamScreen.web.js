@@ -176,7 +176,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [demotedToViewer, setDemotedToViewer] = useState(false);
   const [stageNotice, setStageNotice] = useState('');
   const publisherMode = Boolean(creatorMode || (connection?.role === 'guest' && connection?.canPublish && !demotedToViewer));
-  const mediaVideoEnabled = Boolean(publisherMode && experienceMode !== 'audio_room' && connection?.mediaMode !== 'audio' && connection?.mediaMode !== 'audio');
+  const mediaVideoEnabled = Boolean(publisherMode && experienceMode !== 'audio_room' && connection?.mediaMode !== 'audio');
   const moderatorMode = Boolean(creatorMode || connection?.canModerate);
   const roomRef = useRef(null);
   const publisherModeRef = useRef(publisherMode);
