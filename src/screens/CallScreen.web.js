@@ -732,7 +732,7 @@ const styles = StyleSheet.create({
   name: { marginTop: 24, textAlign: 'center' },
   phase: { marginTop: 9 },
   networkNotice: { textAlign: 'center', marginTop: 12, maxWidth: 320 },
-  error: { textAlign: 'center', marginTop: 16, maxWidth: layout.contentMaxWidth },
+  error: { textAlign: 'center', marginTop: 16, maxWidth: 320 },
   bottom: { paddingHorizontal: 22, paddingBottom: 28, alignItems: 'center' },
   controlsRow: { width: '100%', maxWidth: 340, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', columnGap: 8, rowGap: 8, padding: 10, borderRadius: 28, borderWidth: 1, marginBottom: 20 },
   control: { width: 64, minWidth: 64, height: 68, minHeight: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center', gap: 4 },
