@@ -29,8 +29,14 @@ test('PK interface uses server-owned battle lifecycle and displays real server s
   assert.ok(service.includes("'/live/battles/'"));
   assert.ok(service.includes("'/start'"));
   assert.ok(service.includes("'/finish'"));
+  assert.ok(service.includes("'/accept'"));
+  assert.ok(service.includes("'/decline'"));
   assert.ok(panel.includes('battle.score_a'));
   assert.ok(panel.includes('battle.score_b'));
+  assert.ok(panel.includes('battle.canAccept'));
+  assert.ok(panel.includes('battle.canStart'));
+  assert.ok(panel.includes('Accept challenge'));
+  assert.ok(panel.includes('Decline'));
   assert.ok(panel.includes('gift transactions'));
   assert.ok(panel.includes('Reactions do not count'));
   assert.ok(panel.includes('finishLiveBattle(battle.id)'));
@@ -43,6 +49,7 @@ test('translation is opt-in provider-backed text only and never fabricates micro
   assert.ok(panel.includes('Live microphone transcription is not enabled'));
   assert.ok(panel.includes('result?.translated'));
   assert.ok(panel.includes('No fake captions are shown'));
+  assert.ok(panel.includes('Submitted text is sent to the configured AI provider'));
 });
 
 test('native and web LIVE rooms both expose the same gifts, PK and translation panel', () => {
