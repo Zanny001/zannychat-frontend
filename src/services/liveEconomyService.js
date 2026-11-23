@@ -102,3 +102,37 @@ export function getLiveCreatorEarningsSummary() {
 export function getLiveCreatorEarningsHistory() {
   return backendFetch('/live/creator-earnings/history');
 }
+
+export function getLiveCreatorPayoutEligibility() {
+  return backendFetch('/live/creator-payouts/eligibility');
+}
+
+export function getLiveCreatorPayoutBanks() {
+  return backendFetch('/live/creator-payouts/banks');
+}
+
+export function getLiveCreatorPayoutBeneficiaries() {
+  return backendFetch('/live/creator-payouts/beneficiaries');
+}
+
+export function addLiveCreatorPayoutBeneficiary({ bankCode, accountNumber }) {
+  return backendFetch('/live/creator-payouts/beneficiaries', {
+    method: 'POST',
+    body: JSON.stringify({ bankCode, accountNumber }),
+  });
+}
+
+export function disableLiveCreatorPayoutBeneficiary(beneficiaryId) {
+  return backendFetch('/live/creator-payouts/beneficiaries/' + encodeURIComponent(beneficiaryId), { method: 'DELETE' });
+}
+
+export function requestLiveCreatorPayout({ beneficiaryId, amountMinor }) {
+  return backendFetch('/live/creator-payouts/request', {
+    method: 'POST',
+    body: JSON.stringify({ beneficiaryId, amountMinor }),
+  });
+}
+
+export function getLiveCreatorPayoutHistory() {
+  return backendFetch('/live/creator-payouts/history');
+}
