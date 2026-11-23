@@ -97,3 +97,21 @@ test('call history adds a dedicated group-call filter without changing direct ca
     assert.ok(callsScreen.includes("value: '" + value + "'"), value);
   }
 });
+
+
+test('call history discards stale requests after the screen loses focus', () => {
+  assert.ok(callsScreen.includes('const historyRequestIdRef = useRef(0)'));
+  assert.ok(callsScreen.includes('const screenFocusedRef = useRef(false)'));
+  assert.ok(callsScreen.includes('requestId === historyRequestIdRef.current'));
+  assert.ok(callsScreen.includes('screenFocusedRef.current = false'));
+  assert.ok(callsScreen.includes('historyRequestIdRef.current += 1'));
+});
+
+test('call history never publishes rows fetched for a previous signed-in account', () => {
+  assert.ok(callsService.includes('if (await getCallUserId() !== userId) return []'));
+});
+
+test('direct redial refuses to navigate without a valid peer identity', () => {
+  assert.ok(callsScreen.includes("showAppAlert('Contact unavailable'"));
+  assert.ok(callsScreen.includes('if (!peerId)'));
+});
