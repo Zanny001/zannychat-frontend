@@ -113,3 +113,15 @@ These are historical reports, not claims that the defects still exist on the cur
 - Call/video audio reliability issues, including participants unable to hear one another and switching audio/video during an active call.
 
 For each reproduction, trace the full user journey through UI event, client state, network request, backend authorization, database/LiveKit state, and rendered result. Fix the originating layer, add a regression test, then verify the complete journey before release.
+
+
+## 8. Production database and source checks — 2026-11-23
+
+Read-only checks against the configured Supabase project confirmed:
+
+- `live_stream_invites` already accepts `pending`, `requested`, `accepted`, `declined`, and `revoked`; the guest-consent implementation does not need a schema migration.
+- `public.record_live_creator_impact(uuid, uuid, text)` exists as a SECURITY DEFINER function with an empty search path. Its implementation checks active stream state and joined participant status before recording a reaction.
+- The private `live-replays` storage bucket exists, but it currently contains **0 objects**; `live_stream_replays` currently contains **0 rows**. This confirms no replay artefacts are present, but does not establish whether Render's Egress/storage environment is currently enabled.
+- `public.live_stream_feedback` does not exist in production and migration `20261123090000` is not recorded as applied. This is expected until PR #193 is reviewed and the migration is separately approved/applied.
+
+The previously reported LIVE reaction failure is not yet root-caused: the backend maps unexpected impact RPC/service errors to the generic `Could not send LIVE reaction` response. Current Render application logs are needed to identify the exact error code. The Render connector currently requires the user to confirm the workspace before log inspection.
