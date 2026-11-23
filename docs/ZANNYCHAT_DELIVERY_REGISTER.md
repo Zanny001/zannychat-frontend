@@ -1,12 +1,12 @@
 # ZannyChat Master Delivery Register
 
 **Status:** Full-product phased execution resumed; LIVE incident stabilization remains the immediate runtime priority  
-**Last reconciled:** 2026-11-20  
+**Last reconciled:** 2026-11-23 (architecture and route inventory only; individual feature acceptance rows retain their recorded evidence/status)  
 **Companion charter:** [Master Product, Architecture & Design Blueprint](./ZANNYCHAT_MASTER_BLUEPRINT.md)  
 **Execution sequence:** [Master Execution Phases](./MASTER_EXECUTION_PHASES_20261120.md)  
-**Architecture evidence:** [Architecture and Security Snapshot](./ARCHITECTURE_SECURITY_SNAPSHOT_20261120.md)
+**Architecture evidence:** [Architecture and Security Snapshot](./ARCHITECTURE_SECURITY_SNAPSHOT_20261120.md) · [Architecture, UI/UX and Production Audit](./ARCHITECTURE_UX_PRODUCTION_AUDIT_20261123.md) · [Application Route and Experience Register](./APP_EXPERIENCE_ROUTE_REGISTER_20261123.md) · [Backend Route-to-Service Map](./BACKEND_ROUTE_SERVICE_MAP_20261123.md)
 
-> This is the single execution ledger. Update each row with an owner, source path, PR/commit, tests, deployment evidence and next action. Status labels describe evidence, not optimism.
+> This is the single execution ledger. Update each row with an owner, source path, PR/commit, tests, deployment evidence and next action. Status labels describe evidence, not optimism. The 23 Nov architecture pass reconciled current navigation and backend route-module counts; it does not upgrade existing feature rows to Accepted.
 
 ## Status vocabulary
 
