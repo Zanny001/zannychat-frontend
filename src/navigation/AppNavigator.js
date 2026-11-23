@@ -197,7 +197,7 @@ function MainTabNavigator() {
       })}
     >
       <MainTabs.Screen name="Chats" component={ChatListScreen} />
-      <MainTabs.Screen name="Calls" component={CallHistoryScreen} />
+      <MainTabs.Screen name="Calls" component={CallHistoryRoute} />
       <MainTabs.Screen name="LIVE" component={LiveHubRoute} options={{ tabBarLabel: "LIVE" }} />
       <MainTabs.Screen name="Updates" component={StatusUpdatesScreen} options={{ tabBarLabel: 'Updates' }} />
       <MainTabs.Screen name="Channels" component={ChannelsScreen} options={{ tabBarLabel: 'Explore' }} />
@@ -221,6 +221,7 @@ function withCallRouteBoundary(Screen, routeName) {
   return IsolatedCallRoute;
 }
 
+const CallHistoryRoute = withCallRouteBoundary(CallHistoryScreen, 'CallHistory');
 const IncomingCallRoute = withCallRouteBoundary(IncomingCallScreen, 'IncomingCall');
 const OutgoingCallRoute = withCallRouteBoundary(OutgoingCallScreen, 'OutgoingCall');
 const DirectCallRoute = withCallRouteBoundary(CallScreen, 'Call');

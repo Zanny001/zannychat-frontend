@@ -7,7 +7,7 @@ import Header from '../components/Header';
 import Avatar from '../components/Avatar';
 import GlassCard from '../components/GlassCard';
 import { useTheme } from '../theme/ThemeContext';
-import { hideCallHistory, listCallHistory } from '../services/calls';
+import { getCallUserId, hideCallHistory, listCallHistory } from '../services/calls';
 import { getCallHistoryLabel } from '../utils/callHistory';
 import { hexToRgba } from '../utils/color';
 import { confirmAction, showAppAlert } from '../utils/appDialogs';
@@ -25,6 +25,7 @@ function formatDuration(seconds) {
 export default function CallHistoryScreen({ navigation }) {
   const { colors, spacing, typography, radii, layout } = useTheme();
   const [calls, setCalls] = useState([]);
+  const [userId, setUserId] = useState(null);
   const [historyFilter, setHistoryFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -38,8 +39,14 @@ export default function CallHistoryScreen({ navigation }) {
     if (refresh) setRefreshing(true); else setLoading(true);
     setError('');
     try {
+      const currentUserId = await getCallUserId();
       const history = await listCallHistory();
-      if (screenFocusedRef.current && requestId === historyRequestIdRef.current) setCalls(history);
+      const verifiedUserId = await getCallUserId();
+      if (verifiedUserId !== currentUserId) return;
+      if (screenFocusedRef.current && requestId === historyRequestIdRef.current) {
+        setCalls(history);
+        setUserId(currentUserId);
+      }
     } catch (e) {
       if (screenFocusedRef.current && requestId === historyRequestIdRef.current) setError(e?.message || 'Call history could not be loaded.');
     } finally {

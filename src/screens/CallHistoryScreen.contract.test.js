@@ -115,3 +115,19 @@ test('direct redial refuses to navigate without a valid peer identity', () => {
   assert.ok(callsScreen.includes("showAppAlert('Contact unavailable'"));
   assert.ok(callsScreen.includes('if (!peerId)'));
 });
+
+
+test('call history resolves the signed-in viewer before rendering direction-sensitive row labels', () => {
+  assert.ok(callsScreen.includes("import { getCallUserId, hideCallHistory, listCallHistory } from '../services/calls'"));
+  assert.ok(callsScreen.includes('const [userId, setUserId] = useState(null)'));
+  assert.ok(callsScreen.includes('const currentUserId = await getCallUserId()'));
+  assert.ok(callsScreen.includes('setUserId(currentUserId)'));
+  assert.ok(callsScreen.includes('getCallHistoryLabel(item, userId)'));
+  assert.ok(callsService.includes('export async function getCallUserId()'));
+});
+
+test('call history verifies the account identity after asynchronous data loading', () => {
+  assert.ok(callsScreen.includes('const verifiedUserId = await getCallUserId()'));
+  assert.ok(callsScreen.includes('if (verifiedUserId !== currentUserId) return'));
+  assert.ok(callsScreen.indexOf('const verifiedUserId = await getCallUserId()') < callsScreen.indexOf('setCalls(history)'));
+});

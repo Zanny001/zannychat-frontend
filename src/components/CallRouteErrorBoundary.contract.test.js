@@ -8,6 +8,7 @@ const boundary = fs.readFileSync(new URL('./CallRouteErrorBoundary.js', import.m
 test('all browser and native call routes are isolated from the authenticated chat tree', () => {
   assert.match(navigation, /export default function AppNavigator/);
   for (const [route, wrapper] of [
+    ['Calls', 'CallHistoryRoute'],
     ['IncomingCall', 'IncomingCallRoute'],
     ['OutgoingCall', 'OutgoingCallRoute'],
     ['Call', 'DirectCallRoute'],
@@ -15,13 +16,14 @@ test('all browser and native call routes are isolated from the authenticated cha
   ]) {
     assert.match(navigation, new RegExp(`name="${route}" component={${wrapper}}`));
   }
+  assert.match(navigation, /withCallRouteBoundary\(CallHistoryScreen, 'CallHistory'\)/);
   assert.match(navigation, /withCallRouteBoundary\(CallScreen, 'Call'\)/);
   assert.match(navigation, /withCallRouteBoundary\(GroupCallScreen, 'GroupCall'\)/);
 });
 
 test('call route render failures are logged without user or session payloads', () => {
   assert.match(boundary, /componentDidCatch\(error, info\)/);
-  assert.match(boundary, /\[calls\] Unhandled call-screen render error/);
+  assert.match(boundary, /\[calls\] Unhandled call-view render error/);
   assert.match(boundary, /route: this\.props\.routeName/);
   assert.match(boundary, /componentStack: info\?\.componentStack/);
   assert.doesNotMatch(boundary, /access_token|refresh_token|callId|conversationId/);
@@ -31,6 +33,6 @@ test('call route fallback returns to the existing app instead of reloading the w
   assert.match(boundary, /navigation\?\.canGoBack\?\.\(\)/);
   assert.match(boundary, /navigation\.goBack\(\)/);
   assert.match(boundary, /navigation\?\.navigate\?\.\('Main'\)/);
-  assert.match(boundary, /Your chat is still available/);
+  assert.match(boundary, /Your chats are still available/);
   assert.doesNotMatch(boundary, /window\.location\.reload/);
 });
