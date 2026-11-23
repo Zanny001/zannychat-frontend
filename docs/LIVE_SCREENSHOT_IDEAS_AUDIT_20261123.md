@@ -99,3 +99,17 @@ Keep the current server-side five-guest cap until the intended seat count is con
 - Do not apply production migrations for this consent slice; it reuses existing invitation statuses.
 - Do not bypass Vercel deployment quota or claim a preview is verified until the exact PR head has a successful deployment.
 - Do not raise the guest cap, create a gift economy, or invent PK scoring from visual screenshots alone.
+
+
+## 7. Previously reported production regressions to re-test
+
+These are historical reports, not claims that the defects still exist on the current production build. Reproduce them against the current deployed revision and attach logs, device/browser details, and exact request/response evidence before assigning a current status:
+
+- LIVE reaction submission failure (reported message: `Could not send LIVE reaction`).
+- LIVE replay availability/playback failure (reported message: `LIVE replays unavailable`).
+- Call-history screen crash when opening a history entry.
+- Google sign-in completing without granting access to the main chat.
+- OAuth callback returning to a blank production screen.
+- Call/video audio reliability issues, including participants unable to hear one another and switching audio/video during an active call.
+
+For each reproduction, trace the full user journey through UI event, client state, network request, backend authorization, database/LiveKit state, and rendered result. Fix the originating layer, add a regression test, then verify the complete journey before release.
