@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Linking, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -44,7 +44,7 @@ export default function LiveWalletScreen({ navigation }) {
   const { colors, spacing, typography, layout } = useTheme();
   const [wallet, setWallet] = useState(null);
   const [packages, setPackages] = useState([]);
-  const [purchasable, setPurchasable] = useState(false);
+  const [backendPurchasable, setBackendPurchasable] = useState(false);
   const [purchaseHistory, setPurchaseHistory] = useState([]);
   const [giftHistory, setGiftHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -64,7 +64,7 @@ export default function LiveWalletScreen({ navigation }) {
     if (results[0].status === 'fulfilled') setWallet(results[0].value);
     if (results[1].status === 'fulfilled') {
       setPackages(Array.isArray(results[1].value?.packages) ? results[1].value.packages : []);
-      setPurchasable(Boolean(results[1].value?.purchasable));
+      setBackendPurchasable(Boolean(results[1].value?.purchasable));
     }
     if (results[2].status === 'fulfilled') setPurchaseHistory(Array.isArray(results[2].value?.purchases) ? results[2].value.purchases : []);
     if (results[3].status === 'fulfilled') setGiftHistory(Array.isArray(results[3].value?.entries) ? results[3].value.entries : []);
@@ -79,7 +79,7 @@ export default function LiveWalletScreen({ navigation }) {
   }, [load]));
 
   const buyPackage = async (packageId) => {
-    if (!purchasable || busyPackage) return;
+    if (!canPurchase || busyPackage) return;
     setBusyPackage(packageId);
     setError('');
     setNotice('');
@@ -98,6 +98,7 @@ export default function LiveWalletScreen({ navigation }) {
     }
   };
 
+  const canPurchase = backendPurchasable && Platform.OS === 'web';
   const purchased = Number(wallet?.purchasedSparks || 0);
   const promotional = Number(wallet?.promotionalSparks || 0);
   const legacy = Number(wallet?.legacySparks || 0);
@@ -162,7 +163,7 @@ export default function LiveWalletScreen({ navigation }) {
         <View style={{ gap: 8 }}>
           <Text style={[typography.heading, { color: colors.textPrimary, fontWeight: '900' }]}>Sparks Store</Text>
           <Text style={[typography.caption, { color: colors.textSecondary }]}>Choose a package. The price and Sparks amount come directly from ZannyChat's server catalogue.</Text>
-          {!purchasable ? (
+          {!backendPurchasable ? (
             <Surface colors={colors}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Ionicons name="shield-checkmark-outline" size={22} color={colors.primary} />
@@ -171,6 +172,16 @@ export default function LiveWalletScreen({ navigation }) {
                   <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4 }]}>
                     Secure checkout will appear when payment onboarding, package prices and webhook verification are configured. No payment can be taken right now.
                   </Text>
+                </View>
+              </View>
+            </Surface>
+          ) : Platform.OS !== 'web' ? (
+            <Surface colors={colors}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Ionicons name="shield-checkmark-outline" size={22} color={colors.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colors.textPrimary, fontWeight: '900' }}>Mobile in-app billing is not connected yet</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4 }]}>Sparks are digital currency. Android purchases must use Google Play Billing and iPhone purchases must use Apple In-App Purchase. External Paystack checkout is not offered inside the mobile app.</Text>
                 </View>
               </View>
             </Surface>
@@ -188,7 +199,7 @@ export default function LiveWalletScreen({ navigation }) {
                   <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: '900' }}>{Number(item.sparks).toLocaleString()} Sparks</Text>
                   <Text style={[typography.caption, { color: colors.textSecondary }]}>{formatNaira(item.amount_minor)}</Text>
                 </View>
-                <TouchableOpacity onPress={() => buyPackage(item.package_id)} disabled={!purchasable || Boolean(busyPackage)}
+                <TouchableOpacity onPress={() => buyPackage(item.package_id)} disabled={!canPurchase || Boolean(busyPackage)}
                   accessibilityRole="button" accessibilityLabel={'Buy ' + item.sparks + ' Sparks'}
                   style={{ minWidth: 92, minHeight: 42, paddingHorizontal: 14, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary, opacity: busyPackage && busyPackage !== item.package_id ? 0.55 : 1 }}>
                   {busyPackage === item.package_id ? <ActivityIndicator color="#FFFFFF" /> : <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>Buy</Text>}
