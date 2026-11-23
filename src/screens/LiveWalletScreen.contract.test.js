@@ -83,3 +83,10 @@ test('verified purchase receipts are owner-scoped, short-lived and accessible fr
   assert.ok(screen.includes('View receipt'));
   assert.ok(service.includes("backendFetch('/live/purchases/' + encodeURIComponent(purchaseId) + '/receipt')"));
 });
+
+test('a failed catalogue refresh clears stale purchase availability and packages', () => {
+  const load = screen.slice(screen.indexOf('const load = useCallback'), screen.indexOf('useFocusEffect'));
+  assert.ok(load.includes('setBackendPurchasable(false)'));
+  assert.ok(load.includes('setPackages([])'));
+  assert.ok(load.indexOf('setBackendPurchasable(false)') < load.indexOf('Promise.allSettled'));
+});
