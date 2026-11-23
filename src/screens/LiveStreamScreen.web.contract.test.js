@@ -271,3 +271,11 @@ test('web LIVE room lets viewers suppress future recommendations from the curren
   assert.ok(webScreen.includes("label=\"Not interested\""));
   assert.ok(webScreen.includes("We will show fewer LIVE streams from this creator."));
 });
+
+
+test('web LIVE room exposes an account-level block action that leaves the active stream', () => {
+  assert.ok(webScreen.includes("import { blockUser, getCurrentUser } from '../services/api'"));
+  assert.ok(webScreen.includes("label=\"Block creator\""));
+  assert.ok(webScreen.includes("await blockUser(stream.creator_id)"));
+  assert.ok(webScreen.includes("await leave()"));
+});
