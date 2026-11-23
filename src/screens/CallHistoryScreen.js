@@ -39,7 +39,10 @@ export default function CallHistoryScreen({ navigation }) {
     if (refresh) setRefreshing(true); else setLoading(true);
     setError('');
     try {
-      const [history, currentUserId] = await Promise.all([listCallHistory(), getCallUserId()]);
+      const currentUserId = await getCallUserId();
+      const history = await listCallHistory();
+      const verifiedUserId = await getCallUserId();
+      if (verifiedUserId !== currentUserId) return;
       if (screenFocusedRef.current && requestId === historyRequestIdRef.current) {
         setCalls(history);
         setUserId(currentUserId);
