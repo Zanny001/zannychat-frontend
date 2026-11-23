@@ -16,7 +16,7 @@ import { Room, RoomEvent, Track } from 'livekit-client';
 import { Ionicons } from '@expo/vector-icons';
 import { backendFetch } from '../services/backendClient';
 import { hexToRgba } from '../utils/color';
-import { getCurrentUser } from '../services/api';
+import { blockUser, getCurrentUser } from '../services/api';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
 import LiveCategoryBackdrop from '../components/LiveCategoryBackdrop';
@@ -788,6 +788,19 @@ export default function LiveStreamScreen({ route, navigation }) {
     try { await backendFetch(`/live/${stream.id}/report`, { method: 'POST', body: JSON.stringify({ reason: value }) }); setStatus('Report submitted'); }
     catch (err) { setError(err?.message || 'Report not sent.'); }
   };
+  const confirmBlockCreator = async () => {
+    if (!stream?.creator_id || creatorMode) return;
+    const confirmed = typeof window !== 'undefined'
+      && window.confirm('Block this LIVE creator? This ends your current LIVE session and prevents future access to their content.');
+    if (!confirmed) return;
+    try {
+      await blockUser(stream.creator_id);
+      await leave();
+    } catch (err) {
+      setError(err?.message || 'Could not block this LIVE creator.');
+    }
+  };
+
   const markNotInterested = async () => {
     if (!stream?.id || creatorMode) return;
     try {
@@ -1138,6 +1151,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       <Action colors={colors} label={commentsVisible ? 'Clean mode' : 'Exit clean mode'} onPress={() => { setCommentsVisible((value) => !value); setShowOverlayMenu(false); }} />
       <Action colors={colors} label="Share LIVE" onPress={() => { shareLiveStream(); setShowOverlayMenu(false); }} />
       {!creatorMode && <Action colors={colors} label="Not interested" onPress={() => { markNotInterested(); setShowOverlayMenu(false); }} />}
+      {!creatorMode && <Action colors={colors} label="Block creator" onPress={() => { confirmBlockCreator(); setShowOverlayMenu(false); }} danger />}
       {publisherMode && experienceMode !== 'audio_room' && connection?.mediaMode !== 'audio' && <Action colors={colors} label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={() => { toggleCamera(); setShowOverlayMenu(false); }} />}
       {publisherMode && <Action colors={colors} label={mic ? 'Mute microphone' : 'Unmute microphone'} onPress={() => { toggleMic(); setShowOverlayMenu(false); }} />}
       {!creatorMode && <Action colors={colors} label="Creator profile" accessibilityLabel="Open LIVE creator profile" onPress={() => { navigation.navigate('LiveCreatorProfile', { participant: { id: stream.creator_id, name: route.params?.creatorName || stream.creator_name || 'LIVE Creator', avatarColor: route.params?.creatorAvatarColor || stream.creator_avatar_color }, fromLive: true, currentLiveStreamId: stream.id, alreadyViewingLive: true, isCurrentUser: false }); setShowOverlayMenu(false); }} />}
