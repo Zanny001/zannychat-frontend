@@ -1115,7 +1115,7 @@ export default function LiveStreamScreen({ route, navigation }) {
     {audioBlocked && <View style={{ position: 'absolute', top: '45%', alignSelf: 'center' }}><Action colors={colors} label="Enable LIVE audio" onPress={() => roomRef.current?.startAudio().then(() => setAudioBlocked(false)).catch((err) => setError(err?.message || 'Audio playback is blocked.'))} /></View>}
 
     {showOverlayMenu && <View style={{ position: 'absolute', top: 76 + insets.top, right: 14, width: 230, padding: 10, borderRadius: 18, backgroundColor: 'rgba(12,11,24,0.96)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)', gap: 7, zIndex: 20 }}>
-      <Action colors={colors} label={commentsVisible ? 'Hide comments' : 'Show comments'} onPress={() => { setCommentsVisible((value) => !value); setShowOverlayMenu(false); }} />
+      <Action colors={colors} label={commentsVisible ? 'Clean mode' : 'Exit clean mode'} onPress={() => { setCommentsVisible((value) => !value); setShowOverlayMenu(false); }} />
       <Action colors={colors} label="Share LIVE" onPress={() => { shareLiveStream(); setShowOverlayMenu(false); }} />
       {publisherMode && experienceMode !== 'audio_room' && connection?.mediaMode !== 'audio' && <Action colors={colors} label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={() => { toggleCamera(); setShowOverlayMenu(false); }} />}
       {publisherMode && <Action colors={colors} label={mic ? 'Mute microphone' : 'Unmute microphone'} onPress={() => { toggleMic(); setShowOverlayMenu(false); }} />}
