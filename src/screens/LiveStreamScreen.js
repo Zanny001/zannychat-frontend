@@ -1295,7 +1295,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       {guestRequestStatus === 'pending' && !publisherMode ? (
         <View style={{ position: 'absolute', zIndex: 42, top: Math.max(insets.top + 164, Platform.OS === 'android' ? 180 : 196), left: 14, right: 14, padding: 13, borderRadius: 16, backgroundColor: 'rgba(12,11,28,0.96)', borderWidth: 1, borderColor: 'rgba(190,160,255,0.65)' }}>
           <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '900' }}>LIVE guest invitation</Text>
-          <Text style={{ color: '#E6E2F4', fontSize: 12, marginTop: 4 }}>The creator invited you to join the stage. Choose whether to join before your camera or microphone is enabled.</Text>
+          <Text style={{ color: '#E6E2F4', fontSize: 12, marginTop: 4 }}>{stream?.creator_name || route.params?.creatorName || 'The LIVE creator'} invited you to join the stage. Choose whether to join before your camera or microphone is enabled.</Text>
           <View style={{ flexDirection: 'row', gap: 9, marginTop: 11 }}>
             <TouchableOpacity onPress={() => decideGuestInvitation('accepted', 'video')} accessibilityRole="button" accessibilityLabel="Accept LIVE guest invitation with video" style={{ flex: 1, minWidth: 78, minHeight: 46, borderRadius: 12, backgroundColor: '#20D9C5', alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ color: '#07131B', fontSize: 11, fontWeight: '900' }}>Video Join</Text>
