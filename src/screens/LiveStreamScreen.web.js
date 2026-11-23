@@ -839,6 +839,35 @@ export default function LiveStreamScreen({ route, navigation }) {
     }
   };
 
+  const enterPictureInPicture = async () => {
+    try {
+      if (typeof document === 'undefined' || typeof document.pictureInPictureEnabled !== 'boolean' || !document.pictureInPictureEnabled) {
+        setStageNotice('Picture-in-picture is not supported by this browser. Keep LIVE open in its current tab.');
+        return;
+      }
+      const activeVideo = document.querySelector('video');
+      if (!activeVideo || activeVideo.readyState < 2) {
+        setStageNotice('LIVE video is not ready for picture-in-picture yet.');
+        return;
+      }
+      if (document.pictureInPictureElement === activeVideo) {
+        await document.exitPictureInPicture();
+        return;
+      }
+      if (typeof activeVideo.requestPictureInPicture !== 'function') {
+        setStageNotice('Picture-in-picture is unavailable for this video in the current browser.');
+        return;
+      }
+      await activeVideo.requestPictureInPicture();
+      setStageNotice('LIVE is playing in picture-in-picture. Return to this tab to restore the full room.');
+      setShowOverlayMenu(false);
+    } catch (err) {
+      if (err?.name !== 'NotAllowedError' && err?.name !== 'AbortError') {
+        setError(err?.message || 'Could not open LIVE picture-in-picture.');
+      }
+    }
+  };
+
   const chooseWebAudioOutput = async () => {
     try {
       if (typeof navigator === 'undefined' || typeof navigator.mediaDevices?.selectAudioOutput !== 'function') {
@@ -1187,6 +1216,7 @@ export default function LiveStreamScreen({ route, navigation }) {
     {showOverlayMenu && <View style={{ position: 'absolute', top: 76 + insets.top, right: 14, width: 230, padding: 10, borderRadius: 18, backgroundColor: 'rgba(12,11,24,0.96)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)', gap: 7, zIndex: 20 }}>
       <Action colors={colors} label={commentsVisible ? 'Clean mode' : 'Exit clean mode'} onPress={() => { setCommentsVisible((value) => !value); setShowOverlayMenu(false); }} />
       <Action colors={colors} label="Share LIVE" onPress={() => { shareLiveStream(); setShowOverlayMenu(false); }} />
+      <Action colors={colors} label="Minimize LIVE · Picture-in-picture" onPress={enterPictureInPicture} />
       <Action colors={colors} label={`Quality · ${qualityMode.toUpperCase()}`} onPress={() => { const modes = ['auto', 'low', 'medium', 'high']; applyVideoQuality(modes[(modes.indexOf(qualityMode) + 1) % modes.length]); setShowOverlayMenu(false); }} />
       <Action colors={colors} label="Audio output" onPress={() => { chooseWebAudioOutput(); setShowOverlayMenu(false); }} />
       {!creatorMode && <Action colors={colors} label="Not interested" onPress={() => { markNotInterested(); setShowOverlayMenu(false); }} />}
