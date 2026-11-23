@@ -296,3 +296,11 @@ test('web guest-request approvals let viewers choose video or audio before joini
   assert.ok(web.includes("joinGuest('video')"));
   assert.ok(web.includes("joinGuest('audio')"));
 });
+
+
+test('web LIVE room exposes a browser audio-output picker with safe fallback', () => {
+  assert.ok(web.includes('navigator.mediaDevices?.selectAudioOutput'));
+  assert.ok(web.includes("switchActiveDevice('audiooutput'"));
+  assert.ok(web.includes('label="Audio output"'));
+  assert.ok(web.includes('Use your device sound settings.'));
+});
