@@ -654,11 +654,11 @@ test('native and web LIVE polling stops issuing requests and applying responses 
 test('direct LIVE guest invitations require explicit accept or reject before joining the stage', () => {
   assert.ok(screen.includes("/guest-invitation"));
   assert.ok(screen.includes("guestRequestStatus === 'pending'"));
-  assert.ok(screen.includes("decideGuestInvitation('accepted')"));
+  assert.ok(screen.includes("decideGuestInvitation('accepted', 'video')"));
   assert.ok(screen.includes("decideGuestInvitation('declined')"));
   assert.ok(screen.includes("Accept LIVE guest invitation"));
   assert.ok(screen.includes("Reject LIVE guest invitation"));
-  assert.ok(screen.includes("await joinAsGuest()"));
+  assert.ok(screen.includes("await joinAsGuest(mediaMode)"));
 });
 
 
