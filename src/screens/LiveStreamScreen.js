@@ -580,6 +580,7 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [replayBusy, setReplayBusy] = useState(false);
   const [error, setError] = useState('');
   const [economyOpen, setEconomyOpen] = useState(false);
+  const [liveFeedSignal, setLiveFeedSignal] = useState(0);
   useEffect(() => {
     if (!route.params?.openLiveEconomy) return;
     setEconomyOpen(true);
