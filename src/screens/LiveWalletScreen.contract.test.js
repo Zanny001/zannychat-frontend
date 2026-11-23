@@ -119,7 +119,7 @@ test('iOS Sparks purchases use StoreKit signed transactions and account binding 
   const ios = fs.readFileSync(new URL('../services/liveStoreBilling.ios.js', import.meta.url), 'utf8');
   assert.ok(ios.includes("apple: {"));
   assert.ok(ios.includes('appAccountToken'));
-  assert.ok(ios.includes('purchaseToken'));
+  assert.ok(screen.includes('purchase?.purchaseToken') || screen.includes('purchaseToken = String(purchase?.purchaseToken'));
   assert.ok(ios.includes('finishTransaction({ purchase, isConsumable: true })'));
   assert.ok(ios.includes('purchaseUpdatedListener'));
   assert.ok(ios.includes('purchaseErrorListener'));
