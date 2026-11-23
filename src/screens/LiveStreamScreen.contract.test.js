@@ -669,3 +669,11 @@ test('LIVE guest invitation supports explicit video or audio-only admission', ()
   assert.ok(screen.includes("connection?.mediaMode !== 'audio'"));
   assert.ok(screen.includes("mediaMode={connection?.mediaMode || 'video'}"));
 });
+
+
+test('native LIVE room exposes a real share action with the stream deep link', () => {
+  assert.ok(screen.includes('Share.share('));
+  assert.ok(screen.includes('https://zannychat.vercel.app/LiveStream?streamId='));
+  assert.ok(screen.includes('label="Share LIVE"'));
+  assert.ok(screen.includes('onShare={shareLiveStream}'));
+});
