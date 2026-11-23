@@ -122,7 +122,7 @@ export default function LiveWalletScreen({ navigation }) {
         await finishLiveStorePurchase(purchase);
         setNotice(Number(verified.sparks).toLocaleString() + ' Sparks were verified and added to your wallet.');
       } catch (_) {
-        setNotice('Your Sparks were verified and added. Google Play transaction finalization is pending; refresh this wallet to retry safely.');
+        setNotice('Your Sparks were verified and added. ' + (Platform.OS === 'ios' ? 'Apple' : 'Google Play') + ' transaction finalization is pending; refresh this wallet to retry safely.');
       }
       await load();
     } catch (purchaseError) {
