@@ -721,3 +721,11 @@ test('native guest-request approvals let viewers choose video or audio before jo
 test('native guest invitation prompt identifies the inviting creator when available', () => {
   assert.ok(screen.includes("stream?.creator_name || route.params?.creatorName || 'The LIVE creator'"));
 });
+
+
+test('native and web LIVE rooms open the gifts PK and translation panel from a challenge notification', () => {
+  assert.ok(screen.includes('route.params?.openLiveEconomy'));
+  assert.ok(screen.includes('setEconomyOpen(true)'));
+  assert.ok(webScreen.includes('route.params?.openLiveEconomy'));
+  assert.ok(webScreen.includes('setEconomyOpen(true)'));
+});
