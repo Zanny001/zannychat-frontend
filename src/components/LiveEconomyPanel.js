@@ -82,7 +82,9 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
     setLoading(false);
   }, [streamId, creatorMode]);
 
-  useEffect(() => {\n    loadPanel();\n    const timer = setInterval(refreshBattle, 5000);
+  useEffect(() => {
+    loadPanel();
+    const timer = setInterval(refreshBattle, 5000);
     return () => clearInterval(timer);
   }, [loadPanel, refreshBattle]);
 
