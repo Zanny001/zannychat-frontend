@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AudioSession, LiveKitRoom, VideoTrack, isTrackReference, useRoomContext, useTracks } from '@livekit/react-native';
 import { RoomEvent, Track } from 'livekit-client';
 import { backendFetch } from '../services/backendClient';
-import { getCurrentUser } from '../services/api';
+import { blockUser, getCurrentUser } from '../services/api';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
 import { hexToRgba } from '../utils/color';
@@ -292,6 +292,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarn
             <LiveMenuAction icon={showComments ? 'chatbubbles-outline' : 'chatbubble-outline'} label={showComments ? 'Clean mode' : 'Exit clean mode'} accessibilityLabel={showComments ? 'Hide LIVE comments and reactions with clean mode' : 'Restore LIVE comments and reactions'} onPress={() => setShowComments((value) => !value)} colors={colors} />
             <LiveMenuAction icon="share-social-outline" label="Share LIVE" accessibilityLabel="Share this LIVE stream" onPress={onShare} colors={colors} />
             {!creatorMode ? <LiveMenuAction icon="eye-off-outline" label="Not interested" accessibilityLabel="Show fewer LIVE streams from this creator" onPress={() => { setShowOverlayMenu(false); onNotInterested?.(); }} colors={colors} /> : null}
+            {!creatorMode ? <LiveMenuAction icon="ban-outline" label="Block creator" accessibilityLabel="Block this LIVE creator and leave the room" onPress={() => { setShowOverlayMenu(false); confirmBlockCreator(); }} colors={colors} /> : null}
             <LiveMenuAction icon="volume-high-outline" label="Audio output" accessibilityLabel="Choose LIVE audio output" onPress={chooseNativeAudioOutput} colors={colors} />
             {creatorMode ? <LiveMenuAction icon="people-outline" label="Participants" accessibilityLabel="Open Creator Studio" onPress={onToggleParticipants} colors={colors} /> : null}
             {creatorMode && canManageGuests ? <LiveMenuAction icon="person-add-outline" label="Requests" accessibilityLabel="Review guest requests" onPress={onToggleGuestRequests} colors={colors} /> : null}
@@ -1019,6 +1020,25 @@ export default function LiveStreamScreen({ route, navigation }) {
       setGuestRequests(Array.isArray(result?.requests) ? result.requests : []);
       setShowGuestRequests(true);
     } catch (e) { Alert.alert('Guest requests unavailable', e?.message || 'Please try again.'); }
+  };
+
+  const confirmBlockCreator = () => {
+    if (!stream?.creator_id || creatorMode) return;
+    Alert.alert(
+      'Block this LIVE creator?',
+      'Blocking this account will end your current LIVE session and prevent future access to their content.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Block', style: 'destructive', onPress: async () => {
+          try {
+            await blockUser(stream.creator_id);
+            await leave();
+          } catch (error) {
+            Alert.alert('Could not block creator', error?.message || 'Please try again.');
+          }
+        } },
+      ],
+    );
   };
 
   const markNotInterested = async () => {
