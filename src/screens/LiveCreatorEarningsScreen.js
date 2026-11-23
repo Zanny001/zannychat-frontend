@@ -86,6 +86,16 @@ export default function LiveCreatorEarningsScreen({ navigation }) {
           </View>
         </Surface>
 
+        <TouchableOpacity onPress={() => navigation.navigate('LiveCreatorPayout')} accessibilityRole="button" accessibilityLabel="Open bank payout setup"
+          style={{ minHeight: 54, borderRadius: 17, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: 15, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Ionicons name="business-outline" size={20} color={colors.primary} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: colors.textPrimary, fontWeight: '900' }}>Bank and withdrawals</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>Verify a bank account and track payouts</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+        </TouchableOpacity>
+
         <Surface colors={colors}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Ionicons name="information-circle-outline" size={22} color={colors.primary} />
