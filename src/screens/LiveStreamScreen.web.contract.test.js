@@ -279,3 +279,12 @@ test('web LIVE room exposes an account-level block action that leaves the active
   assert.ok(web.includes("await blockUser(stream.creator_id)"));
   assert.ok(web.includes("await leave()"));
 });
+
+
+test('web LIVE room quality control applies LiveKit remote publication quality caps', () => {
+  assert.ok(web.includes("VideoQuality.LOW"));
+  assert.ok(web.includes("VideoQuality.MEDIUM"));
+  assert.ok(web.includes("VideoQuality.HIGH"));
+  assert.ok(web.includes("publication.setVideoQuality(quality)"));
+  assert.ok(web.includes("label={`Quality · ${qualityMode.toUpperCase()}`}"));
+});
