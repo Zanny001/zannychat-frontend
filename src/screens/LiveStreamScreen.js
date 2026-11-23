@@ -14,7 +14,7 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import { Ionicons } from '@expo/vector-icons';
 import { AudioSession, LiveKitRoom, VideoTrack, isTrackReference, useRoomContext, useTracks } from '@livekit/react-native';
-import { RoomEvent, Track } from 'livekit-client';
+import { RoomEvent, Track, VideoQuality } from 'livekit-client';
 import { backendFetch } from '../services/backendClient';
 import { blockUser, getCurrentUser } from '../services/api';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
@@ -164,6 +164,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarn
   const compactRoomHeader = roomViewportWidth < 390;
   const room = useRoomContext();
   const [showOverlayMenu, setShowOverlayMenu] = useState(false);
+  const [qualityMode, setQualityMode] = useState('auto');
 
   useEffect(() => {
     const onDataReceived = (payload, _participant, _kind, topic) => {
@@ -177,6 +178,28 @@ function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarn
       room.off(RoomEvent.Reconnected, onReconnected);
     };
   }, [room, onRealtimeFeedSignal]);
+
+  const applyVideoQuality = (mode) => {
+    const quality = mode === 'low' ? VideoQuality.LOW : mode === 'medium' ? VideoQuality.MEDIUM : VideoQuality.HIGH;
+    room.remoteParticipants.forEach((participant) => {
+      participant.trackPublications.forEach((publication) => {
+        if (publication.kind === Track.Kind.Video && typeof publication.setVideoQuality === 'function') {
+          publication.setVideoQuality(quality);
+        }
+      });
+    });
+    setQualityMode(mode);
+  };
+
+  useEffect(() => {
+    const onTrackSubscribed = (_track, publication) => {
+      if (publication?.kind !== Track.Kind.Video || typeof publication.setVideoQuality !== 'function') return;
+      const quality = qualityMode === 'low' ? VideoQuality.LOW : qualityMode === 'medium' ? VideoQuality.MEDIUM : VideoQuality.HIGH;
+      publication.setVideoQuality(quality);
+    };
+    room.on(RoomEvent.TrackSubscribed, onTrackSubscribed);
+    return () => room.off(RoomEvent.TrackSubscribed, onTrackSubscribed);
+  }, [room, qualityMode]);
 
   const [showComments, setShowComments] = useState(true);
   const [focusedStageIdentity, setFocusedStageIdentity] = useState(null);
@@ -291,6 +314,7 @@ function LiveMedia({ streamId, creatorId, creatorMode, timeoutLabel, timeoutWarn
             {moderatorMode && onOpenReports ? <LiveMenuAction icon="flag-outline" label="Reports" accessibilityLabel="Open LIVE safety reports workspace" onPress={onOpenReports} colors={colors} /> : null}
             <LiveMenuAction icon={showComments ? 'chatbubbles-outline' : 'chatbubble-outline'} label={showComments ? 'Clean mode' : 'Exit clean mode'} accessibilityLabel={showComments ? 'Hide LIVE comments and reactions with clean mode' : 'Restore LIVE comments and reactions'} onPress={() => setShowComments((value) => !value)} colors={colors} />
             <LiveMenuAction icon="share-social-outline" label="Share LIVE" accessibilityLabel="Share this LIVE stream" onPress={onShare} colors={colors} />
+            <LiveMenuAction icon="speedometer-outline" label={`Quality · ${qualityMode.toUpperCase()}`} accessibilityLabel={`Change LIVE video quality, currently ${qualityMode}`} onPress={() => { const modes = ['auto', 'low', 'medium', 'high']; applyVideoQuality(modes[(modes.indexOf(qualityMode) + 1) % modes.length]); }} colors={colors} />
             {!creatorMode ? <LiveMenuAction icon="eye-off-outline" label="Not interested" accessibilityLabel="Show fewer LIVE streams from this creator" onPress={() => { setShowOverlayMenu(false); onNotInterested?.(); }} colors={colors} /> : null}
             {!creatorMode ? <LiveMenuAction icon="ban-outline" label="Block creator" accessibilityLabel="Block this LIVE creator and leave the room" onPress={() => { setShowOverlayMenu(false); onBlockCreator?.(); }} colors={colors} /> : null}
             <LiveMenuAction icon="volume-high-outline" label="Audio output" accessibilityLabel="Choose LIVE audio output" onPress={chooseNativeAudioOutput} colors={colors} />
