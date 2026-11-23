@@ -227,6 +227,8 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [panel, setPanel] = useState('');
   const [showOverlayMenu, setShowOverlayMenu] = useState(false);
   const [qualityMode, setQualityMode] = useState('auto');
+  const qualityModeRef = useRef('auto');
+  qualityModeRef.current = qualityMode;
   const [commentsVisible, setCommentsVisible] = useState(true);
   const [focusedStageIdentity, setFocusedStageIdentity] = useState('');
 
@@ -402,6 +404,11 @@ export default function LiveStreamScreen({ route, navigation }) {
       target.appendChild(element);
     };
     const onSubscribed = (track, publication, participant) => {
+      if (publication?.kind === Track.Kind.Video && typeof publication.setVideoQuality === 'function') {
+        const currentMode = qualityModeRef.current;
+        const quality = currentMode === 'low' ? VideoQuality.LOW : currentMode === 'medium' ? VideoQuality.MEDIUM : VideoQuality.HIGH;
+        publication.setVideoQuality(quality);
+      }
       if (track.kind === Track.Kind.Video) {
         setRemoteVideoTracks((current) => current.some((item) => item.track.sid === track.sid)
           ? current
@@ -843,18 +850,6 @@ export default function LiveStreamScreen({ route, navigation }) {
     });
     setQualityMode(mode);
   };
-
-  useEffect(() => {
-    const room = roomRef.current;
-    if (!room) return undefined;
-    const onTrackSubscribed = (_track, publication) => {
-      if (publication?.kind !== Track.Kind.Video || typeof publication.setVideoQuality !== 'function') return;
-      const quality = qualityMode === 'low' ? VideoQuality.LOW : qualityMode === 'medium' ? VideoQuality.MEDIUM : VideoQuality.HIGH;
-      publication.setVideoQuality(quality);
-    };
-    room.on(RoomEvent.TrackSubscribed, onTrackSubscribed);
-    return () => room.off(RoomEvent.TrackSubscribed, onTrackSubscribed);
-  }, [qualityMode, connection?.token]);
 
   const requestGuest = async () => {
     try { await backendFetch(`/live/${stream.id}/guest-requests`, { method: 'POST' }); setGuestStatus('requested'); }
