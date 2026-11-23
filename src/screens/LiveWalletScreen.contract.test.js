@@ -41,3 +41,17 @@ test('Sparks wallet is reachable from LIVE hub navigation', () => {
   assert.ok(navigator.includes("import LiveWalletScreen from '../screens/LiveWalletScreen'"));
   assert.ok(navigator.includes("name=\"LiveWallet\" component={LiveWalletRoute}"));
 });
+
+test('creator earnings dashboard is separately reachable from Sparks wallet and backed by ledger APIs', () => {
+  assert.ok(screen.includes("navigation.navigate('LiveCreatorEarnings')"));
+  assert.ok(service.includes("backendFetch('/live/creator-earnings/summary')"));
+  assert.ok(service.includes("backendFetch('/live/creator-earnings/history')"));
+  const earnings = fs.readFileSync(new URL('./LiveCreatorEarningsScreen.js', import.meta.url), 'utf8');
+  assert.ok(earnings.includes('getLiveCreatorEarningsSummary()'));
+  assert.ok(earnings.includes('getLiveCreatorEarningsHistory()'));
+  assert.ok(earnings.includes('availableMinor'));
+  assert.ok(earnings.includes('pendingMinor'));
+  assert.ok(earnings.includes('earningEnabled'));
+  assert.ok(earnings.includes('identity verification'));
+  assert.ok(navigator.includes("name=\\\"LiveCreatorEarnings\\\" component={LiveCreatorEarningsRoute}"));
+});
