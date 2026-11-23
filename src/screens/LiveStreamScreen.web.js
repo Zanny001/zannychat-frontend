@@ -215,6 +215,8 @@ export default function LiveStreamScreen({ route, navigation }) {
   const guestStatusRefreshInFlight = useRef(false);
   const guestRequestsRefreshInFlight = useRef(false);
   const replayRefreshInFlight = useRef(false);
+  const reactionRequestInFlight = useRef(false);
+  const lastReactionRequestAt = useRef(0);
   const studioParticipantsRefreshInFlight = useRef(false);
   const [draft, setDraft] = useState('');
   const [guestStatus, setGuestStatus] = useState('none');
@@ -769,11 +771,18 @@ export default function LiveStreamScreen({ route, navigation }) {
       setError('The LIVE room is still connecting. Please try again.');
       return;
     }
+    if (reactionRequestInFlight.current) return;
+    const now = Date.now();
+    if (now - lastReactionRequestAt.current < 1300) return;
+    reactionRequestInFlight.current = true;
+    lastReactionRequestAt.current = now;
     try {
       const result = await backendFetch(`/live/${stream.id}/react`, { method: 'POST', body: JSON.stringify({ reaction }) });
       if (result?.accepted) await refreshComments();
     } catch (err) {
       setError(err?.message || 'Reaction not sent.');
+    } finally {
+      reactionRequestInFlight.current = false;
     }
   };
   const removeFloatingReaction = useCallback((reactionId) => {
