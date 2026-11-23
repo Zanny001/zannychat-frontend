@@ -122,6 +122,7 @@ function RemoteVideoTile({ track, participant, colors, creatorId, spotlight = fa
   })).current;
   useEffect(() => {
     const element = track.attach(); element.autoplay = true; element.playsInline = true; element.style.width = '100%'; element.style.height = '100%'; element.style.objectFit = 'cover';
+    if (element instanceof HTMLVideoElement && mainStage) element.dataset.zannyLivePip = 'true';
     containerRef.current?.replaceChildren(element);
     return () => { track.detach(element); containerRef.current?.replaceChildren(); };
   }, [track]);
@@ -461,6 +462,8 @@ export default function LiveStreamScreen({ route, navigation }) {
       if (publication.source === Track.Source.Camera && publication.videoTrack && localRef.current) {
         localRef.current.replaceChildren();
         attach(publication.videoTrack, localRef.current);
+        const localVideo = localRef.current.querySelector('video');
+        if (localVideo) localVideo.dataset.zannyLivePip = 'true';
       }
     };
 
@@ -845,7 +848,7 @@ export default function LiveStreamScreen({ route, navigation }) {
         setStageNotice('Picture-in-picture is not supported by this browser. Keep LIVE open in its current tab.');
         return;
       }
-      const activeVideo = document.querySelector('video');
+      const activeVideo = document.querySelector('video[data-zanny-live-pip="true"]');
       if (!activeVideo || activeVideo.readyState < 2) {
         setStageNotice('LIVE video is not ready for picture-in-picture yet.');
         return;
