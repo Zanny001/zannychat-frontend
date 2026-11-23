@@ -69,6 +69,7 @@ test('creator payout screen uses server verification and never stores full bank 
   assert.ok(payout.includes('requestLiveCreatorPayout({ beneficiaryId: selectedBeneficiaryId, amountMinor })'));
   assert.ok(payout.includes(String.raw`value.replace(/\D/g, '').slice(0, 10)`) && payout.includes('not stored by ZannyChat'));
   assert.ok(payout.includes('PAYOUT_KYC_REQUIRED'));
+  assert.ok(payout.includes('PAYOUT_FEE_POLICY_REQUIRED'));
   assert.ok(payout.includes('No withdrawal can be submitted.'));
   const earningsScreen = fs.readFileSync(new URL('./LiveCreatorEarningsScreen.js', import.meta.url), 'utf8');
   assert.ok(earningsScreen.includes("navigation.navigate('LiveCreatorPayout')"));
