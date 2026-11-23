@@ -15,7 +15,7 @@ export default class CallRouteErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, info) {
-    console.error('[calls] Unhandled call-screen render error:', {
+    console.error('[calls] Unhandled call-view render error:', {
       route: this.props.routeName || 'Call',
       name: error?.name || 'Error',
       message: error?.message || 'Unknown call rendering error',
@@ -43,9 +43,9 @@ export default class CallRouteErrorBoundary extends React.Component {
       <View style={styles.container} accessibilityRole="alert">
         <View style={styles.panel}>
           <Text style={styles.eyebrow}>ZANNYCHAT CALL</Text>
-          <Text style={styles.title}>This call screen couldn’t open</Text>
+          <Text style={styles.title}>This call view couldn’t open</Text>
           <Text style={styles.description}>
-            Your chat is still available. Close this call screen and try again.
+            Your chats are still available. Close this view and try again.
           </Text>
           {this.state.diagnosticId ? <Text selectable style={styles.code}>Diagnostic reference: {this.state.diagnosticId}</Text> : null}
           <Pressable accessibilityRole="button" accessibilityLabel="Return to chats" onPress={this.handleClose} style={styles.button}>
