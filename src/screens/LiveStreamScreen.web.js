@@ -20,6 +20,7 @@ import { blockUser, getCurrentUser } from '../services/api';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { useTheme } from '../theme/ThemeContext';
 import LiveCategoryBackdrop from '../components/LiveCategoryBackdrop';
+import LiveEconomyPanel from '../components/LiveEconomyPanel';
 import { formatLiveBroadcastTimeRemaining, getLiveBroadcastTimeRemaining, LIVE_BROADCAST_WARNING_MS } from '../utils/liveBroadcastTimeout';
 import { getActiveCreatorStreamId, hasLiveConnectionCredentials } from '../utils/liveCreatorRecovery';
 import { getLiveStageTileFrame } from '../utils/liveStageLayout';
@@ -227,6 +228,12 @@ export default function LiveStreamScreen({ route, navigation }) {
   const [participants, setParticipants] = useState([]);
   const [panel, setPanel] = useState('');
   const [showOverlayMenu, setShowOverlayMenu] = useState(false);
+  const [economyOpen, setEconomyOpen] = useState(false);
+  useEffect(() => {
+    if (!route.params?.openLiveEconomy) return;
+    setEconomyOpen(true);
+    navigation.setParams?.({ openLiveEconomy: undefined });
+  }, [route.params?.openLiveEconomy, navigation]);
   const [qualityMode, setQualityMode] = useState('auto');
   const qualityModeRef = useRef('auto');
   qualityModeRef.current = qualityMode;
@@ -1222,6 +1229,7 @@ export default function LiveStreamScreen({ route, navigation }) {
       <Action colors={colors} label="Minimize LIVE · Picture-in-picture" onPress={enterPictureInPicture} />
       <Action colors={colors} label={`Quality · ${qualityMode.toUpperCase()}`} onPress={() => { const modes = ['auto', 'low', 'medium', 'high']; applyVideoQuality(modes[(modes.indexOf(qualityMode) + 1) % modes.length]); setShowOverlayMenu(false); }} />
       <Action colors={colors} label="Audio output" onPress={() => { chooseWebAudioOutput(); setShowOverlayMenu(false); }} />
+      <Action colors={colors} label="Gifts · PK · Translate" onPress={() => { setEconomyOpen(true); setShowOverlayMenu(false); }} />
       {!creatorMode && <Action colors={colors} label="Not interested" onPress={() => { markNotInterested(); setShowOverlayMenu(false); }} />}
       {!creatorMode && <Action colors={colors} label="Block creator" onPress={() => { confirmBlockCreator(); setShowOverlayMenu(false); }} danger />}
       {publisherMode && experienceMode !== 'audio_room' && connection?.mediaMode !== 'audio' && <Action colors={colors} label={camera ? 'Turn camera off' : 'Turn camera on'} onPress={() => { toggleCamera(); setShowOverlayMenu(false); }} />}
@@ -1283,6 +1291,7 @@ export default function LiveStreamScreen({ route, navigation }) {
         </>}
       </ScrollView>
     </View>}
+    {economyOpen && <LiveEconomyPanel streamId={stream.id} creatorId={stream.creator_id} creatorMode={creatorMode} onClose={() => setEconomyOpen(false)} />}
     {busy && <View pointerEvents="none" style={{ position: 'absolute', top: '50%', alignSelf: 'center' }}><ActivityIndicator color="#FFFFFF" /></View>}
   </View>;
 }
