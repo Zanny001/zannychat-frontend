@@ -239,8 +239,9 @@ test('web LIVE guest invitations require explicit accept or reject before joinin
   assert.ok(web.includes("guestStatus === 'pending'"));
   assert.ok(web.includes("decideGuestInvitation('accepted')"));
   assert.ok(web.includes("decideGuestInvitation('declined')"));
-  assert.ok(web.includes("Accept invitation"));
-  assert.ok(web.includes("await joinGuest()"));
+  assert.ok(web.includes('label="Video Join"'));
+  assert.ok(web.includes('label="Audio Join"'));
+  assert.ok(web.includes("await joinGuest(mediaMode)"));
 });
 
 
