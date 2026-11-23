@@ -83,6 +83,7 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
       getLiveTranslationStatus(),
       getCurrentLiveBattle(streamId),
       creatorMode ? backendFetch('/live/' + encodeURIComponent(streamId) + '/participants') : Promise.resolve({ participants: [] }),
+      getLiveGiftStreamFeed(streamId),
     ]);
     if (gifts.status === 'fulfilled') setCatalog(Array.isArray(gifts.value?.gifts) ? gifts.value.gifts : []);
     if (balance.status === 'fulfilled') setWallet(balance.value);
