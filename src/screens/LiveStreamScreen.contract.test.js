@@ -691,3 +691,11 @@ test('native LIVE room lets viewers suppress future recommendations from the cur
   assert.ok(screen.includes("onNotInterested={markNotInterested}"));
   assert.ok(screen.includes("We will show fewer LIVE streams from this creator."));
 });
+
+
+test('native LIVE room exposes an account-level block action that leaves the active stream', () => {
+  assert.ok(screen.includes("import { blockUser, getCurrentUser } from '../services/api'"));
+  assert.ok(screen.includes("label=\"Block creator\""));
+  assert.ok(screen.includes("await blockUser(stream.creator_id)"));
+  assert.ok(screen.includes("await leave()"));
+});
