@@ -1,6 +1,6 @@
 import { backendFetch } from './backendClient';
 
-function makeIdempotencyKey() {
+export function createLiveGiftIdempotencyKey() {
   return 'livegift-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 14);
 }
 
@@ -16,7 +16,7 @@ export function getLiveGiftHistory(limit = 12) {
   return backendFetch('/live/gifts/history?limit=' + encodeURIComponent(String(limit)));
 }
 
-export function sendLiveGift({ streamId, recipientId, giftId, quantity = 1 }) {
+export function sendLiveGift({ streamId, recipientId, giftId, quantity = 1, idempotencyKey = createLiveGiftIdempotencyKey() }) {
   return backendFetch('/live/gifts/send', {
     method: 'POST',
     body: JSON.stringify({
@@ -24,7 +24,7 @@ export function sendLiveGift({ streamId, recipientId, giftId, quantity = 1 }) {
       recipientId,
       giftId,
       quantity,
-      idempotencyKey: makeIdempotencyKey(),
+      idempotencyKey,
     }),
   });
 }
