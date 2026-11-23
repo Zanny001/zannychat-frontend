@@ -16,7 +16,7 @@ export function getLiveGiftHistory(limit = 12) {
   return backendFetch('/live/gifts/history?limit=' + encodeURIComponent(String(limit)));
 }
 
-export function sendLiveGift({ streamId, recipientId, giftId, quantity = 1, battleId = null }) {
+export function sendLiveGift({ streamId, recipientId, giftId, quantity = 1 }) {
   return backendFetch('/live/gifts/send', {
     method: 'POST',
     body: JSON.stringify({
@@ -24,7 +24,6 @@ export function sendLiveGift({ streamId, recipientId, giftId, quantity = 1, batt
       recipientId,
       giftId,
       quantity,
-      battleId,
       idempotencyKey: makeIdempotencyKey(),
     }),
   });
