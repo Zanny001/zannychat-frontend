@@ -2,7 +2,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import {
+  acceptLiveBattle,
   createLiveBattle,
+  declineLiveBattle,
   finishLiveBattle,
   getCurrentLiveBattle,
   getLiveBattle,
@@ -126,15 +128,39 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
       const created = await createLiveBattle({ streamId, opponentId: selectedBattleOpponentId, durationSeconds });
       const battleId = created?.battleId;
       if (!battleId) throw new Error('The server did not return a PK battle id.');
-      try {
-        await startLiveBattle(battleId);
-      } catch (startError) {
-        setNotice('PK challenge created but not started: ' + (startError?.message || 'try again'));
-      }
+      setNotice('PK challenge sent. The stage guest must accept before the host can start.');
       const latest = await getLiveBattle(battleId);
       setBattle(latest?.battle || { id: battleId, status: 'pending' });
     } catch (error) {
       setNotice(error?.message || 'Could not create the PK battle.');
+    } finally {
+      setBattleBusy(false);
+    }
+  };
+
+  const handleAcceptBattle = async () => {
+    if (!battle?.id || battleBusy) return;
+    setBattleBusy(true);
+    try {
+      const result = await acceptLiveBattle(battle.id);
+      setBattle(result?.battle || battle);
+      setNotice('PK challenge accepted. The host can now start the match.');
+    } catch (error) {
+      setNotice(error?.message || 'Could not accept the PK challenge.');
+    } finally {
+      setBattleBusy(false);
+    }
+  };
+
+  const handleDeclineBattle = async () => {
+    if (!battle?.id || battleBusy) return;
+    setBattleBusy(true);
+    try {
+      const result = await declineLiveBattle(battle.id);
+      setBattle(result?.battle || battle);
+      setNotice('PK challenge declined.');
+    } catch (error) {
+      setNotice(error?.message || 'Could not decline the PK challenge.');
     } finally {
       setBattleBusy(false);
     }
@@ -222,7 +248,7 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
             <Text style={{ color: '#F6F1FF', fontSize: 13, fontWeight: '900' }}>PK arena</Text>
             <Text style={{ color: '#BEB4D7', fontSize: 10, marginTop: 4 }}>Scores come only from completed gift transactions. Reactions do not count.</Text>
             {battle ? <View style={{ marginTop: 9, padding: 10, borderRadius: 12, backgroundColor: 'rgba(135,100,255,0.12)' }}>
-              <Text style={{ color: '#F4EEFF', fontWeight: '900', fontSize: 11 }}>{battle.status === 'live' ? 'LIVE BATTLE' : battle.status === 'ended' ? 'BATTLE RESULT' : 'CHALLENGE PENDING'}</Text>
+              <Text style={{ color: '#F4EEFF', fontWeight: '900', fontSize: 11 }}>{battle.status === 'live' ? 'LIVE BATTLE' : battle.status === 'ended' ? 'BATTLE RESULT' : battle.status === 'accepted' ? 'CHALLENGE ACCEPTED' : battle.status === 'cancelled' ? 'CHALLENGE CLOSED' : 'CHALLENGE PENDING'}</Text>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 7 }}>
                 <View style={{ flex: 1 }}><Text style={{ color: '#C9B9FF', fontSize: 10 }}>HOST</Text><Text style={{ color: '#FFFFFF', fontSize: 22, fontWeight: '900' }}>{Number(battle.score_a || 0).toLocaleString()}</Text></View>
                 <Text style={{ color: '#C9B9FF', fontSize: 15, fontWeight: '900', alignSelf: 'center' }}>VS</Text>
@@ -230,16 +256,19 @@ export default function LiveEconomyPanel({ streamId, creatorId, creatorMode, onC
               </View>
               {battle.status === 'ended' ? <Text style={{ color: '#E5D9FF', fontSize: 11, fontWeight: '800', marginTop: 6 }}>{winnerLabel}</Text> : null}
               {battle.status === 'live' && battle.ends_at ? <Text style={{ color: '#CBB9FF', fontSize: 10, marginTop: 5 }}>Ends {new Date(battle.ends_at).toLocaleTimeString()}</Text> : null}
-              {creatorMode && battle.status === 'pending' ? <PanelAction label={battleBusy ? 'Starting…' : 'Start battle'} onPress={handleStartBattle} disabled={battleBusy} colors={colors} /> : null}
-              {creatorMode && battle.status === 'live' ? <PanelAction label="End battle" tone="danger" onPress={handleFinishBattle} disabled={battleBusy} colors={colors} /> : null}
-              {creatorMode && battle.status === 'ended' ? <PanelAction label="Start another PK battle" onPress={() => setBattle(null)} colors={colors} /> : null}
+              {battle.status === 'pending' && battle.canAccept ? <View style={{ flexDirection: 'row', gap: 7, marginTop: 8 }}><PanelAction label={battleBusy ? 'Please wait…' : 'Accept challenge'} onPress={handleAcceptBattle} disabled={battleBusy} colors={colors} /><PanelAction label="Decline" tone="danger" onPress={handleDeclineBattle} disabled={battleBusy} colors={colors} /></View> : null}
+              {battle.status === 'pending' && !battle.canAccept ? <Text style={{ color: '#D8D0EA', fontSize: 10, marginTop: 7 }}>Waiting for the invited stage guest to accept or decline.</Text> : null}
+              {battle.status === 'accepted' && battle.canStart ? <PanelAction label={battleBusy ? 'Starting…' : 'Start battle'} onPress={handleStartBattle} disabled={battleBusy} colors={colors} /> : null}
+              {battle.status === 'accepted' && !battle.canStart ? <Text style={{ color: '#D8D0EA', fontSize: 10, marginTop: 7 }}>Challenge accepted. Waiting for the host to start.</Text> : null}
+              {battle.status === 'live' && creatorMode ? <PanelAction label="End battle" tone="danger" onPress={handleFinishBattle} disabled={battleBusy} colors={colors} /> : null}
+              {['ended', 'cancelled'].includes(battle.status) && creatorMode ? <PanelAction label="Start another PK battle" onPress={() => setBattle(null)} colors={colors} /> : null}
             </View> : creatorMode ? <>
               <Text style={{ color: '#D8D0EA', fontSize: 10, marginTop: 8 }}>{opponents.length ? 'Choose an approved guest already on your stage.' : 'PK requires an approved guest publisher on the same LIVE stage.'}</Text>
               {opponents.map((item) => <PanelAction key={item.id} label={'Challenge ' + item.name} selected={selectedBattleOpponentId === item.id} onPress={() => setOpponentId(item.id)} colors={colors} />)}
               <View style={{ flexDirection: 'row', gap: 6, marginTop: 7 }}>
                 {[60, 300, 600, 900].map((seconds) => <PanelAction key={seconds} label={seconds / 60 + ' min'} selected={durationSeconds === seconds} onPress={() => setDurationSeconds(seconds)} colors={colors} />)}
               </View>
-              <PanelAction label={battleBusy ? 'Starting…' : 'Start PK battle'} onPress={handleCreateBattle} disabled={battleBusy || !selectedBattleOpponentId || !opponents.length} colors={colors} />
+              <PanelAction label={battleBusy ? 'Sending…' : 'Send PK challenge'} onPress={handleCreateBattle} disabled={battleBusy || !selectedBattleOpponentId || !opponents.length} colors={colors} />
             </> : <Text style={{ color: '#D8D0EA', fontSize: 10, marginTop: 8 }}>The creator can start a PK battle with an approved guest on this stage.</Text>}
           </View>
 
