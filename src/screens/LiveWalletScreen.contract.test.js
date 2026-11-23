@@ -110,7 +110,7 @@ test('Android Sparks store purchases are linked to the signed-in account and ver
 test('native purchase APIs use the authenticated backend and platform-specific store catalogue', () => {
   assert.ok(service.includes('/live/purchases/native/account-binding'));
   assert.ok(service.includes('/live/purchases/native/verify'));
-  assert.ok(screen.includes("Platform.OS === 'android' ? 'google_play' : (Platform.OS === 'ios' ? 'apple' : 'paystack')"));
+  assert.ok(screen.includes("Platform.OS === 'android' ? 'google_play' : (Platform.OS === 'ios' ? 'apple_iap' : 'paystack')"));
   assert.ok(screen.includes("(Platform.OS === 'android' || Platform.OS === 'ios') ? (storeProducts.find"));
 });
 
