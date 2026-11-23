@@ -257,3 +257,9 @@ test('web LIVE room exposes a share action with the stream deep link', () => {
   assert.ok(webScreen.includes('https://zannychat.vercel.app/LiveStream?streamId='));
   assert.ok(webScreen.includes('label="Share LIVE"'));
 });
+
+
+test('web LIVE room exposes a named clean mode that hides the chat overlay', () => {
+  assert.ok(webScreen.includes("label={commentsVisible ? 'Clean mode' : 'Exit clean mode'}"));
+  assert.ok(webScreen.includes("setCommentsVisible((value) => !value)"));
+});
