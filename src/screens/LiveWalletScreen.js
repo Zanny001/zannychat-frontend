@@ -79,7 +79,7 @@ export default function LiveWalletScreen({ navigation }) {
     setPackages([]);
     const results = await Promise.allSettled([
       getLiveGiftWallet(),
-      getLivePurchasePackages(Platform.OS === 'android' ? 'google_play' : (Platform.OS === 'ios' ? 'apple' : 'paystack')),
+      getLivePurchasePackages(Platform.OS === 'android' ? 'google_play' : (Platform.OS === 'ios' ? 'apple_iap' : 'paystack')),
       getLivePurchaseHistory(),
       getLiveGiftHistory(12),
     ]);
