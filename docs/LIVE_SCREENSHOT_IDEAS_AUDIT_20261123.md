@@ -64,8 +64,8 @@ Required work:
 | Share | Added to the current native/web implementation branch | Validate share-sheet behaviour and the destination deep link |
 | Recorder | Existing replay start/stop flow | Verify server configuration, recording permissions, processing/recovery, and retention |
 | Minimize | No in-room minimize / PiP action found | Design platform-specific PiP/background behaviour; do not claim support until verified |
-| Quality | Adaptive streaming is enabled by default | Decide whether manual Auto/Low/Medium/High controls are required and map them to supported LiveKit APIs |
-| Watching Optimization | Adaptive stream and dynacast are already enabled | Add explanatory state or preferences only if they change actual subscription behaviour |
+| Quality | Native/web Auto/Low/Medium/High quality caps are being added through LiveKit remote publication controls | Verify simulcast support, quality changes on newly joined tracks, and adaptive-stream interaction |
+| Watching Optimization | Adaptive stream and dynacast are already enabled by default | Verify constrained-bandwidth behaviour; avoid a cosmetic toggle because the current room options are enabled at connection time |
 | Gift Settings | No corresponding in-room settings flow found | Audit gift catalogue, wallet/ledger, pricing, moderation, and purchase safeguards before adding |
 | Report | Existing LIVE reporting and moderation routes | Verify viewer and moderator journeys end to end |
 | Block | Native/web Block Creator action uses the existing account-level block API and exits the active LIVE session | Verify blocked creator cannot be rediscovered, rejoined, or surfaced through another LIVE entry point |
