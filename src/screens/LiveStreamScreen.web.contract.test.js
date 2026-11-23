@@ -264,3 +264,10 @@ test('web LIVE room exposes a named clean mode that hides the chat overlay', () 
   assert.ok(webScreen.includes("label={commentsVisible ? 'Clean mode' : 'Exit clean mode'}"));
   assert.ok(webScreen.includes("setCommentsVisible((value) => !value)"));
 });
+
+
+test('web LIVE room lets viewers suppress future recommendations from the current creator', () => {
+  assert.ok(webScreen.includes("/not-interested"));
+  assert.ok(webScreen.includes("label=\"Not interested\""));
+  assert.ok(webScreen.includes("We will show fewer LIVE streams from this creator."));
+});
