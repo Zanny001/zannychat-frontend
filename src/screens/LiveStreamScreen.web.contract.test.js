@@ -311,3 +311,12 @@ test('web LIVE room exposes a browser audio-output picker with safe fallback', (
 test('web guest invitation prompt identifies the inviting creator when available', () => {
   assert.ok(web.includes("stream?.creator_name || route.params?.creatorName || 'The LIVE creator'"));
 });
+
+test('web LIVE room exposes a feature-detected browser picture-in-picture minimize action', () => {
+  assert.ok(web.includes('document.pictureInPictureEnabled'));
+  assert.ok(web.includes('document.querySelector(\'video\')'));
+  assert.ok(web.includes('activeVideo.requestPictureInPicture()'));
+  assert.ok(web.includes('document.exitPictureInPicture()'));
+  assert.ok(web.includes('label="Minimize LIVE · Picture-in-picture"'));
+  assert.ok(web.includes('Picture-in-picture is not supported by this browser.'));
+});
