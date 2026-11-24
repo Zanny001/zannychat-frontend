@@ -116,13 +116,13 @@ export default function LiveSparkCatalogueAdminScreen({ navigation }) {
             ))}
           </View>
           <Text style={{ color: colors.textPrimary, fontWeight: '800' }}>Exact provider product ID</Text>
-          <TextInput value={packageId} onChangeText={setPackageId} autoCapitalize="none" placeholder="Enter approved product ID" placeholderTextColor={colors.textSecondary} style={field} />
+          <TextInput value={packageId} onChangeText={setPackageId} accessibilityRole="text" accessibilityLabel="Exact provider product ID" autoCapitalize="none" placeholder="Enter approved product ID" placeholderTextColor={colors.textSecondary} style={field} />
           <Text style={{ color: colors.textPrimary, fontWeight: '800' }}>Sparks quantity</Text>
-          <TextInput value={sparks} onChangeText={setSparks} keyboardType="number-pad" placeholder="Approved Sparks amount" placeholderTextColor={colors.textSecondary} style={field} />
+          <TextInput value={sparks} onChangeText={setSparks} accessibilityRole="text" accessibilityLabel="Sparks quantity" keyboardType="number-pad" placeholder="Approved Sparks amount" placeholderTextColor={colors.textSecondary} style={field} />
           <Text style={{ color: colors.textPrimary, fontWeight: '800' }}>Price (NGN)</Text>
-          <TextInput value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="Approved NGN price" placeholderTextColor={colors.textSecondary} style={field} />
+          <TextInput value={amount} onChangeText={setAmount} accessibilityRole="text" accessibilityLabel="Price in Nigerian naira" keyboardType="decimal-pad" placeholder="Approved NGN price" placeholderTextColor={colors.textSecondary} style={field} />
           <Text style={{ color: colors.textPrimary, fontWeight: '800' }}>Display order</Text>
-          <TextInput value={sortOrder} onChangeText={setSortOrder} keyboardType="number-pad" placeholder="0" placeholderTextColor={colors.textSecondary} style={field} />
+          <TextInput value={sortOrder} onChangeText={setSortOrder} accessibilityRole="text" accessibilityLabel="Display order" keyboardType="number-pad" placeholder="0" placeholderTextColor={colors.textSecondary} style={field} />
           <TouchableOpacity disabled={saving} onPress={createDraft} accessibilityRole="button" accessibilityLabel="Save inactive Sparks package" style={{ minHeight: 47, borderRadius: 13, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', opacity: saving ? 0.5 : 1 }}>
             {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>Save inactive draft</Text>}
           </TouchableOpacity>
