@@ -17,27 +17,27 @@ function ReviewCard({ item, colors, typography, draft, onDraft, onDecision, busy
       <Text selectable style={{ color: colors.textSecondary, fontSize: 12 }}>Creator ID: {item.creator_id}</Text>
       <Text style={[typography.caption, { color: colors.textSecondary }]}>Last updated: {item.updated_at ? new Date(item.updated_at).toLocaleString() : '—'}</Text>
       <Text style={{ color: colors.textPrimary, fontWeight: '800' }}>Verification provider</Text>
-      <TextInput value={draft.provider} onChangeText={(v) => onDraft({ provider: v })} placeholder="e.g. approved identity verification provider" placeholderTextColor={colors.textSecondary} style={fieldStyle} />
+      <TextInput value={draft.provider} onChangeText={(v) => onDraft({ provider: v })} accessibilityRole="text" accessibilityLabel="Verification provider" placeholder="e.g. approved identity verification provider" placeholderTextColor={colors.textSecondary} style={fieldStyle} />
       <Text style={{ color: colors.textPrimary, fontWeight: '800' }}>Evidence reference</Text>
-      <TextInput value={draft.reference} onChangeText={(v) => onDraft({ reference: v })} placeholder="External case/reference ID only — no BVN/NIN" placeholderTextColor={colors.textSecondary} style={fieldStyle} />
+      <TextInput value={draft.reference} onChangeText={(v) => onDraft({ reference: v })} accessibilityRole="text" accessibilityLabel="External verification evidence reference" placeholder="External case/reference ID only — no BVN/NIN" placeholderTextColor={colors.textSecondary} style={fieldStyle} />
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View style={{ flex: 1, paddingRight: 12 }}>
           <Text style={{ color: colors.textPrimary, fontWeight: '800' }}>Place payout hold</Text>
           <Text style={[typography.caption, { color: colors.textSecondary }]}>Keep withdrawals blocked while this hold is active.</Text>
         </View>
-        <Switch value={draft.payoutHold} onValueChange={(value) => onDraft({ payoutHold: value })} trackColor={{ true: colors.primary }} />
+        <Switch accessibilityRole="switch" accessibilityLabel="Place payout hold for creator" value={draft.payoutHold} onValueChange={(value) => onDraft({ payoutHold: value })} trackColor={{ true: colors.primary }} />
       </View>
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        <TouchableOpacity disabled={busy} onPress={() => onDecision('rejected')} accessibilityRole="button"
+        <TouchableOpacity disabled={busy} onPress={() => onDecision('rejected')} accessibilityRole="button" accessibilityLabel="Reject creator verification"
           style={{ flex: 1, minHeight: 44, borderRadius: 12, borderWidth: 1, borderColor: colors.danger || '#D65A72', alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ color: colors.danger || '#D65A72', fontWeight: '900' }}>Reject</Text>
         </TouchableOpacity>
-        <TouchableOpacity disabled={busy || draft.provider.trim().length < 2 || draft.reference.trim().length < 3} onPress={() => onDecision('verified')} accessibilityRole="button"
+        <TouchableOpacity disabled={busy || draft.provider.trim().length < 2 || draft.reference.trim().length < 3} onPress={() => onDecision('verified')} accessibilityRole="button" accessibilityLabel="Approve creator verification"
           style={{ flex: 1, minHeight: 44, borderRadius: 12, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', opacity: busy || draft.provider.trim().length < 2 || draft.reference.trim().length < 3 ? 0.45 : 1 }}>
           <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>Approve verification</Text>
         </TouchableOpacity>
       </View>
-      <TouchableOpacity disabled={busy} onPress={() => onDecision('pending')} accessibilityRole="button" style={{ alignItems: 'center', paddingVertical: 5 }}>
+      <TouchableOpacity disabled={busy} onPress={() => onDecision('pending')} accessibilityRole="button" accessibilityLabel="Return creator review to pending" style={{ alignItems: 'center', paddingVertical: 5 }}>
         <Text style={{ color: colors.textSecondary, fontWeight: '700' }}>Return to pending</Text>
       </TouchableOpacity>
     </View>
