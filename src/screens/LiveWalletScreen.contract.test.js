@@ -139,3 +139,12 @@ test('iOS Sparks purchases use StoreKit signed transactions and account binding 
   assert.ok(service.includes('/live/purchases/apple/verify'));
   assert.ok(screen.indexOf('verifyLiveApplePurchase({ signedTransaction: purchaseToken })') < screen.indexOf('finishLiveStorePurchase(purchase)'));
 });
+
+
+test('Android native purchase listener and recovery scan serialize duplicate in-flight tokens', () => {
+  const screen = fs.readFileSync(new URL('./LiveWalletScreen.js', import.meta.url), 'utf8');
+  assert.ok(screen.includes('useRef(new Set())'));
+  assert.ok(screen.includes('processingPurchaseTokens.current.has(purchaseToken)'));
+  assert.ok(screen.includes('processingPurchaseTokens.current.add(purchaseToken)'));
+  assert.ok(screen.includes('processingPurchaseTokens.current.delete(purchaseToken)'));
+});
