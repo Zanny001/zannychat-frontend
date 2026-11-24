@@ -177,3 +177,16 @@ export function reviewLiveCreatorPayoutProfile(creatorId, decision) {
     body: JSON.stringify(decision),
   });
 }
+
+export function getLiveCreatorRewardPolicyAccess() {
+  return backendFetch('/live/admin/reward-policy/access');
+}
+export function getLiveCreatorRewardRules() {
+  return backendFetch('/live/admin/reward-policy/rules');
+}
+export function createLiveCreatorRewardRule({ creatorShareBps, clearanceHours, minimumWithdrawalMinor }) {
+  return backendFetch('/live/admin/reward-policy/rules', { method: 'POST', body: JSON.stringify({ creatorShareBps, clearanceHours, minimumWithdrawalMinor }) });
+}
+export function activateLiveCreatorRewardRule(ruleId) {
+  return backendFetch('/live/admin/reward-policy/rules/' + encodeURIComponent(ruleId) + '/activate', { method: 'POST', body: JSON.stringify({ confirmation: 'ACTIVATE_CREATOR_REWARD_RULE' }) });
+}
