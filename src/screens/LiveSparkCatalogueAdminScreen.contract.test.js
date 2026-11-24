@@ -18,7 +18,7 @@ test('catalogue drafts require explicit provider SKU, Sparks quantity and NGN pr
   assert.match(screen, /Sparks quantity/);
   assert.match(screen, /Price \(NGN\)/);
   assert.match(screen, /Save inactive draft/);
-  assert.match(screen, /isActive/);
+  assert.match(screen, /ACTIVE/);
 });
 
 test('activation and deactivation are separately confirmed and use server-backed APIs', () => {
