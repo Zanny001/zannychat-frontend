@@ -199,13 +199,15 @@ export default function LiveCreatorPayoutScreen({ navigation }) {
           <View style={{ gap: 10 }}>
             <Text style={[typography.heading, { color: colors.textPrimary, fontWeight: '900' }]}>Bank account</Text>
             {verifiedBeneficiaries.length ? verifiedBeneficiaries.map((item) => (
-              <TouchableOpacity key={item.id} onPress={() => setSelectedBeneficiaryId(item.id)} accessibilityRole="radio" accessibilityLabel={'Select ' + item.bank_name + ' account ending ' + item.account_last4} accessibilityState={{ checked: selectedBeneficiaryId === item.id }}
-                style={{ borderRadius: 16, padding: 13, borderWidth: 1, borderColor: selectedBeneficiaryId === item.id ? colors.primary : colors.border, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Ionicons name={selectedBeneficiaryId === item.id ? 'radio-button-on' : 'radio-button-off'} size={20} color={colors.primary} />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.textPrimary, fontWeight: '900' }}>{item.bank_name}</Text>
-                  <Text style={[typography.caption, { color: colors.textSecondary }]}>{item.account_name} · •••• {item.account_last4}</Text>
-                </View>
+              <View key={item.id} style={{ borderRadius: 16, padding: 13, borderWidth: 1, borderColor: selectedBeneficiaryId === item.id ? colors.primary : colors.border, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <TouchableOpacity onPress={() => setSelectedBeneficiaryId(item.id)} accessibilityRole="radio" accessibilityLabel={'Select ' + item.bank_name + ' account ending ' + item.account_last4} accessibilityState={{ checked: selectedBeneficiaryId === item.id }}
+                  style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <Ionicons name={selectedBeneficiaryId === item.id ? 'radio-button-on' : 'radio-button-off'} size={20} color={colors.primary} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: colors.textPrimary, fontWeight: '900' }}>{item.bank_name}</Text>
+                    <Text style={[typography.caption, { color: colors.textSecondary }]}>{item.account_name} · •••• {item.account_last4}</Text>
+                  </View>
+                </TouchableOpacity>
                 <View style={{ alignItems: 'flex-end', gap: 7 }}>
                   <Text style={[typography.caption, { color: colors.success || colors.primary }]}>Verified</Text>
                   <TouchableOpacity onPress={() => disableBank(item)} accessibilityRole="button"
@@ -214,7 +216,7 @@ export default function LiveCreatorPayoutScreen({ navigation }) {
                     <Text style={{ color: colors.danger || '#D65A72', fontSize: 12, fontWeight: '800' }}>Remove</Text>
                   </TouchableOpacity>
                 </View>
-              </TouchableOpacity>
+              </View>
             )) : <Surface colors={colors}><Text style={{ color: colors.textSecondary }}>No verified bank account saved yet.</Text></Surface>}
 
             <Surface colors={colors} style={{ gap: 10 }}>
