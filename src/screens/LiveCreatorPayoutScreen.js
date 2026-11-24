@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import {
   addLiveCreatorPayoutBeneficiary,
+  disableLiveCreatorPayoutBeneficiary,
   getLiveCreatorEarningsSummary,
   getLiveCreatorPayoutBanks,
   getLiveCreatorPayoutBeneficiaries,
@@ -85,6 +86,33 @@ export default function LiveCreatorPayoutScreen({ navigation }) {
     } finally {
       setSavingBank(false);
     }
+  };
+
+  const disableBank = (beneficiary) => {
+    if (!beneficiary?.id) return;
+    Alert.alert(
+      'Remove bank account',
+      'Remove ' + beneficiary.bank_name + ' account ending ' + beneficiary.account_last4 + ' from your payout methods? This does not reverse transfers already submitted.',
+      [
+        { text: 'Keep account', style: 'cancel' },
+        {
+          text: 'Remove account',
+          style: 'destructive',
+          onPress: async () => {
+            setError('');
+            setNotice('');
+            try {
+              await disableLiveCreatorPayoutBeneficiary(beneficiary.id);
+              if (selectedBeneficiaryId === beneficiary.id) setSelectedBeneficiaryId('');
+              setNotice('Bank account removed from your payout methods.');
+              await load();
+            } catch (removeError) {
+              setError(removeError?.message || 'Could not remove this bank account.');
+            }
+          },
+        },
+      ],
+    );
   };
 
   const performWithdrawal = async () => {
@@ -178,7 +206,14 @@ export default function LiveCreatorPayoutScreen({ navigation }) {
                   <Text style={{ color: colors.textPrimary, fontWeight: '900' }}>{item.bank_name}</Text>
                   <Text style={[typography.caption, { color: colors.textSecondary }]}>{item.account_name} · •••• {item.account_last4}</Text>
                 </View>
-                <Text style={[typography.caption, { color: colors.success || colors.primary }]}>Verified</Text>
+                <View style={{ alignItems: 'flex-end', gap: 7 }}>
+                  <Text style={[typography.caption, { color: colors.success || colors.primary }]}>Verified</Text>
+                  <TouchableOpacity onPress={() => disableBank(item)} accessibilityRole="button"
+                    accessibilityLabel={'Remove ' + item.bank_name + ' account ending ' + item.account_last4}
+                    style={{ paddingVertical: 5, paddingHorizontal: 8, borderRadius: 9, borderWidth: 1, borderColor: colors.danger || '#D65A72' }}>
+                    <Text style={{ color: colors.danger || '#D65A72', fontSize: 12, fontWeight: '800' }}>Remove</Text>
+                  </TouchableOpacity>
+                </View>
               </TouchableOpacity>
             )) : <Surface colors={colors}><Text style={{ color: colors.textSecondary }}>No verified bank account saved yet.</Text></Surface>}
 
