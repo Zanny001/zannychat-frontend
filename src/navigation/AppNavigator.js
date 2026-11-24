@@ -70,6 +70,7 @@ import LiveCreatorEarningsScreen from '../screens/LiveCreatorEarningsScreen';
 import LiveCreatorPayoutScreen from '../screens/LiveCreatorPayoutScreen';
 import LivePayoutReviewScreen from '../screens/LivePayoutReviewScreen';
 import LiveRewardPolicyAdminScreen from '../screens/LiveRewardPolicyAdminScreen';
+import LiveSparkCatalogueAdminScreen from '../screens/LiveSparkCatalogueAdminScreen';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { getCallParticipantName, getCallSessionById, subscribeToIncomingCalls, updateCallStatus } from '../services/calls';
 import { clearNativeCallMapping, getNativeCallMapping, initializeNativeCallSystem, reportIncomingCallIfNeeded, reportNativeCallEnded } from '../services/nativeCallSystem';
@@ -259,6 +260,7 @@ const LiveLeaderboardRoute = withLiveRouteBoundary(LiveLeaderboardScreen, 'LiveL
 const LiveSettingsRoute = withLiveRouteBoundary(LiveSettingsScreen, 'LiveSettings');
 const LiveEventsRoute = withLiveRouteBoundary(LiveEventsScreen, 'LiveEvents');
 const LiveWalletRoute = withLiveRouteBoundary(LiveWalletScreen, 'LiveWallet');
+const LiveSparkCatalogueAdminRoute = withLiveRouteBoundary(LiveSparkCatalogueAdminScreen, 'LiveSparkCatalogueAdmin');
 const LiveCreatorEarningsRoute = withLiveRouteBoundary(LiveCreatorEarningsScreen, 'LiveCreatorEarnings');
 const LiveCreatorPayoutRoute = withLiveRouteBoundary(LiveCreatorPayoutScreen, 'LiveCreatorPayout');
 
@@ -544,6 +546,7 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
             <RootStack.Screen name="LiveCreatorPayout" component={LiveCreatorPayoutRoute} options={{ animation: 'slide_from_right' }} />
             <RootStack.Screen name="LivePayoutReview" component={LivePayoutReviewScreen} options={{ animation: 'slide_from_right' }} />
             <RootStack.Screen name="LiveRewardPolicyAdmin" component={LiveRewardPolicyAdminScreen} options={{ animation: 'slide_from_right' }} />
+            <RootStack.Screen name="LiveSparkCatalogueAdmin" component={LiveSparkCatalogueAdminRoute} options={{ animation: 'slide_from_right' }} />
           </RootStack.Group>
           <RootStack.Screen name="PeerProfile" component={PeerProfileScreen} />
           <RootStack.Screen name="NewChat" component={NewChatScreen} options={{ presentation: 'modal' }} />
