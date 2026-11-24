@@ -39,7 +39,7 @@ export default function LiveRewardPolicyAdminScreen({ navigation }) {
     const minimumMinor = Math.round(Number(minimum) * 100);
     if (!Number.isFinite(shareValue) || shareValue <= 0 || shareValue > 100
         || !Number.isInteger(shareBps) || !/^\d{1,3}(\.\d{1,2})?$/.test(share)
-        || !Number.isInteger(clearanceHours) || clearanceHours < 0 || clearanceHours > 720
+        || !/^\\d+$/.test(clearance) || !Number.isInteger(clearanceHours) || clearanceHours < 0 || clearanceHours > 720
         || !/^\d+(\.\d{1,2})?$/.test(minimum) || !Number.isSafeInteger(minimumMinor) || minimumMinor <= 0) {
       setError('Enter a valid creator share (0.01–100%), clearance period (0–720 hours), and withdrawal minimum in NGN.'); return;
     }
