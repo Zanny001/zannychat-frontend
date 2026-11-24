@@ -110,7 +110,7 @@ export default function LiveSparkCatalogueAdminScreen({ navigation }) {
           <Text style={{ color: colors.textPrimary, fontWeight: '800' }}>Payment provider</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
             {PROVIDERS.map((item) => (
-              <TouchableOpacity key={item.id} onPress={() => setProvider(item.id)} accessibilityRole="radio" accessibilityState={{ checked: provider === item.id }} style={{ minHeight: 40, paddingHorizontal: 12, borderRadius: 11, borderWidth: 1, borderColor: provider === item.id ? colors.primary : colors.border, backgroundColor: provider === item.id ? colors.primary + '18' : colors.background, justifyContent: 'center' }}>
+              <TouchableOpacity key={item.id} onPress={() => setProvider(item.id)} accessibilityRole="radio" accessibilityLabel={"Select " + item.label + " provider"} accessibilityState={{ checked: provider === item.id }} style={{ minHeight: 40, paddingHorizontal: 12, borderRadius: 11, borderWidth: 1, borderColor: provider === item.id ? colors.primary : colors.border, backgroundColor: provider === item.id ? colors.primary + '18' : colors.background, justifyContent: 'center' }}>
                 <Text style={{ color: provider === item.id ? colors.primary : colors.textSecondary, fontWeight: '800' }}>{item.label}</Text>
               </TouchableOpacity>
             ))}
