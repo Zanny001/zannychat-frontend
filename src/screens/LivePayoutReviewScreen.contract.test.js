@@ -1,12 +1,11 @@
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
-const screen = fs.readFileSync(path.join(__dirname, 'LivePayoutReviewScreen.js'), 'utf8');
-const payoutScreen = fs.readFileSync(path.join(__dirname, 'LiveCreatorPayoutScreen.js'), 'utf8');
-const service = fs.readFileSync(path.join(__dirname, '../services/liveEconomyService.js'), 'utf8');
-const navigator = fs.readFileSync(path.join(__dirname, '../navigation/AppNavigator.js'), 'utf8');
+const screen = fs.readFileSync(new URL('./LivePayoutReviewScreen.js', import.meta.url), 'utf8');
+const payoutScreen = fs.readFileSync(new URL('./LiveCreatorPayoutScreen.js', import.meta.url), 'utf8');
+const service = fs.readFileSync(new URL('../services/liveEconomyService.js', import.meta.url), 'utf8');
+const navigator = fs.readFileSync(new URL('../navigation/AppNavigator.js', import.meta.url), 'utf8');
 
 test('payout review queue is only exposed to users authorized by the backend access probe', () => {
   assert.match(service, /getLiveCreatorPayoutReviewAccess/);
