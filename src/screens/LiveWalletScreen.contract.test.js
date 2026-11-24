@@ -19,6 +19,17 @@ test('Sparks wallet renders real server-backed balances, package catalogue and p
   assert.ok(screen.includes('item.status.toUpperCase()'));
 });
 
+test('Sparks wallet explains the server catalogue readiness reason without enabling checkout', () => {
+  assert.ok(screen.includes("const [catalogueReason, setCatalogueReason] = useState('CATALOGUE_LOADING')"));
+  assert.ok(screen.includes("setCatalogueReason(results[1].value?.reason || null)"));
+  assert.ok(screen.includes("setCatalogueReason('CATALOGUE_UNAVAILABLE')"));
+  assert.ok(screen.includes("'NO_ACTIVE_PACKAGES'"));
+  assert.ok(screen.includes("'PROVIDER_NOT_CONFIGURED'"));
+  assert.ok(screen.includes("'CATALOGUE_UNAVAILABLE'"));
+  assert.ok(screen.includes('checkout remains disabled'));
+  assert.ok(screen.includes('setBackendPurchasable(false)'));
+});
+
 test('Sparks purchase UI stays disabled until server configuration and a real package exist', () => {
   assert.ok(screen.includes('!backendPurchasable'));
   assert.ok(screen.includes("Platform.OS === 'web' || (Platform.OS === 'android'"));
