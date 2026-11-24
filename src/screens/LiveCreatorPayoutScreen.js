@@ -12,6 +12,7 @@ import {
   getLiveCreatorPayoutBeneficiaries,
   getLiveCreatorPayoutEligibility,
   getLiveCreatorPayoutHistory,
+  getLiveCreatorPayoutReviewAccess,
   requestLiveCreatorPayout,
 } from '../services/liveEconomyService';
 
@@ -41,6 +42,7 @@ export default function LiveCreatorPayoutScreen({ navigation }) {
   const [withdrawing, setWithdrawing] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [canReviewPayouts, setCanReviewPayouts] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -51,6 +53,7 @@ export default function LiveCreatorPayoutScreen({ navigation }) {
       getLiveCreatorPayoutBanks(),
       getLiveCreatorPayoutBeneficiaries(),
       getLiveCreatorPayoutHistory(),
+      getLiveCreatorPayoutReviewAccess(),
     ]);
     if (results[0].status === 'fulfilled') setEligibility(results[0].value);
     if (results[1].status === 'fulfilled') setEarnings(results[1].value?.earnings || null);
@@ -62,6 +65,7 @@ export default function LiveCreatorPayoutScreen({ navigation }) {
         ? current : (list.find((item) => item.status === 'verified')?.id || ''));
     }
     if (results[4].status === 'fulfilled') setPayouts(Array.isArray(results[4].value?.payouts) ? results[4].value.payouts : []);
+    setCanReviewPayouts(results[5].status === 'fulfilled' && results[5].value?.isAdmin === true);
     const failed = results.find((item) => item.status === 'rejected');
     if (failed) setError(failed.reason?.message || 'Some payout information could not be loaded.');
     setLoading(false);
@@ -176,6 +180,16 @@ export default function LiveCreatorPayoutScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
+        {canReviewPayouts ? (
+          <TouchableOpacity onPress={() => navigation.navigate('LivePayoutReview')} accessibilityRole="button" accessibilityLabel="Open creator payout review queue"
+            style={{ minHeight: 48, borderRadius: 14, paddingHorizontal: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+              <Ionicons name="shield-checkmark" size={19} color={colors.primary} />
+              <Text style={{ color: colors.textPrimary, fontWeight: '900' }}>Admin · Payout verification reviews</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.primary} />
+          </TouchableOpacity>
+        ) : null}
         <Surface colors={colors} style={{ borderColor: eligibility?.enabled ? (colors.success || colors.primary) : colors.border }}>
           <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '800', letterSpacing: 1.2 }]}>WITHDRAWABLE BALANCE</Text>
           <Text style={{ color: colors.textPrimary, fontSize: 32, fontWeight: '900', marginTop: 7 }}>{loading ? '—' : formatNaira(earnings?.availableMinor)}</Text>

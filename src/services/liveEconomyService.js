@@ -162,3 +162,18 @@ export function requestLiveCreatorPayout({ beneficiaryId, amountMinor }) {
 export function getLiveCreatorPayoutHistory() {
   return backendFetch('/live/creator-payouts/history');
 }
+
+export function getLiveCreatorPayoutReviewAccess() {
+  return backendFetch('/live/admin/payout-review/access');
+}
+
+export function getLiveCreatorPayoutReviewQueue() {
+  return backendFetch('/live/admin/payout-review/queue');
+}
+
+export function reviewLiveCreatorPayoutProfile(creatorId, decision) {
+  return backendFetch('/live/admin/payout-review/' + encodeURIComponent(creatorId), {
+    method: 'POST',
+    body: JSON.stringify(decision),
+  });
+}
