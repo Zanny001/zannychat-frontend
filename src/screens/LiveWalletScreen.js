@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -70,6 +70,7 @@ export default function LiveWalletScreen({ navigation }) {
   const [storeProducts, setStoreProducts] = useState([]);
   const [obfuscatedAccountId, setObfuscatedAccountId] = useState('');
   const [appAccountToken, setAppAccountToken] = useState('');
+  const processingPurchaseTokens = useRef(new Set());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -112,7 +113,12 @@ export default function LiveWalletScreen({ navigation }) {
       setError('The app store returned incomplete signed purchase evidence. Your transaction has not been finalized.');
       return;
     }
+    // The native update listener and recovery scan can surface the same token concurrently.
+    // Serialize each token in this screen instance; backend ledger idempotency remains the final safeguard.
+    if (processingPurchaseTokens.current.has(purchaseToken)) return;
+    processingPurchaseTokens.current.add(purchaseToken);
     if (!packages.some((item) => item.package_id === packageId)) {
+      processingPurchaseTokens.current.delete(purchaseToken);
       setError('This store product is not in the active ZannyChat Sparks catalogue.');
       return;
     }
@@ -133,6 +139,7 @@ export default function LiveWalletScreen({ navigation }) {
     } catch (purchaseError) {
       setError(purchaseError?.message || 'The store could not verify this purchase. Your transaction remains available for a safe retry.');
     } finally {
+      processingPurchaseTokens.current.delete(purchaseToken);
       setBusyPackage('');
     }
   }, [packages, load]);
