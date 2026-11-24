@@ -190,3 +190,22 @@ export function createLiveCreatorRewardRule({ creatorShareBps, clearanceHours, m
 export function activateLiveCreatorRewardRule(ruleId) {
   return backendFetch('/live/admin/reward-policy/rules/' + encodeURIComponent(ruleId) + '/activate', { method: 'POST', body: JSON.stringify({ confirmation: 'ACTIVATE_CREATOR_REWARD_RULE' }) });
 }
+
+export function getLiveSparkCatalogueAdminPackages() {
+  return backendFetch('/live/admin/spark-catalogue/packages');
+}
+export function createLiveSparkCatalogueDraft({ provider, packageId, sparks, amountMinor, sortOrder = 0 }) {
+  return backendFetch('/live/admin/spark-catalogue/packages', {
+    method: 'POST',
+    body: JSON.stringify({ provider, packageId, sparks, amountMinor, sortOrder }),
+  });
+}
+export function setLiveSparkCataloguePackageActive(provider, packageId, active) {
+  const action = active ? 'activate' : 'deactivate';
+  const confirmation = active ? 'ACTIVATE_SPARKS_PACKAGE' : 'DEACTIVATE_SPARKS_PACKAGE';
+  return backendFetch('/live/admin/spark-catalogue/packages/' + encodeURIComponent(provider) + '/'
+    + encodeURIComponent(packageId) + '/' + action, {
+    method: 'POST',
+    body: JSON.stringify({ confirmation }),
+  });
+}
