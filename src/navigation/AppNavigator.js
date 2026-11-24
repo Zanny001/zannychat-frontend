@@ -69,6 +69,7 @@ import LiveWalletScreen from '../screens/LiveWalletScreen';
 import LiveCreatorEarningsScreen from '../screens/LiveCreatorEarningsScreen';
 import LiveCreatorPayoutScreen from '../screens/LiveCreatorPayoutScreen';
 import LivePayoutReviewScreen from '../screens/LivePayoutReviewScreen';
+import LiveRewardPolicyAdminScreen from '../screens/LiveRewardPolicyAdminScreen';
 import { supabase, SUPABASE_ENABLED } from '../services/supabaseClient';
 import { getCallParticipantName, getCallSessionById, subscribeToIncomingCalls, updateCallStatus } from '../services/calls';
 import { clearNativeCallMapping, getNativeCallMapping, initializeNativeCallSystem, reportIncomingCallIfNeeded, reportNativeCallEnded } from '../services/nativeCallSystem';
@@ -542,6 +543,7 @@ export default function AppNavigator({ initialRouteName = 'Onboarding', isAuthen
             <RootStack.Screen name="LiveCreatorEarnings" component={LiveCreatorEarningsRoute} options={{ animation: 'slide_from_right' }} />
             <RootStack.Screen name="LiveCreatorPayout" component={LiveCreatorPayoutRoute} options={{ animation: 'slide_from_right' }} />
             <RootStack.Screen name="LivePayoutReview" component={LivePayoutReviewScreen} options={{ animation: 'slide_from_right' }} />
+            <RootStack.Screen name="LiveRewardPolicyAdmin" component={LiveRewardPolicyAdminScreen} options={{ animation: 'slide_from_right' }} />
           </RootStack.Group>
           <RootStack.Screen name="PeerProfile" component={PeerProfileScreen} />
           <RootStack.Screen name="NewChat" component={NewChatScreen} options={{ presentation: 'modal' }} />
