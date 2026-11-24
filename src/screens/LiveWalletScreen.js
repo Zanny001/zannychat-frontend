@@ -58,6 +58,7 @@ export default function LiveWalletScreen({ navigation }) {
   const [wallet, setWallet] = useState(null);
   const [packages, setPackages] = useState([]);
   const [backendPurchasable, setBackendPurchasable] = useState(false);
+  const [catalogueReason, setCatalogueReason] = useState('CATALOGUE_LOADING');
   const [purchaseHistory, setPurchaseHistory] = useState([]);
   const [giftHistory, setGiftHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -76,6 +77,7 @@ export default function LiveWalletScreen({ navigation }) {
     // Fail closed: a failed catalogue refresh must never leave stale packages
     // or a previously enabled checkout action visible.
     setBackendPurchasable(false);
+    setCatalogueReason('CATALOGUE_LOADING');
     setPackages([]);
     const results = await Promise.allSettled([
       getLiveGiftWallet(),
@@ -87,6 +89,9 @@ export default function LiveWalletScreen({ navigation }) {
     if (results[1].status === 'fulfilled') {
       setPackages(Array.isArray(results[1].value?.packages) ? results[1].value.packages : []);
       setBackendPurchasable(Boolean(results[1].value?.purchasable));
+      setCatalogueReason(results[1].value?.reason || null);
+    } else {
+      setCatalogueReason('CATALOGUE_UNAVAILABLE');
     }
     if (results[2].status === 'fulfilled') setPurchaseHistory(Array.isArray(results[2].value?.purchases) ? results[2].value.purchases : []);
     if (results[3].status === 'fulfilled') setGiftHistory(Array.isArray(results[3].value?.entries) ? results[3].value.entries : []);
@@ -294,9 +299,21 @@ export default function LiveWalletScreen({ navigation }) {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Ionicons name="shield-checkmark-outline" size={22} color={colors.primary} />
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.textPrimary, fontWeight: '900' }}>Purchases are not active yet</Text>
+                  <Text style={{ color: colors.textPrimary, fontWeight: '900' }}>
+                    {catalogueReason === 'NO_ACTIVE_PACKAGES' ? 'No Sparks packages are published yet' : 'Purchases are not active yet'}
+                  </Text>
                   <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4 }]}>
-                    Secure checkout will appear when payment onboarding, package prices and webhook verification are configured. No payment can be taken right now.
+                    {catalogueReason === 'NO_ACTIVE_PACKAGES'
+                      ? 'The server has no active, approved Sparks packages for this store. Checkout will appear when the catalogue is published.'
+                      : catalogueReason === 'PROVIDER_NOT_CONFIGURED'
+                        ? (Platform.OS === 'android'
+                          ? 'Google Play billing is not enabled for production yet. No payment can be taken.'
+                          : Platform.OS === 'ios'
+                            ? 'Apple in-app purchase setup is not enabled for production yet. No payment can be taken.'
+                            : 'Secure Paystack checkout is not configured for production yet. No payment can be taken.')
+                        : catalogueReason === 'CATALOGUE_UNAVAILABLE'
+                          ? 'ZannyChat could not confirm the live purchase catalogue. Refresh before trying again; checkout remains disabled.'
+                          : 'Secure checkout will appear when payment onboarding, package prices and purchase verification are configured. No payment can be taken right now.'}
                   </Text>
                 </View>
               </View>
