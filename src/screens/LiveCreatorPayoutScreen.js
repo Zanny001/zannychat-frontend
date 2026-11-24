@@ -194,6 +194,16 @@ export default function LiveCreatorPayoutScreen({ navigation }) {
             <Ionicons name="chevron-forward" size={18} color={colors.primary} />
           </TouchableOpacity>
         ) : null}
+        {canManageRewardPolicy ? (
+          <TouchableOpacity onPress={() => navigation.navigate('LiveSparkCatalogueAdmin')} accessibilityRole="button" accessibilityLabel="Open Sparks store catalogue administration"
+            style={{ minHeight: 48, borderRadius: 14, paddingHorizontal: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+              <Ionicons name="flash" size={19} color={colors.primary} />
+              <Text style={{ color: colors.textPrimary, fontWeight: '900' }}>Admin · Sparks store catalogue</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.primary} />
+          </TouchableOpacity>
+        ) : null}
         {canReviewPayouts ? (
           <TouchableOpacity onPress={() => navigation.navigate('LivePayoutReview')} accessibilityRole="button" accessibilityLabel="Open creator payout review queue"
             style={{ minHeight: 48, borderRadius: 14, paddingHorizontal: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
